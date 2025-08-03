@@ -27,7 +27,9 @@ export const PaymentButton = ({
   const navigate = useNavigate();
 
   const handlePayment = async () => {
-    console.log("Payment button clicked for:", productType);
+    console.log("=== PAYMENT FLOW STARTED ===");
+    console.log("Product type:", productType);
+    console.log("User:", user?.email);
 
     if (!user) {
       toast({
@@ -42,48 +44,44 @@ export const PaymentButton = ({
     try {
       setLoading(true);
       
-      console.log("Making request to create-payment with:", {
+      const paymentData = {
         productType,
         successUrl: `${window.location.origin}/payment-success?type=${productType}`,
         cancelUrl: `${window.location.origin}/pricing`
-      });
+      };
       
-      // Create payment session - Stripe will redirect to success page
+      console.log("Creating payment with data:", paymentData);
+      
       const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          productType,
-          successUrl: `${window.location.origin}/payment-success?type=${productType}`,
-          cancelUrl: `${window.location.origin}/pricing`
-        }
+        body: paymentData
       });
 
-      console.log("Response from edge function:", { data, error });
+      console.log("Payment response:", { data, error });
 
       if (error) {
-        console.error("Edge function error details:", error);
-        throw error;
+        console.error("Payment creation error:", error);
+        throw new Error(error.message || "Failed to create payment");
       }
 
-      if (data?.url) {
-        console.log("Redirecting to Stripe checkout:", data.url);
-        
-        toast({
-          title: "Redirecting to payment",
-          description: "Opening Stripe checkout...",
-        });
-        
-        // Use setTimeout to ensure toast shows, then redirect
-        setTimeout(() => {
-          window.location.href = data.url;
-        }, 100);
-      } else {
-        throw new Error('No payment URL received');
+      if (!data?.url) {
+        throw new Error('No payment URL received from Stripe');
       }
-    } catch (error) {
-      console.error('Payment error:', error);
+
+      console.log("Redirecting to:", data.url);
+      
       toast({
-        title: "Payment Error",
-        description: error.message || "Failed to create payment session",
+        title: "Redirecting to Stripe",
+        description: "Please complete your payment on the secure checkout page.",
+      });
+      
+      // Direct redirect to Stripe
+      window.location.href = data.url;
+      
+    } catch (error: any) {
+      console.error("=== PAYMENT ERROR ===", error);
+      toast({
+        title: "Payment Error", 
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -102,7 +100,7 @@ export const PaymentButton = ({
       {loading ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          Creating payment...
+          Processing...
         </>
       ) : (
         children
