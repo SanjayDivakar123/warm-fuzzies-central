@@ -30,28 +30,15 @@ interface AssessmentResult {
   assessment_type: string;
   results: any;
   created_at: string;
-  expires_at: string;
-}
-
-interface QuizSession {
-  id: string;
-  created_at: string;
-  completed_at: string;
-  result_color: string;
-  result_percentage: any;
-  answers: Array<{
-    question_text: string;
-    answer_text: string;
-    color_weight: any;
-  }>;
+  updated_at: string;
+  user_id: string;
 }
 
 const Dashboard = () => {
   const { user, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
   const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
-  const [quizSessions, setQuizSessions] = useState<QuizSession[]>([]);
-  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | QuizSession | null>(null);
+  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -61,7 +48,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
-      fetchUserQuizSessions();
     }
   }, [user]);
 
@@ -80,46 +66,6 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: "Failed to fetch your assessments",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchUserQuizSessions = async () => {
-    try {
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('quiz_sessions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false });
-
-      if (sessionsError) throw sessionsError;
-
-      // Fetch answers for each session
-      const sessionsWithAnswers = await Promise.all(
-        (sessions || []).map(async (session) => {
-          const { data: answers, error: answersError } = await supabase
-            .from('quiz_answers')
-            .select('question_text, answer_text, color_weight')
-            .eq('session_id', session.id)
-            .order('question_id');
-
-          if (answersError) throw answersError;
-
-          return {
-            ...session,
-            answers: answers || []
-          };
-        })
-      );
-
-      setQuizSessions(sessionsWithAnswers);
-    } catch (error) {
-      console.error('Error fetching quiz sessions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch your quiz history",
         variant: "destructive",
       });
     } finally {
@@ -156,30 +102,14 @@ const Dashboard = () => {
     }
   };
 
-  const handleDownloadReport = async (assessment: AssessmentResult | QuizSession) => {
+  const handleDownloadReport = async (assessment: AssessmentResult) => {
     try {
-      let reportData;
-      let filename;
-
-      if ('assessment_type' in assessment) {
-        // Assessment result
-        reportData = {
-          type: assessment.assessment_type,
-          results: assessment.results,
-          date: assessment.created_at,
-        };
-        filename = `${assessment.assessment_type}-assessment-${format(new Date(assessment.created_at), 'yyyy-MM-dd')}.pdf`;
-      } else {
-        // Quiz session
-        reportData = {
-          type: 'quiz',
-          color: assessment.result_color,
-          percentage: assessment.result_percentage,
-          answers: assessment.answers,
-          date: assessment.completed_at,
-        };
-        filename = `quiz-results-${format(new Date(assessment.completed_at), 'yyyy-MM-dd')}.pdf`;
-      }
+      const reportData = {
+        type: assessment.assessment_type,
+        results: assessment.results,
+        date: assessment.created_at,
+      };
+      const filename = `${assessment.assessment_type}-assessment-${format(new Date(assessment.created_at), 'yyyy-MM-dd')}.pdf`;
 
       await exportToPDF(reportData, filename);
       
@@ -440,83 +370,8 @@ const Dashboard = () => {
                 </section>
               )}
 
-              {/* Quiz Sessions */}
-              {quizSessions.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                    <FileText className="w-6 h-6" />
-                    Quiz History
-                  </h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {quizSessions.map((session) => (
-                      <Card key={session.id} className="shadow-elegant border-border/20">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">Free Preview Quiz</CardTitle>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                <Clock className="w-4 h-4" />
-                                {format(new Date(session.completed_at), 'MMM dd, yyyy')}
-                              </div>
-                            </div>
-                            {session.result_color && (
-                              <Badge className={getColorBadgeStyle(session.result_color)}>
-                                {getColorLabel(session.result_color)}
-                              </Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {session.answers.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium">Responses ({session.answers.length} questions)</p>
-                              <div className="text-xs text-muted-foreground space-y-1">
-                                {session.answers.slice(0, 2).map((answer, index) => (
-                                  <div key={index} className="truncate">
-                                    <span className="font-medium">Q{index + 1}:</span> {answer.answer_text}
-                                  </div>
-                                ))}
-                                {session.answers.length > 2 && (
-                                  <div className="text-muted-foreground">
-                                    +{session.answers.length - 2} more responses
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex gap-2 pt-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleDownloadReport(session)}
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setSelectedAssessment(session)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Details
-                            </Button>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to="/results">
-                                <ChevronRight className="w-4 h-4 mr-2" />
-                                View
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               {/* Empty State */}
-              {assessments.length === 0 && quizSessions.length === 0 && (
+              {assessments.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <BarChart3 className="w-8 h-8 text-muted-foreground" />
@@ -553,12 +408,8 @@ const Dashboard = () => {
                 </div>
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                   <AssessmentDetails
-                    answers={'answers' in selectedAssessment ? selectedAssessment.answers : undefined}
-                    results={'results' in selectedAssessment ? selectedAssessment.results : {
-                      dominantColor: selectedAssessment.result_color,
-                      scores: selectedAssessment.result_percentage
-                    }}
-                    type={'assessment_type' in selectedAssessment ? selectedAssessment.assessment_type : 'quiz'}
+                    results={selectedAssessment.results}
+                    type={selectedAssessment.assessment_type}
                   />
                 </div>
               </div>
