@@ -65,13 +65,17 @@ export const PaymentButton = ({
       }
 
       if (data?.url) {
-        // Open Stripe checkout in same tab so it can redirect properly
-        window.location.href = data.url;
+        console.log("Redirecting to Stripe checkout:", data.url);
         
         toast({
           title: "Redirecting to payment",
-          description: "You'll be able to access your assessment after payment...",
+          description: "Opening Stripe checkout...",
         });
+        
+        // Use setTimeout to ensure toast shows, then redirect
+        setTimeout(() => {
+          window.location.href = data.url;
+        }, 100);
       } else {
         throw new Error('No payment URL received');
       }
