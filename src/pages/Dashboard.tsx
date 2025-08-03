@@ -1,0 +1,573 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Navbar } from "@/components/navigation/Navbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Calendar, 
+  Download, 
+  Eye, 
+  Clock, 
+  BarChart3, 
+  FileText,
+  ChevronRight,
+  User,
+  Settings,
+  KeyRound
+} from "lucide-react";
+import { format } from "date-fns";
+import { exportToPDF } from "@/lib/pdfExport";
+import AssessmentDetails from "@/components/AssessmentDetails";
+
+interface AssessmentResult {
+  id: string;
+  assessment_type: string;
+  results: any;
+  created_at: string;
+  expires_at: string;
+}
+
+interface QuizSession {
+  id: string;
+  created_at: string;
+  completed_at: string;
+  result_color: string;
+  result_percentage: any;
+  answers: Array<{
+    question_text: string;
+    answer_text: string;
+    color_weight: any;
+  }>;
+}
+
+const Dashboard = () => {
+  const { user, updatePassword, signOut } = useAuth();
+  const { toast } = useToast();
+  const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
+  const [quizSessions, setQuizSessions] = useState<QuizSession[]>([]);
+  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | QuizSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserAssessments();
+      fetchUserQuizSessions();
+    }
+  }, [user]);
+
+  const fetchUserAssessments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('assessment_results')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAssessments(data || []);
+    } catch (error) {
+      console.error('Error fetching assessments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your assessments",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchUserQuizSessions = async () => {
+    try {
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('quiz_sessions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false });
+
+      if (sessionsError) throw sessionsError;
+
+      // Fetch answers for each session
+      const sessionsWithAnswers = await Promise.all(
+        (sessions || []).map(async (session) => {
+          const { data: answers, error: answersError } = await supabase
+            .from('quiz_answers')
+            .select('question_text, answer_text, color_weight')
+            .eq('session_id', session.id)
+            .order('question_id');
+
+          if (answersError) throw answersError;
+
+          return {
+            ...session,
+            answers: answers || []
+          };
+        })
+      );
+
+      setQuizSessions(sessionsWithAnswers);
+    } catch (error) {
+      console.error('Error fetching quiz sessions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your quiz history",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAssessmentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'free': return 'Free Preview';
+      case 'premium': return 'Premium Assessment';
+      case 'pro': return 'Pro Assessment';
+      default: return 'Assessment';
+    }
+  };
+
+  const getColorLabel = (color: string) => {
+    switch (color) {
+      case 'yellow': return 'Action-first executor';
+      case 'red': return 'Vision-driven motivator';
+      case 'green': return 'Logic-based architect';
+      case 'blue': return 'People-first supporter';
+      default: return color;
+    }
+  };
+
+  const getColorBadgeStyle = (color: string) => {
+    switch (color) {
+      case 'yellow': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'red': return 'bg-red-100 text-red-800 border-red-300';
+      case 'green': return 'bg-green-100 text-green-800 border-green-300';
+      case 'blue': return 'bg-blue-100 text-blue-800 border-blue-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const handleDownloadReport = async (assessment: AssessmentResult | QuizSession) => {
+    try {
+      let reportData;
+      let filename;
+
+      if ('assessment_type' in assessment) {
+        // Assessment result
+        reportData = {
+          type: assessment.assessment_type,
+          results: assessment.results,
+          date: assessment.created_at,
+        };
+        filename = `${assessment.assessment_type}-assessment-${format(new Date(assessment.created_at), 'yyyy-MM-dd')}.pdf`;
+      } else {
+        // Quiz session
+        reportData = {
+          type: 'quiz',
+          color: assessment.result_color,
+          percentage: assessment.result_percentage,
+          answers: assessment.answers,
+          date: assessment.completed_at,
+        };
+        filename = `quiz-results-${format(new Date(assessment.completed_at), 'yyyy-MM-dd')}.pdf`;
+      }
+
+      await exportToPDF(reportData, filename);
+      
+      toast({
+        title: "Download Complete",
+        description: "Your report has been downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to generate the report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmPassword) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all password fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords Don't Match",
+        description: "Please make sure both passwords are identical.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    const { error } = await updatePassword(newPassword);
+    
+    if (error) {
+      toast({
+        title: "Password Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Password Updated",
+        description: "Your password has been successfully updated.",
+      });
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordChange(false);
+    }
+    setPasswordLoading(false);
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Please sign in to view your dashboard</h1>
+            <Button asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="bg-gradient-subtle py-8">
+        <div className="container mx-auto px-4">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                  Your Dashboard
+                </h1>
+                <p className="text-muted-foreground">Welcome back, {user.email}</p>
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading your assessments...</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Account Settings */}
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                  <Settings className="w-6 h-6" />
+                  Account Settings
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card className="shadow-elegant border-border/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <KeyRound className="w-5 h-5" />
+                        Password & Security
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-sm text-muted-foreground">
+                        Manage your account password and security settings
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowPasswordChange(!showPasswordChange)}
+                        >
+                          <KeyRound className="w-4 h-4 mr-2" />
+                          Change Password
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={signOut}
+                        >
+                          Sign Out
+                        </Button>
+                      </div>
+                      
+                      {showPasswordChange && (
+                        <form onSubmit={handlePasswordChange} className="space-y-3 pt-4 border-t">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-password">New Password</Label>
+                            <Input
+                              id="new-password"
+                              type="password"
+                              placeholder="Enter new password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirm-password">Confirm Password</Label>
+                            <Input
+                              id="confirm-password"
+                              type="password"
+                              placeholder="Confirm new password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="submit" size="sm" disabled={passwordLoading}>
+                              {passwordLoading ? "Updating..." : "Update Password"}
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => {
+                                setShowPasswordChange(false);
+                                setNewPassword("");
+                                setConfirmPassword("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </section>
+              {/* Assessment Results */}
+              {assessments.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-6 h-6" />
+                    Assessment Results
+                  </h2>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {assessments.map((assessment) => (
+                      <Card key={assessment.id} className="shadow-elegant border-border/20">
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">
+                                {getAssessmentTypeLabel(assessment.assessment_type)}
+                              </CardTitle>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                <Calendar className="w-4 h-4" />
+                                {format(new Date(assessment.created_at), 'MMM dd, yyyy')}
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="border-primary/30">
+                              {assessment.assessment_type}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {assessment.results.dominantColor && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium">Primary Role:</p>
+                              <Badge className={getColorBadgeStyle(assessment.results.dominantColor)}>
+                                {getColorLabel(assessment.results.dominantColor)}
+                              </Badge>
+                            </div>
+                          )}
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleDownloadReport(assessment)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setSelectedAssessment(assessment)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Details
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to={`/${assessment.assessment_type}-results`}>
+                                <ChevronRight className="w-4 h-4 mr-2" />
+                                View
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Quiz Sessions */}
+              {quizSessions.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="w-6 h-6" />
+                    Quiz History
+                  </h2>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {quizSessions.map((session) => (
+                      <Card key={session.id} className="shadow-elegant border-border/20">
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">Free Preview Quiz</CardTitle>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                <Clock className="w-4 h-4" />
+                                {format(new Date(session.completed_at), 'MMM dd, yyyy')}
+                              </div>
+                            </div>
+                            {session.result_color && (
+                              <Badge className={getColorBadgeStyle(session.result_color)}>
+                                {getColorLabel(session.result_color)}
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {session.answers.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium">Responses ({session.answers.length} questions)</p>
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                {session.answers.slice(0, 2).map((answer, index) => (
+                                  <div key={index} className="truncate">
+                                    <span className="font-medium">Q{index + 1}:</span> {answer.answer_text}
+                                  </div>
+                                ))}
+                                {session.answers.length > 2 && (
+                                  <div className="text-muted-foreground">
+                                    +{session.answers.length - 2} more responses
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleDownloadReport(session)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setSelectedAssessment(session)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Details
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to="/results">
+                                <ChevronRight className="w-4 h-4 mr-2" />
+                                View
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Empty State */}
+              {assessments.length === 0 && quizSessions.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BarChart3 className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No assessments yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Take your first assessment to discover your leadership color role
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button asChild>
+                      <Link to="/free-assessment">
+                        Start Free Assessment
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/pricing">View All Options</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assessment Details Modal */}
+          {selectedAssessment && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <div className="p-6 border-b flex justify-between items-center">
+                  <h2 className="text-xl font-bold">Assessment Details</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
+                    ✕
+                  </Button>
+                </div>
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                  <AssessmentDetails
+                    answers={'answers' in selectedAssessment ? selectedAssessment.answers : undefined}
+                    results={'results' in selectedAssessment ? selectedAssessment.results : {
+                      dominantColor: selectedAssessment.result_color,
+                      scores: selectedAssessment.result_percentage
+                    }}
+                    type={'assessment_type' in selectedAssessment ? selectedAssessment.assessment_type : 'quiz'}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
