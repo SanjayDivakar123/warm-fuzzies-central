@@ -60,41 +60,37 @@ export const PaymentButton = ({
 
       if (error) {
         console.error("Payment creation error:", error);
+        setLoading(false);
         throw new Error(error.message || "Failed to create payment");
       }
 
       if (!data?.url) {
+        setLoading(false);
         throw new Error('No payment URL received from Stripe');
       }
 
-      console.log("Redirecting to:", data.url);
+      console.log("About to redirect to:", data.url);
       
+      // Don't set loading to false here since we're redirecting
       toast({
-        title: "Redirecting to payment...",
-        description: "Opening Stripe checkout page",
+        title: "Redirecting to Stripe...",
+        description: "Opening payment page",
       });
       
-      // Direct redirect to Stripe - ensure it happens
-      try {
+      // Small delay to ensure toast shows, then redirect
+      setTimeout(() => {
+        console.log("Executing redirect to:", data.url);
         window.location.href = data.url;
-      } catch (redirectError) {
-        console.error("Redirect failed, trying window.open:", redirectError);
-        // Fallback: open in new window if direct redirect fails
-        const newWindow = window.open(data.url, '_blank');
-        if (!newWindow) {
-          throw new Error('Please allow popups for this site to complete payment');
-        }
-      }
+      }, 500);
       
     } catch (error: any) {
       console.error("=== PAYMENT ERROR ===", error);
+      setLoading(false); // Only set loading to false on error
       toast({
         title: "Payment Error", 
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
