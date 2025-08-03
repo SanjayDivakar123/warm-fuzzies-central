@@ -71,17 +71,8 @@ export const PaymentButton = ({
 
       console.log("About to redirect to:", data.url);
       
-      // Don't set loading to false here since we're redirecting
-      toast({
-        title: "Redirecting to Stripe...",
-        description: "Opening payment page",
-      });
-      
-      // Small delay to ensure toast shows, then redirect
-      setTimeout(() => {
-        console.log("Executing redirect to:", data.url);
-        window.location.href = data.url;
-      }, 500);
+      // Immediately redirect to Stripe - this is more reliable than setTimeout
+      window.location.href = data.url;
       
     } catch (error: any) {
       console.error("=== PAYMENT ERROR ===", error);
