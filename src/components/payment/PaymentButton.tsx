@@ -70,12 +70,21 @@ export const PaymentButton = ({
       console.log("Redirecting to:", data.url);
       
       toast({
-        title: "Redirecting to Stripe",
-        description: "Please complete your payment on the secure checkout page.",
+        title: "Redirecting to payment...",
+        description: "Opening Stripe checkout page",
       });
       
-      // Direct redirect to Stripe
-      window.location.href = data.url;
+      // Direct redirect to Stripe - ensure it happens
+      try {
+        window.location.href = data.url;
+      } catch (redirectError) {
+        console.error("Redirect failed, trying window.open:", redirectError);
+        // Fallback: open in new window if direct redirect fails
+        const newWindow = window.open(data.url, '_blank');
+        if (!newWindow) {
+          throw new Error('Please allow popups for this site to complete payment');
+        }
+      }
       
     } catch (error: any) {
       console.error("=== PAYMENT ERROR ===", error);
