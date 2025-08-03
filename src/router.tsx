@@ -14,6 +14,7 @@ import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
 import { ResetPassword } from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
+import Maintenance from "@/pages/Maintenance";
 
 export const router = createBrowserRouter([
   {
@@ -71,6 +72,10 @@ export const router = createBrowserRouter([
   {
     path: "/reset-password",
     element: <ResetPassword />,
+  },
+  {
+    path: "/maintenance",
+    element: <Maintenance />,
   },
   {
     path: "*",
