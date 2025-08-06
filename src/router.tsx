@@ -19,7 +19,7 @@ import Maintenance from "@/pages/Maintenance";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Maintenance />,
+    element: <Index />,
   },
   {
     path: "/auth",
