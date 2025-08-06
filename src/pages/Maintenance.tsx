@@ -27,7 +27,7 @@ const Maintenance = () => {
               Expected Return:
             </p>
             <p className="text-lg font-semibold text-primary">
-              August 5, 2025 at 9:00 PM EDT
+              August 10, 2025 at 9:00 PM EDT
             </p>
           </div>
           
