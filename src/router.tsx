@@ -15,6 +15,7 @@ import Results from "@/pages/Results";
 import { ResetPassword } from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
 import Maintenance from "@/pages/Maintenance";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
   {
     path: "/maintenance",
     element: <Maintenance />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicy />,
   },
   {
     path: "*",

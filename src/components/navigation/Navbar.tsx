@@ -71,6 +71,18 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
+              <MenubarMenu>
+                <MenubarTrigger asChild>
+                  <Link 
+                    to="/privacy-policy" 
+                    className={`cursor-pointer ${isActive('/privacy-policy') ? 'bg-accent text-accent-foreground' : ''}`}
+                  >
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Privacy Policy
+                  </Link>
+                </MenubarTrigger>
+              </MenubarMenu>
+
             </Menubar>
           </div>
 
@@ -147,6 +159,16 @@ export function Navbar() {
               >
                 <Palette className="w-4 h-4 mr-2 inline" />
                 Free Assessment
+              </Link>
+              <Link
+                to="/privacy-policy"
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  isActive('/privacy-policy') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <HelpCircle className="w-4 h-4 mr-2 inline" />
+                Privacy Policy
               </Link>
               <div className="px-3 py-2">
                 <div className="space-y-2">
