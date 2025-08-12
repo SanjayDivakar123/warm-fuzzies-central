@@ -1,14 +1,60 @@
+User-agent: *
+Allow: /
+
+# Allow all major search engines
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+User-agent: DuckDuckBot
+Allow: /
+
+# Allow social media crawlers
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
+
+# Block specific pages that shouldn't be indexed
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /payment-success
+Disallow: /dashboard
+Disallow: /*-results
+Disallow: /*-assessment
+
+# Block admin/sensitive areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /temp/
+Disallow: /tmp/
+
+# Block file types that shouldn't be crawled
+Disallow: *.json$
+Disallow: *.xml$
+Disallow: *.log$
+
+# Allow specific important pages
+Allow: /
+Allow: /pricing
+Allow: /privacy-policy
+
+# Crawl delay for heavy crawlers
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+# Sitemap location (add when you create one)
+# Sitemap: https://yourdomain.com/sitemap.xml
