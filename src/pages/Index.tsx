@@ -93,9 +93,15 @@ const Index = () => {
 
           {/* How Our Idea Works */}
           <div className="mb-16">
-            <h3 className="text-3xl font-bold text-center text-foreground mb-12">
-              Here's how our <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">idea works</span>:
+            <h3 className="text-3xl font-bold text-center text-foreground mb-8">
+              Here's how our <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">patent pending</span> idea works:
             </h3>
+            
+            <div className="text-center mb-8">
+              <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent/40">
+                🔬 Patent Pending System
+              </Badge>
+            </div>
             
             <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant mb-12">
               <p className="text-lg text-foreground mb-8 leading-relaxed">
