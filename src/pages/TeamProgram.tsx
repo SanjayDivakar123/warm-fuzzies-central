@@ -182,11 +182,19 @@ const TeamProgram = () => {
 
         {/* CTA Section */}
         <div className="text-center">
-          <Button size="lg" className="px-8">
-            Get Started with Your Team Assessment
-          </Button>
-          <p className="text-sm text-muted-foreground mt-4">
-            Ready to transform your hiring process? Let's begin.
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
+            <Button size="lg" className="px-8">
+              Pay Now - {formatPrice(price)}
+            </Button>
+            <span className="text-muted-foreground">or</span>
+            <Button variant="outline" size="lg" className="px-8" asChild>
+              <a href="mailto:sanjay@rolecolorfinder.com">
+                Contact Sanjay
+              </a>
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Ready to transform your hiring process? Pay now or reach out to discuss your needs.
           </p>
         </div>
       </main>
