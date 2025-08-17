@@ -5,7 +5,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { PaymentButton } from "@/components/payment/PaymentButton";
+
 import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "lucide-react";
 const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([100]);
@@ -225,25 +225,13 @@ const TeamProgram = () => {
 
         {/* CTA Section */}
         <div className="text-center">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
-            <PaymentButton 
-              productType="team" 
-              size="lg" 
-              className="px-8"
-              customAmount={price * 100}
-              customDescription={`12-week Team Composition & Role Design Program for ${employeeCount[0].toLocaleString()} employees`}
-            >
-              Pay Now - {formatPrice(price)}
-            </PaymentButton>
-            <span className="text-muted-foreground">or</span>
-            <Button variant="outline" size="lg" className="px-8" asChild>
-              <a href="mailto:sanjay@rolecolorfinder.com">
-                Contact Sanjay
-              </a>
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Ready to transform your hiring process? Pay now or reach out to discuss your needs.
+          <Button variant="default" size="lg" className="px-8" asChild>
+            <a href="mailto:sanjay@rolecolorfinder.com">
+              Contact Sanjay to Get Started
+            </a>
+          </Button>
+          <p className="text-sm text-muted-foreground mt-4">
+            Ready to transform your hiring process? Reach out to discuss your needs.
           </p>
         </div>
       </main>
