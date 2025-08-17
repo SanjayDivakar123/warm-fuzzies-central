@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PaymentButton } from "@/components/payment/PaymentButton";
 import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "lucide-react";
 const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([1000]);
@@ -183,9 +184,13 @@ const TeamProgram = () => {
         {/* CTA Section */}
         <div className="text-center">
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
-            <Button size="lg" className="px-8">
+            <PaymentButton 
+              productType="pro" 
+              size="lg" 
+              className="px-8"
+            >
               Pay Now - {formatPrice(price)}
-            </Button>
+            </PaymentButton>
             <span className="text-muted-foreground">or</span>
             <Button variant="outline" size="lg" className="px-8" asChild>
               <a href="mailto:sanjay@rolecolorfinder.com">
