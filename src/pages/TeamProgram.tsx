@@ -5,10 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "lucide-react";
-
 const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([1000]);
-
   const calculatePrice = (count: number) => {
     if (count <= 5000) {
       // Scale from $20,000 (for 5 employees) to $100,000 (for 5,000 employees)
@@ -21,51 +19,42 @@ const TeamProgram = () => {
       // Add $10,000 for every additional 1,000 employees
       const basePrice = 100000;
       const additionalEmployees = count - 5000;
-      const additionalCost = Math.round((additionalEmployees / 1000) * 10000);
+      const additionalCost = Math.round(additionalEmployees / 1000 * 10000);
       return basePrice + additionalCost;
     }
   };
-
   const formatPrice = (price: number) => {
     return `$${price.toLocaleString()}`;
   };
-
   const price = calculatePrice(employeeCount[0]);
-
-  const deliverables = [
-    "Team Capability Map (skills, behaviors, leadership strengths)",
-    "Gap Analysis (what's missing; impact & priority)",
-    "Future Org Blueprint (how the team should be structured)",
-    "Role Design Package for each critical gap",
-    "Role Blueprint (purpose, scope, KPIs, reporting lines)",
-    "Hiring Scorecard (competencies, evidence signals, red flags)",
-    "Structured Interview Kit (questions + rubrics)",
-    "Publish-ready Job Listing (inclusive, ATS-optimized)",
-    "30-60-90 Onboarding Plan"
-  ];
-
-  const timeline = [
-    { weeks: "Weeks 1–2", activity: "Discovery & org mapping" },
-    { weeks: "Weeks 3–4", activity: "Capability inventory & gap analysis" },
-    { weeks: "Weeks 5–6", activity: "Future org blueprint" },
-    { weeks: "Weeks 7–8", activity: "Role blueprint + scorecard" },
-    { weeks: "Weeks 9–10", activity: "Job listing + interview kit + sourcing plan" },
-    { weeks: "Weeks 11–12", activity: "Executive readout & rollout plan" }
-  ];
-
-  const faqs = [
-    {
-      question: "How is pricing calculated?",
-      answer: "Pricing scales with organization size. Smaller teams start at $20,000, reaching $100,000 at 5,000 employees, then continuing to scale for larger organizations."
-    },
-    {
-      question: "What's the typical outcome?",
-      answer: "A clear view of current capabilities, agreed gaps, and ready-to-hire role(s) with everything your hiring team needs."
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const deliverables = ["Team Capability Map (skills, behaviors, leadership strengths)", "Gap Analysis (what's missing; impact & priority)", "Future Org Blueprint (how the team should be structured)", "Role Design Package for each critical gap", "Role Blueprint (purpose, scope, KPIs, reporting lines)", "Hiring Scorecard (competencies, evidence signals, red flags)", "Structured Interview Kit (questions + rubrics)", "Publish-ready Job Listing (inclusive, ATS-optimized)", "30-60-90 Onboarding Plan"];
+  const timeline = [{
+    weeks: "Weeks 1–2",
+    activity: "Discovery & org mapping"
+  }, {
+    weeks: "Weeks 3–4",
+    activity: "Capability inventory & gap analysis"
+  }, {
+    weeks: "Weeks 5–6",
+    activity: "Future org blueprint"
+  }, {
+    weeks: "Weeks 7–8",
+    activity: "Role blueprint + scorecard"
+  }, {
+    weeks: "Weeks 9–10",
+    activity: "Job listing + interview kit + sourcing plan"
+  }, {
+    weeks: "Weeks 11–12",
+    activity: "Executive readout & rollout plan"
+  }];
+  const faqs = [{
+    question: "How is pricing calculated?",
+    answer: "Pricing scales with organization size. Smaller teams start at $20,000, reaching $100,000 at 5,000 employees, then continuing to scale for larger organizations."
+  }, {
+    question: "What's the typical outcome?",
+    answer: "A clear view of current capabilities, agreed gaps, and ready-to-hire role(s) with everything your hiring team needs."
+  }];
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
@@ -98,14 +87,7 @@ const TeamProgram = () => {
           <CardContent className="space-y-6">
             <div>
               <label className="text-sm font-medium mb-4 block">Number of employees:</label>
-              <Slider
-                value={employeeCount}
-                onValueChange={setEmployeeCount}
-                max={100000}
-                min={5}
-                step={5}
-                className="w-full"
-              />
+              <Slider value={employeeCount} onValueChange={setEmployeeCount} max={100000} min={5} step={5} className="w-full" />
               <div className="flex justify-between text-sm text-muted-foreground mt-2">
                 <span>5</span>
                 <span>100,000</span>
@@ -119,16 +101,7 @@ const TeamProgram = () => {
               </div>
             </div>
 
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2">Pricing Guide:</h4>
-              <ul className="text-sm space-y-1">
-                <li>• 5-5,000 employees: $20,000-$100,000</li>
-                <li>• 5,000+ employees: $100,000+ (scales with size)</li>
-              </ul>
-              <p className="text-xs text-muted-foreground mt-2">
-                The exact price updates automatically as you move the slider.
-              </p>
-            </div>
+            
           </CardContent>
         </Card>
 
@@ -142,12 +115,10 @@ const TeamProgram = () => {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
-              {deliverables.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
+              {deliverables.map((item, index) => <div key={index} className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <span>{item}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -162,14 +133,12 @@ const TeamProgram = () => {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {timeline.map((item, index) => (
-                <Card key={index} className="border border-muted">
+              {timeline.map((item, index) => <Card key={index} className="border border-muted">
                   <CardContent className="pt-4">
                     <div className="font-semibold text-primary mb-2">{item.weeks}</div>
                     <div className="text-sm">{item.activity}</div>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </CardContent>
         </Card>
@@ -203,12 +172,10 @@ const TeamProgram = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {faqs.map((faq, index) => (
-                <div key={index}>
+              {faqs.map((faq, index) => <div key={index}>
                   <h4 className="font-semibold mb-2">{faq.question}</h4>
                   <p className="text-muted-foreground">{faq.answer}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -223,8 +190,6 @@ const TeamProgram = () => {
           </p>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default TeamProgram;
