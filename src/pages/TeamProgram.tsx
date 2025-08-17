@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PaymentButton } from "@/components/payment/PaymentButton";
 import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "lucide-react";
@@ -31,6 +32,12 @@ const TeamProgram = () => {
   
   const handleSliderChange = (value: number[]) => {
     setEmployeeCount(value);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 5;
+    const clampedValue = Math.max(5, Math.min(50000, value));
+    setEmployeeCount([clampedValue]);
   };
   
   const getSliderStep = (value: number) => {
@@ -96,20 +103,37 @@ const TeamProgram = () => {
               Select your organization size
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8">
             <div>
               <label className="text-sm font-medium mb-4 block">Number of employees:</label>
-              <Slider 
-                value={employeeCount} 
-                onValueChange={handleSliderChange} 
-                max={50000} 
-                min={5} 
-                step={getSliderStep(employeeCount[0])} 
-                className="w-full" 
-              />
-              <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                <span>5</span>
-                <span>50,000+</span>
+              
+              {/* Input field for direct number entry */}
+              <div className="mb-6">
+                <Input
+                  type="number"
+                  min="5"
+                  max="50000"
+                  value={employeeCount[0]}
+                  onChange={handleInputChange}
+                  className="w-full text-center text-lg font-medium"
+                  placeholder="Enter number of employees"
+                />
+              </div>
+              
+              {/* Larger slider */}
+              <div className="px-4">
+                <Slider 
+                  value={employeeCount} 
+                  onValueChange={handleSliderChange} 
+                  max={50000} 
+                  min={5} 
+                  step={getSliderStep(employeeCount[0])} 
+                  className="w-full h-6" 
+                />
+                <div className="flex justify-between text-sm text-muted-foreground mt-3">
+                  <span>5</span>
+                  <span>50,000+</span>
+                </div>
               </div>
             </div>
             
