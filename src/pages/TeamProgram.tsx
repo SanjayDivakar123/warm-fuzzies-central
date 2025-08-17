@@ -36,7 +36,7 @@ const TeamProgram = () => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value) || 5;
-    const clampedValue = Math.max(5, Math.min(50000, value));
+    const clampedValue = Math.max(5, Math.min(100000, value));
     setEmployeeCount([clampedValue]);
   };
   
@@ -112,7 +112,7 @@ const TeamProgram = () => {
                 <Input
                   type="number"
                   min="5"
-                  max="50000"
+                  max="100000"
                   value={employeeCount[0]}
                   onChange={handleInputChange}
                   className="w-full text-center text-lg font-medium"
@@ -125,14 +125,14 @@ const TeamProgram = () => {
                 <Slider 
                   value={employeeCount} 
                   onValueChange={handleSliderChange} 
-                  max={50000} 
-                  min={5} 
+                  max={100000} 
+                  min={5}
                   step={getSliderStep(employeeCount[0])} 
                   className="w-full h-6" 
                 />
                 <div className="flex justify-between text-sm text-muted-foreground mt-3">
                   <span>5</span>
-                  <span>50,000+</span>
+                  <span>100,000</span>
                 </div>
               </div>
             </div>
