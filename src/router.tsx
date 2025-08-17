@@ -16,6 +16,7 @@ import { ResetPassword } from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
 import Maintenance from "@/pages/Maintenance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TeamProgram from "@/pages/TeamProgram";
 
 export const router = createBrowserRouter([
   {
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
   {
     path: "/privacy-policy",
     element: <PrivacyPolicy />,
+  },
+  {
+    path: "/team-program",
+    element: <TeamProgram />,
   },
   {
     path: "*",
