@@ -22,8 +22,8 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Request body:", body);
     
-    const { productType, successUrl, cancelUrl } = body;
-    console.log("Extracted data:", { productType, successUrl, cancelUrl });
+    const { productType, successUrl, cancelUrl, customAmount, customDescription } = body;
+    console.log("Extracted data:", { productType, successUrl, cancelUrl, customAmount, customDescription });
 
     if (!productType) {
       throw new Error("Product type is required");
@@ -54,12 +54,17 @@ serve(async (req) => {
         name: "Pro Deep Dive Assessment", 
         amount: 4900, // $49.00
         description: "Ultimate 50-question assessment with comprehensive 3-page report"
+      },
+      team: {
+        name: "Team Composition & Role Design Program",
+        amount: customAmount || 100000, // Use custom amount or default to $1000
+        description: customDescription || "12-week program to map capabilities, identify gaps, and design roles"
       }
     };
 
     const productConfig = pricing[productType as keyof typeof pricing];
     if (!productConfig) {
-      throw new Error("Invalid product type. Use 'premium' or 'pro'");
+      throw new Error("Invalid product type. Use 'premium', 'pro', or 'team'");
     }
 
     console.log("Creating payment for:", productConfig.name, "Amount:", productConfig.amount);

@@ -185,9 +185,11 @@ const TeamProgram = () => {
         <div className="text-center">
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
             <PaymentButton 
-              productType="pro" 
+              productType="team" 
               size="lg" 
               className="px-8"
+              customAmount={price * 100}
+              customDescription={`12-week Team Composition & Role Design Program for ${employeeCount[0].toLocaleString()} employees`}
             >
               Pay Now - {formatPrice(price)}
             </PaymentButton>

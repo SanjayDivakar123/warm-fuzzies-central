@@ -7,11 +7,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 interface PaymentButtonProps {
-  productType: "premium" | "pro";
+  productType: "premium" | "pro" | "team";
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
+  customAmount?: number;
+  customDescription?: string;
 }
 
 export const PaymentButton = ({ 
@@ -19,7 +21,9 @@ export const PaymentButton = ({
   children, 
   className,
   variant = "default",
-  size = "default"
+  size = "default",
+  customAmount,
+  customDescription
 }: PaymentButtonProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -47,7 +51,9 @@ export const PaymentButton = ({
       const paymentData = {
         productType,
         successUrl: `${window.location.origin}/payment-success?type=${productType}`,
-        cancelUrl: `${window.location.origin}/pricing`
+        cancelUrl: `${window.location.origin}/pricing`,
+        ...(customAmount && { customAmount }),
+        ...(customDescription && { customDescription })
       };
       
       console.log("Creating payment with data:", paymentData);
