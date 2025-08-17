@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { Button } from "@/components/ui/button";
-import { Palette, Home, CreditCard, HelpCircle, Menu, X, User, LogOut } from "lucide-react";
+import { Palette, Home, CreditCard, HelpCircle, Menu, X, User, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const location = useLocation();
@@ -52,7 +52,10 @@ export function Navbar() {
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
-                  
+                  <Link to="/team-program" className={`cursor-pointer ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : ''}`}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Team Program
+                  </Link>
                 </MenubarTrigger>
               </MenubarMenu>
 
@@ -106,6 +109,10 @@ export function Navbar() {
               <Link to="/free-assessment" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/free-assessment') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Palette className="w-4 h-4 mr-2 inline" />
                 Free Assessment
+              </Link>
+              <Link to="/team-program" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <Users className="w-4 h-4 mr-2 inline" />
+                Team Program
               </Link>
               <Link to="/privacy-policy" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/privacy-policy') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <HelpCircle className="w-4 h-4 mr-2 inline" />
