@@ -226,12 +226,12 @@ const TeamProgram = () => {
         {/* CTA Section */}
         <div className="text-center">
           <Button variant="default" size="lg" className="px-8" asChild>
-            <a href="mailto:sanjay@rolecolorfinder.com">
+            <a href={`mailto:sanjay@rolecolorfinder.com?subject=Team Composition & Role Design Program Inquiry&body=Hi Sanjay,%0D%0A%0D%0AI'm interested in the 12-Week Team Composition & Role Design Program.%0D%0A%0D%0AOrganization Details:%0D%0A- Number of employees: ${employeeCount[0].toLocaleString()}%0D%0A- Estimated program cost: ${formatPrice(price)}%0D%0A%0D%0AI'd like to discuss how this program can help us map our team's capabilities, identify missing roles, and create a ready-to-hire package.%0D%0A%0D%0APlease let me know your availability for a consultation.%0D%0A%0D%0ABest regards`}>
               Contact Sanjay to Get Started
             </a>
           </Button>
           <p className="text-sm text-muted-foreground mt-4">
-            Ready to transform your hiring process? Reach out to discuss your needs.
+            Ready to transform your hiring process? This will open a pre-drafted email with your organization details.
           </p>
         </div>
       </main>
