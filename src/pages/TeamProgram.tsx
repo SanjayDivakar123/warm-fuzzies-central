@@ -10,21 +10,23 @@ const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([1000]);
 
   const calculatePrice = (count: number) => {
-    if (count < 5000) {
-      // Scale from $20,000 (for 5 employees) to $95,000 (for 4,995 employees)
+    if (count <= 5000) {
+      // Scale from $20,000 (for 5 employees) to $100,000 (for 5,000 employees)
       const basePrice = 20000;
-      const maxPrice = 95000;
+      const maxPrice = 100000;
       const scaleFactor = (count - 5) / (5000 - 5);
       return Math.round(basePrice + (maxPrice - basePrice) * scaleFactor);
-    } else if (count === 5000) {
-      return 100000;
     } else {
-      return "Custom pricing";
+      // For organizations larger than 5,000, continue scaling
+      // Add $10,000 for every additional 1,000 employees
+      const basePrice = 100000;
+      const additionalEmployees = count - 5000;
+      const additionalCost = Math.round((additionalEmployees / 1000) * 10000);
+      return basePrice + additionalCost;
     }
   };
 
-  const formatPrice = (price: number | string) => {
-    if (typeof price === "string") return price;
+  const formatPrice = (price: number) => {
     return `$${price.toLocaleString()}`;
   };
 
@@ -53,12 +55,8 @@ const TeamProgram = () => {
 
   const faqs = [
     {
-      question: "What if we're below 5,000 employees?",
-      answer: "Pricing is less than $100,000, scaled to your size."
-    },
-    {
-      question: "What if we exceed 5,000?",
-      answer: "We'll create a custom pricing proposal."
+      question: "How is pricing calculated?",
+      answer: "Pricing scales with organization size. Smaller teams start at $20,000, reaching $100,000 at 5,000 employees, then continuing to scale for larger organizations."
     },
     {
       question: "What's the typical outcome?",
@@ -124,9 +122,8 @@ const TeamProgram = () => {
             <div className="bg-muted/50 p-4 rounded-lg">
               <h4 className="font-semibold mb-2">Pricing Guide:</h4>
               <ul className="text-sm space-y-1">
-                <li>• Smaller than 5,000 employees → Less than $100,000</li>
-                <li>• Around 5,000 employees → About $100,000</li>
-                <li>• Larger than 5,000 employees → Custom pricing available</li>
+                <li>• 5-5,000 employees: $20,000-$100,000</li>
+                <li>• 5,000+ employees: $100,000+ (scales with size)</li>
               </ul>
               <p className="text-xs text-muted-foreground mt-2">
                 The exact price updates automatically as you move the slider.
