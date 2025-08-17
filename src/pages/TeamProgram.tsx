@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PaymentButton } from "@/components/payment/PaymentButton";
 import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "lucide-react";
 const TeamProgram = () => {
-  const [employeeCount, setEmployeeCount] = useState([1000]);
+  const [employeeCount, setEmployeeCount] = useState([100]);
   const calculatePrice = (count: number) => {
     if (count <= 5000) {
       // Scale from $20,000 (for 5 employees) to $100,000 (for 5,000 employees)
@@ -28,6 +28,17 @@ const TeamProgram = () => {
     return `$${price.toLocaleString()}`;
   };
   const price = calculatePrice(employeeCount[0]);
+  
+  const handleSliderChange = (value: number[]) => {
+    setEmployeeCount(value);
+  };
+  
+  const getSliderStep = (value: number) => {
+    if (value <= 100) return 1;
+    if (value <= 1000) return 5;
+    if (value <= 10000) return 50;
+    return 100;
+  };
   const deliverables = ["Team Capability Map (skills, behaviors, leadership strengths)", "Gap Analysis (what's missing; impact & priority)", "Future Org Blueprint (how the team should be structured)", "Role Design Package for each critical gap", "Role Blueprint (purpose, scope, KPIs, reporting lines)", "Hiring Scorecard (competencies, evidence signals, red flags)", "Structured Interview Kit (questions + rubrics)", "Publish-ready Job Listing (inclusive, ATS-optimized)", "30-60-90 Onboarding Plan"];
   const timeline = [{
     weeks: "Weeks 1–2",
@@ -88,10 +99,17 @@ const TeamProgram = () => {
           <CardContent className="space-y-6">
             <div>
               <label className="text-sm font-medium mb-4 block">Number of employees:</label>
-              <Slider value={employeeCount} onValueChange={setEmployeeCount} max={100000} min={5} step={5} className="w-full" />
+              <Slider 
+                value={employeeCount} 
+                onValueChange={handleSliderChange} 
+                max={50000} 
+                min={5} 
+                step={getSliderStep(employeeCount[0])} 
+                className="w-full" 
+              />
               <div className="flex justify-between text-sm text-muted-foreground mt-2">
                 <span>5</span>
-                <span>100,000</span>
+                <span>50,000+</span>
               </div>
             </div>
             
