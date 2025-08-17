@@ -20,48 +20,48 @@ const Index = () => {
       
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20 px-4 bg-gradient-soft">
+      <section className="relative overflow-hidden py-20 px-4 bg-gradient-soft">
         <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
-        <div className="relative max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="relative max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="text-center lg:text-left order-2 lg:order-1">
-              <div className="mb-4">
-                <span className="text-primary text-xs sm:text-sm font-bold tracking-wide uppercase bg-accent/20 px-3 py-1 rounded-full inline-block">
+            <div className="text-center lg:text-left">
+              <div className="mb-2">
+                <span className="text-primary text-sm font-bold tracking-wide uppercase bg-accent/20 px-3 py-1 rounded-full">
                   🎨 Role Color Finder
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6 leading-tight">
+              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
                 Contextual Leadership.
                 <br />
                 <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">Adapt your strengths.</span>
                 <br />
                 <span className="bg-gradient-to-r from-green to-blue bg-clip-text text-transparent">Lead at every stage.</span>
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mb-6 sm:mb-8 leading-relaxed mx-auto lg:mx-0">
+              <p className="text-xl text-muted-foreground max-w-2xl mb-8 leading-relaxed">
                 Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8 justify-center lg:justify-start">
-                <Button variant="hero" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-bold hover-scale w-full sm:w-auto" onClick={() => navigate('/free-assessment')}>
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <Button variant="hero" size="lg" className="text-lg px-8 py-4 font-bold hover-scale" onClick={() => navigate('/free-assessment')}>
                   Take the Free Assessment
                 </Button>
-                {user && <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => navigate('/premium-results')}>
+                {user && <Button variant="outline" size="lg" onClick={() => navigate('/premium-results')}>
                     View My Results
                   </Button>}
               </div>
             </div>
 
             {/* Right Visual */}
-            <div className="relative max-w-xs sm:max-w-sm mx-auto lg:max-w-md order-1 lg:order-2">
-              <div className="aspect-square rounded-xl bg-card backdrop-blur-sm border-2 border-border p-6 sm:p-8 flex flex-col items-center justify-center shadow-elegant">
-                <div className="absolute inset-0.5 rounded-xl bg-gradient-brand opacity-5"></div>
+            <div className="relative max-w-sm mx-auto lg:max-w-md">
+              <div className="aspect-square rounded-xl bg-card backdrop-blur-sm border-2 border-border p-8 flex flex-col items-center justify-center shadow-elegant">
+                
                 <div className="relative flex flex-col items-center justify-center w-full h-full">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mb-3 sm:mb-4">
-                    <Palette className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
+                  <div className="w-32 h-32 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mb-4">
+                    <Palette className="w-16 h-16 text-white" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-center text-foreground mb-2">Discover Your Colors</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground text-center">Take our assessment to reveal your unique color profile</p>
+                  <h3 className="text-xl font-bold text-center text-foreground mb-2">Discover Your Colors</h3>
+                  <p className="text-sm text-muted-foreground text-center">Take our assessment to reveal your unique color profile</p>
                 </div>
               </div>
             </div>
@@ -70,16 +70,16 @@ const Index = () => {
       </section>
 
       {/* Our Philosophy Section */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-6">
+      <section className="py-20 px-4 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Our <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Philosophy</span>
             </h2>
-            <blockquote className="text-lg sm:text-xl italic text-muted-foreground max-w-4xl mx-auto mb-3 sm:mb-4 px-4">
+            <blockquote className="text-xl italic text-muted-foreground max-w-4xl mx-auto mb-4">
               "Great teams don't just happen. They grow through stages."
             </blockquote>
-            <cite className="text-xs sm:text-sm text-muted-foreground px-4">— Bruce Tuckman, developer of the Forming–Storming–Norming–Performing model</cite>
+            <cite className="text-sm text-muted-foreground">— Bruce Tuckman, developer of the Forming–Storming–Norming–Performing model</cite>
           </div>
 
           <div className="max-w-4xl mx-auto mb-16">
@@ -108,41 +108,41 @@ const Index = () => {
                 Every user takes a 25-question diagnostic designed around real group psychology, especially Tuckman's Five Stages of Team Development:
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid md:grid-cols-5 gap-6">
                 <div className="text-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-colorful">
-                    <Users className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <Users className="w-8 h-8 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">Forming</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Building connection</p>
+                  <h4 className="font-bold text-foreground mb-2">Forming</h4>
+                  <p className="text-sm text-muted-foreground">Building connection</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-colorful">
-                    <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <Zap className="w-8 h-8 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">Storming</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Navigating friction</p>
+                  <h4 className="font-bold text-foreground mb-2">Storming</h4>
+                  <p className="text-sm text-muted-foreground">Navigating friction</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-colorful">
-                    <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <Settings className="w-8 h-8 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">Norming</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Establishing flow</p>
+                  <h4 className="font-bold text-foreground mb-2">Norming</h4>
+                  <p className="text-sm text-muted-foreground">Establishing flow</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-colorful">
-                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <TrendingUp className="w-8 h-8 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">Performing</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Reaching peak productivity</p>
+                  <h4 className="font-bold text-foreground mb-2">Performing</h4>
+                  <p className="text-sm text-muted-foreground">Reaching peak productivity</p>
                 </div>
-                <div className="text-center col-span-2 sm:col-span-1">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-brand rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-colorful">
-                    <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-brand rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <CheckCircle className="w-8 h-8 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">Adjourning</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Ending with clarity and reflection</p>
+                  <h4 className="font-bold text-foreground mb-2">Adjourning</h4>
+                  <p className="text-sm text-muted-foreground">Ending with clarity and reflection</p>
                 </div>
               </div>
 
