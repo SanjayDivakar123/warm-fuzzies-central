@@ -65,27 +65,27 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Navbar />
       {/* Header */}
-      <div className="bg-gradient-hero text-white py-16">
+      <div className="bg-gradient-hero text-white py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
             Role Color Finder
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-8">
+          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
             Pricing Plans
           </p>
-          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
             Choose the perfect plan for your needs - from individual discovery to enterprise solutions
           </p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-12 sm:py-16">
         {/* Individual Plans */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Choose Your Assessment Level</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+        <div className="mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {individualPlans.map((plan) => (
-              <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary shadow-lg scale-105' : ''}`}>
+              <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary shadow-lg sm:scale-105' : ''}`}>
                 {plan.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     Most Popular
@@ -148,16 +148,16 @@ export default function Pricing() {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center bg-muted rounded-lg p-8">
-          <h3 className="text-2xl font-bold mb-4">Ready to Discover Your Leadership Color?</h3>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+        <div className="text-center bg-muted rounded-lg p-6 sm:p-8">
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Discover Your Leadership Color?</h3>
+          <p className="text-muted-foreground mb-4 sm:mb-6 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
             Start with our free 3-question preview or dive deep with our comprehensive assessments.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <Button asChild size="lg" className="w-full sm:w-auto">
               <Link to="/free-assessment">Start Free Preview</Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
               <Link to="/">Learn More</Link>
             </Button>
           </div>

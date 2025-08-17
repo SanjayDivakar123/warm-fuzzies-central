@@ -78,59 +78,59 @@ const TeamProgram = () => {
       
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">
-            <Calendar className="w-4 h-4 mr-2" />
+        <div className="text-center mb-8 sm:mb-12 px-4">
+          <Badge variant="secondary" className="mb-4 text-xs sm:text-sm">
+            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
             12-Week Program
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
             Team Composition & Role Design Program
           </h1>
-          <p className="text-xl text-muted-foreground mb-4">
+          <p className="text-lg sm:text-xl text-muted-foreground mb-3 sm:mb-4">
             Find the gaps. Design the roles. Hire with confidence.
           </p>
-          <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             We map your team's capabilities, identify missing roles, and deliver a ready-to-hire package 
             (role blueprint, hiring scorecard, interview kit, and a 30-60-90 onboarding plan).
           </p>
         </div>
 
         {/* Pricing Section */}
-        <Card className="mb-12 max-w-2xl mx-auto">
+        <Card className="mb-8 sm:mb-12 max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               Select your organization size
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-6 sm:space-y-8">
             <div>
-              <label className="text-sm font-medium mb-4 block">Number of employees:</label>
+              <label className="text-sm font-medium mb-3 sm:mb-4 block">Number of employees:</label>
               
               {/* Input field for direct number entry */}
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <Input
                   type="number"
                   min="5"
                   max="100000"
                   value={employeeCount[0]}
                   onChange={handleInputChange}
-                  className="w-full text-center text-lg font-medium"
+                  className="w-full text-center text-base sm:text-lg font-medium py-3"
                   placeholder="Enter number of employees"
                 />
               </div>
               
               {/* Larger slider */}
-              <div className="px-4">
+              <div className="px-2 sm:px-4">
                 <Slider 
                   value={employeeCount} 
                   onValueChange={handleSliderChange} 
                   max={100000} 
                   min={5}
                   step={getSliderStep(employeeCount[0])} 
-                  className="w-full h-6" 
+                  className="w-full h-4 sm:h-6" 
                 />
-                <div className="flex justify-between text-sm text-muted-foreground mt-3">
+                <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3">
                   <span>5</span>
                   <span>100,000</span>
                 </div>
@@ -138,8 +138,8 @@ const TeamProgram = () => {
             </div>
             
             <div className="text-center">
-              <p className="text-lg mb-2">You selected: <strong>{employeeCount[0].toLocaleString()} employees</strong></p>
-              <div className="text-3xl font-bold text-primary mb-4">
+              <p className="text-base sm:text-lg mb-2">You selected: <strong>{employeeCount[0].toLocaleString()} employees</strong></p>
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-4">
                 Your custom price: {formatPrice(price)}
               </div>
             </div>
@@ -157,10 +157,10 @@ const TeamProgram = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
               {deliverables.map((item, index) => <div key={index} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>{item}</span>
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-sm sm:text-base">{item}</span>
                 </div>)}
             </div>
           </CardContent>
@@ -175,11 +175,11 @@ const TeamProgram = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {timeline.map((item, index) => <Card key={index} className="border border-muted">
-                  <CardContent className="pt-4">
-                    <div className="font-semibold text-primary mb-2">{item.weeks}</div>
-                    <div className="text-sm">{item.activity}</div>
+                  <CardContent className="pt-3 sm:pt-4">
+                    <div className="font-semibold text-primary mb-1 sm:mb-2 text-sm sm:text-base">{item.weeks}</div>
+                    <div className="text-xs sm:text-sm">{item.activity}</div>
                   </CardContent>
                 </Card>)}
             </div>
