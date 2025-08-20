@@ -8,6 +8,10 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
+import teamCollaborationImage from "@/assets/team-collaboration.jpg";
+import colorPersonalitiesImage from "@/assets/color-personalities.jpg";
+import leadershipJourneyImage from "@/assets/leadership-journey.jpg";
+import assessmentTakingImage from "@/assets/assessment-taking.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const {
@@ -252,7 +256,17 @@ const Index = () => {
                 <strong>Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
               </p>
             </div>
-          </div>
+              </div>
+              
+              {/* Leadership Journey Visual */}
+              <div className="mt-12 relative">
+                <img 
+                  src={leadershipJourneyImage} 
+                  alt="Leadership journey through team development stages" 
+                  className="rounded-2xl shadow-elegant w-full h-auto"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+              </div>
 
           {/* Color Roles */}
           <div className="mb-16">
@@ -290,7 +304,16 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">People-first supporters (coaches, HR, community builders)</p>
               </div>
             </div>
-          </div>
+            </div>
+            
+            {/* Color Personalities Visual */}
+            <div className="mt-12">
+              <img 
+                src={colorPersonalitiesImage} 
+                alt="Four color personality types visualization" 
+                className="rounded-2xl shadow-elegant w-full max-w-md mx-auto"
+              />
+            </div>
 
           {/* What Role Color Finder Reveals */}
           <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 border border-border mb-16">
@@ -352,7 +375,7 @@ const Index = () => {
           </div>
 
           {/* How We Personalize */}
-          <div className="grid md:grid-cols-2 gap-12 mb-20">
+          <div className="grid md:grid-cols-2 gap-12 mb-20 items-center">
             <div className="space-y-6">
               <h3 className="text-3xl font-bold text-foreground mb-6">How Your Results Are Tailored</h3>
               <div className="space-y-4">
@@ -414,7 +437,17 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+            
+            {/* Assessment Taking Visual */}
+            <div className="relative">
+              <img 
+                src={assessmentTakingImage} 
+                alt="Professional taking personality assessment" 
+                className="rounded-2xl shadow-elegant w-full h-auto"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-2xl"></div>
+            </div>
 
           {/* Detailed Color Explanations */}
           <div className="mb-16">
@@ -557,6 +590,15 @@ const Index = () => {
             </p>
           </div>
 
+          {/* Team Collaboration Visual */}
+          <div className="mb-12">
+            <img 
+              src={teamCollaborationImage} 
+              alt="Professional team collaboration" 
+              className="rounded-2xl shadow-elegant w-full h-auto max-w-4xl mx-auto"
+            />
+          </div>
+          
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-colorful">
