@@ -32,10 +32,6 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="text-center lg:text-left space-y-8">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue/10 to-green/10 px-4 py-2 rounded-full border border-blue/20">
-                <span className="text-2xl">🎨</span>
-                <span className="text-primary text-sm font-semibold tracking-wide">Role Color Finder</span>
-              </div>
               
               <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
                 Discover Your
