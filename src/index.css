@@ -165,19 +165,19 @@ All colors MUST be HSL.
   }
 
   h3 {
-    @apply text-[36px] font-bold leading-tight;
+    @apply text-[36px] font-normal leading-tight;
   }
 
   h4 {
-    @apply text-[32px] font-bold leading-tight;
+    @apply text-[32px] font-normal leading-tight;
   }
 
   h5 {
-    @apply text-[24px] font-medium leading-tight;
+    @apply text-[24px] font-normal leading-tight;
   }
 
   h6 {
-    @apply text-[20px] font-bold leading-tight;
+    @apply text-[20px] font-normal leading-tight;
   }
 
   p {
