@@ -8,79 +8,73 @@ All colors MUST be HSL.
 
 @layer base {
 :root {
-    /* Brand Color Palette - Role Color Finder */
-    --background: 0 0% 100%;
-    --foreground: 225 29% 20%;
+    --background: 250 100% 99%;
+    --foreground: 220 30% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 225 29% 20%;
+    --card-foreground: 220 30% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 225 29% 20%;
+    --popover-foreground: 220 30% 20%;
 
-    --primary: 215 82% 57%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 210 85% 55%;
+    --primary-foreground: 250 100% 99%;
 
-    --secondary: 225 29% 20%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 150 65% 45%;
+    --secondary-foreground: 250 100% 99%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 225 15% 50%;
+    --muted: 250 100% 97%;
+    --muted-foreground: 220 15% 50%;
 
-    --accent: 148 66% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 85% 55%;
+    --accent-foreground: 250 100% 99%;
 
-    --destructive: 0 82% 54%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 250 100% 99%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 95%;
-    --ring: 215 82% 57%;
+    --border: 220 15% 92%;
+    --input: 220 15% 95%;
+    --ring: 210 85% 55%;
 
-    /* Role Color Finder Brand Colors */
-    --red: 0 82% 54%;
-    --red-foreground: 0 0% 100%;
-    --red-light: 0 82% 97%;
-    --red-dark: 0 82% 44%;
+    /* Vibrant Four-Color System: Red, Yellow, Blue, Green */
+    --red: 0 85% 60%;
+    --red-foreground: 250 100% 99%;
+    --red-light: 0 85% 97%;
+    --red-dark: 0 85% 50%;
+    --red-glow: 0 85% 70%;
 
-    --steel-black: 225 29% 20%;
-    --steel-black-foreground: 0 0% 100%;
-    --steel-black-light: 225 29% 90%;
-    --steel-black-dark: 225 29% 10%;
+    --yellow: 50 100% 60%;
+    --yellow-foreground: 220 30% 20%;
+    --yellow-light: 50 100% 97%;
+    --yellow-dark: 50 100% 50%;
+    --yellow-glow: 50 100% 70%;
 
-    --green: 148 66% 45%;
-    --green-foreground: 0 0% 100%;
-    --green-light: 148 66% 95%;
-    --green-dark: 148 66% 35%;
+    --green: 150 70% 50%;
+    --green-foreground: 250 100% 99%;
+    --green-light: 150 70% 97%;
+    --green-dark: 150 70% 40%;
+    --green-glow: 150 70% 60%;
 
-    --white: 0 0% 100%;
-    --white-foreground: 0 0% 0%;
+    --blue: 210 85% 60%;
+    --blue-foreground: 250 100% 99%;
+    --blue-light: 210 85% 97%;
+    --blue-dark: 210 85% 50%;
+    --blue-glow: 210 85% 70%;
 
-    --yellow: 51 100% 60%;
-    --yellow-foreground: 0 0% 0%;
-    --yellow-light: 51 100% 95%;
-    --yellow-dark: 51 100% 50%;
-
-    --blue: 215 82% 57%;
-    --blue-foreground: 0 0% 100%;
-    --blue-light: 215 82% 95%;
-    --blue-dark: 215 82% 47%;
-
-    --black: 0 0% 0%;
-    --black-foreground: 0 0% 100%;
-
-    /* Brand Gradients */
+    /* Updated Gradients with Four Colors */
     --gradient-hero: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--green)));
-    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-light)));
-    --gradient-red: linear-gradient(135deg, hsl(var(--red)), hsl(var(--red-light)));
-    --gradient-green: linear-gradient(135deg, hsl(var(--green)), hsl(var(--green-light)));
-    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)), hsl(var(--yellow-light)));
-    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-light)));
-    --gradient-steel: linear-gradient(135deg, hsl(var(--steel-black)), hsl(var(--steel-black-light)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-glow)));
+    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)), hsl(var(--yellow-glow)));
+    --gradient-red: linear-gradient(135deg, hsl(var(--red)), hsl(var(--red-glow)));
+    --gradient-green: linear-gradient(135deg, hsl(var(--green)), hsl(var(--green-glow)));
+    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-glow)));
     --gradient-brand: linear-gradient(135deg, hsl(var(--red)), hsl(var(--yellow)), hsl(var(--blue)), hsl(var(--green)));
+    --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-colorful: linear-gradient(45deg, hsl(var(--red)), hsl(var(--yellow)), hsl(var(--green)), hsl(var(--blue)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--blue-light)));
 
-    /* Brand Shadows */
-    --shadow-elegant: 0 8px 32px -8px hsl(var(--steel-black) / 0.15);
+    /* Colorful Shadows */
+    --shadow-elegant: 0 8px 32px -8px hsl(var(--foreground) / 0.15);
     --shadow-colorful: 0 12px 40px -12px hsl(var(--red) / 0.2), 0 8px 24px -8px hsl(var(--blue) / 0.15);
     --shadow-glow: 0 0 50px hsl(var(--blue) / 0.3);
     --shadow-red: 0 8px 32px -8px hsl(var(--red) / 0.3);
@@ -152,45 +146,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-poppins;
-  }
-
-  /* Typography Hierarchy */
-  h1 {
-    @apply text-[60px] font-bold leading-tight;
-  }
-
-  h2 {
-    @apply text-[42px] font-bold leading-tight;
-  }
-
-  h3 {
-    @apply text-[36px] font-normal leading-tight;
-  }
-
-  h4 {
-    @apply text-[32px] font-normal leading-tight;
-  }
-
-  h5 {
-    @apply text-[24px] font-normal leading-tight;
-  }
-
-  h6 {
-    @apply text-[20px] font-normal leading-tight;
-  }
-
-  p {
-    @apply text-[18px] font-normal leading-relaxed;
-  }
-
-  /* Footer specific typography */
-  footer {
-    @apply text-[16px] font-normal;
-  }
-
-  /* Ensure regular text elements are not bold */
-  li, span, div:not(.font-bold) {
-    @apply font-normal;
+    @apply bg-background text-foreground;
   }
 }
