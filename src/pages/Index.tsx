@@ -40,7 +40,7 @@ const Index = () => {
               <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
                 Discover Your
                 <br />
-                <span className="bg-gradient-colorful bg-clip-text text-transparent animate-glow-pulse">Leadership Color</span>
+                <span className="bg-gradient-colorful bg-clip-text text-transparent">Leadership Color</span>
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
