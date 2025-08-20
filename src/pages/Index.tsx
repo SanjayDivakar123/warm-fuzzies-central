@@ -107,7 +107,7 @@ const Index = () => {
                     <div className="relative">
                       <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto border border-border/50 hover:border-primary/30 transition-colors duration-300">
                         <img 
-                          src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
+                          src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
                           alt="Role Color Finder"
                           className="w-16 h-auto"
                         />
@@ -656,13 +656,13 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted text-muted-foreground py-8">
+      <footer className="bg-black text-white py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
                 <img 
-                  src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
+                  src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
                   alt="Role Color Finder" 
                   className="h-8 mb-2"
                 />
