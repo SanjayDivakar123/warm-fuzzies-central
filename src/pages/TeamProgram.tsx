@@ -230,6 +230,22 @@ const TeamProgram = () => {
               Contact Sanjay to Get Started
             </a>
           </Button>
+          
+          {/* Brochure Download */}
+          <div className="mt-4">
+            <Button variant="outline" size="sm" className="px-6" asChild>
+              <a 
+                href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Download: Why Every Team Needs RoleColorFinder
+              </a>
+            </Button>
+          </div>
+          
           <p className="text-sm text-muted-foreground mt-4">
             Ready to transform your hiring process? This will open a pre-drafted email with your organization details.
           </p>

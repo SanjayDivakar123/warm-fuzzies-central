@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User } from "lucide-react";
+import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
@@ -67,7 +67,7 @@ const Index = () => {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4">
+               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
                   variant="hero" 
                   size="lg" 
@@ -87,6 +87,26 @@ const Index = () => {
                     View My Results
                   </Button>
                 )}
+              </div>
+              
+              {/* Brochure Download */}
+              <div className="mt-6">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-sm px-6 py-3 border border-primary/30 text-primary hover:bg-primary/10" 
+                  asChild
+                >
+                  <a 
+                    href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Download: Why Every Team Needs RoleColorFinder
+                  </a>
+                </Button>
               </div>
             </div>
 
