@@ -115,6 +115,8 @@ export default {
 			},
 			boxShadow: {
 				'elegant': 'var(--shadow-elegant)',
+				'colorful': 'var(--shadow-colorful)',
+				'glow': 'var(--shadow-glow)',
 				'red': 'var(--shadow-red)',
 				'yellow': 'var(--shadow-yellow)',
 				'green': 'var(--shadow-green)',

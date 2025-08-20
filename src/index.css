@@ -80,6 +80,8 @@ All colors MUST be HSL.
 
     /* Brand Shadows */
     --shadow-elegant: 0 8px 32px -8px hsl(var(--steel-black) / 0.15);
+    --shadow-colorful: 0 12px 40px -12px hsl(var(--red) / 0.2), 0 8px 24px -8px hsl(var(--blue) / 0.15);
+    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.3);
     --shadow-red: 0 8px 32px -8px hsl(var(--red) / 0.3);
     --shadow-yellow: 0 8px 32px -8px hsl(var(--yellow) / 0.3);
     --shadow-green: 0 8px 32px -8px hsl(var(--green) / 0.3);
