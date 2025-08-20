@@ -13,7 +13,7 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background font-poppins">
       <Navbar />
       
       {/* Sign Up Bar */}
@@ -558,7 +558,7 @@ const Index = () => {
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="flex items-center space-x-4">
                 <img 
-                  src="/lovable-uploads/99889e15-83c9-4252-87b5-4f802189c64e.png" 
+                  src="/lovable-uploads/b0720aa1-19dc-4cac-aefe-2dfb86343600.png" 
                   alt="Role Color Finder" 
                   className="h-8"
                 />
