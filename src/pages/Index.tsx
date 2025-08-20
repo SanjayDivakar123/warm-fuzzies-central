@@ -20,48 +20,124 @@ const Index = () => {
       
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 px-4 bg-gradient-soft">
-        <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
-        <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <section className="relative overflow-hidden py-24 px-4 bg-gradient-subtle">
+        <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+        
+        {/* Floating elements for visual interest */}
+        <div className="absolute top-20 left-10 w-20 h-20 bg-yellow/10 rounded-full blur-xl animate-bounce-gentle"></div>
+        <div className="absolute top-40 right-20 w-16 h-16 bg-blue/10 rounded-full blur-xl animate-bounce-gentle"></div>
+        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-red/10 rounded-full blur-xl animate-bounce-gentle"></div>
+        
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
-            <div className="text-center lg:text-left">
-              <div className="mb-2">
-                <span className="text-primary text-sm font-bold tracking-wide uppercase bg-accent/20 px-3 py-1 rounded-full">
-                  🎨 Role Color Finder
-                </span>
+            <div className="text-center lg:text-left space-y-8">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue/10 to-green/10 px-4 py-2 rounded-full border border-blue/20">
+                <span className="text-2xl">🎨</span>
+                <span className="text-primary text-sm font-semibold tracking-wide">Role Color Finder</span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-                Contextual Leadership.
-                <br />
-                <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">Adapt your strengths.</span>
-                <br />
-                <span className="bg-gradient-to-r from-green to-blue bg-clip-text text-transparent">Lead at every stage.</span>
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mb-8 leading-relaxed">
-                Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
-              </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Button variant="hero" size="lg" className="text-lg px-8 py-4 font-bold hover-scale" onClick={() => navigate('/free-assessment')}>
-                  Take the Free Assessment
+              <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
+                Discover Your
+                <br />
+                <span className="bg-gradient-colorful bg-clip-text text-transparent animate-glow-pulse">Leadership Color</span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
+                Leadership isn't one‑size‑fits‑all. Our fast, free quiz reveals how your natural style can 
+                <span className="text-foreground font-medium"> adapt and thrive</span> at every stage of a team's journey.
+              </p>
+
+              {/* Enhanced Social Proof */}
+              <div className="flex items-center justify-center lg:justify-start gap-4 bg-card/50 backdrop-blur-sm rounded-2xl p-4 border border-border/50">
+                <div className="flex -space-x-3">
+                  {[
+                    'from-red to-yellow',
+                    'from-green to-blue', 
+                    'from-yellow to-green',
+                    'from-blue to-red'
+                  ].map((gradient, i) => (
+                    <div key={i} className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-lg animate-scale-in`} 
+                         style={{ animationDelay: `${i * 0.1}s` }}></div>
+                  ))}
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-yellow text-lg">⭐⭐⭐⭐⭐</span>
+                    <span className="text-sm font-semibold text-foreground">4.8/5</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    "Finally, a quiz that doesn't put me in a box!" • 3 min quiz
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="text-lg px-10 py-6 hover-scale shadow-glow animate-fade-in" 
+                  onClick={() => navigate('/free-assessment')}
+                >
+                  Start Your Free Assessment
+                  <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 </Button>
-                {user && <Button variant="outline" size="lg" onClick={() => navigate('/premium-results')}>
+                {user && (
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-lg px-8 py-6 hover-scale animate-fade-in border-2" 
+                    style={{ animationDelay: '0.1s' }}
+                    onClick={() => navigate('/premium-results')}
+                  >
                     View My Results
-                  </Button>}
+                  </Button>
+                )}
               </div>
             </div>
 
-            {/* Right Visual */}
-            <div className="relative max-w-sm mx-auto lg:max-w-md">
-              <div className="aspect-square rounded-xl bg-card backdrop-blur-sm border-2 border-border p-8 flex flex-col items-center justify-center shadow-elegant">
+            {/* Right Visual - Enhanced */}
+            <div className="relative max-w-lg mx-auto">
+              <div className="relative">
+                {/* Background glow effect */}
+                <div className="absolute inset-0 bg-gradient-brand rounded-3xl blur-3xl opacity-20 animate-glow-pulse"></div>
                 
-                <div className="relative flex flex-col items-center justify-center w-full h-full">
-                  <div className="w-32 h-32 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mb-4">
-                    <Palette className="w-16 h-16 text-white" />
+                {/* Main card */}
+                <div className="relative bg-card/90 backdrop-blur-xl rounded-3xl border-2 border-border/50 p-10 shadow-elegant animate-scale-in">
+                  <div className="text-center space-y-6">
+                    {/* Logo with enhanced styling */}
+                    <div className="relative">
+                      <div className="w-40 h-40 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mx-auto relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-full"></div>
+                        <img 
+                          src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
+                          alt="Role Color Finder"
+                          className="w-24 h-auto relative z-10"
+                        />
+                      </div>
+                      
+                      {/* Floating color dots */}
+                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-yellow rounded-full animate-bounce-gentle shadow-yellow"></div>
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-red rounded-full animate-bounce-gentle shadow-red" style={{ animationDelay: '0.5s' }}></div>
+                      <div className="absolute -bottom-2 -left-2 w-5 h-5 bg-gradient-green rounded-full animate-bounce-gentle shadow-green" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-gradient-blue rounded-full animate-bounce-gentle shadow-blue" style={{ animationDelay: '1.5s' }}></div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h3 className="text-2xl font-bold text-foreground">Discover Your Colors</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Take our assessment to reveal your unique color profile and unlock your leadership potential
+                      </p>
+                    </div>
+
+                    {/* Progress indicator */}
+                    <div className="flex justify-center gap-2">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="w-2 h-2 bg-gradient-brand rounded-full animate-pulse" 
+                             style={{ animationDelay: `${i * 0.2}s` }}></div>
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-center text-foreground mb-2">Discover Your Colors</h3>
-                  <p className="text-sm text-muted-foreground text-center">Take our assessment to reveal your unique color profile</p>
                 </div>
               </div>
             </div>
@@ -70,25 +146,59 @@ const Index = () => {
       </section>
 
       {/* Our Philosophy Section */}
-      <section className="py-20 px-4 bg-background">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Our <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Philosophy</span>
+      <section className="py-24 px-4 bg-background relative overflow-hidden">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,_hsl(var(--blue))_0%,_transparent_50%),_radial-gradient(circle_at_70%_80%,_hsl(var(--green))_0%,_transparent_50%)]"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto relative">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 px-6 py-3 rounded-full border border-primary/20 mb-8">
+              <span className="text-sm font-semibold text-primary tracking-wide">OUR PHILOSOPHY</span>
+            </div>
+            
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 leading-tight">
+              Great teams don't just happen.
+              <br />
+              <span className="bg-gradient-colorful bg-clip-text text-transparent">They grow through stages.</span>
             </h2>
-            <blockquote className="text-xl italic text-muted-foreground max-w-4xl mx-auto mb-4">
-              "Great teams don't just happen. They grow through stages."
-            </blockquote>
-            <cite className="text-sm text-muted-foreground">— Bruce Tuckman, developer of the Forming–Storming–Norming–Performing model</cite>
+            
+            <div className="max-w-5xl mx-auto">
+              <blockquote className="text-2xl md:text-3xl font-light text-muted-foreground mb-6 leading-relaxed italic">
+                "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
+              </blockquote>
+              <cite className="text-primary font-medium">— Bruce Tuckman, developer of the team development model</cite>
+            </div>
           </div>
 
-          <div className="max-w-4xl mx-auto mb-16">
-            <p className="text-lg text-foreground mb-6 leading-relaxed">
-              At Role Color Finder, we believe in <strong>Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
-            </p>
-            <p className="text-lg text-foreground mb-8 leading-relaxed">
-              Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because effective leaders adapt, they don't impose.
-            </p>
+          <div className="max-w-5xl mx-auto mb-20">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <div className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/50 shadow-elegant">
+                  <h3 className="text-2xl font-bold text-foreground mb-4">Contextual Leadership</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    We believe in <strong className="text-foreground">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8 border border-primary/10">
+                  <p className="text-lg text-foreground leading-relaxed">
+                    Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
+                    <strong className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"> effective leaders adapt, they don't impose.</strong>
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <img 
+                  src={professionalTeamImage} 
+                  alt="Professional team collaboration" 
+                  className="rounded-2xl shadow-elegant w-full h-auto"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+              </div>
+            </div>
           </div>
 
           {/* How Our Idea Works */}
@@ -117,8 +227,10 @@ const Index = () => {
                   <p className="text-sm text-muted-foreground">Building connection</p>
                 </div>
                 <div className="text-center">
-                  
-                  
+                  <div className="w-16 h-16 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
+                    <Zap className="w-8 h-8 text-white" />
+                  </div>
+                  <h4 className="font-bold text-foreground mb-2">Storming</h4>
                   <p className="text-sm text-muted-foreground">Navigating friction</p>
                 </div>
                 <div className="text-center">
@@ -553,14 +665,21 @@ const Index = () => {
       <footer className="bg-muted text-muted-foreground py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="flex items-center space-x-4">
-                <img src="/lovable-uploads/99889e15-83c9-4252-87b5-4f802189c64e.png" alt="Role Color Finder" className="h-8" />
-                <span className="text-sm">© 2024 Role Color Finder. All rights reserved.</span>
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="mb-4 md:mb-0">
+                <img 
+                  src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
+                  alt="Role Color Finder" 
+                  className="h-8 mb-2"
+                />
+                <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
               </div>
-              <nav className="flex space-x-6 text-sm">
-                <a href="mailto:support@rolecolorfinder.com" className="hover:text-foreground transition-colors">Contact</a>
-              </nav>
+              <div className="text-center md:text-right">
+                <p className="text-sm opacity-80">© 2025 RoleColorFinder</p>
+                <p className="text-xs opacity-60 mt-1">
+                  All rights reserved
+                </p>
+              </div>
             </div>
           </div>
         </div>
