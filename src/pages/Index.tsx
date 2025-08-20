@@ -265,7 +265,6 @@ const Index = () => {
                   alt="Leadership journey through team development stages" 
                   className="rounded-2xl shadow-elegant w-full h-auto"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
               </div>
 
           {/* Color Roles */}
