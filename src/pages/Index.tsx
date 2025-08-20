@@ -68,7 +68,11 @@ const Index = () => {
                 
                 <div className="relative flex flex-col items-center justify-center w-full h-full">
                   <div className="w-32 h-32 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mb-4">
-                    <Palette className="w-16 h-16 text-white" />
+                    <img 
+                      src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
+                      alt="Role Color Finder"
+                      className="w-20 h-auto"
+                    />
                   </div>
                   <h3 className="text-xl font-bold text-center text-foreground mb-2">Discover Your Colors</h3>
                   <p className="text-sm text-muted-foreground text-center">Take our assessment to reveal your unique color profile</p>
