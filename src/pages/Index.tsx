@@ -41,13 +41,15 @@ const Index = () => {
               </p>
 
               {/* Social Proof */}
-              <div className="flex items-center gap-2 mb-8 text-muted-foreground">
+              <div className="flex items-center gap-3 mb-8 text-muted-foreground">
                 <div className="flex -space-x-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red to-yellow border-2 border-background"></div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green to-blue border-2 border-background"></div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow to-green border-2 border-background"></div>
                 </div>
-                <span className="text-sm">Join over 5,000 leaders who've discovered their color</span>
+                <span className="text-sm">
+                  ⭐ 4.8/5 stars • "Finally, a quiz that doesn't put me in a box!" • Takes just 3 minutes
+                </span>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
