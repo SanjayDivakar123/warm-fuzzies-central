@@ -263,7 +263,7 @@ const Index = () => {
                 <img 
                   src={leadershipJourneyImage} 
                   alt="Leadership journey through team development stages" 
-                  className="rounded-2xl shadow-elegant w-full h-auto"
+                  className="rounded-2xl shadow-elegant w-full max-w-2xl mx-auto h-auto"
                 />
               </div>
 
