@@ -8,65 +8,60 @@ All colors MUST be HSL.
 
 @layer base {
 :root {
-    /* Brand Colors - Role Color Finder Palette */
-    --background: 0 0% 100%;
-    --foreground: 220 29% 20%;
+    --background: 250 100% 99%;
+    --foreground: 220 30% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 29% 20%;
+    --card-foreground: 220 30% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 29% 20%;
+    --popover-foreground: 220 30% 20%;
 
-    --primary: 212 84% 57%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 210 85% 55%;
+    --primary-foreground: 250 100% 99%;
 
-    --secondary: 146 65% 45%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 150 65% 45%;
+    --secondary-foreground: 250 100% 99%;
 
-    --muted: 220 13% 95%;
-    --muted-foreground: 220 29% 40%;
+    --muted: 250 100% 97%;
+    --muted-foreground: 220 15% 50%;
 
-    --accent: 0 84% 57%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 85% 55%;
+    --accent-foreground: 250 100% 99%;
 
-    --destructive: 0 84% 57%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 250 100% 99%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 95%;
-    --ring: 212 84% 57%;
+    --border: 220 15% 92%;
+    --input: 220 15% 95%;
+    --ring: 210 85% 55%;
 
-    /* Role Color Finder Brand Colors */
-    --red: 0 84% 57%;           /* #EE2B2B */
-    --red-foreground: 0 0% 100%;
-    --red-light: 0 84% 97%;
-    --red-dark: 0 84% 47%;
-    --red-glow: 0 84% 67%;
+    /* Vibrant Four-Color System: Red, Yellow, Blue, Green */
+    --red: 0 85% 60%;
+    --red-foreground: 250 100% 99%;
+    --red-light: 0 85% 97%;
+    --red-dark: 0 85% 50%;
+    --red-glow: 0 85% 70%;
 
-    --yellow: 48 100% 59%;      /* #FFDD33 */
-    --yellow-foreground: 220 29% 20%;
-    --yellow-light: 48 100% 97%;
-    --yellow-dark: 48 100% 49%;
-    --yellow-glow: 48 100% 69%;
+    --yellow: 50 100% 60%;
+    --yellow-foreground: 220 30% 20%;
+    --yellow-light: 50 100% 97%;
+    --yellow-dark: 50 100% 50%;
+    --yellow-glow: 50 100% 70%;
 
-    --green: 146 65% 45%;       /* #27BD73 */
-    --green-foreground: 0 0% 100%;
-    --green-light: 146 65% 97%;
-    --green-dark: 146 65% 35%;
-    --green-glow: 146 65% 55%;
+    --green: 150 70% 50%;
+    --green-foreground: 250 100% 99%;
+    --green-light: 150 70% 97%;
+    --green-dark: 150 70% 40%;
+    --green-glow: 150 70% 60%;
 
-    --blue: 212 84% 57%;        /* #2B8CEE */
-    --blue-foreground: 0 0% 100%;
-    --blue-light: 212 84% 97%;
-    --blue-dark: 212 84% 47%;
-    --blue-glow: 212 84% 67%;
+    --blue: 210 85% 60%;
+    --blue-foreground: 250 100% 99%;
+    --blue-light: 210 85% 97%;
+    --blue-dark: 210 85% 50%;
+    --blue-glow: 210 85% 70%;
 
-    --steel-black: 220 29% 20%; /* #242E42 */
-    --black: 0 0% 0%;           /* #000000 */
-    --white: 0 0% 100%;         /* #FFFFFF */
-
-    /* Updated Gradients with Brand Colors */
+    /* Updated Gradients with Four Colors */
     --gradient-hero: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--green)));
     --gradient-primary: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-glow)));
     --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)), hsl(var(--yellow-glow)));
@@ -78,7 +73,7 @@ All colors MUST be HSL.
     --gradient-colorful: linear-gradient(45deg, hsl(var(--red)), hsl(var(--yellow)), hsl(var(--green)), hsl(var(--blue)));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--blue-light)));
 
-    /* Brand Shadows */
+    /* Colorful Shadows */
     --shadow-elegant: 0 8px 32px -8px hsl(var(--foreground) / 0.15);
     --shadow-colorful: 0 12px 40px -12px hsl(var(--red) / 0.2), 0 8px 24px -8px hsl(var(--blue) / 0.15);
     --shadow-glow: 0 0 50px hsl(var(--blue) / 0.3);
@@ -90,52 +85,58 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 29% 20%;
-    --sidebar-primary: 220 29% 20%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 95%;
-    --sidebar-accent-foreground: 220 29% 20%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 212 84% 57%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 220 29% 4%;
-    --foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 220 29% 4%;
-    --card-foreground: 0 0% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 29% 4%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 212 84% 57%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 146 65% 45%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 29% 17%;
-    --muted-foreground: 220 13% 65%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 0 84% 57%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 84% 57%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 29% 17%;
-    --input: 220 29% 17%;
-    --ring: 212 84% 57%;
-    
-    --sidebar-background: 220 29% 10%;
-    --sidebar-foreground: 220 13% 95%;
-    --sidebar-primary: 212 84% 57%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 29% 15%;
-    --sidebar-accent-foreground: 220 13% 95%;
-    --sidebar-border: 220 29% 15%;
-    --sidebar-ring: 212 84% 57%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -145,74 +146,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-poppins;
-  }
-
-  /* Typography Hierarchy - Poppins Font */
-  h1 {
-    @apply text-[60px] font-bold leading-tight;
-  }
-
-  h2 {
-    @apply text-[42px] font-semibold leading-tight;
-  }
-
-  h3 {
-    @apply text-[36px] font-semibold leading-tight;
-  }
-
-  h4 {
-    @apply text-[32px] font-medium leading-tight;
-  }
-
-  h5 {
-    @apply text-[24px] font-medium leading-normal;
-  }
-
-  h6 {
-    @apply text-[20px] font-medium leading-normal;
-  }
-
-  p, li, span, div {
-    @apply text-[18px] font-normal leading-relaxed;
-  }
-
-  footer, .footer {
-    @apply text-[16px] font-normal leading-normal;
-  }
-
-  /* Responsive Typography */
-  @media (max-width: 768px) {
-    h1 {
-      @apply text-[40px];
-    }
-
-    h2 {
-      @apply text-[32px];
-    }
-
-    h3 {
-      @apply text-[28px];
-    }
-
-    h4 {
-      @apply text-[24px];
-    }
-
-    h5 {
-      @apply text-[20px];
-    }
-
-    h6 {
-      @apply text-[18px];
-    }
-
-    p, li, span, div {
-      @apply text-[16px] font-normal;
-    }
-
-    footer, .footer {
-      @apply text-[14px] font-normal;
-    }
+    @apply bg-background text-foreground;
   }
 }
