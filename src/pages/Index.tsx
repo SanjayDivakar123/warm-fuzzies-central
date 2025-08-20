@@ -48,7 +48,7 @@ const Index = () => {
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow to-green border-2 border-background"></div>
                 </div>
                 <span className="text-sm">
-                  ⭐ 4.8/5 stars • "Finally, a quiz that doesn't put me in a box!" • Takes just 3 minutes
+                  ⭐ 4.8/5 stars • "Finally, a quiz that doesn&apos;t put me in a box!" • Takes just 3 minutes
                 </span>
               </div>
               
