@@ -173,7 +173,7 @@ All colors MUST be HSL.
     @apply text-[20px] font-medium leading-normal;
   }
 
-  p {
+  p, li, span, div {
     @apply text-[18px] font-normal leading-relaxed;
   }
 
@@ -207,12 +207,12 @@ All colors MUST be HSL.
       @apply text-[18px];
     }
 
-    p {
-      @apply text-[16px];
+    p, li, span, div {
+      @apply text-[16px] font-normal;
     }
 
     footer, .footer {
-      @apply text-[14px];
+      @apply text-[14px] font-normal;
     }
   }
 }
