@@ -103,38 +103,30 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-brand rounded-3xl blur-3xl opacity-20 animate-glow-pulse"></div>
                 
                 {/* Main card */}
-                <div className="relative bg-card/90 backdrop-blur-xl rounded-3xl border-2 border-border/50 p-10 shadow-elegant animate-scale-in">
+                <div className="bg-card rounded-2xl border border-border p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
                   <div className="text-center space-y-6">
-                    {/* Logo with enhanced styling */}
+                    {/* Logo */}
                     <div className="relative">
-                      <div className="w-40 h-40 bg-gradient-brand rounded-full flex items-center justify-center shadow-colorful mx-auto relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-full"></div>
+                      <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto border border-border/50">
                         <img 
                           src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
                           alt="Role Color Finder"
-                          className="w-24 h-auto relative z-10"
+                          className="w-16 h-auto"
                         />
                       </div>
-                      
-                      {/* Floating color dots */}
-                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-yellow rounded-full animate-bounce-gentle shadow-yellow"></div>
-                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-red rounded-full animate-bounce-gentle shadow-red" style={{ animationDelay: '0.5s' }}></div>
-                      <div className="absolute -bottom-2 -left-2 w-5 h-5 bg-gradient-green rounded-full animate-bounce-gentle shadow-green" style={{ animationDelay: '1s' }}></div>
-                      <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-gradient-blue rounded-full animate-bounce-gentle shadow-blue" style={{ animationDelay: '1.5s' }}></div>
                     </div>
                     
                     <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-foreground">Discover Your Colors</h3>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <h3 className="text-xl font-semibold text-foreground">Discover Your Colors</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
                         Take our assessment to reveal your unique color profile and unlock your leadership potential
                       </p>
                     </div>
 
-                    {/* Progress indicator */}
-                    <div className="flex justify-center gap-2">
+                    {/* Simple indicator */}
+                    <div className="flex justify-center gap-1">
                       {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="w-2 h-2 bg-gradient-brand rounded-full animate-pulse" 
-                             style={{ animationDelay: `${i * 0.2}s` }}></div>
+                        <div key={i} className="w-1.5 h-1.5 bg-primary/60 rounded-full"></div>
                       ))}
                     </div>
                   </div>
