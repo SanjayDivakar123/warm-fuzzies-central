@@ -20,19 +20,22 @@ const Index = () => {
       
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-24 px-4 bg-gradient-subtle">
-        <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+      <section className="relative overflow-hidden py-24 px-4 bg-gradient-to-br from-background to-muted/20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,_hsl(var(--primary)/0.1)_0%,_transparent_50%)]"></div>
         
-        {/* Floating elements for visual interest */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-yellow/10 rounded-full blur-xl animate-bounce-gentle"></div>
-        <div className="absolute top-40 right-20 w-16 h-16 bg-blue/10 rounded-full blur-xl animate-bounce-gentle"></div>
-        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-red/10 rounded-full blur-xl animate-bounce-gentle"></div>
+        {/* Subtle floating elements */}
+        <div className="absolute top-20 left-10 w-16 h-16 bg-primary/10 rounded-full blur-xl"></div>
+        <div className="absolute top-40 right-20 w-12 h-12 bg-secondary/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-20 left-1/4 w-8 h-8 bg-accent/10 rounded-full blur-xl"></div>
         
         <div className="relative max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="text-center lg:text-left space-y-8">
-              
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue/10 to-green/10 px-4 py-2 rounded-full border border-blue/20">
+                <span className="text-2xl">🎨</span>
+                <span className="text-primary text-sm font-semibold tracking-wide">Role Color Finder</span>
+              </div>
               
               <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
                 Discover Your
@@ -46,11 +49,16 @@ const Index = () => {
               </p>
 
               {/* Enhanced Social Proof */}
-              <div className="flex items-center justify-center lg:justify-start gap-4 bg-card/50 backdrop-blur-sm rounded-2xl p-4 border border-border/50">
+              <div className="flex items-center justify-center lg:justify-start gap-4 bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border/50 hover:shadow-md transition-shadow duration-300">
                 <div className="flex -space-x-3">
-                  {['from-red to-yellow', 'from-green to-blue', 'from-yellow to-green', 'from-blue to-red'].map((gradient, i) => <div key={i} className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-lg animate-scale-in`} style={{
-                  animationDelay: `${i * 0.1}s`
-                }}></div>)}
+                  {[
+                    'from-red to-yellow',
+                    'from-green to-blue', 
+                    'from-yellow to-green',
+                    'from-blue to-red'
+                  ].map((gradient, i) => (
+                    <div key={i} className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-lg`}></div>
+                  ))}
                 </div>
                 <div className="text-left">
                   <div className="flex items-center gap-1 mb-1">
@@ -64,32 +72,50 @@ const Index = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="hero" size="lg" className="text-lg px-10 py-6 hover-scale shadow-glow animate-fade-in" onClick={() => navigate('/free-assessment')}>
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="text-lg px-10 py-6 hover:scale-105 transition-transform duration-200 shadow-lg" 
+                  onClick={() => navigate('/free-assessment')}
+                >
                   Start Your Free Assessment
                   <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 </Button>
-                {user && <Button variant="outline" size="lg" className="text-lg px-8 py-6 hover-scale animate-fade-in border-2" style={{
-                animationDelay: '0.1s'
-              }} onClick={() => navigate('/premium-results')}>
+                {user && (
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-lg px-8 py-6 hover:scale-105 transition-transform duration-200 border-2" 
+                    onClick={() => navigate('/premium-results')}
+                  >
                     View My Results
-                  </Button>}
+                  </Button>
+                )}
               </div>
             </div>
 
-            {/* Right Visual - Enhanced */}
+            {/* Right Visual - Refined */}
             <div className="relative max-w-lg mx-auto">
-              <div className="relative">
-                {/* Background glow effect */}
-                <div className="absolute inset-0 bg-gradient-brand rounded-3xl blur-3xl opacity-20 animate-glow-pulse"></div>
+              <div className="relative group">
+                {/* Subtle background glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
                 
                 {/* Main card */}
-                <div className="bg-card rounded-2xl border border-border p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-card rounded-2xl border border-border p-8 shadow-lg hover:shadow-xl transition-all duration-300 relative">
                   <div className="text-center space-y-6">
-                    {/* Logo */}
+                    {/* Logo container */}
                     <div className="relative">
-                      <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto border border-border/50">
-                        <img src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" alt="Role Color Finder" className="w-16 h-auto" />
+                      <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto border border-border/50 hover:border-primary/30 transition-colors duration-300">
+                        <img 
+                          src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
+                          alt="Role Color Finder"
+                          className="w-16 h-auto"
+                        />
                       </div>
+                      
+                      {/* Subtle accent dots */}
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red to-yellow rounded-full opacity-60"></div>
+                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-r from-green to-blue rounded-full opacity-60"></div>
                     </div>
                     
                     <div className="space-y-3">
@@ -99,9 +125,11 @@ const Index = () => {
                       </p>
                     </div>
 
-                    {/* Simple indicator */}
+                    {/* Progress indicator */}
                     <div className="flex justify-center gap-1">
-                      {[0, 1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 bg-primary/60 rounded-full"></div>)}
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="w-1.5 h-1.5 bg-primary/60 rounded-full"></div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -157,7 +185,11 @@ const Index = () => {
               </div>
               
               <div className="relative">
-                <img src={professionalTeamImage} alt="Professional team collaboration" className="rounded-2xl shadow-elegant w-full h-auto" />
+                <img 
+                  src={professionalTeamImage} 
+                  alt="Professional team collaboration" 
+                  className="rounded-2xl shadow-elegant w-full h-auto"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
               </div>
             </div>
@@ -233,32 +265,32 @@ const Index = () => {
             </h3>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
-                <div className="w-12 h-12 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-yellow/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
+                <div className="w-12 h-12 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
                   <Target className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-bold text-yellow-600 mb-2">Yellow</h4>
+                <h4 className="font-bold text-yellow-600 mb-2 group-hover:text-yellow-500 transition-colors duration-300">Yellow</h4>
                 <p className="text-sm text-muted-foreground">Action-first executors (founders, builders, PMs)</p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
-                <div className="w-12 h-12 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-red/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
+                <div className="w-12 h-12 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
                   <Heart className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-bold text-red-600 mb-2">Red</h4>
+                <h4 className="font-bold text-red-600 mb-2 group-hover:text-red-500 transition-colors duration-300">Red</h4>
                 <p className="text-sm text-muted-foreground">Vision-driven motivators (speakers, creatives, brand builders)</p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
-                <div className="w-12 h-12 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-green/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
+                <div className="w-12 h-12 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
                   <Brain className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-bold text-green-600 mb-2">Green</h4>
+                <h4 className="font-bold text-green-600 mb-2 group-hover:text-green-500 transition-colors duration-300">Green</h4>
                 <p className="text-sm text-muted-foreground">Logic-based architects (analysts, engineers, operators)</p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
-                <div className="w-12 h-12 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-blue/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
+                <div className="w-12 h-12 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
                   <Users className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-bold text-blue-600 mb-2">Blue</h4>
+                <h4 className="font-bold text-blue-600 mb-2 group-hover:text-blue-500 transition-colors duration-300">Blue</h4>
                 <p className="text-sm text-muted-foreground">People-first supporters (coaches, HR, community builders)</p>
               </div>
             </div>
@@ -624,12 +656,16 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted text-muted-foreground py-8">
+      <footer className="bg-black text-white py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
-                <img src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" alt="Role Color Finder" className="h-8 mb-2" />
+                <img 
+                  src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
+                  alt="Role Color Finder" 
+                  className="h-8 mb-2"
+                />
                 <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
               </div>
               <div className="text-center md:text-right">
