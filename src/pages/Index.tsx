@@ -43,7 +43,7 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Button variant="hero" size="lg" className="text-lg px-8 py-4 font-bold hover-scale" onClick={() => navigate('/free-assessment')}>
+                <Button variant="hero" size="lg" className="text-lg px-8 py-4 hover-scale" onClick={() => navigate('/free-assessment')}>
                   Take the Free Assessment
                 </Button>
                 {user && <Button variant="outline" size="lg" onClick={() => navigate('/premium-results')}>
