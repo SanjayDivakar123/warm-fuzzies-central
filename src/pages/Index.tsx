@@ -16,125 +16,125 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Sign Up Bar */}
-      
-      
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-24 px-4 bg-gradient-to-br from-background to-muted/20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,_hsl(var(--primary)/0.1)_0%,_transparent_50%)]"></div>
+      <section className="relative overflow-hidden py-32 px-4 mesh-background">
+        <div className="absolute inset-0 bg-gradient-to-br from-background/90 to-background/60"></div>
         
-        {/* Subtle floating elements */}
-        <div className="absolute top-20 left-10 w-16 h-16 bg-primary/10 rounded-full blur-xl"></div>
-        <div className="absolute top-40 right-20 w-12 h-12 bg-secondary/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-1/4 w-8 h-8 bg-accent/10 rounded-full blur-xl"></div>
+        {/* Enhanced floating elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-red/20 rounded-full blur-3xl animate-bounce-gentle"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-blue/20 rounded-full blur-2xl animate-bounce-gentle delay-1000"></div>
+        <div className="absolute bottom-32 left-1/4 w-16 h-16 bg-green/20 rounded-full blur-xl animate-bounce-gentle delay-500"></div>
+        <div className="absolute bottom-20 right-1/3 w-20 h-20 bg-yellow/20 rounded-full blur-2xl animate-bounce-gentle delay-1500"></div>
         
         <div className="relative max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
             {/* Left Content */}
-            <div className="text-center lg:text-left space-y-8">
+            <div className="text-center lg:text-left space-y-10">
               
-              <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
+              <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-tight text-balance animate-fade-in">
                 Discover Your
                 <br />
-                <span className="bg-gradient-colorful bg-clip-text text-transparent">Leadership Color</span>
+                <span className="gradient-text">Leadership Color</span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed text-balance animate-fade-in delay-200">
                 Leadership isn't one‑size‑fits‑all. Our fast, free quiz reveals how your natural style can 
                 <span className="text-foreground font-medium"> adapt and thrive</span> at every stage of a team's journey.
               </p>
 
               {/* Enhanced Social Proof */}
-              <div className="flex items-center justify-center lg:justify-start gap-4 bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border/50 hover:shadow-md transition-shadow duration-300">
-                <div className="flex -space-x-3">
-                  {[
-                    'from-red to-yellow',
-                    'from-green to-blue', 
-                    'from-yellow to-green',
-                    'from-blue to-red'
-                  ].map((gradient, i) => (
-                    <div key={i} className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-lg`}></div>
-                  ))}
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="text-yellow text-lg">⭐⭐⭐⭐⭐</span>
-                    <span className="text-sm font-semibold text-foreground">4.8/5</span>
+              <div className="floating-card glass-card rounded-3xl p-6 border border-border/50 animate-fade-in delay-300">
+                <div className="flex items-center justify-center lg:justify-start gap-6">
+                  <div className="flex -space-x-3">
+                    {[
+                      'from-red to-red-glow',
+                      'from-green to-green-glow', 
+                      'from-yellow to-yellow-glow',
+                      'from-blue to-blue-glow'
+                    ].map((gradient, i) => (
+                      <div key={i} className={`w-12 h-12 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-colorful animate-glow-pulse delay-${i * 200}`}></div>
+                    ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    "Finally, a quiz that doesn't put me in a box!" • 3 min quiz
-                  </p>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-yellow text-xl">⭐⭐⭐⭐⭐</span>
+                      <span className="text-lg font-bold text-foreground">4.8/5</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      "Finally, a quiz that doesn't put me in a box!" • 3 min quiz
+                    </p>
+                  </div>
                 </div>
               </div>
               
-               <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-6 animate-fade-in delay-500">
                 <Button 
                   variant="hero" 
                   size="lg" 
-                  className="text-lg px-10 py-6 hover:scale-105 transition-transform duration-200 shadow-lg" 
+                  className="text-xl px-12 py-8 hover:scale-105 transition-all duration-300 shadow-colorful hover:shadow-glow" 
                   onClick={() => navigate('/free-assessment')}
                 >
                   Start Your Free Assessment
-                  <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <div className="ml-3 w-3 h-3 bg-white rounded-full animate-pulse"></div>
                 </Button>
               </div>
               
               {/* Brochure Download */}
-              <div className="mt-6">
+              <div className="mt-8 animate-fade-in delay-700">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="text-sm px-6 py-3 border border-primary/30 text-primary hover:bg-primary/10" 
+                  className="text-sm px-8 py-4 border-2 border-primary/30 text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300" 
                   asChild
                 >
                   <a 
                     href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-3"
                   >
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-5 h-5" />
                     Download: Why Every Team Needs RoleColorFinder
                   </a>
                 </Button>
               </div>
             </div>
 
-            {/* Right Visual - Refined */}
-            <div className="relative max-w-lg mx-auto">
-              <div className="relative group">
-                {/* Subtle background glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
+            {/* Right Visual - Enhanced */}
+            <div className="relative max-w-lg mx-auto animate-fade-in delay-400">
+              <div className="relative group floating-card">
+                {/* Enhanced background glow */}
+                <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 animate-glow-pulse"></div>
                 
                 {/* Main card */}
-                <div className="bg-card rounded-2xl border border-border p-8 shadow-lg hover:shadow-xl transition-all duration-300 relative">
-                  <div className="text-center space-y-6">
+                <div className="glass-card rounded-3xl p-10 shadow-elegant hover:shadow-colorful transition-all duration-500 relative border-2 border-white/30">
+                  <div className="text-center space-y-8">
                     {/* Logo container */}
                     <div className="relative">
-                      <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto border border-border/50 hover:border-primary/30 transition-colors duration-300">
+                      <div className="w-40 h-40 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center mx-auto border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-blue">
                         <img 
                           src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
                           alt="Role Color Finder"
-                          className="w-16 h-auto"
+                          className="w-20 h-auto"
                         />
                       </div>
                       
-                      {/* Subtle accent dots */}
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red to-yellow rounded-full opacity-60"></div>
-                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-r from-green to-blue rounded-full opacity-60"></div>
+                      {/* Enhanced accent dots */}
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-red rounded-full opacity-80 animate-bounce-gentle"></div>
+                      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-green rounded-full opacity-80 animate-bounce-gentle delay-1000"></div>
                     </div>
                     
-                    <div className="space-y-3">
-                      <h3 className="text-xl font-semibold text-foreground">Discover Your Colors</h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-foreground">Discover Your Colors</h3>
+                      <p className="text-muted-foreground text-base leading-relaxed">
                         Take our assessment to reveal your unique color profile and unlock your leadership potential
                       </p>
                     </div>
 
-                    {/* Progress indicator */}
-                    <div className="flex justify-center gap-1">
+                    {/* Enhanced progress indicator */}
+                    <div className="flex justify-center gap-2">
                       {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="w-1.5 h-1.5 bg-primary/60 rounded-full"></div>
+                        <div key={i} className="w-2 h-2 bg-primary/80 rounded-full animate-pulse" style={{animationDelay: `${i * 200}ms`}}></div>
                       ))}
                     </div>
                   </div>
@@ -146,117 +146,117 @@ const Index = () => {
       </section>
 
       {/* Our Philosophy Section */}
-      <section className="py-24 px-4 bg-background relative overflow-hidden">
-        {/* Subtle background pattern */}
+      <section className="py-32 px-4 bg-background relative overflow-hidden">
+        {/* Enhanced background pattern */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,_hsl(var(--blue))_0%,_transparent_50%),_radial-gradient(circle_at_70%_80%,_hsl(var(--green))_0%,_transparent_50%)]"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-mesh"></div>
         </div>
         
         <div className="max-w-7xl mx-auto relative">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 px-6 py-3 rounded-full border border-primary/20 mb-8">
-              <span className="text-sm font-semibold text-primary tracking-wide">OUR PHILOSOPHY</span>
+          <div className="text-center mb-24 animate-fade-in">
+            <div className="inline-flex items-center gap-3 glass-card px-8 py-4 rounded-full border border-primary/20 mb-10">
+              <span className="text-sm font-bold text-primary tracking-wide uppercase">Our Philosophy</span>
             </div>
             
-            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 leading-tight">
+            <h2 className="text-6xl md:text-7xl font-bold text-foreground mb-10 leading-tight text-balance">
               Great teams don't just happen.
               <br />
-              <span className="bg-gradient-colorful bg-clip-text text-transparent">They grow through stages.</span>
+              <span className="gradient-text">They grow through stages.</span>
             </h2>
             
             <div className="max-w-5xl mx-auto">
-              <blockquote className="text-2xl md:text-3xl font-light text-muted-foreground mb-6 leading-relaxed italic">
+              <blockquote className="text-3xl md:text-4xl font-light text-muted-foreground mb-8 leading-relaxed italic text-balance">
                 "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
               </blockquote>
-              <cite className="text-primary font-medium">— Bruce Tuckman, developer of the team development model</cite>
+              <cite className="text-primary font-semibold text-lg">— Bruce Tuckman, developer of the team development model</cite>
             </div>
           </div>
 
-          <div className="max-w-5xl mx-auto mb-20">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <div className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/50 shadow-elegant">
-                  <h3 className="text-2xl font-bold text-foreground mb-4">Contextual Leadership</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+          <div className="max-w-6xl mx-auto mb-24">
+            <div className="grid md:grid-cols-2 gap-16 items-center">
+              <div className="space-y-10 animate-fade-in delay-200">
+                <div className="glass-card rounded-3xl p-10 border border-border/50 shadow-elegant hover:shadow-colorful transition-all duration-500">
+                  <h3 className="text-3xl font-bold text-foreground mb-6">Contextual Leadership</h3>
+                  <p className="text-xl text-muted-foreground leading-relaxed">
                     We believe in <strong className="text-foreground">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                   </p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8 border border-primary/10">
-                  <p className="text-lg text-foreground leading-relaxed">
+                <div className="glass-card rounded-3xl p-10 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+                  <p className="text-xl text-foreground leading-relaxed">
                     Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
-                    <strong className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"> effective leaders adapt, they don't impose.</strong>
+                    <strong className="gradient-text text-2xl"> effective leaders adapt, they don't impose.</strong>
                   </p>
                 </div>
               </div>
               
-              <div className="relative">
+              <div className="relative animate-fade-in delay-400">
                 <img 
                   src={professionalTeamImage} 
                   alt="Professional team collaboration" 
-                  className="rounded-2xl shadow-elegant w-full h-auto"
+                  className="rounded-3xl shadow-elegant w-full h-auto floating-card"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-3xl"></div>
               </div>
             </div>
           </div>
 
           {/* How Our Idea Works */}
-          <div className="mb-16">
-            <h3 className="text-3xl font-bold text-center text-foreground mb-8">
-              Here's how our <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">patent pending</span> idea works:
+          <div className="mb-20">
+            <h3 className="text-4xl font-bold text-center text-foreground mb-10">
+              Here's how our <span className="gradient-text">patent pending</span> idea works:
             </h3>
             
-            <div className="text-center mb-8">
-              <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent/40">
-                🔬 Patent Pending System
-              </Badge>
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-3 glass-card px-6 py-3 rounded-full border border-accent/40">
+                <span className="text-sm font-bold text-accent">🔬 Patent Pending System</span>
+              </div>
             </div>
             
-            <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant mb-12">
-              <p className="text-lg text-foreground mb-8 leading-relaxed">
+            <div className="glass-card rounded-3xl p-12 border border-border shadow-elegant mb-16">
+              <p className="text-xl text-foreground mb-12 leading-relaxed text-center text-balance">
                 Every user takes a 25-question diagnostic designed around real group psychology, especially Tuckman's Five Stages of Team Development:
               </p>
               
-              <div className="grid md:grid-cols-5 gap-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
-                    <Users className="w-8 h-8 text-white" />
+              <div className="grid md:grid-cols-5 gap-8">
+                <div className="text-center floating-card">
+                  <div className="w-20 h-20 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-4 shadow-red">
+                    <Users className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-2">Forming</h4>
+                  <h4 className="font-bold text-foreground mb-3 text-lg">Forming</h4>
                   <p className="text-sm text-muted-foreground">Building connection</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
-                    <Zap className="w-8 h-8 text-white" />
+                <div className="text-center floating-card">
+                  <div className="w-20 h-20 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-yellow">
+                    <Zap className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-2">Storming</h4>
+                  <h4 className="font-bold text-foreground mb-3 text-lg">Storming</h4>
                   <p className="text-sm text-muted-foreground">Navigating friction</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
-                    <Settings className="w-8 h-8 text-white" />
+                <div className="text-center floating-card">
+                  <div className="w-20 h-20 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-4 shadow-green">
+                    <Settings className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-2">Norming</h4>
+                  <h4 className="font-bold text-foreground mb-3 text-lg">Norming</h4>
                   <p className="text-sm text-muted-foreground">Establishing flow</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
-                    <TrendingUp className="w-8 h-8 text-white" />
+                <div className="text-center floating-card">
+                  <div className="w-20 h-20 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-blue">
+                    <TrendingUp className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-2">Performing</h4>
+                  <h4 className="font-bold text-foreground mb-3 text-lg">Performing</h4>
                   <p className="text-sm text-muted-foreground">Reaching peak productivity</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-brand rounded-full flex items-center justify-center mx-auto mb-3 shadow-colorful">
-                    <CheckCircle className="w-8 h-8 text-white" />
+                <div className="text-center floating-card">
+                  <div className="w-20 h-20 bg-gradient-brand rounded-full flex items-center justify-center mx-auto mb-4 shadow-colorful">
+                    <CheckCircle className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="font-bold text-foreground mb-2">Adjourning</h4>
+                  <h4 className="font-bold text-foreground mb-3 text-lg">Adjourning</h4>
                   <p className="text-sm text-muted-foreground">Ending with clarity and reflection</p>
                 </div>
               </div>
 
-              <p className="text-lg text-foreground mt-8 text-center leading-relaxed">
+              <p className="text-xl text-foreground mt-12 text-center leading-relaxed text-balance">
                 At each of these stages, teams need different kinds of leadership.<br />
                 Sometimes they need decisive action. Sometimes they need creative vision. Sometimes they need systematic planning.<br />
                 <strong>Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>

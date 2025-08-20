@@ -36,7 +36,7 @@ All colors MUST be HSL.
     --input: 220 15% 95%;
     --ring: 210 85% 55%;
 
-    /* Vibrant Four-Color System: Red, Yellow, Blue, Green */
+    /* Enhanced Four-Color System: Red, Yellow, Blue, Green */
     --red: 0 85% 60%;
     --red-foreground: 250 100% 99%;
     --red-light: 0 85% 97%;
@@ -61,7 +61,7 @@ All colors MUST be HSL.
     --blue-dark: 210 85% 50%;
     --blue-glow: 210 85% 70%;
 
-    /* Updated Gradients with Four Colors */
+    /* Enhanced Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--green)));
     --gradient-primary: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-glow)));
     --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)), hsl(var(--yellow-glow)));
@@ -72,32 +72,30 @@ All colors MUST be HSL.
     --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
     --gradient-colorful: linear-gradient(45deg, hsl(var(--red)), hsl(var(--yellow)), hsl(var(--green)), hsl(var(--blue)));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--blue-light)));
+    --gradient-mesh: radial-gradient(circle at 20% 50%, hsl(var(--red) / 0.1) 0%, transparent 50%), 
+                     radial-gradient(circle at 80% 20%, hsl(var(--blue) / 0.1) 0%, transparent 50%), 
+                     radial-gradient(circle at 40% 80%, hsl(var(--green) / 0.1) 0%, transparent 50%), 
+                     radial-gradient(circle at 90% 90%, hsl(var(--yellow) / 0.1) 0%, transparent 50%);
 
-    /* Colorful Shadows */
-    --shadow-elegant: 0 8px 32px -8px hsl(var(--foreground) / 0.15);
-    --shadow-colorful: 0 12px 40px -12px hsl(var(--red) / 0.2), 0 8px 24px -8px hsl(var(--blue) / 0.15);
-    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.3);
-    --shadow-red: 0 8px 32px -8px hsl(var(--red) / 0.3);
-    --shadow-yellow: 0 8px 32px -8px hsl(var(--yellow) / 0.3);
-    --shadow-green: 0 8px 32px -8px hsl(var(--green) / 0.3);
-    --shadow-blue: 0 8px 32px -8px hsl(var(--blue) / 0.3);
+    /* Enhanced Shadows with deeper colors */
+    --shadow-elegant: 0 20px 60px -12px hsl(var(--foreground) / 0.15), 0 8px 32px -8px hsl(var(--foreground) / 0.1);
+    --shadow-colorful: 0 20px 60px -12px hsl(var(--red) / 0.25), 0 12px 40px -8px hsl(var(--blue) / 0.15);
+    --shadow-glow: 0 0 80px hsl(var(--blue) / 0.4), 0 0 40px hsl(var(--blue) / 0.3);
+    --shadow-red: 0 20px 60px -12px hsl(var(--red) / 0.35);
+    --shadow-yellow: 0 20px 60px -12px hsl(var(--yellow) / 0.35);
+    --shadow-green: 0 20px 60px -12px hsl(var(--green) / 0.35);
+    --shadow-blue: 0 20px 60px -12px hsl(var(--blue) / 0.35);
+    --shadow-soft: 0 8px 32px -8px hsl(var(--foreground) / 0.08);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -146,6 +144,34 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+    letter-spacing: -0.025em;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-elegant;
+  }
+
+  .floating-card {
+    @apply transform transition-all duration-300 hover:scale-105 hover:shadow-elegant;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-colorful bg-clip-text text-transparent;
+  }
+
+  .mesh-background {
+    background: var(--gradient-mesh);
   }
 }

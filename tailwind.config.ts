@@ -103,7 +103,8 @@ export default {
 				'gradient-brand': 'var(--gradient-brand)',
 				'gradient-soft': 'var(--gradient-soft)',
 				'gradient-colorful': 'var(--gradient-colorful)',
-				'gradient-subtle': 'var(--gradient-subtle)'
+				'gradient-subtle': 'var(--gradient-subtle)',
+				'gradient-mesh': 'var(--gradient-mesh)'
 			},
 			boxShadow: {
 				'elegant': 'var(--shadow-elegant)',
@@ -112,7 +113,8 @@ export default {
 				'yellow': 'var(--shadow-yellow)',
 				'red': 'var(--shadow-red)',
 				'green': 'var(--shadow-green)',
-				'blue': 'var(--shadow-blue)'
+				'blue': 'var(--shadow-blue)',
+				'soft': 'var(--shadow-soft)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
