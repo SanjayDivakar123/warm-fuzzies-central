@@ -555,17 +555,18 @@ const Index = () => {
       <footer className="bg-muted text-muted-foreground py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="mb-4 md:mb-0">
-                <h3 className="text-xl font-bold mb-2">Role Color Finder</h3>
-                <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="flex items-center space-x-4">
+                <img 
+                  src="/lovable-uploads/99889e15-83c9-4252-87b5-4f802189c64e.png" 
+                  alt="Role Color Finder" 
+                  className="h-8"
+                />
+                <span className="text-sm">© 2024 Role Color Finder. All rights reserved.</span>
               </div>
-              <div className="text-center md:text-right">
-                <p className="text-sm opacity-80">© 2025 RoleColorFinder</p>
-                <p className="text-xs opacity-60 mt-1">
-                  All rights reserved
-                </p>
-              </div>
+              <nav className="flex space-x-6 text-sm">
+                <a href="mailto:support@rolecolorfinder.com" className="hover:text-foreground transition-colors">Contact</a>
+              </nav>
             </div>
           </div>
         </div>
