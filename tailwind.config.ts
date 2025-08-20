@@ -110,6 +110,7 @@ export default {
 				'gradient-red': 'var(--gradient-red)',
 				'gradient-green': 'var(--gradient-green)',
 				'gradient-yellow': 'var(--gradient-yellow)',
+				'gradient-blue': 'var(--gradient-blue)',
 				'gradient-steel': 'var(--gradient-steel)',
 				'gradient-brand': 'var(--gradient-brand)'
 			},

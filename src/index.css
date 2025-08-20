@@ -75,6 +75,7 @@ All colors MUST be HSL.
     --gradient-red: linear-gradient(135deg, hsl(var(--red)), hsl(var(--red-light)));
     --gradient-green: linear-gradient(135deg, hsl(var(--green)), hsl(var(--green-light)));
     --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)), hsl(var(--yellow-light)));
+    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)), hsl(var(--blue-light)));
     --gradient-steel: linear-gradient(135deg, hsl(var(--steel-black)), hsl(var(--steel-black-light)));
     --gradient-brand: linear-gradient(135deg, hsl(var(--red)), hsl(var(--yellow)), hsl(var(--blue)), hsl(var(--green)));
 
