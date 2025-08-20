@@ -557,8 +557,8 @@ const Index = () => {
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
-                <h3 className="text-xl font-bold mb-2">Role Color Finder</h3>
-                <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
+                <img src="/lovable-uploads/437da1e1-96fa-4b72-a90e-dc4df858f98a.png" alt="Role Color Finder" className="h-8 w-auto" />
+                <p className="text-sm opacity-80 mt-2">Discover your leadership style with science-backed insights</p>
               </div>
               <div className="text-center md:text-right">
                 <p className="text-sm opacity-80">© 2025 RoleColorFinder</p>

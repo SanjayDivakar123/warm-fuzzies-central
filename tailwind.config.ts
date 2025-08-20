@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'poppins': ['Poppins', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -89,7 +92,10 @@ export default {
 					light: 'hsl(var(--blue-light))',
 					dark: 'hsl(var(--blue-dark))',
 					glow: 'hsl(var(--blue-glow))'
-				}
+				},
+				'steel-black': 'hsl(var(--steel-black))',
+				'brand-black': 'hsl(var(--black))',
+				'brand-white': 'hsl(var(--white))'
 			},
 			backgroundImage: {
 				'gradient-hero': 'var(--gradient-hero)',
