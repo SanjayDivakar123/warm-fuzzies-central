@@ -32,19 +32,27 @@ const Index = () => {
                 </span>
               </div>
               <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-                Contextual Leadership.
+                Discover Your Leadership Color:
                 <br />
-                <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">Adapt your strengths.</span>
-                <br />
-                <span className="bg-gradient-to-r from-green to-blue bg-clip-text text-transparent">Lead at every stage.</span>
+                <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">unlock your unique strengths.</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mb-8 leading-relaxed">
-                Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+              <p className="text-xl text-muted-foreground max-w-2xl mb-6 leading-relaxed">
+                Leadership isn't one‑size‑fits‑all. Our fast, free quiz reveals how your natural style can adapt and thrive at every stage of a team's journey.
               </p>
+
+              {/* Social Proof */}
+              <div className="flex items-center gap-2 mb-8 text-muted-foreground">
+                <div className="flex -space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red to-yellow border-2 border-background"></div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green to-blue border-2 border-background"></div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow to-green border-2 border-background"></div>
+                </div>
+                <span className="text-sm">Join over 5,000 leaders who've discovered their color</span>
+              </div>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button variant="hero" size="lg" className="text-lg px-8 py-4 hover-scale" onClick={() => navigate('/free-assessment')}>
-                  Take the Free Assessment
+                  Start Your Free Assessment
                 </Button>
                 {user && <Button variant="outline" size="lg" onClick={() => navigate('/premium-results')}>
                     View My Results
