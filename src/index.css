@@ -173,7 +173,7 @@ All colors MUST be HSL.
   }
 
   h5 {
-    @apply text-[24px] font-semibold leading-tight;
+    @apply text-[24px] font-medium leading-tight;
   }
 
   h6 {
