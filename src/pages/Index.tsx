@@ -77,16 +77,6 @@ const Index = () => {
                   Start Your Free Assessment
                   <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 </Button>
-                {user && (
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="text-lg px-8 py-6 hover:scale-105 transition-transform duration-200 border-2" 
-                    onClick={() => navigate('/premium-results')}
-                  >
-                    View My Results
-                  </Button>
-                )}
               </div>
               
               {/* Brochure Download */}
