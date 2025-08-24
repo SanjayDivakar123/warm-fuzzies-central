@@ -37,58 +37,61 @@ All colors MUST be HSL.
     --input: 220 13% 91%;
     --ring: 221 83% 58%;
 
-    /* Modern Four-Color System with Rich Tones */
-    --red: 355 78% 60%;
+    /* Vibrant Four-Color System with Rich, Fun Tones */
+    --red: 348 100% 65%;
     --red-foreground: 0 0% 100%;
-    --red-light: 355 78% 96%;
-    --red-dark: 355 78% 45%;
-    --red-glow: 355 78% 75%;
+    --red-light: 348 100% 95%;
+    --red-dark: 348 100% 55%;
+    --red-glow: 348 100% 75%;
 
-    --yellow: 45 93% 58%;
+    --yellow: 45 100% 65%;
     --yellow-foreground: 230 15% 15%;
-    --yellow-light: 45 93% 95%;
-    --yellow-dark: 45 93% 45%;
-    --yellow-glow: 45 93% 75%;
+    --yellow-light: 45 100% 95%;
+    --yellow-dark: 45 100% 55%;
+    --yellow-glow: 45 100% 75%;
 
-    --green: 142 71% 45%;
+    --green: 142 85% 55%;
     --green-foreground: 0 0% 100%;
-    --green-light: 142 71% 95%;
-    --green-dark: 142 71% 35%;
-    --green-glow: 142 71% 65%;
+    --green-light: 142 85% 95%;
+    --green-dark: 142 85% 45%;
+    --green-glow: 142 85% 70%;
 
-    --blue: 221 83% 58%;
+    --blue: 212 100% 60%;
     --blue-foreground: 0 0% 100%;
-    --blue-light: 221 83% 95%;
-    --blue-dark: 221 83% 45%;
-    --blue-glow: 221 83% 75%;
+    --blue-light: 212 100% 95%;
+    --blue-dark: 212 100% 50%;
+    --blue-glow: 212 100% 75%;
 
-    /* Sophisticated Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(var(--green)) 35%, hsl(var(--yellow)) 70%, hsl(var(--red)) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(var(--green)) 100%);
-    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)) 0%, hsl(45 95% 68%) 100%);
-    --gradient-red: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(355 80% 70%) 100%);
-    --gradient-green: linear-gradient(135deg, hsl(var(--green)) 0%, hsl(142 73% 55%) 100%);
-    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(221 85% 68%) 100%);
-    --gradient-brand: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 75%, hsl(var(--blue)) 100%);
-    --gradient-soft: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(220 15% 94%) 100%);
-    --gradient-colorful: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 30%, hsl(var(--green)) 60%, hsl(var(--blue)) 100%);
-    --gradient-subtle: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--accent)) 100%);
+    /* Super Vibrant and Fun Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(var(--green)) 50%, hsl(var(--blue)) 100%);
+    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)) 0%, hsl(45 100% 75%) 50%, hsl(var(--yellow-glow)) 100%);
+    --gradient-red: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(348 100% 75%) 50%, hsl(var(--red-glow)) 100%);
+    --gradient-green: linear-gradient(135deg, hsl(var(--green)) 0%, hsl(142 85% 65%) 50%, hsl(var(--green-glow)) 100%);
+    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(212 100% 70%) 50%, hsl(var(--blue-glow)) 100%);
+    --gradient-brand: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%);
+    --gradient-soft: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--yellow-light)) 30%, hsl(var(--blue-light)) 70%, hsl(220 15% 94%) 100%);
+    --gradient-colorful: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 20%, hsl(var(--green)) 40%, hsl(var(--blue)) 60%, hsl(var(--red)) 80%, hsl(var(--yellow)) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--blue-light)) 50%, hsl(var(--green-light)) 100%);
+    --gradient-rainbow: linear-gradient(90deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 16.66%, hsl(var(--green)) 33.33%, hsl(var(--blue)) 50%, hsl(var(--red)) 66.66%, hsl(var(--yellow)) 83.33%, hsl(var(--green)) 100%);
     --gradient-mesh: 
-      radial-gradient(circle at 25% 25%, hsl(var(--blue) / 0.08) 0%, transparent 50%), 
-      radial-gradient(circle at 75% 25%, hsl(var(--green) / 0.06) 0%, transparent 50%), 
-      radial-gradient(circle at 25% 75%, hsl(var(--yellow) / 0.04) 0%, transparent 50%), 
-      radial-gradient(circle at 75% 75%, hsl(var(--red) / 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 20% 30%, hsl(var(--red) / 0.15) 0%, transparent 60%), 
+      radial-gradient(circle at 80% 20%, hsl(var(--blue) / 0.12) 0%, transparent 60%), 
+      radial-gradient(circle at 30% 80%, hsl(var(--green) / 0.10) 0%, transparent 60%), 
+      radial-gradient(circle at 70% 70%, hsl(var(--yellow) / 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 50% 50%, hsl(var(--red) / 0.05) 0%, transparent 80%);
 
-    /* Enhanced Shadow System */
+    /* Fun and Vibrant Shadow System */
     --shadow-elegant: 0 25px 50px -12px hsl(var(--foreground) / 0.08), 0 8px 16px -8px hsl(var(--foreground) / 0.04);
-    --shadow-colorful: 0 25px 50px -12px hsl(var(--blue) / 0.15), 0 8px 16px -8px hsl(var(--blue) / 0.08);
-    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.25), 0 0 25px hsl(var(--blue) / 0.15);
-    --shadow-red: 0 25px 50px -12px hsl(var(--red) / 0.2);
-    --shadow-yellow: 0 25px 50px -12px hsl(var(--yellow) / 0.2);
-    --shadow-green: 0 25px 50px -12px hsl(var(--green) / 0.2);
-    --shadow-blue: 0 25px 50px -12px hsl(var(--blue) / 0.2);
+    --shadow-colorful: 0 25px 50px -12px hsl(var(--blue) / 0.2), 0 8px 16px -8px hsl(var(--green) / 0.15), 0 4px 8px -4px hsl(var(--yellow) / 0.1);
+    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.4), 0 0 25px hsl(var(--blue) / 0.3), 0 0 15px hsl(var(--blue) / 0.2);
+    --shadow-red: 0 25px 50px -12px hsl(var(--red) / 0.3), 0 8px 20px -8px hsl(var(--red) / 0.2);
+    --shadow-yellow: 0 25px 50px -12px hsl(var(--yellow) / 0.3), 0 8px 20px -8px hsl(var(--yellow) / 0.2);
+    --shadow-green: 0 25px 50px -12px hsl(var(--green) / 0.3), 0 8px 20px -8px hsl(var(--green) / 0.2);
+    --shadow-blue: 0 25px 50px -12px hsl(var(--blue) / 0.3), 0 8px 20px -8px hsl(var(--blue) / 0.2);
     --shadow-soft: 0 10px 25px -5px hsl(var(--foreground) / 0.04);
     --shadow-xl: 0 35px 60px -12px hsl(var(--foreground) / 0.1);
+    --shadow-rainbow: 0 20px 40px -10px hsl(var(--red) / 0.15), 0 15px 30px -8px hsl(var(--yellow) / 0.1), 0 10px 20px -6px hsl(var(--green) / 0.1), 0 5px 10px -4px hsl(var(--blue) / 0.1);
 
     --radius: 1rem;
 
@@ -186,18 +189,19 @@ All colors MUST be HSL.
   }
 
   .floating-card {
-    @apply transform transition-all duration-500 hover:scale-[1.02] hover:shadow-colorful;
+    @apply transform transition-all duration-500 hover:scale-[1.02] hover:shadow-rainbow;
   }
 
   .gradient-text {
-    background: var(--gradient-brand);
+    background: var(--gradient-rainbow);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
+    animation: rainbow-spin 4s ease-in-out infinite;
   }
 
   .gradient-text-primary {
-    background: var(--gradient-primary);
+    background: var(--gradient-colorful);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -213,7 +217,7 @@ All colors MUST be HSL.
   }
 
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-xl;
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-rainbow;
   }
 
   .smooth-hover {
@@ -226,5 +230,23 @@ All colors MUST be HSL.
 
   .container-wide {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .colorful-border {
+    border-image: var(--gradient-rainbow) 1;
+    border-style: solid;
+    border-width: 2px;
+  }
+
+  .pulse-rainbow {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .spin-colors {
+    animation: rainbow-spin 4s ease-in-out infinite;
+  }
+
+  .float-fun {
+    animation: float-colorful 6s ease-in-out infinite;
   }
 }
