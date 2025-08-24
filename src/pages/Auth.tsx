@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/navigation/Navbar";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles, Shield } from "lucide-react";
 
 export const Auth = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const { signUp, signIn, resetPassword, user } = useAuth();
   const navigate = useNavigate();
@@ -126,104 +128,240 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome</CardTitle>
-            <CardDescription>
-              Sign in to your account or create a new one
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+      
+      {/* Hero Background */}
+      <div className="relative overflow-hidden mesh-background">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
+        
+        {/* Floating elements */}
+        <div className="absolute top-32 left-[15%] w-64 h-64 bg-gradient-primary rounded-full blur-3xl opacity-10 animate-bounce-gentle"></div>
+        <div className="absolute bottom-32 right-[20%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-8 animate-bounce-gentle delay-1000"></div>
+        
+        <div className="relative section-padding">
+          <div className="container-wide">
+            <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
               
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+              {/* Left Content */}
+              <div className="text-center lg:text-left space-y-8">
+                <div className="space-y-6 animate-fade-in">
+                  <div className="inline-flex items-center gap-3 glass-card px-6 py-3 rounded-full border border-primary/30">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-bold text-primary tracking-wide">Welcome Back</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                  
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight text-balance">
+                    Your Leadership
+                    <br />
+                    <span className="gradient-text-primary">Journey Continues</span>
+                  </h1>
+                  
+                  <p className="text-xl text-muted-foreground leading-relaxed">
+                    Access your personalized leadership assessments, track your progress, and unlock deeper insights into your unique color profile.
+                  </p>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="grid grid-cols-3 gap-6 animate-fade-in delay-300">
+                  <div className="text-center">
+                    <Shield className="w-12 h-12 text-primary mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-foreground">Secure & Private</p>
+                    <p className="text-xs text-muted-foreground">Your data is protected</p>
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing In..." : "Sign In"}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    className="w-full text-sm" 
-                    onClick={handleResetPassword}
-                    disabled={resetLoading}
-                  >
-                    {resetLoading ? "Sending..." : "Forgot Password?"}
-                  </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
+                  <div className="text-center">
+                    <Sparkles className="w-12 h-12 text-green mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-foreground">Science-Based</p>
+                    <p className="text-xs text-muted-foreground">Research-backed insights</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                  <div className="text-center">
+                    <User className="w-12 h-12 text-yellow mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-foreground">Personalized</p>
+                    <p className="text-xs text-muted-foreground">Tailored to you</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Create a password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
+
+              {/* Right Auth Form */}
+              <div className="relative max-w-md mx-auto w-full animate-fade-in delay-200">
+                <div className="relative group">
+                  {/* Background glow */}
+                  <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                  
+                  {/* Main card */}
+                  <Card className="glass-card-strong rounded-3xl shadow-xl border-2 border-primary/20 relative hover-lift">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-blue">
+                        <img 
+                          src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+                          alt="RoleColor ™️ Finder" 
+                          className="w-8 h-auto"
+                        />
+                      </div>
+                      <CardTitle className="text-2xl font-bold">Welcome</CardTitle>
+                      <CardDescription className="text-base">
+                        Sign in to your account or create a new one
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent className="px-8 pb-8">
+                      <Tabs defaultValue="signin" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 rounded-xl">
+                          <TabsTrigger 
+                            value="signin" 
+                            className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md font-semibold"
+                          >
+                            Sign In
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="signup"
+                            className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md font-semibold"
+                          >
+                            Sign Up
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="signin" className="mt-6">
+                          <form onSubmit={handleSignIn} className="space-y-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="signin-email" className="text-sm font-semibold">Email</Label>
+                              <div className="relative">
+                                <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                  id="signin-email"
+                                  type="email"
+                                  placeholder="Enter your email"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="pl-10 py-3 rounded-xl border-2 focus:border-primary/50"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="signin-password" className="text-sm font-semibold">Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                  id="signin-password"
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder="Enter your password"
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  className="pl-10 pr-12 py-3 rounded-xl border-2 focus:border-primary/50"
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <Button 
+                              type="submit" 
+                              variant="hero" 
+                              size="lg" 
+                              className="w-full py-3 font-bold group" 
+                              disabled={loading}
+                            >
+                              {loading ? "Signing In..." : "Sign In"}
+                              {!loading && <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                            </Button>
+                            
+                            <Button 
+                              type="button" 
+                              variant="glass" 
+                              size="lg"
+                              className="w-full" 
+                              onClick={handleResetPassword}
+                              disabled={resetLoading}
+                            >
+                              {resetLoading ? "Sending..." : "Forgot Password?"}
+                            </Button>
+                          </form>
+                        </TabsContent>
+                        
+                        <TabsContent value="signup" className="mt-6">
+                          <form onSubmit={handleSignUp} className="space-y-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-name" className="text-sm font-semibold">Full Name</Label>
+                              <div className="relative">
+                                <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                  id="signup-name"
+                                  type="text"
+                                  placeholder="Enter your full name"
+                                  value={fullName}
+                                  onChange={(e) => setFullName(e.target.value)}
+                                  className="pl-10 py-3 rounded-xl border-2 focus:border-primary/50"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-email" className="text-sm font-semibold">Email</Label>
+                              <div className="relative">
+                                <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                  id="signup-email"
+                                  type="email"
+                                  placeholder="Enter your email"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="pl-10 py-3 rounded-xl border-2 focus:border-primary/50"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-password" className="text-sm font-semibold">Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                  id="signup-password"
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder="Create a password"
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  className="pl-10 pr-12 py-3 rounded-xl border-2 focus:border-primary/50"
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <Button 
+                              type="submit" 
+                              variant="hero" 
+                              size="lg" 
+                              className="w-full py-3 font-bold group" 
+                              disabled={loading}
+                            >
+                              {loading ? "Creating Account..." : "Create Account"}
+                              {!loading && <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                            </Button>
+                          </form>
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
