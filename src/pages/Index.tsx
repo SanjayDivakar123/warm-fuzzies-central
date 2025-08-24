@@ -276,7 +276,7 @@ const Index = () => {
           {/* Color Roles */}
           <div className="mb-16">
             <h3 className="text-3xl font-bold text-center text-foreground mb-8">
-              Our algorithm translates your answers into one of four <span className="bg-gradient-to-r from-blue to-green bg-clip-text text-transparent">Color Roles</span>:
+              Our algorithm translates your answers into one of four <span className="bg-gradient-to-r from-blue to-green bg-clip-text text-transparent">RoleColor ™️ Profiles</span>:
             </h3>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
