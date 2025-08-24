@@ -363,7 +363,7 @@ const Index = () => {
       </section>
 
       {/* Enhanced Footer */}
-      <footer className="bg-foreground text-background py-16">
+      <footer className="bg-footer text-background py-16">
         <div className="container-wide">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             

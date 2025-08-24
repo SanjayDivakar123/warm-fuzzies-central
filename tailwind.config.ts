@@ -92,7 +92,8 @@ export default {
 					light: 'hsl(var(--blue-light))',
 					dark: 'hsl(var(--blue-dark))',
 					glow: 'hsl(var(--blue-glow))'
-				}
+				},
+				footer: 'hsl(var(--footer))'
 			},
 			backgroundImage: {
 				'gradient-hero': 'var(--gradient-hero)',
