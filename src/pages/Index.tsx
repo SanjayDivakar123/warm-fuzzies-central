@@ -429,7 +429,7 @@ const Index = () => {
                 <img 
                   src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
                   alt="RoleColor ™️ Finder" 
-                  className="h-4 w-auto brightness-0 invert"
+                  className="h-4 w-auto"
                 />
                 <span>All rights reserved.</span>
               </div>
