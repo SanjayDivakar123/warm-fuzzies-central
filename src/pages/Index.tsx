@@ -32,15 +32,10 @@ const Index = () => {
             <div className="text-center lg:text-left space-y-10">
               
               <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-tight text-balance animate-fade-in">
-                Discover Your
+                12 Weeks. Faster Decisions.
                 <br />
-                <span className="gradient-text">Leadership Color</span>
+                <span className="gradient-text">Cleaner Handoffs. Stronger Pipeline.</span>
               </h1>
-              
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed text-balance animate-fade-in delay-200">
-                Leadership isn't one‑size‑fits‑all. Our fast, free quiz reveals how your natural style can 
-                <span className="text-foreground font-medium"> adapt and thrive</span> at every stage of a team's journey.
-              </p>
 
               {/* Enhanced Social Proof */}
               <div className="floating-card glass-card rounded-3xl p-6 border border-border/50 animate-fade-in delay-300">
@@ -76,6 +71,20 @@ const Index = () => {
                 >
                   Start Your Free Assessment
                   <div className="ml-3 w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="text-xl px-12 py-8 hover:scale-105 transition-all duration-300 border-2 border-white/30 text-white hover:bg-white/10" 
+                  asChild
+                >
+                  <a 
+                    href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    Book a 20-min Fit Call
+                  </a>
                 </Button>
               </div>
               
