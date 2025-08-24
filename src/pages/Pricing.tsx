@@ -67,9 +67,13 @@ export default function Pricing() {
       {/* Header */}
       <div className="bg-gradient-hero text-white py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
-            RoleColor ™️ Finder
-          </h1>
+          <div className="flex items-center justify-center mb-4 sm:mb-6">
+            <img 
+              src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+              alt="RoleColor ™️ Finder" 
+              className="h-12 sm:h-16 md:h-20 w-auto"
+            />
+          </div>
           <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
             Pricing Plans
           </p>
