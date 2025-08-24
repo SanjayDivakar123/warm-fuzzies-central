@@ -348,8 +348,11 @@ const Index = () => {
               <p className="text-lg text-muted-foreground mb-8">
                 Our team program is designed to help teams understand each other better, communicate more effectively, and achieve their goals faster.
               </p>
-              <Button variant="primary" size="lg" asChild>
-                <Link to="/team-program">Learn More About the Team Program</Link>
+              <Button variant="hero" size="lg" className="group" asChild>
+                <Link to="/team-program">
+                  Learn More About the Team Program
+                  <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
             </div>
             <div>
