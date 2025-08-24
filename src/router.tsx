@@ -17,6 +17,7 @@ import NotFound from "@/pages/NotFound";
 import Maintenance from "@/pages/Maintenance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TeamProgram from "@/pages/TeamProgram";
+import Sitemap from "@/pages/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
@@ -94,6 +95,10 @@ export const router = createBrowserRouter([
   {
     path: "/team-program",
     element: <Layout><TeamProgram /></Layout>,
+  },
+  {
+    path: "/sitemap",
+    element: <Layout><Sitemap /></Layout>,
   },
   {
     path: "*",
