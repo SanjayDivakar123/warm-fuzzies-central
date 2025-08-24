@@ -651,6 +651,94 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Team Program Section */}
+      <section className="py-32 px-4 bg-gradient-to-r from-primary/5 to-secondary/5 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-3 glass-card px-8 py-4 rounded-full border border-primary/20 mb-10">
+              <span className="text-sm font-bold text-primary tracking-wide uppercase">For Teams & Organizations</span>
+            </div>
+            
+            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 leading-tight text-balance">
+              Transform Your Entire Team's
+              <br />
+              <span className="gradient-text">Hiring & Development</span>
+            </h2>
+            
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed text-balance">
+              Go beyond individual assessments. Our 12-week Team Composition & Role Design Program maps your team's capabilities, identifies missing roles, and delivers everything you need to hire with confidence.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-16 items-center mb-16">
+            <div className="space-y-8">
+              <div className="glass-card rounded-3xl p-8 border border-border/50 shadow-elegant">
+                <h3 className="text-2xl font-bold text-foreground mb-6">What You Get in 12 Weeks</h3>
+                <div className="space-y-4">
+                  {[
+                    "Team Capability Map & Gap Analysis",
+                    "Future Org Blueprint & Role Design",
+                    "Hiring Scorecards & Interview Kits",
+                    "Ready-to-Publish Job Listings",
+                    "30-60-90 Onboarding Plans"
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <span className="text-foreground">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="glass-card rounded-3xl p-8 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-foreground">Custom Pricing</h4>
+                    <p className="text-sm text-muted-foreground">Starting at $20k for small teams</p>
+                  </div>
+                </div>
+                <p className="text-foreground">
+                  Scales with your organization size — from startups to enterprises with 100,000+ employees.
+                </p>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <div className="glass-card rounded-3xl p-8 shadow-elegant border border-border/50">
+                <div className="text-center space-y-6">
+                  <div className="w-20 h-20 bg-gradient-brand rounded-full flex items-center justify-center mx-auto shadow-colorful">
+                    <Target className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">The Result</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    A clear view of current capabilities, agreed-upon gaps, and ready-to-hire roles with everything your hiring team needs to succeed.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button variant="default" size="lg" className="flex-1" asChild>
+                      <Link to="/team-program">
+                        Learn More
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="lg" className="flex-1" asChild>
+                      <a 
+                        href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Book Fit Call
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>

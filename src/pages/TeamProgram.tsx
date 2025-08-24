@@ -225,11 +225,22 @@ const TeamProgram = () => {
 
         {/* CTA Section */}
         <div className="text-center">
-          <Button variant="default" size="lg" className="px-8" asChild>
-            <a href={`mailto:sanjay@rolecolorfinder.com?subject=Team Composition & Role Design Program Inquiry&body=Hi Sanjay,%0D%0A%0D%0AI'm interested in the 12-Week Team Composition & Role Design Program.%0D%0A%0D%0AOrganization Details:%0D%0A- Number of employees: ${employeeCount[0].toLocaleString()}%0D%0A- Estimated program cost: ${formatPrice(price)}%0D%0A%0D%0AI'd like to discuss how this program can help us map our team's capabilities, identify missing roles, and create a ready-to-hire package.%0D%0A%0D%0APlease let me know your availability for a consultation.%0D%0A%0D%0ABest regards`}>
-              Contact Sanjay to Get Started
-            </a>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+            <Button variant="default" size="lg" className="px-8" asChild>
+              <a 
+                href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Book a 20-min Fit Call
+              </a>
+            </Button>
+            <Button variant="outline" size="lg" className="px-8" asChild>
+              <a href={`mailto:sanjay@rolecolorfinder.com?subject=Team Composition & Role Design Program Inquiry&body=Hi Sanjay,%0D%0A%0D%0AI'm interested in the 12-Week Team Composition & Role Design Program.%0D%0A%0D%0AOrganization Details:%0D%0A- Number of employees: ${employeeCount[0].toLocaleString()}%0D%0A- Estimated program cost: ${formatPrice(price)}%0D%0A%0D%0AI'd like to discuss how this program can help us map our team's capabilities, identify missing roles, and create a ready-to-hire package.%0D%0A%0D%0APlease let me know your availability for a consultation.%0D%0A%0D%0ABest regards`}>
+                Contact Sanjay to Get Started
+              </a>
+            </Button>
+          </div>
           
           {/* Brochure Download */}
           <div className="mt-4">
