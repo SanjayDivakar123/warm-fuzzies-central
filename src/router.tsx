@@ -17,78 +17,86 @@ import NotFound from "@/pages/NotFound";
 import Maintenance from "@/pages/Maintenance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TeamProgram from "@/pages/TeamProgram";
+import ScrollToTop from "@/components/ScrollToTop";
+
+const Layout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    <ScrollToTop />
+    {children}
+  </>
+);
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Index />,
+    element: <Layout><Index /></Layout>,
   },
   {
     path: "/auth",
-    element: <Auth />,
+    element: <Layout><Auth /></Layout>,
   },
   {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: <Layout><Dashboard /></Layout>,
   },
   {
     path: "/free-assessment",
-    element: <FreeAssessment />,
+    element: <Layout><FreeAssessment /></Layout>,
   },
   {
     path: "/free-results",
-    element: <FreeResults />,
+    element: <Layout><FreeResults /></Layout>,
   },
   {
     path: "/premium-assessment",
-    element: <PremiumAssessment />,
+    element: <Layout><PremiumAssessment /></Layout>,
   },
   {
     path: "/premium-results",
-    element: <PremiumResults />,
+    element: <Layout><PremiumResults /></Layout>,
   },
   {
     path: "/pro-assessment",
-    element: <ProAssessment />,
+    element: <Layout><ProAssessment /></Layout>,
   },
   {
     path: "/pro-results",
-    element: <ProResults />,
+    element: <Layout><ProResults /></Layout>,
   },
   {
     path: "/payment-success",
-    element: <PaymentSuccess />,
+    element: <Layout><PaymentSuccess /></Layout>,
   },
   {
     path: "/pricing",
-    element: <Pricing />,
+    element: <Layout><Pricing /></Layout>,
   },
   {
     path: "/quiz",
-    element: <Quiz />,
+    element: <Layout><Quiz /></Layout>,
   },
   {
     path: "/results",
-    element: <Results />,
+    element: <Layout><Results /></Layout>,
   },
   {
     path: "/reset-password",
-    element: <ResetPassword />,
+    element: <Layout><ResetPassword /></Layout>,
   },
   {
     path: "/maintenance",
-    element: <Maintenance />,
+    element: <Layout><Maintenance /></Layout>,
   },
   {
     path: "/privacy-policy",
-    element: <PrivacyPolicy />,
+    element: <Layout><PrivacyPolicy /></Layout>,
   },
   {
     path: "/team-program",
-    element: <TeamProgram />,
+    element: <Layout><TeamProgram /></Layout>,
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: <Layout><NotFound /></Layout>,
   },
 ]);
