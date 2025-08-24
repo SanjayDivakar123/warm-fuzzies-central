@@ -162,39 +162,15 @@ export default {
 				},
 				'glow-pulse': {
 					'0%, 100%': { 
-						boxShadow: '0 0 20px hsl(var(--blue-glow) / 0.4), 0 0 40px hsl(var(--green-glow) / 0.2), 0 0 60px hsl(var(--yellow-glow) / 0.1)' 
-					},
-					'33%': { 
-						boxShadow: '0 0 30px hsl(var(--green-glow) / 0.5), 0 0 50px hsl(var(--yellow-glow) / 0.3), 0 0 70px hsl(var(--red-glow) / 0.1)' 
-					},
-					'66%': { 
-						boxShadow: '0 0 35px hsl(var(--red-glow) / 0.5), 0 0 55px hsl(var(--blue-glow) / 0.3), 0 0 75px hsl(var(--green-glow) / 0.1)' 
-					}
-				},
-				'rainbow-spin': {
-					'0%': { background: 'var(--gradient-red)' },
-					'25%': { background: 'var(--gradient-yellow)' },
-					'50%': { background: 'var(--gradient-green)' },
-					'75%': { background: 'var(--gradient-blue)' },
-					'100%': { background: 'var(--gradient-red)' }
-				},
-				'float-colorful': {
-					'0%, 100%': { 
-						transform: 'translateY(0px) rotate(0deg)',
-						filter: 'hue-rotate(0deg)'
-					},
-					'25%': { 
-						transform: 'translateY(-10px) rotate(90deg)',
-						filter: 'hue-rotate(90deg)'
+						boxShadow: '0 0 15px hsl(var(--primary) / 0.2)' 
 					},
 					'50%': { 
-						transform: 'translateY(-5px) rotate(180deg)',
-						filter: 'hue-rotate(180deg)'
-					},
-					'75%': { 
-						transform: 'translateY(-15px) rotate(270deg)',
-						filter: 'hue-rotate(270deg)'
+						boxShadow: '0 0 25px hsl(var(--primary) / 0.3)' 
 					}
+				},
+				'gentle-bounce': {
+					'0%, 100%': { transform: 'translateY(0px)' },
+					'50%': { transform: 'translateY(-5px)' }
 				}
 			},
 			animation: {
@@ -207,9 +183,8 @@ export default {
 				'slide-in-right': 'slide-in-right 0.3s ease-out',
 				'slide-out-right': 'slide-out-right 0.3s ease-out',
 				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
-				'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
-				'rainbow-spin': 'rainbow-spin 4s ease-in-out infinite',
-				'float-colorful': 'float-colorful 6s ease-in-out infinite'
+				'glow-pulse': 'glow-pulse 4s ease-in-out infinite',
+				'gentle-bounce': 'gentle-bounce 3s ease-in-out infinite'
 			}
 		}
 	},
