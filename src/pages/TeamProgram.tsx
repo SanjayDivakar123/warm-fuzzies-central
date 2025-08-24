@@ -252,7 +252,12 @@ const TeamProgram = () => {
                 className="flex items-center gap-2"
               >
                 <FileText className="w-4 h-4" />
-                Download: Why Every Team Needs RoleColorFinder
+                Download: Why Every Team Needs 
+                <img 
+                  src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+                  alt="RoleColor ™️ Finder" 
+                  className="h-4 w-auto inline"
+                />
               </a>
             </Button>
           </div>

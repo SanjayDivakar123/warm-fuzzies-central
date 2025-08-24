@@ -123,7 +123,12 @@ const Index = () => {
                     className="flex items-center gap-4"
                   >
                     <FileText className="w-6 h-6" />
-                    Download: Why Every Team Needs RoleColorFinder
+                    Download: Why Every Team Needs 
+                    <img 
+                      src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+                      alt="RoleColor ™️ Finder" 
+                      className="h-5 w-auto inline"
+                    />
                   </a>
                 </Button>
               </div>
