@@ -34,7 +34,7 @@ const Index = () => {
               <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-tight text-balance animate-fade-in">
                 12 Weeks. Faster Decisions.
                 <br />
-                <span className="gradient-text">Cleaner Handoffs. Stronger Pipeline.</span>
+                <span className="gradient-text text-4xl md:text-6xl">Cleaner Handoffs. Stronger Pipeline.</span>
               </h1>
 
               {/* Enhanced Social Proof */}
