@@ -3,79 +3,98 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText } from "lucide-react";
+import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
+
 const Index = () => {
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
-  return <div className="min-h-screen bg-background">
+  const { user } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-32 px-4 mesh-background">
-        <div className="absolute inset-0 bg-gradient-to-br from-background/90 to-background/60"></div>
+      {/* Hero Section - Completely Redesigned */}
+      <section className="relative section-padding overflow-hidden mesh-background">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
         
-        {/* Enhanced floating elements */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-red/20 rounded-full blur-3xl animate-bounce-gentle"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-blue/20 rounded-full blur-2xl animate-bounce-gentle delay-1000"></div>
-        <div className="absolute bottom-32 left-1/4 w-16 h-16 bg-green/20 rounded-full blur-xl animate-bounce-gentle delay-500"></div>
-        <div className="absolute bottom-20 right-1/3 w-20 h-20 bg-yellow/20 rounded-full blur-2xl animate-bounce-gentle delay-1500"></div>
+        {/* Modern floating elements */}
+        <div className="absolute top-32 left-[10%] w-64 h-64 bg-gradient-primary rounded-full blur-3xl opacity-20 animate-bounce-gentle"></div>
+        <div className="absolute bottom-32 right-[15%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-15 animate-bounce-gentle delay-1000"></div>
+        <div className="absolute top-48 right-[25%] w-32 h-32 bg-gradient-yellow rounded-full blur-xl opacity-10 animate-bounce-gentle delay-500"></div>
         
-        <div className="relative max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            {/* Left Content */}
-            <div className="text-center lg:text-left space-y-10">
+        <div className="relative container-wide">
+          <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
+            
+            {/* Left Content - Enhanced */}
+            <div className="text-center lg:text-left space-y-12">
               
-              <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-tight text-balance animate-fade-in">
-                12 Weeks. Faster Decisions.
-                <br />
-                <span className="gradient-text text-4xl md:text-6xl leading-tight">Cleaner Handoffs. Stronger Pipeline.</span>
-              </h1>
+              {/* Badge */}
+              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border border-primary/30 animate-fade-in">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-sm font-bold text-primary tracking-wide">Patent Pending System</span>
+              </div>
+              
+              {/* Main Headline */}
+              <div className="space-y-6 animate-fade-in delay-200">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight text-balance">
+                  12 Weeks.
+                  <br />
+                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-muted-foreground">Faster Decisions.</span>
+                  <br />
+                  <span className="gradient-text-primary text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold">Cleaner Handoffs.</span>
+                  <br />
+                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-foreground">Stronger Pipeline.</span>
+                </h1>
+              </div>
 
               {/* Enhanced Social Proof */}
-              <div className="floating-card glass-card rounded-3xl p-6 border border-border/50 animate-fade-in delay-300">
-                <div className="flex items-center justify-center lg:justify-start gap-6">
-                  <div className="flex -space-x-3">
+              <div className="glass-card-strong rounded-2xl p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
+                <div className="flex items-center justify-center lg:justify-start gap-8">
+                  <div className="flex -space-x-4">
                     {[
                       'from-red to-red-glow',
                       'from-green to-green-glow', 
                       'from-yellow to-yellow-glow',
                       'from-blue to-blue-glow'
                     ].map((gradient, i) => (
-                      <div key={i} className={`w-12 h-12 rounded-full bg-gradient-to-r ${gradient} border-3 border-background shadow-colorful animate-glow-pulse delay-${i * 200}`}></div>
+                      <div key={i} className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} border-4 border-background shadow-xl hover-lift`}></div>
                     ))}
                   </div>
                   <div className="text-left">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-yellow text-xl">⭐⭐⭐⭐⭐</span>
-                      <span className="text-lg font-bold text-foreground">4.8/5</span>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-6 h-6 fill-yellow text-yellow" />
+                        ))}
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">4.8/5</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      "Finally, a quiz that doesn't put me in a box!" • 3 min quiz
+                    <p className="text-lg text-muted-foreground font-medium">
+                      "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold">• 3 min quiz</span>
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-6 animate-fade-in delay-500">
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-6 animate-fade-in delay-600">
                 <Button 
                   variant="hero" 
-                  size="lg" 
-                  className="text-xl px-12 py-8 hover:scale-105 transition-all duration-300 shadow-colorful hover:shadow-glow" 
+                  size="xl" 
+                  className="text-xl px-12 py-6 font-bold group" 
                   onClick={() => navigate('/free-assessment')}
                 >
                   Start Your Free Assessment
-                  <div className="ml-3 w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                  <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="text-xl px-12 py-8 hover:scale-105 transition-all duration-300 border-2 border-primary text-primary hover:bg-primary hover:text-white" 
+                  variant="modern" 
+                  size="xl" 
+                  className="text-xl px-12 py-6 font-semibold" 
                   asChild
                 >
                   <a 
@@ -83,68 +102,93 @@ const Index = () => {
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
+                    <Clock className="mr-3 w-6 h-6" />
                     Book a 20-min Fit Call
                   </a>
                 </Button>
               </div>
               
               {/* Brochure Download */}
-              <div className="mt-8 animate-fade-in delay-700">
+              <div className="animate-fade-in delay-800">
                 <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-sm px-8 py-4 border-2 border-primary/30 text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300" 
+                  variant="glass" 
+                  size="lg" 
+                  className="text-base px-8 py-4 hover-lift" 
                   asChild
                 >
                   <a 
                     href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3"
+                    className="flex items-center gap-4"
                   >
-                    <FileText className="w-5 h-5" />
+                    <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs RoleColorFinder
                   </a>
                 </Button>
               </div>
             </div>
 
-            {/* Right Visual - Enhanced */}
-            <div className="relative max-w-lg mx-auto animate-fade-in delay-400">
-              <div className="relative group floating-card">
-                {/* Enhanced background glow */}
-                <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 animate-glow-pulse"></div>
+            {/* Right Visual - Completely Redesigned */}
+            <div className="relative max-w-2xl mx-auto animate-fade-in delay-400">
+              <div className="relative group">
+                
+                {/* Background gradient orb */}
+                <div className="absolute inset-0 bg-gradient-hero rounded-3xl blur-3xl opacity-40 group-hover:opacity-60 transition-all duration-700 animate-glow-pulse scale-110"></div>
                 
                 {/* Main card */}
-                <div className="glass-card rounded-3xl p-10 shadow-elegant hover:shadow-colorful transition-all duration-500 relative border-2 border-white/30">
-                  <div className="text-center space-y-8">
-                    {/* Logo container */}
-                    <div className="relative">
-                      <div className="w-40 h-40 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center mx-auto border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-blue">
-                        <img 
-                          src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
-                          alt="RoleColor ™️ Finder"
-                          className="w-20 h-auto"
-                        />
-                      </div>
-                      
-                      {/* Enhanced accent dots */}
-                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-red rounded-full opacity-80 animate-bounce-gentle"></div>
-                      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-green rounded-full opacity-80 animate-bounce-gentle delay-1000"></div>
+                <div className="glass-card-strong rounded-3xl p-12 shadow-xl hover:shadow-2xl transition-all duration-700 relative border-2 border-primary/30 group-hover:border-primary/50 hover-lift">
+                  
+                  {/* Logo container with enhanced styling */}
+                  <div className="relative mb-10">
+                    <div className="w-48 h-48 bg-gradient-to-br from-card via-background to-accent/20 rounded-3xl flex items-center justify-center mx-auto border-3 border-primary/40 shadow-colorful hover:shadow-glow transition-all duration-500 hover:scale-105">
+                      <img 
+                        src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
+                        alt="RoleColor ™️ Finder"
+                        className="w-24 h-auto filter drop-shadow-lg"
+                      />
                     </div>
                     
-                    <div className="space-y-4">
-                      <h3 className="text-2xl font-bold text-foreground">Discover Your Colors</h3>
-                      <p className="text-muted-foreground text-base leading-relaxed">
+                    {/* Floating accent elements */}
+                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-red rounded-full opacity-90 animate-bounce-gentle shadow-lg"></div>
+                    <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-gradient-green rounded-full opacity-90 animate-bounce-gentle delay-1000 shadow-lg"></div>
+                    <div className="absolute top-1/2 -right-8 w-6 h-6 bg-gradient-yellow rounded-full opacity-80 animate-bounce-gentle delay-500 shadow-md"></div>
+                    <div className="absolute top-1/4 -left-6 w-6 h-6 bg-gradient-blue rounded-full opacity-80 animate-bounce-gentle delay-1500 shadow-md"></div>
+                  </div>
+                  
+                  <div className="space-y-8 text-center">
+                    <div>
+                      <h3 className="text-3xl font-bold text-foreground mb-4">Discover Your Colors</h3>
+                      <p className="text-xl text-muted-foreground leading-relaxed">
                         Take our assessment to reveal your unique color profile and unlock your leadership potential
                       </p>
                     </div>
 
-                    {/* Enhanced progress indicator */}
-                    <div className="flex justify-center gap-2">
+                    {/* Enhanced progress dots */}
+                    <div className="flex justify-center gap-3">
                       {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="w-2 h-2 bg-primary/80 rounded-full animate-pulse" style={{animationDelay: `${i * 200}ms`}}></div>
+                        <div 
+                          key={i} 
+                          className="w-3 h-3 bg-gradient-primary rounded-full animate-pulse shadow-blue" 
+                          style={{animationDelay: `${i * 300}ms`}}
+                        ></div>
                       ))}
+                    </div>
+                    
+                    {/* Trust indicators */}
+                    <div className="flex justify-center gap-8 pt-6 border-t border-border/30">
+                      <div className="text-center">
+                        <Shield className="w-8 h-8 text-green mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground font-medium">Secure</p>
+                      </div>
+                      <div className="text-center">
+                        <Clock className="w-8 h-8 text-blue mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground font-medium">3 Minutes</p>
+                      </div>
+                      <div className="text-center">
+                        <Sparkles className="w-8 h-8 text-yellow mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground font-medium">Free</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -154,633 +198,170 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Our Philosophy Section */}
-      <section className="py-32 px-4 bg-background relative overflow-hidden">
-        {/* Enhanced background pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-mesh"></div>
-        </div>
+      {/* Philosophy Section - Enhanced */}
+      <section className="section-padding bg-gradient-soft relative overflow-hidden">
         
-        <div className="max-w-7xl mx-auto relative">
-          <div className="text-center mb-24 animate-fade-in">
-            <div className="inline-flex items-center gap-3 glass-card px-8 py-4 rounded-full border border-primary/20 mb-10">
-              <span className="text-sm font-bold text-primary tracking-wide uppercase">Our Philosophy</span>
-            </div>
+        <div className="container-wide relative">
+          <div className="text-center mb-20 animate-fade-in">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
+              Our Philosophy
+            </Badge>
             
-            <h2 className="text-6xl md:text-7xl font-bold text-foreground mb-10 leading-tight text-balance">
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground mb-12 leading-tight text-balance">
               Great teams don't just happen.
               <br />
-              <span className="gradient-text">They grow through stages.</span>
+              <span className="gradient-text-primary font-bold">They grow through stages.</span>
             </h2>
             
-            <div className="max-w-5xl mx-auto">
-              <blockquote className="text-3xl md:text-4xl font-light text-muted-foreground mb-8 leading-relaxed italic text-balance">
+            <div className="max-w-6xl mx-auto">
+              <blockquote className="text-2xl md:text-4xl lg:text-5xl font-light text-muted-foreground mb-10 leading-relaxed italic text-balance">
                 "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
               </blockquote>
-              <cite className="text-primary font-semibold text-lg">— Bruce Tuckman, developer of the team development model</cite>
+              <cite className="text-primary font-bold text-xl">— Bruce Tuckman, developer of the team development model</cite>
             </div>
           </div>
 
-          <div className="max-w-6xl mx-auto mb-24">
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div className="space-y-10 animate-fade-in delay-200">
-                <div className="glass-card rounded-3xl p-10 border border-border/50 shadow-elegant hover:shadow-colorful transition-all duration-500">
-                  <h3 className="text-3xl font-bold text-foreground mb-6">Contextual Leadership</h3>
+          <div className="max-w-7xl mx-auto mb-24">
+            <div className="grid lg:grid-cols-2 gap-20 items-center">
+              <div className="space-y-12 animate-fade-in delay-200">
+                <div className="glass-card-strong rounded-3xl p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
+                  <h3 className="text-4xl font-bold text-foreground mb-8">Contextual Leadership</h3>
                   <p className="text-xl text-muted-foreground leading-relaxed">
-                    We believe in <strong className="text-foreground">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+                    We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                   </p>
                 </div>
                 
-                <div className="glass-card rounded-3xl p-10 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+                <div className="glass-card-strong rounded-3xl p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
                   <p className="text-xl text-foreground leading-relaxed">
                     Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
-                    <strong className="gradient-text text-2xl"> effective leaders adapt, they don't impose.</strong>
+                    <strong className="gradient-text-primary text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
                   </p>
                 </div>
               </div>
               
               <div className="relative animate-fade-in delay-400">
-                <img 
-                  src={professionalTeamImage} 
-                  alt="Professional team collaboration" 
-                  className="rounded-3xl shadow-elegant w-full h-auto floating-card"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-3xl"></div>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                  <img 
+                    src={professionalTeamImage} 
+                    alt="Professional team collaboration" 
+                    className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent rounded-3xl z-20"></div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* How Our Idea Works */}
+          {/* How Our Idea Works - Enhanced */}
           <div className="mb-20">
-            <h3 className="text-4xl font-bold text-center text-foreground mb-10">
-              Here's how our <span className="gradient-text">patent pending</span> idea works:
-            </h3>
-            
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-3 glass-card px-6 py-3 rounded-full border border-accent/40">
-                <span className="text-sm font-bold text-accent">🔬 Patent Pending System</span>
-              </div>
+            <div className="text-center mb-16">
+              <h3 className="text-3xl md:text-5xl font-bold text-foreground mb-8">
+                Here's how our <span className="gradient-text-primary">patent pending</span> idea works:
+              </h3>
+              
+              <Badge variant="outline" className="text-lg px-8 py-4 border-primary/40 text-primary font-bold">
+                🔬 Patent Pending System
+              </Badge>
             </div>
             
-            <div className="glass-card rounded-3xl p-12 border border-border shadow-elegant mb-16">
-              <p className="text-xl text-foreground mb-12 leading-relaxed text-center text-balance">
+            <div className="glass-card-strong rounded-3xl p-16 border border-primary/20 shadow-elegant mb-20 hover-lift">
+              <p className="text-2xl text-foreground mb-16 leading-relaxed text-center text-balance font-medium">
                 Every user takes a 25-question diagnostic designed around real group psychology, especially Tuckman's Five Stages of Team Development:
               </p>
               
-              <div className="grid md:grid-cols-5 gap-8">
-                <div className="text-center floating-card">
-                  <div className="w-20 h-20 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-4 shadow-red">
-                    <Users className="w-10 h-10 text-white" />
+              <div className="grid md:grid-cols-5 gap-8 mb-16">
+                {[
+                  { icon: Users, color: 'red', title: 'Forming', desc: 'Building connection' },
+                  { icon: Zap, color: 'yellow', title: 'Storming', desc: 'Navigating friction' },
+                  { icon: Settings, color: 'green', title: 'Norming', desc: 'Establishing flow' },
+                  { icon: TrendingUp, color: 'blue', title: 'Performing', desc: 'Reaching peak productivity' },
+                  { icon: CheckCircle, color: 'brand', title: 'Adjourning', desc: 'Ending with clarity' }
+                ].map((stage, i) => (
+                  <div key={i} className="text-center hover-lift">
+                    <div className={`w-24 h-24 bg-gradient-${stage.color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-${stage.color} hover:scale-110 transition-transform duration-300`}>
+                      <stage.icon className="w-12 h-12 text-white" />
+                    </div>
+                    <h4 className="font-bold text-foreground mb-3 text-xl">{stage.title}</h4>
+                    <p className="text-base text-muted-foreground">{stage.desc}</p>
                   </div>
-                  <h4 className="font-bold text-foreground mb-3 text-lg">Forming</h4>
-                  <p className="text-sm text-muted-foreground">Building connection</p>
-                </div>
-                <div className="text-center floating-card">
-                  <div className="w-20 h-20 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-yellow">
-                    <Zap className="w-10 h-10 text-white" />
-                  </div>
-                  <h4 className="font-bold text-foreground mb-3 text-lg">Storming</h4>
-                  <p className="text-sm text-muted-foreground">Navigating friction</p>
-                </div>
-                <div className="text-center floating-card">
-                  <div className="w-20 h-20 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-4 shadow-green">
-                    <Settings className="w-10 h-10 text-white" />
-                  </div>
-                  <h4 className="font-bold text-foreground mb-3 text-lg">Norming</h4>
-                  <p className="text-sm text-muted-foreground">Establishing flow</p>
-                </div>
-                <div className="text-center floating-card">
-                  <div className="w-20 h-20 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-blue">
-                    <TrendingUp className="w-10 h-10 text-white" />
-                  </div>
-                  <h4 className="font-bold text-foreground mb-3 text-lg">Performing</h4>
-                  <p className="text-sm text-muted-foreground">Reaching peak productivity</p>
-                </div>
-                <div className="text-center floating-card">
-                  <div className="w-20 h-20 bg-gradient-brand rounded-full flex items-center justify-center mx-auto mb-4 shadow-colorful">
-                    <CheckCircle className="w-10 h-10 text-white" />
-                  </div>
-                  <h4 className="font-bold text-foreground mb-3 text-lg">Adjourning</h4>
-                  <p className="text-sm text-muted-foreground">Ending with clarity and reflection</p>
-                </div>
+                ))}
               </div>
 
-              <p className="text-xl text-foreground mt-12 text-center leading-relaxed text-balance">
+              <p className="text-xl text-foreground text-center leading-relaxed text-balance font-medium">
                 At each of these stages, teams need different kinds of leadership.<br />
                 Sometimes they need decisive action. Sometimes they need creative vision. Sometimes they need systematic planning.<br />
-                <strong>Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
+                <strong className="gradient-text-primary text-2xl block mt-6">Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
               </p>
             </div>
           </div>
 
-          {/* Color Roles */}
-          <div className="mb-16">
-            <h3 className="text-3xl font-bold text-center text-foreground mb-8">
-              Our algorithm translates your answers into one of four <span className="bg-gradient-to-r from-blue to-green bg-clip-text text-transparent">RoleColor ™️ Profiles</span>:
+          {/* Color Roles - Enhanced */}
+          <div className="mb-20">
+            <h3 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
+              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor ™️ Profiles</span>:
             </h3>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-yellow/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
-                <div className="w-12 h-12 bg-gradient-yellow rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                  <Target className="w-6 h-6 text-white" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+              {[
+                { icon: Target, color: 'yellow', name: 'Yellow', desc: 'Action-first executors (founders, builders, PMs)', gradient: 'gradient-yellow' },
+                { icon: Heart, color: 'red', name: 'Red', desc: 'Vision-driven motivators (speakers, creatives, brand builders)', gradient: 'gradient-red' },
+                { icon: Brain, color: 'green', name: 'Green', desc: 'Logic-based architects (analysts, engineers, operators)', gradient: 'gradient-green' },
+                { icon: Lightbulb, color: 'blue', name: 'Blue', desc: 'Innovation-focused visionaries (strategists, designers, researchers)', gradient: 'gradient-blue' }
+              ].map((role, i) => (
+                <div key={i} className="glass-card rounded-2xl p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
+                  <div className={`w-16 h-16 bg-${role.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-${role.color}`}>
+                    <role.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h4 className={`font-bold text-${role.color} mb-4 text-xl group-hover:text-${role.color}/80 transition-colors duration-300`}>{role.name}</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">{role.desc}</p>
                 </div>
-                <h4 className="font-bold text-yellow-600 mb-2 group-hover:text-yellow-500 transition-colors duration-300">Yellow</h4>
-                <p className="text-sm text-muted-foreground">Action-first executors (founders, builders, PMs)</p>
-              </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-red/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
-                <div className="w-12 h-12 bg-gradient-red rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-bold text-red-600 mb-2 group-hover:text-red-500 transition-colors duration-300">Red</h4>
-                <p className="text-sm text-muted-foreground">Vision-driven motivators (speakers, creatives, brand builders)</p>
-              </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-green/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
-                <div className="w-12 h-12 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                  <Brain className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-bold text-green-600 mb-2 group-hover:text-green-500 transition-colors duration-300">Green</h4>
-                <p className="text-sm text-muted-foreground">Logic-based architects (analysts, engineers, operators)</p>
-              </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center hover:border-blue/50 transition-all duration-300 hover:scale-105 hover:shadow-lg group">
-                <div className="w-12 h-12 bg-gradient-blue rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <h4 className="font-bold text-blue-600 mb-2 group-hover:text-blue-500 transition-colors duration-300">Blue</h4>
-                <p className="text-sm text-muted-foreground">People-first supporters (coaches, HR, community builders)</p>
-              </div>
+              ))}
             </div>
-          </div>
 
-          {/* What Role Color Finder Reveals */}
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 border border-border mb-16">
-            <h3 className="text-2xl font-bold text-center text-foreground mb-8">
-              But more than just a "you are this" label, RoleColor ™️ Finder also reveals:
-            </h3>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-3">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-sm text-foreground font-medium">How to adapt your leadership style contextually</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-sm text-foreground font-medium">Which roles match your natural wiring</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-sm text-foreground font-medium">When to lead vs. when to support in team stages</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-muted-foreground rounded-full flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-sm text-foreground font-medium">Where you'll likely struggle and grow</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Final Message */}
-          <div className="text-center">
-            <p className="text-lg text-foreground mb-6 leading-relaxed">
-              We created this to help you master <strong>Contextual Leadership</strong> — knowing how to adapt your natural strengths to what teams need at different stages and situations.
-            </p>
-            <div className="bg-card rounded-xl p-6 border border-border inline-block">
-              <p className="text-xl font-bold text-foreground mb-2">Because leadership isn't a fixed identity.</p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">It's adapting your strengths to what a team needs at each stage.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Personalization & Color Details Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              <span className="bg-gradient-to-r from-red to-yellow bg-clip-text text-transparent">Personalized</span> Just for You
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We DON'T USE AI AT ALL. Our assessment uses proven psychological frameworks to create your customized profile based on established personality science.
-            </p>
-          </div>
-
-          {/* How We Personalize */}
-          <div className="grid md:grid-cols-2 gap-12 mb-20">
-            <div className="space-y-6">
-              <h3 className="text-3xl font-bold text-foreground mb-6">How Your Results Are Tailored</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-red rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Brain className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground mb-1">Human Psychology Analysis</h4>
-                    <p className="text-muted-foreground text-sm">We analyze patterns based on established psychological research, not AI algorithms</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-blue rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Target className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground mb-1">Context-Aware Insights</h4>
-                    <p className="text-muted-foreground text-sm">Results consider your industry, experience level, and career stage</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-green rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Settings className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground mb-1">Dynamic Recommendations</h4>
-                    <p className="text-muted-foreground text-sm">Career paths and growth strategies adapt to your unique color blend</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-              <h4 className="text-xl font-bold text-foreground mb-4 text-center">What You'll Receive</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Personal color intensity scores (0-100)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Custom archetype combination analysis</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Industry-specific role recommendations</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Leadership style breakdown</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Communication preferences guide</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Stress triggers & management tips</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Detailed Color Explanations */}
-          <div className="mb-16">
-            <h3 className="text-3xl font-bold text-center text-foreground mb-12">
-              <span className="bg-gradient-to-r from-blue to-green bg-clip-text text-transparent">Understanding</span> Your Colors
-            </h3>
-            <div className="grid lg:grid-cols-2 gap-8">
-              
-              {/* Red - Expressive */}
-              <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-red rounded-2xl flex items-center justify-center shadow-colorful shadow-red/30">
-                    <Heart className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-bold text-foreground">Red - The Expressive</h4>
-                    <p className="text-muted-foreground font-medium">Humorous • Fun • Highly Extroverted</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Core Strengths:</h5>
-                    <p className="text-sm text-muted-foreground">Natural entertainers and people-pleasers who bring energy and joy to any environment. Excel at building rapport, lightening moods, and making work enjoyable. Highly charismatic but struggle with serious matters.</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Ideal Roles:</h5>
-                    <p className="text-sm text-muted-foreground">Entertainment Host, Sales Representative, Event Coordinator, Social Media Manager, Public Relations Specialist, Team Morale Coordinator</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Growth Areas:</h5>
-                    <p className="text-sm text-muted-foreground">Taking serious matters seriously, attention to detail, following through on commitments, professional boundaries</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Blue - Analytical */}
-              <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-blue rounded-2xl flex items-center justify-center shadow-colorful shadow-blue/30">
-                    <Brain className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-bold text-foreground">Blue - The Amiable</h4>
-                    <p className="text-muted-foreground font-medium">Kind • Extroverted • People-focused</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Core Strengths:</h5>
-                    <p className="text-sm text-muted-foreground">Natural people-pleasers who excel at building relationships and creating positive environments. Highly empathetic leaders who motivate through kindness and genuine care for others.</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Ideal Roles:</h5>
-                    <p className="text-sm text-muted-foreground">Team Leader, Human Resources Director, Customer Relations Manager, Social Coordinator, Mentor, Community Manager</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Growth Areas:</h5>
-                    <p className="text-sm text-muted-foreground">Setting firm boundaries, making tough decisions, managing conflict, assertiveness training</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Yellow - CEO */}
-              <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-yellow rounded-2xl flex items-center justify-center shadow-colorful shadow-yellow/30">
-                    <Target className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-bold text-foreground">Yellow - The CEO</h4>
-                    <p className="text-muted-foreground font-medium">Result-oriented • Perfect • Visionary Leader</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Core Strengths:</h5>
-                    <p className="text-sm text-muted-foreground">Natural communicators with infectious enthusiasm. Excel at inspiring others and building relationships. Highly creative with strong presentation and persuasion skills.</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Ideal Roles:</h5>
-                    <p className="text-sm text-muted-foreground">Marketing Director, Public Speaker, Creative Director, Sales Leader, Event Manager, Brand Ambassador</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Growth Areas:</h5>
-                    <p className="text-sm text-muted-foreground">Follow-through on details, time management, listening skills, handling criticism constructively</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Green - Amiable */}
-              <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-green rounded-2xl flex items-center justify-center shadow-colorful shadow-green/30">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-bold text-foreground">Green - The Analytical</h4>
-                    <p className="text-muted-foreground font-medium">Nerdy • Introverted • Detail-oriented</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Core Strengths:</h5>
-                    <p className="text-sm text-muted-foreground">Deep thinkers who excel in complex problem-solving and technical expertise. Prefer working independently or in small teams. Highly focused on accuracy and logical analysis over social interactions.</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Ideal Roles:</h5>
-                    <p className="text-sm text-muted-foreground">Software Developer, Research Scientist, Data Analyst, Technical Writer, Engineer, Laboratory Specialist</p>
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground mb-2">Growth Areas:</h5>
-                    <p className="text-sm text-muted-foreground">Interpersonal communication, presentation skills, networking, team collaboration, leadership development</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Combination Insight */}
-          <div className="text-center bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 border border-border">
-            <h4 className="text-2xl font-bold text-foreground mb-4">Most People Are a Unique Blend</h4>
-            <p className="text-muted-foreground max-w-3xl mx-auto">
-              While everyone has dominant colors, your secondary and tertiary colors create your unique professional signature. 
-              Our assessment reveals how your specific color combination influences your leadership style, communication preferences, 
-              and ideal work environment.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Competitive Advantage Section */}
-      <section className="py-20 px-4 bg-background">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-6">
-              <span className="bg-gradient-to-r from-green to-blue bg-clip-text text-transparent">Why</span> We're the Leader
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-              While others offer generic personality tests, we deliver career-focused insights that professionals actually use to advance their careers.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
             <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-colorful">
-                <Brain className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">AI-Powered Analysis</h3>
-              <p className="text-muted-foreground">Our proprietary AI analyzes response patterns, timing, and consistency to create deeper insights than traditional scoring methods.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-hero rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-elegant">
-                <Target className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Career-Specific Mapping</h3>
-              <p className="text-muted-foreground">Unlike generic tests, we map your colors to specific roles, industries, and career paths with real job market data.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow bg-slate-950">
-                <TrendingUp className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Actionable Insights</h3>
-              <p className="text-muted-foreground">Get specific strategies for interviews, networking, leadership development, and career transitions based on your unique profile.</p>
-            </div>
-          </div>
-
-          {/* Comparison */}
-          <div className="bg-card rounded-2xl p-8 border border-border shadow-elegant">
-            <h3 className="text-2xl font-bold text-center text-foreground mb-8">How We Compare</h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-lg font-bold text-muted-foreground mb-4">Other Assessments</h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Generic personality types</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Basic scoring systems</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">One-size-fits-all results</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Academic focus only</span>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-accent mb-4">RoleColor ™️ Finder</h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-accent" />
-                    <span className="text-sm text-foreground font-medium">Career-focused color profiles</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-accent" />
-                    <span className="text-sm text-foreground font-medium">AI-powered pattern analysis</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-accent" />
-                    <span className="text-sm text-foreground font-medium">Personalized to your industry</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-accent" />
-                    <span className="text-sm text-foreground font-medium">Practical career strategies</span>
-                  </li>
-                </ul>
-              </div>
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="text-xl px-16 py-6 font-bold group" 
+                onClick={() => navigate('/free-assessment')}
+              >
+                Discover Your RoleColor ™️ Profile
+                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Team Program Section */}
-      <section className="py-32 px-4 bg-gradient-to-r from-primary/5 to-secondary/5 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-3 glass-card px-8 py-4 rounded-full border border-primary/20 mb-10">
-              <span className="text-sm font-bold text-primary tracking-wide uppercase">For Teams & Organizations</span>
+      <section className="section-padding">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold mb-6">Unlock Your Team's Potential with Our Team Program</h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Our team program is designed to help teams understand each other better, communicate more effectively, and achieve their goals faster.
+              </p>
+              <Button variant="primary" size="lg" asChild>
+                <Link to="/team-program">Learn More About the Team Program</Link>
+              </Button>
             </div>
-            
-            <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 leading-tight text-balance">
-              Transform Your Entire Team's
-              <br />
-              <span className="gradient-text">Hiring & Development</span>
-            </h2>
-            
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed text-balance">
-              Go beyond individual assessments. Our 12-week Team Composition & Role Design Program maps your team's capabilities, identifies missing roles, and delivers everything you need to hire with confidence.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-16 items-center mb-16">
-            <div className="space-y-8">
-              <div className="glass-card rounded-3xl p-8 border border-border/50 shadow-elegant">
-                <h3 className="text-2xl font-bold text-foreground mb-6">What You Get in 12 Weeks</h3>
-                <div className="space-y-4">
-                  {[
-                    "Team Capability Map & Gap Analysis",
-                    "Future Org Blueprint & Role Design",
-                    "Hiring Scorecards & Interview Kits",
-                    "Ready-to-Publish Job Listings",
-                    "30-60-90 Onboarding Plans"
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      <span className="text-foreground">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="glass-card rounded-3xl p-8 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-brand rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-foreground">Custom Pricing</h4>
-                    <p className="text-sm text-muted-foreground">Starting at $20k for small teams</p>
-                  </div>
-                </div>
-                <p className="text-foreground">
-                  Scales with your organization size — from startups to enterprises with 100,000+ employees.
-                </p>
-              </div>
+            <div>
+              <img src={heroImage} alt="Team Collaboration" className="rounded-lg shadow-md" />
             </div>
-            
-            <div className="relative">
-              <div className="glass-card rounded-3xl p-8 shadow-elegant border border-border/50">
-                <div className="text-center space-y-6">
-                  <div className="w-20 h-20 bg-gradient-brand rounded-full flex items-center justify-center mx-auto shadow-colorful">
-                    <Target className="w-10 h-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground">The Result</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    A clear view of current capabilities, agreed-upon gaps, and ready-to-hire roles with everything your hiring team needs to succeed.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button variant="default" size="lg" className="flex-1" asChild>
-                      <Link to="/team-program">
-                        Learn More
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="lg" className="flex-1" asChild>
-                      <a 
-                        href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        Book Fit Call
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-hero relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="max-w-4xl mx-auto text-center relative">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to begin your journey?
-          </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Discover your true colors and unlock your career potential with our comprehensive assessment.
-          </p>
-          <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 font-bold shadow-elegant hover-scale" onClick={() => navigate('/free-assessment')}>
-            🎨 Start Free Assessment
-          </Button>
-          <div className="mt-4 text-white/80 text-sm font-medium">
-            Takes only 2 minutes • Get instant preview results
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="mb-4 md:mb-0">
-                <img 
-                  src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
-                  alt="RoleColor ™️ Finder" 
-                  className="h-8 mb-2"
-                />
-                <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
-              </div>
-              <div className="text-center md:text-right">
-                <p className="text-sm opacity-80">© 2025 RoleColorFinder</p>
-                <p className="text-xs opacity-60 mt-1">
-                  All rights reserved
-                </p>
-              </div>
-            </div>
-          </div>
+      <footer className="bg-card border-t border-border py-12">
+        <div className="container-wide text-center text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} RoleColor ™️ Finder. All rights reserved.</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

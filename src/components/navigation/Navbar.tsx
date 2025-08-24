@@ -12,20 +12,23 @@ export function Navbar() {
     signOut
   } = useAuth();
   const isActive = (path: string) => location.pathname === path;
-  return <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
+  return <div className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90 shadow-soft">
+      <div className="container-wide">
         <div className="flex h-20 items-center justify-between py-2">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-            <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-6 w-auto sm:h-8" />
+          <Link to="/" className="flex items-center space-x-3 flex-shrink-0 smooth-hover hover:scale-105">
+            <div className="relative">
+              <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-8 w-auto sm:h-10" />
+              <div className="absolute inset-0 bg-gradient-primary opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300"></div>
+            </div>
           </Link>
 
           {/* Desktop Navigation Menu */}
           <div className="hidden lg:block">
-            <Menubar className="border-none bg-transparent">
+            <Menubar className="border-none bg-transparent space-x-2">
               <MenubarMenu>
                 <MenubarTrigger asChild>
-                  <Link to="/" className={`cursor-pointer ${isActive('/') ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Link to="/" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <Home className="w-4 h-4 mr-2" />
                     Home
                   </Link>
@@ -34,7 +37,7 @@ export function Navbar() {
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
-                  <Link to="/pricing" className={`cursor-pointer ${isActive('/pricing') ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Link to="/pricing" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/pricing') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <CreditCard className="w-4 h-4 mr-2" />
                     Pricing
                   </Link>
@@ -43,7 +46,7 @@ export function Navbar() {
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
-                  <Link to="/free-assessment" className={`cursor-pointer ${isActive('/free-assessment') ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Link to="/free-assessment" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/free-assessment') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <Palette className="w-4 h-4 mr-2" />
                     Free Assessment
                   </Link>
@@ -52,7 +55,7 @@ export function Navbar() {
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
-                  <Link to="/team-program" className={`cursor-pointer ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Link to="/team-program" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/team-program') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <Users className="w-4 h-4 mr-2" />
                     Team Program
                   </Link>
@@ -63,25 +66,25 @@ export function Navbar() {
           </div>
 
           {/* Desktop Action Buttons */}
-          <div className="hidden lg:flex items-center space-x-2">
+          <div className="hidden lg:flex items-center space-x-3">
             {user ? <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="glass" size="sm" asChild>
                   <Link to="/dashboard">
                     <User className="w-4 h-4 mr-2" />
                     Dashboard
                   </Link>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={signOut}>
+                <Button variant="outline" size="sm" onClick={signOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
                 </Button>
               </> : <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="modern" size="sm" asChild>
                   <Link to="/auth">
                     Sign In
                   </Link>
                 </Button>
-                <Button asChild size="sm">
+                <Button variant="hero" size="sm" asChild>
                   <Link to="/free-assessment">
                     Get Started
                   </Link>
