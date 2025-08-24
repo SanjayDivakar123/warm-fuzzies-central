@@ -365,7 +365,15 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-card border-t border-border py-12">
         <div className="container-wide text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} RoleColor ™️ Finder. All rights reserved.</p>
+          <div className="flex items-center justify-center gap-2">
+            <span>&copy; {new Date().getFullYear()}</span>
+            <img 
+              src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+              alt="RoleColor ™️ Finder" 
+              className="h-5 w-auto"
+            />
+            <span>All rights reserved.</span>
+          </div>
         </div>
       </footer>
     </div>
