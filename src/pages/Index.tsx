@@ -416,7 +416,7 @@ const Index = () => {
                 <li><Link to="/auth" className="text-background/80 hover:text-background transition-colors text-sm">Sign In / Sign Up</Link></li>
                 <li><Link to="/reset-password" className="text-background/80 hover:text-background transition-colors text-sm">Reset Password</Link></li>
                 <li><Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm">Privacy Policy</Link></li>
-                <li><a href="https://lovable.dev/support" target="_blank" rel="noopener noreferrer" className="text-background/80 hover:text-background transition-colors text-sm">Support</a></li>
+                
               </ul>
             </div>
           </div>
