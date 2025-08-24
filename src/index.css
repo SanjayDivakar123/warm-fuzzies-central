@@ -190,11 +190,17 @@ All colors MUST be HSL.
   }
 
   .gradient-text {
-    @apply bg-gradient-brand bg-clip-text text-transparent;
+    background: var(--gradient-brand);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
   .gradient-text-primary {
-    @apply bg-gradient-primary bg-clip-text text-transparent;
+    background: var(--gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
   .mesh-background {
