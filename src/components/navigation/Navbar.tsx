@@ -17,7 +17,7 @@ export function Navbar() {
         <div className="flex h-20 items-center justify-between py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-            <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="Role Color Finder" className="h-6 w-auto sm:h-8" />
+            <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-6 w-auto sm:h-8" />
           </Link>
 
           {/* Desktop Navigation Menu */}

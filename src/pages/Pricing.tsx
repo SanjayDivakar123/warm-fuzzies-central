@@ -68,7 +68,7 @@ export default function Pricing() {
       <div className="bg-gradient-hero text-white py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
-            Role Color Finder
+            RoleColor ™️ Finder
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
             Pricing Plans

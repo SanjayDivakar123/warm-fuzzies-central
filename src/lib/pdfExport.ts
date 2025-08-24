@@ -126,7 +126,7 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('ROLE COLOR FINDER', 55, 25);
+  pdf.text('ROLECOLOR ™️ FINDER', 55, 25);
   
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'normal');

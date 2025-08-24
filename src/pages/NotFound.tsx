@@ -20,7 +20,7 @@ const NotFound = () => {
         <div className="flex justify-center mb-8">
           <img 
             src="/lovable-uploads/b0720aa1-19dc-4cac-aefe-2dfb86343600.png" 
-            alt="Role Color Finder Logo" 
+            alt="RoleColor ™️ Finder Logo" 
             className="h-20 w-auto opacity-80"
           />
         </div>

@@ -123,7 +123,7 @@ const Index = () => {
                       <div className="w-40 h-40 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center mx-auto border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-blue">
                         <img 
                           src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
-                          alt="Role Color Finder"
+                          alt="RoleColor ™️ Finder"
                           className="w-20 h-auto"
                         />
                       </div>
@@ -314,7 +314,7 @@ const Index = () => {
           {/* What Role Color Finder Reveals */}
           <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 border border-border mb-16">
             <h3 className="text-2xl font-bold text-center text-foreground mb-8">
-              But more than just a "you are this" label, Role Color Finder also reveals:
+              But more than just a "you are this" label, RoleColor ™️ Finder also reveals:
             </h3>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -626,7 +626,7 @@ const Index = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="text-lg font-bold text-accent mb-4">Role Color Finder</h4>
+                <h4 className="text-lg font-bold text-accent mb-4">RoleColor ™️ Finder</h4>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
                     <CheckCircle className="w-4 h-4 text-accent" />
@@ -678,7 +678,7 @@ const Index = () => {
               <div className="mb-4 md:mb-0">
                 <img 
                   src="/lovable-uploads/2938b86e-e795-4587-9359-51f4b94c106a.png" 
-                  alt="Role Color Finder" 
+                  alt="RoleColor ™️ Finder" 
                   className="h-8 mb-2"
                 />
                 <p className="text-sm opacity-80">Discover your leadership style with science-backed insights</p>
