@@ -395,7 +395,7 @@ const Index = () => {
                   How long does the assessment take?
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  The assessment takes just 3 minutes to complete with 25 carefully crafted questions. We've designed it to be quick yet comprehensive, respecting your time while providing deep insights into your leadership style and team dynamics.
+                  The assessment offers two options: a quick 25-question version (3 minutes) or a comprehensive 50-question version (6 minutes). Both are carefully crafted to provide deep insights into your leadership style and team dynamics, with the longer version offering more detailed analysis.
                 </AccordionContent>
               </AccordionItem>
 
