@@ -7,7 +7,7 @@ const Sitemap = () => {
     {
       title: "Main Pages",
       pages: [
-        { name: "Home", path: "/", icon: Home, description: "Welcome to RoleColor ™️ Finder" },
+        { name: "Home", path: "/", icon: Home, description: "Welcome to RoleColor Finder" },
         { name: "Pricing", path: "/pricing", icon: CreditCard, description: "View all assessment plans and pricing" },
         { name: "Team Program", path: "/team-program", icon: Users, description: "12-Week Team Composition & Role Design Program" },
       ]
@@ -60,7 +60,7 @@ const Sitemap = () => {
             </h1>
             
             <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              Navigate through all pages and features of RoleColor ™️ Finder.
+              Navigate through all pages and features of RoleColor Finder.
             </p>
           </div>
         </div>
