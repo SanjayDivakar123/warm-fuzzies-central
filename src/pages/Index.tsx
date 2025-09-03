@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
@@ -358,6 +359,91 @@ const Index = () => {
             <div>
               <img src={heroImage} alt="Team Collaboration" className="rounded-lg shadow-md" />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="section-padding bg-gradient-soft">
+        <div className="container-wide">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
+              <HelpCircle className="w-5 h-5 mr-2" />
+              Frequently Asked Questions
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
+              Got Questions? <span className="gradient-text-primary">We've Got Answers</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Everything you need to know about our leadership assessment and team development approach.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <Accordion type="single" collapsible className="space-y-4">
+              <AccordionItem value="what-is-rolecolor" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  What is RoleColor™️ and how is it different from other assessments?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  RoleColor™️ is our patent-pending leadership assessment based on real group psychology, specifically Tuckman's Five Stages of Team Development. Unlike static personality tests, our system reveals how your leadership style adapts across different team contexts and stages. It's designed for modern teams who need flexible, contextual leadership rather than rigid personality boxes.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="how-long" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  How long does the assessment take?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  The assessment takes just 3 minutes to complete with 25 carefully crafted questions. We've designed it to be quick yet comprehensive, respecting your time while providing deep insights into your leadership style and team dynamics.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="accuracy" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  How accurate are the results?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  Our assessment has a 4.8/5 satisfaction rating with over 10,000 users. The algorithm is based on established psychological frameworks and has been refined through extensive testing. Most users report that the results feel "surprisingly accurate" and provide actionable insights they can immediately apply to their leadership approach.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="team-vs-individual" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  Can I use this for my entire team or just individually?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  Both! Individual assessments help you understand your own leadership style, while our Team Program is specifically designed for organizations wanting to improve team dynamics. The Team Program includes group workshops, role mapping, and a 12-week implementation plan. Many users start with the individual assessment and then bring it to their team.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="cost" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  What does it cost?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  The basic assessment is completely free! We also offer premium reports ($29) with detailed insights and action plans, and professional reports ($99) with team-building recommendations. Our Team Program pricing varies by organization size. We believe everyone should have access to understanding their leadership style, which is why we start with a free option.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="getting-started" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  How do I get started?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™️ profile. If you want to explore team applications, you can book a 20-minute fit call with our team to discuss your specific needs and objectives.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="scientific-backing" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
+                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
+                  What's the scientific backing behind this approach?
+                </AccordionTrigger>
+                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
+                  Our assessment is built on Bruce Tuckman's well-established Five Stages of Team Development (Forming, Storming, Norming, Performing, Adjourning), combined with modern organizational psychology research on contextual leadership. We've integrated insights from adaptive leadership theory and situational leadership models to create a framework that's both scientifically grounded and practically applicable.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
       </section>
