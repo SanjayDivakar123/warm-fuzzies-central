@@ -9,13 +9,12 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
-
 const Index = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  return (
-    <div className="min-h-screen bg-background">
+  const {
+    user
+  } = useAuth();
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
       {/* Hero Section - Completely Redesigned */}
@@ -56,21 +55,12 @@ const Index = () => {
               <div className="glass-card-strong rounded-2xl p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
                 <div className="flex items-center justify-center lg:justify-start gap-8">
                   <div className="flex -space-x-4">
-                    {[
-                      'from-red to-red-glow',
-                      'from-green to-green-glow', 
-                      'from-yellow to-yellow-glow',
-                      'from-blue to-blue-glow'
-                    ].map((gradient, i) => (
-                      <div key={i} className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} border-4 border-background shadow-xl hover-lift`}></div>
-                    ))}
+                    {['from-red to-red-glow', 'from-green to-green-glow', 'from-yellow to-yellow-glow', 'from-blue to-blue-glow'].map((gradient, i) => <div key={i} className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} border-4 border-background shadow-xl hover-lift`}></div>)}
                   </div>
                   <div className="text-left">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-6 h-6 fill-yellow text-yellow" />
-                        ))}
+                        {[...Array(5)].map((_, i) => <Star key={i} className="w-6 h-6 fill-yellow text-yellow" />)}
                       </div>
                       <span className="text-2xl font-bold text-foreground">4.8/5</span>
                     </div>
@@ -83,26 +73,12 @@ const Index = () => {
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-6 animate-fade-in delay-600">
-                <Button 
-                  variant="hero" 
-                  size="xl" 
-                  className="text-xl px-12 py-6 font-bold group" 
-                  onClick={() => navigate('/free-assessment')}
-                >
+                <Button variant="hero" size="xl" className="text-xl px-12 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
                   Start Your Free Assessment
                   <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <Button 
-                  variant="modern" 
-                  size="xl" 
-                  className="text-xl px-12 py-6 font-semibold" 
-                  asChild
-                >
-                  <a 
-                    href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
+                <Button variant="modern" size="xl" className="text-xl px-12 py-6 font-semibold" asChild>
+                  <a href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" target="_blank" rel="noopener noreferrer">
                     <Clock className="mr-3 w-6 h-6" />
                     Book a 20-min Fit Call
                   </a>
@@ -111,25 +87,11 @@ const Index = () => {
               
               {/* Brochure Download */}
               <div className="animate-fade-in delay-800">
-                <Button 
-                  variant="glass" 
-                  size="lg" 
-                  className="text-base px-8 py-4 hover-lift" 
-                  asChild
-                >
-                  <a 
-                    href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4"
-                  >
+                <Button variant="glass" size="lg" className="text-base px-8 py-4 hover-lift" asChild>
+                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4">
                     <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs 
-                    <img 
-                      src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
-                      alt="RoleColor ™️ Finder" 
-                      className="h-5 w-auto inline"
-                    />
+                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-5 w-auto inline" />
                   </a>
                 </Button>
               </div>
@@ -148,11 +110,7 @@ const Index = () => {
                   {/* Logo container with enhanced styling */}
                   <div className="relative mb-10">
                     <div className="w-48 h-48 bg-gradient-to-br from-card via-background to-accent/20 rounded-3xl flex items-center justify-center mx-auto border-3 border-primary/40 shadow-colorful hover:shadow-glow transition-all duration-500 hover:scale-105">
-                      <img 
-                        src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" 
-                        alt="RoleColor ™️ Finder"
-                        className="w-24 h-auto filter drop-shadow-lg"
-                      />
+                      <img src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" alt="RoleColor ™️ Finder" className="w-24 h-auto filter drop-shadow-lg" />
                     </div>
                     
                     {/* Floating accent elements */}
@@ -172,13 +130,9 @@ const Index = () => {
 
                     {/* Enhanced progress dots */}
                     <div className="flex justify-center gap-3">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div 
-                          key={i} 
-                          className="w-3 h-3 bg-gradient-primary rounded-full animate-pulse shadow-blue" 
-                          style={{animationDelay: `${i * 300}ms`}}
-                        ></div>
-                      ))}
+                      {[0, 1, 2, 3].map(i => <div key={i} className="w-3 h-3 bg-gradient-primary rounded-full animate-pulse shadow-blue" style={{
+                      animationDelay: `${i * 300}ms`
+                    }}></div>)}
                     </div>
                     
                     {/* Trust indicators */}
@@ -248,11 +202,7 @@ const Index = () => {
               <div className="relative animate-fade-in delay-400">
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-                  <img 
-                    src={professionalTeamImage} 
-                    alt="Professional team collaboration" 
-                    className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10"
-                  />
+                  <img src={professionalTeamImage} alt="Professional team collaboration" className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent rounded-3xl z-20"></div>
                 </div>
               </div>
@@ -277,21 +227,38 @@ const Index = () => {
               </p>
               
               <div className="grid md:grid-cols-5 gap-8 mb-16">
-                {[
-                  { icon: Users, color: 'red', title: 'Forming', desc: 'Building connection' },
-                  { icon: Zap, color: 'yellow', title: 'Storming', desc: 'Navigating friction' },
-                  { icon: Settings, color: 'green', title: 'Norming', desc: 'Establishing flow' },
-                  { icon: TrendingUp, color: 'blue', title: 'Performing', desc: 'Reaching peak productivity' },
-                  { icon: CheckCircle, color: 'brand', title: 'Adjourning', desc: 'Ending with clarity' }
-                ].map((stage, i) => (
-                  <div key={i} className="text-center hover-lift">
+                {[{
+                icon: Users,
+                color: 'red',
+                title: 'Forming',
+                desc: 'Building connection'
+              }, {
+                icon: Zap,
+                color: 'yellow',
+                title: 'Storming',
+                desc: 'Navigating friction'
+              }, {
+                icon: Settings,
+                color: 'green',
+                title: 'Norming',
+                desc: 'Establishing flow'
+              }, {
+                icon: TrendingUp,
+                color: 'blue',
+                title: 'Performing',
+                desc: 'Reaching peak productivity'
+              }, {
+                icon: CheckCircle,
+                color: 'brand',
+                title: 'Adjourning',
+                desc: 'Ending with clarity'
+              }].map((stage, i) => <div key={i} className="text-center hover-lift">
                     <div className={`w-24 h-24 bg-gradient-${stage.color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-${stage.color} hover:scale-110 transition-transform duration-300`}>
                       <stage.icon className="w-12 h-12 text-white" />
                     </div>
                     <h4 className="font-bold text-foreground mb-3 text-xl">{stage.title}</h4>
                     <p className="text-base text-muted-foreground">{stage.desc}</p>
-                  </div>
-                ))}
+                  </div>)}
               </div>
 
               <p className="text-xl text-foreground text-center leading-relaxed text-balance font-medium">
@@ -309,29 +276,41 @@ const Index = () => {
             </h3>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-              {[
-                { icon: Target, color: 'yellow', name: 'Yellow', desc: 'Action-first executors (founders, builders, PMs)', gradient: 'gradient-yellow' },
-                { icon: Heart, color: 'red', name: 'Red', desc: 'Vision-driven motivators (speakers, creatives, brand builders)', gradient: 'gradient-red' },
-                { icon: Brain, color: 'green', name: 'Green', desc: 'Logic-based architects (analysts, engineers, operators)', gradient: 'gradient-green' },
-                { icon: Lightbulb, color: 'blue', name: 'Blue', desc: 'Innovation-focused visionaries (strategists, designers, researchers)', gradient: 'gradient-blue' }
-              ].map((role, i) => (
-                <div key={i} className="glass-card rounded-2xl p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
+              {[{
+              icon: Target,
+              color: 'yellow',
+              name: 'Yellow',
+              desc: 'Action-first executors (founders, builders, PMs)',
+              gradient: 'gradient-yellow'
+            }, {
+              icon: Heart,
+              color: 'red',
+              name: 'Red',
+              desc: 'Vision-driven motivators (speakers, creatives, brand builders)',
+              gradient: 'gradient-red'
+            }, {
+              icon: Brain,
+              color: 'green',
+              name: 'Green',
+              desc: 'Logic-based architects (analysts, engineers, operators)',
+              gradient: 'gradient-green'
+            }, {
+              icon: Lightbulb,
+              color: 'blue',
+              name: 'Blue',
+              desc: 'Innovation-focused visionaries (strategists, designers, researchers)',
+              gradient: 'gradient-blue'
+            }].map((role, i) => <div key={i} className="glass-card rounded-2xl p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
                   <div className={`w-16 h-16 bg-${role.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-${role.color}`}>
                     <role.icon className="w-8 h-8 text-white" />
                   </div>
                   <h4 className={`font-bold text-${role.color} mb-4 text-xl group-hover:text-${role.color}/80 transition-colors duration-300`}>{role.name}</h4>
                   <p className="text-base text-muted-foreground leading-relaxed">{role.desc}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <div className="text-center">
-              <Button 
-                variant="hero" 
-                size="xl" 
-                className="text-xl px-16 py-6 font-bold group" 
-                onClick={() => navigate('/free-assessment')}
-              >
+              <Button variant="hero" size="xl" className="text-xl px-16 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
                 Discover Your RoleColor ™️ Profile
                 <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -399,14 +378,7 @@ const Index = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="accuracy" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  How accurate are the results?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Our assessment has a 4.8/5 satisfaction rating with over 10,000 users. The algorithm is based on established psychological frameworks and has been refined through extensive testing. Most users report that the results feel "surprisingly accurate" and provide actionable insights they can immediately apply to their leadership approach.
-                </AccordionContent>
-              </AccordionItem>
+              
 
               <AccordionItem value="team-vs-individual" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
                 <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
@@ -456,11 +428,7 @@ const Index = () => {
             {/* Logo & Description */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-6">
-                <img 
-                  src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" 
-                  alt="RoleColor ™️ Finder" 
-                  className="h-8 w-auto"
-                />
+                <img src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor ™️ Finder" className="h-8 w-auto" />
               </div>
               <p className="text-background/80 text-sm leading-relaxed mb-6">
                 Discover your unique leadership color profile with our science-backed assessment system.
@@ -512,11 +480,7 @@ const Index = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2 text-background/80 text-sm">
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img 
-                  src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
-                  alt="RoleColor ™️ Finder" 
-                  className="h-4 w-auto"
-                />
+                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-4 w-auto" />
                 <span>All rights reserved.</span>
               </div>
               <div className="flex gap-6">
@@ -534,8 +498,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
