@@ -26,6 +26,16 @@ const PaymentSuccess = () => {
     try {
       console.log('Storing payment record for user:', user?.id, 'type:', assessmentType);
       
+      // Store payment verification in localStorage for immediate access
+      const paymentKey = `payment_verified_${assessmentType}_${user?.id}`;
+      const paymentVerification = {
+        timestamp: new Date().toISOString(),
+        type: assessmentType,
+        userId: user?.id
+      };
+      localStorage.setItem(paymentKey, JSON.stringify(paymentVerification));
+      
+      // Also store in Supabase for persistence
       const { data, error } = await supabase
         .from('assessment_results')
         .upsert({

@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { shuffleArray } from "@/lib/utils";
 
 // 50 questions for Pro assessment - organized by Tuckman's team development stages
@@ -638,125 +639,127 @@ const ProAssessment = () => {
   }, [currentQuestion]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="bg-gradient-subtle py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          {/* Header with Progress */}
-          <div className="mb-8 animate-fade-in">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
-                  <Crown className="text-white w-4 h-4" />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                  Pro Deep Dive Assessment
-                </h1>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">
-                  Question {currentQuestion + 1} of {proQuestions.length}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {Math.round(progress)}% Complete
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <Progress value={progress} className="h-3 bg-muted/30" />
-              <div 
-                className="absolute top-0 left-0 h-3 bg-gradient-brand rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Question Card */}
-          <Card className="shadow-elegant border-2 border-border/20 animate-scale-in">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-6 h-6 bg-gradient-hero rounded-full flex items-center justify-center animate-glow-pulse">
-                  <span className="text-white font-bold text-xs">{currentQuestion + 1}</span>
-                </div>
-                <div className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
-                  {currentQuestionData.stage} Stage • Pro Deep Dive
-                </div>
-              </div>
-              <div className="mb-3">
-                <div className="text-sm font-semibold text-primary mb-1">
-                  Team Development: {currentQuestionData.stage}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {currentQuestionData.stage === "Forming" && "Building connection and establishing organizational foundation"}
-                  {currentQuestionData.stage === "Storming" && "Navigating complex conflicts and organizational challenges"}
-                  {currentQuestionData.stage === "Norming" && "Establishing organizational flow and operational standards"}
-                  {currentQuestionData.stage === "Performing" && "Reaching peak organizational productivity and excellence"}
-                  {currentQuestionData.stage === "Adjourning" && "Ending with clarity, reflection, and legacy building"}
-                </div>
-              </div>
-              <CardTitle className="text-xl leading-relaxed text-foreground">
-                {currentQuestionData.question}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
-                {shuffledOptions.map((option, index) => (
-                  <div 
-                    key={index} 
-                    className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${
-                      selectedAnswer === option.color 
-                        ? 'border-primary bg-primary/5 shadow-glow' 
-                        : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
-                    }`}
-                    onClick={() => handleAnswer(option.color)}
-                  >
-                    <RadioGroupItem 
-                      value={option.color} 
-                      id={`option-${index}`}
-                      className="mt-0.5 flex-shrink-0"
-                    />
-                    <Label 
-                      htmlFor={`option-${index}`} 
-                      className="text-sm leading-relaxed cursor-pointer text-foreground font-medium"
-                    >
-                      {option.text}
-                    </Label>
+    <ProtectedRoute requiresPayment={true} assessmentType="pro">
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="bg-gradient-subtle py-8 px-4">
+          <div className="max-w-3xl mx-auto">
+            {/* Header with Progress */}
+            <div className="mb-8 animate-fade-in">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
+                    <Crown className="text-white w-4 h-4" />
                   </div>
-                ))}
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center mt-8 animate-fade-in">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentQuestion === 0}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                Your answers are not saved if you don't finish the quiz
-              </p>
+                  <h1 className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                    Pro Deep Dive Assessment
+                  </h1>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">
+                    Question {currentQuestion + 1} of {proQuestions.length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {Math.round(progress)}% Complete
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <Progress value={progress} className="h-3 bg-muted/30" />
+                <div 
+                  className="absolute top-0 left-0 h-3 bg-gradient-brand rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
 
-            <Button
-              onClick={handleNext}
-              disabled={!selectedAnswer}
-              className="flex items-center gap-2 hover-scale"
-            >
-              {currentQuestion === proQuestions.length - 1 ? 'Get Pro Results' : 'Next'}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            {/* Question Card */}
+            <Card className="shadow-elegant border-2 border-border/20 animate-scale-in">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-6 h-6 bg-gradient-hero rounded-full flex items-center justify-center animate-glow-pulse">
+                    <span className="text-white font-bold text-xs">{currentQuestion + 1}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+                    {currentQuestionData.stage} Stage • Pro Deep Dive
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="text-sm font-semibold text-primary mb-1">
+                    Team Development: {currentQuestionData.stage}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {currentQuestionData.stage === "Forming" && "Building connection and establishing organizational foundation"}
+                    {currentQuestionData.stage === "Storming" && "Navigating complex conflicts and organizational challenges"}
+                    {currentQuestionData.stage === "Norming" && "Establishing organizational flow and operational standards"}
+                    {currentQuestionData.stage === "Performing" && "Reaching peak organizational productivity and excellence"}
+                    {currentQuestionData.stage === "Adjourning" && "Ending with clarity, reflection, and legacy building"}
+                  </div>
+                </div>
+                <CardTitle className="text-xl leading-relaxed text-foreground">
+                  {currentQuestionData.question}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
+                  {shuffledOptions.map((option, index) => (
+                    <div 
+                      key={index} 
+                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${
+                        selectedAnswer === option.color 
+                          ? 'border-primary bg-primary/5 shadow-glow' 
+                          : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
+                      }`}
+                      onClick={() => handleAnswer(option.color)}
+                    >
+                      <RadioGroupItem 
+                        value={option.color} 
+                        id={`option-${index}`}
+                        className="mt-0.5 flex-shrink-0"
+                      />
+                      <Label 
+                        htmlFor={`option-${index}`} 
+                        className="text-sm leading-relaxed cursor-pointer text-foreground font-medium"
+                      >
+                        {option.text}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </CardContent>
+            </Card>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-8 animate-fade-in">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentQuestion === 0}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Your answers are not saved if you don't finish the quiz
+                </p>
+              </div>
+
+              <Button
+                onClick={handleNext}
+                disabled={!selectedAnswer}
+                className="flex items-center gap-2 hover-scale"
+              >
+                {currentQuestion === proQuestions.length - 1 ? 'Get Pro Results' : 'Next'}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 };
 
