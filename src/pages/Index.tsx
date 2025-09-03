@@ -383,10 +383,10 @@ const Index = () => {
             <Accordion type="single" collapsible className="space-y-4">
               <AccordionItem value="what-is-rolecolor" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
                 <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  What is RoleColor™️ and how is it different from other assessments?
+                  What is RoleColorFinder and how is it different from other assessments?
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  RoleColor™️ is our patent-pending leadership assessment based on real group psychology, specifically Tuckman's Five Stages of Team Development. Unlike static personality tests, our system reveals how your leadership style adapts across different team contexts and stages. It's designed for modern teams who need flexible, contextual leadership rather than rigid personality boxes.
+                  RoleColorFinder is our patent-pending leadership assessment platform based on real group psychology, specifically Tuckman's Five Stages of Team Development. Unlike static personality tests, our system reveals how your leadership style adapts across different team contexts and stages. It's designed for modern teams who need flexible, contextual leadership rather than rigid personality boxes.
                 </AccordionContent>
               </AccordionItem>
 
