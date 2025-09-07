@@ -18,6 +18,8 @@ import Maintenance from "@/pages/Maintenance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TeamProgram from "@/pages/TeamProgram";
 import Sitemap from "@/pages/Sitemap";
+import Schools from "@/pages/Schools";
+import AudiencePage from "@/pages/AudiencePage";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
@@ -99,6 +101,14 @@ export const router = createBrowserRouter([
   {
     path: "/sitemap",
     element: <Layout><Sitemap /></Layout>,
+  },
+  {
+    path: "/schools",
+    element: <Layout><Schools /></Layout>,
+  },
+  {
+    path: "/audience",
+    element: <Layout><AudiencePage /></Layout>,
   },
   {
     path: "*",

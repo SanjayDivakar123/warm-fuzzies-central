@@ -37,6 +37,15 @@ export function Navbar() {
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
+                  <Link to="/schools" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/schools') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Schools
+                  </Link>
+                </MenubarTrigger>
+              </MenubarMenu>
+
+              <MenubarMenu>
+                <MenubarTrigger asChild>
                   <Link to="/pricing" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/pricing') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <CreditCard className="w-4 h-4 mr-2" />
                     Pricing
