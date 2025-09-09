@@ -7,84 +7,13 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
-      access_codes: {
-        Row: {
-          can_see_results: boolean
-          code: string
-          created_at: string
-          created_by_admin: string | null
-          expires_at: string | null
-          id: string
-          is_active: boolean
-          is_used: boolean | null
-          max_uses: number | null
-          updated_at: string
-        }
-        Insert: {
-          can_see_results?: boolean
-          code: string
-          created_at?: string
-          created_by_admin?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          is_used?: boolean | null
-          max_uses?: number | null
-          updated_at?: string
-        }
-        Update: {
-          can_see_results?: boolean
-          code?: string
-          created_at?: string
-          created_by_admin?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          is_used?: boolean | null
-          max_uses?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "access_codes_created_by_admin_fkey"
-            columns: ["created_by_admin"]
-            isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_users: {
-        Row: {
-          created_at: string
-          id: string
-          password_hash: string
-          updated_at: string
-          username: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          password_hash: string
-          updated_at?: string
-          username: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          password_hash?: string
-          updated_at?: string
-          username?: string
-        }
-        Relationships: []
-      }
       assessment_results: {
         Row: {
           assessment_type: string
@@ -133,54 +62,6 @@ export type Database = {
           id?: string
           metadata?: Json | null
           source?: string
-        }
-        Relationships: []
-      }
-      testimonials: {
-        Row: {
-          advice_to_others: string
-          created_at: string
-          id: string
-          liked_most: string
-          name: string
-          organization: string
-          permission_level: string
-          problem_description: string
-          recommendation_score: number
-          results_benefits: string
-          role_title: string
-          updated_at: string
-          video_testimonial_interest: string
-        }
-        Insert: {
-          advice_to_others: string
-          created_at?: string
-          id?: string
-          liked_most: string
-          name: string
-          organization: string
-          permission_level: string
-          problem_description: string
-          recommendation_score: number
-          results_benefits: string
-          role_title: string
-          updated_at?: string
-          video_testimonial_interest: string
-        }
-        Update: {
-          advice_to_others?: string
-          created_at?: string
-          id?: string
-          liked_most?: string
-          name?: string
-          organization?: string
-          permission_level?: string
-          problem_description?: string
-          recommendation_score?: number
-          results_benefits?: string
-          role_title?: string
-          updated_at?: string
-          video_testimonial_interest?: string
         }
         Relationships: []
       }
