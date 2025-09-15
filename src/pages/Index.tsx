@@ -175,49 +175,46 @@ const Index = () => {
                 </h2>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                <div className="order-2 md:order-1">
-                  <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed">
-                    <p className="text-lg mb-4">
-                      When I started RoleColorFinder, I wasn't just building another assessment tool—I was building a new way for people to see themselves and each other. Teams fail not because of lack of talent, but because of misalignment. People clash, roles blur, and potential gets buried. I wanted to fix that.
-                    </p>
-                    
-                    <p className="text-lg mb-4">
-                      RoleColor™ is my answer: a simple, color-based system that brings clarity, balance, and trust to any group. What began as a small idea is now growing into a movement—helping schools, nonprofits, and businesses unlock the hidden strengths in their people.
-                    </p>
-                    
-                    <p className="text-lg mb-4">
-                      This isn't about filling out a quiz and moving on. It's about starting a conversation—about who you are, how you lead, and how you fit into something bigger. If RoleColorFinder helps you discover even one new strength, build one stronger relationship, or feel a little more aligned with your path, then it's doing its job.
-                    </p>
-                    
-                    <p className="text-lg mb-6">
-                      Thank you for being part of this journey. The future of leadership doesn't belong to a few—it belongs to all of us.
-                    </p>
-                    
-                    <div className="border-t border-primary/20 pt-6">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <img 
-                            src={sanjaySignature} 
-                            alt="Sanjay Divakar Signature" 
-                            className="h-12 w-auto mb-1"
-                          />
-                          <p className="font-semibold text-foreground">Sanjay Divakar</p>
-                          <p className="text-sm text-muted-foreground">Founder & CEO, RoleColorFinder</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="max-w-4xl mx-auto text-center">
+                <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed mb-8">
+                  <p className="text-lg mb-6">
+                    When I started RoleColorFinder, I wasn't just building another assessment tool—I was building a new way for people to see themselves and each other. Teams fail not because of lack of talent, but because of misalignment. People clash, roles blur, and potential gets buried. I wanted to fix that.
+                  </p>
+                  
+                  <p className="text-lg mb-6">
+                    RoleColor™ is my answer: a simple, color-based system that brings clarity, balance, and trust to any group. What began as a small idea is now growing into a movement—helping schools, nonprofits, and businesses unlock the hidden strengths in their people.
+                  </p>
+                  
+                  <p className="text-lg mb-6">
+                    This isn't about filling out a quiz and moving on. It's about starting a conversation—about who you are, how you lead, and how you fit into something bigger. If RoleColorFinder helps you discover even one new strength, build one stronger relationship, or feel a little more aligned with your path, then it's doing its job.
+                  </p>
+                  
+                  <p className="text-lg mb-8">
+                    Thank you for being part of this journey. The future of leadership doesn't belong to a few—it belongs to all of us.
+                  </p>
                 </div>
                 
-                <div className="order-1 md:order-2 flex justify-center">
-                  <div className="relative">
-                    <img 
-                      src={sanjayPhoto} 
-                      alt="Sanjay Divakar, Founder & CEO" 
-                      className="w-64 h-64 object-cover rounded-2xl shadow-lg border-4 border-primary/20"
-                    />
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-primary rounded-full shadow-lg"></div>
+                <div className="border-t border-primary/20 pt-8">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-6">
+                      <div className="relative">
+                        <img 
+                          src={sanjayPhoto} 
+                          alt="Sanjay Divakar, Founder & CEO" 
+                          className="w-20 h-20 object-cover rounded-full shadow-md border-2 border-primary/30"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-primary rounded-full shadow-sm"></div>
+                      </div>
+                      <div className="text-left">
+                        <img 
+                          src={sanjaySignature} 
+                          alt="Sanjay Divakar Signature" 
+                          className="h-10 w-auto mb-1"
+                        />
+                        <p className="font-semibold text-foreground">Sanjay Divakar</p>
+                        <p className="text-sm text-muted-foreground">Founder & CEO, RoleColorFinder</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
