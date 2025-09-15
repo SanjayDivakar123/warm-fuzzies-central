@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,712 +8,278 @@ import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { shuffleArray } from "@/lib/utils";
-
-// 50 questions for Pro assessment - organized by Tuckman's team development stages
-const proQuestions = [
-  // FORMING STAGE - Questions 1-10 (Building Connection)
-  {
-    id: 1,
-    stage: "Forming",
-    question: "When building connection in a new team, you naturally:",
-    options: [
-      { text: "Take charge and set clear direction from day one", color: "yellow" },
-      { text: "Create energy and enthusiasm to bring people together", color: "red" },
-      { text: "Analyze team dynamics and establish structured processes", color: "green" },
-      { text: "Focus on understanding each person and building trust", color: "blue" },
-    ],
-  },
-  {
-    id: 2,
-    stage: "Forming",
-    question: "When establishing organizational culture from the ground up, you emphasize:",
-    options: [
-      { text: "Performance standards and accountability frameworks", color: "yellow" },
-      { text: "Innovation, creativity, and breakthrough thinking", color: "red" },
-      { text: "Excellence, continuous improvement, and systematic development", color: "green" },
-      { text: "Inclusion, psychological safety, and authentic relationships", color: "blue" },
-    ],
-  },
-  {
-    id: 3,
-    stage: "Forming",
-    question: "Your approach to talent acquisition in the early formation stage emphasizes:",
-    options: [
-      { text: "Track record of results, achievements, and proven execution", color: "yellow" },
-      { text: "Creative potential, cultural fit, and innovative thinking", color: "red" },
-      { text: "Technical competence, reliability, and systematic skills", color: "green" },
-      { text: "Emotional intelligence, collaboration, and relationship building", color: "blue" },
-    ],
-  },
-  {
-    id: 4,
-    stage: "Forming",
-    question: "When onboarding senior executives into a new organization, you:",
-    options: [
-      { text: "Set aggressive 90-day goals to prove immediate value", color: "yellow" },
-      { text: "Inspire them with the transformational vision and possibilities", color: "red" },
-      { text: "Provide comprehensive strategic context and systematic orientation", color: "green" },
-      { text: "Invest in relationship building and cultural integration", color: "blue" },
-    ],
-  },
-  {
-    id: 5,
-    stage: "Forming",
-    question: "Your philosophy for establishing initial team foundations centers on:",
-    options: [
-      { text: "Quick wins that build momentum and establish credibility", color: "yellow" },
-      { text: "Creating excitement about breakthrough possibilities", color: "red" },
-      { text: "Building systematic approaches, documentation, and frameworks", color: "green" },
-      { text: "Creating psychological safety, trust, and open communication", color: "blue" },
-    ],
-  },
-  {
-    id: 6,
-    stage: "Forming",
-    question: "When establishing board relationships in a new role, you:",
-    options: [
-      { text: "Focus on delivering results and demonstrating executive capability", color: "yellow" },
-      { text: "Share compelling vision and inspire confidence in the future", color: "red" },
-      { text: "Provide comprehensive analysis and systematic reporting", color: "green" },
-      { text: "Build authentic relationships and establish transparent dialogue", color: "blue" },
-    ],
-  },
-  {
-    id: 7,
-    stage: "Forming",
-    question: "Your approach to establishing stakeholder relationships emphasizes:",
-    options: [
-      { text: "Clear deliverables, mutual benefit, and measurable outcomes", color: "yellow" },
-      { text: "Shared vision, aligned purpose, and transformational possibilities", color: "red" },
-      { text: "Formal agreements, structured processes, and systematic engagement", color: "green" },
-      { text: "Trust building, relationship investment, and genuine partnership", color: "blue" },
-    ],
-  },
-  {
-    id: 8,
-    stage: "Forming",
-    question: "When forming strategic partnerships, you prioritize:",
-    options: [
-      { text: "Speed to market and competitive advantage", color: "yellow" },
-      { text: "Innovation potential and breakthrough opportunities", color: "red" },
-      { text: "Due diligence, risk analysis, and systematic evaluation", color: "green" },
-      { text: "Cultural alignment and long-term relationship potential", color: "blue" },
-    ],
-  },
-  {
-    id: 9,
-    stage: "Forming",
-    question: "Your initial communication strategy with new teams focuses on:",
-    options: [
-      { text: "Clear expectations, performance metrics, and accountability", color: "yellow" },
-      { text: "Inspiring vision, creative possibilities, and transformational goals", color: "red" },
-      { text: "Structured information sharing and systematic feedback loops", color: "green" },
-      { text: "Open dialogue, individual understanding, and relationship building", color: "blue" },
-    ],
-  },
-  {
-    id: 10,
-    stage: "Forming",
-    question: "When establishing governance structures in new organizations, you:",
-    options: [
-      { text: "Create lean structures that enable rapid decision-making", color: "yellow" },
-      { text: "Design adaptive frameworks that encourage innovation", color: "red" },
-      { text: "Build comprehensive systems with clear roles and processes", color: "green" },
-      { text: "Ensure inclusive representation and stakeholder voice", color: "blue" },
-    ],
-  },
-
-  // STORMING STAGE - Questions 11-20 (Navigating Friction)
-  {
-    id: 11,
-    stage: "Storming",
-    question: "When navigating organizational politics and power dynamics, you:",
-    options: [
-      { text: "Navigate efficiently to achieve strategic objectives", color: "yellow" },
-      { text: "Use influence to build coalitions for transformational change", color: "red" },
-      { text: "Study power structures and plan systematic engagement strategies", color: "green" },
-      { text: "Focus on building authentic relationships across all stakeholders", color: "blue" },
-    ],
-  },
-  {
-    id: 12,
-    stage: "Storming",
-    question: "Your approach to managing board conflicts and disagreements is:",
-    options: [
-      { text: "Drive toward resolution with data-driven recommendations", color: "yellow" },
-      { text: "Reframe conflicts as opportunities for breakthrough thinking", color: "red" },
-      { text: "Facilitate structured debate using frameworks and analysis", color: "green" },
-      { text: "Ensure all perspectives are heard before building consensus", color: "blue" },
-    ],
-  },
-  {
-    id: 13,
-    stage: "Storming",
-    question: "When facing resistance to strategic change initiatives, you:",
-    options: [
-      { text: "Push through with strong leadership and clear communication", color: "yellow" },
-      { text: "Inspire people to see beyond current limitations to future possibilities", color: "red" },
-      { text: "Address concerns systematically with data and structured communication", color: "green" },
-      { text: "Listen deeply to understand root concerns and build inclusive solutions", color: "blue" },
-    ],
-  },
-  {
-    id: 14,
-    stage: "Storming",
-    question: "Your conflict resolution style with senior leadership teams involves:",
-    options: [
-      { text: "Direct confrontation of issues to restore team effectiveness", color: "yellow" },
-      { text: "Helping leaders see how differences can create complementary strength", color: "red" },
-      { text: "Creating clear behavioral frameworks and performance expectations", color: "green" },
-      { text: "Coaching individuals to understand and appreciate different leadership styles", color: "blue" },
-    ],
-  },
-  {
-    id: 15,
-    stage: "Storming",
-    question: "When managing competing stakeholder demands, you:",
-    options: [
-      { text: "Make tough decisions quickly to maintain organizational momentum", color: "yellow" },
-      { text: "Find creative solutions that transcend traditional either-or thinking", color: "red" },
-      { text: "Use systematic evaluation criteria to prioritize objectively", color: "green" },
-      { text: "Help stakeholders understand each other's perspectives and needs", color: "blue" },
-    ],
-  },
-  {
-    id: 16,
-    stage: "Storming",
-    question: "During organizational restructuring, you focus on:",
-    options: [
-      { text: "Speed of execution and minimizing disruption to performance", color: "yellow" },
-      { text: "Communicating the transformational vision and future opportunities", color: "red" },
-      { text: "Systematic planning, communication, and change management", color: "green" },
-      { text: "Supporting affected individuals and maintaining team cohesion", color: "blue" },
-    ],
-  },
-  {
-    id: 17,
-    stage: "Storming",
-    question: "Your approach to managing cultural integration after mergers involves:",
-    options: [
-      { text: "Quick decision-making on operating models to capture synergies", color: "yellow" },
-      { text: "Creating new shared vision that inspires all legacy cultures", color: "red" },
-      { text: "Systematic cultural assessment and structured integration planning", color: "green" },
-      { text: "Extensive listening and relationship building across organizations", color: "blue" },
-    ],
-  },
-  {
-    id: 18,
-    stage: "Storming",
-    question: "When leading through industry disruption, you:",
-    options: [
-      { text: "Quickly adapt operations to new realities and capture opportunities", color: "yellow" },
-      { text: "Lead the disruption with bold innovation and market transformation", color: "red" },
-      { text: "Analyze trends systematically and plan strategic responses", color: "green" },
-      { text: "Unite stakeholders around shared challenges and collaborative solutions", color: "blue" },
-    ],
-  },
-  {
-    id: 19,
-    stage: "Storming",
-    question: "Your risk management philosophy during turbulent periods emphasizes:",
-    options: [
-      { text: "Taking calculated risks for competitive advantage and growth", color: "yellow" },
-      { text: "Embracing bold risks for breakthrough opportunities and innovation", color: "red" },
-      { text: "Conducting thorough risk analysis before strategic decisions", color: "green" },
-      { text: "Considering how risks affect organizational stability and people", color: "blue" },
-    ],
-  },
-  {
-    id: 20,
-    stage: "Storming",
-    question: "When managing crisis situations, your leadership approach is:",
-    options: [
-      { text: "Take decisive action to stabilize quickly and restore operations", color: "yellow" },
-      { text: "Rally people around compelling vision of recovery and renewal", color: "red" },
-      { text: "Develop comprehensive crisis management plans and systematic responses", color: "green" },
-      { text: "Support organizational resilience, wellbeing, and collective recovery", color: "blue" },
-    ],
-  },
-
-  // NORMING STAGE - Questions 21-30 (Establishing Flow)
-  {
-    id: 21,
-    stage: "Norming",
-    question: "When establishing flow and organizational norms, you prefer to:",
-    options: [
-      { text: "Drive execution excellence and maintain momentum toward strategic goals", color: "yellow" },
-      { text: "Inspire innovation and creative possibilities within operational frameworks", color: "red" },
-      { text: "Build logical systems and clear operational processes", color: "green" },
-      { text: "Ensure all stakeholders feel heard and supported in process development", color: "blue" },
-    ],
-  },
-  {
-    id: 22,
-    stage: "Norming",
-    question: "Your approach to establishing performance management systems emphasizes:",
-    options: [
-      { text: "High performance standards that drive exceptional results", color: "yellow" },
-      { text: "Inspiring peak performance through purpose and creative challenge", color: "red" },
-      { text: "Systematic development frameworks and objective measurement", color: "green" },
-      { text: "Individual coaching, support, and personalized growth plans", color: "blue" },
-    ],
-  },
-  {
-    id: 23,
-    stage: "Norming",
-    question: "When implementing new operational standards across the organization, you:",
-    options: [
-      { text: "Focus on rapid adoption and immediate performance improvement", color: "yellow" },
-      { text: "Help teams see how standards enable greater creative freedom", color: "red" },
-      { text: "Create comprehensive training and systematic implementation plans", color: "green" },
-      { text: "Involve teams in co-creating standards they can enthusiastically embrace", color: "blue" },
-    ],
-  },
-  {
-    id: 24,
-    stage: "Norming",
-    question: "Your philosophy for establishing communication protocols focuses on:",
-    options: [
-      { text: "Efficient information flow that supports rapid decision-making", color: "yellow" },
-      { text: "Open sharing of ideas, creative inspiration, and innovative thinking", color: "red" },
-      { text: "Structured reporting, documentation systems, and knowledge management", color: "green" },
-      { text: "Regular relationship maintenance and inclusive dialogue", color: "blue" },
-    ],
-  },
-  {
-    id: 25,
-    stage: "Norming",
-    question: "When scaling successful practices across multiple business units, you:",
-    options: [
-      { text: "Rapidly implement proven approaches for maximum efficiency", color: "yellow" },
-      { text: "Adapt and innovate practices for different contexts and cultures", color: "red" },
-      { text: "Document and systematize methods for consistent replication", color: "green" },
-      { text: "Help teams understand cultural elements behind successful practices", color: "blue" },
-    ],
-  },
-  {
-    id: 26,
-    stage: "Norming",
-    question: "Your approach to budget and financial management emphasizes:",
-    options: [
-      { text: "ROI optimization, cost efficiency, and resource productivity", color: "yellow" },
-      { text: "Strategic investment in growth opportunities and innovation", color: "red" },
-      { text: "Detailed financial models, controls, and systematic planning", color: "green" },
-      { text: "Balanced financial goals that consider organizational and individual needs", color: "blue" },
-    ],
-  },
-  {
-    id: 27,
-    stage: "Norming",
-    question: "When establishing quality standards and continuous improvement, you:",
-    options: [
-      { text: "Set aggressive benchmarks that push organizational performance", color: "yellow" },
-      { text: "Encourage breakthrough thinking about what quality could become", color: "red" },
-      { text: "Build systematic measurement and improvement methodologies", color: "green" },
-      { text: "Engage all stakeholders in defining and maintaining quality standards", color: "blue" },
-    ],
-  },
-  {
-    id: 28,
-    stage: "Norming",
-    question: "Your leadership rhythm during stable operations includes:",
-    options: [
-      { text: "Fast-paced cycles with regular performance optimization", color: "yellow" },
-      { text: "Dynamic innovation sprints balanced with operational excellence", color: "red" },
-      { text: "Consistent processes with systematic review and improvement cycles", color: "green" },
-      { text: "Regular organizational development and relationship building activities", color: "blue" },
-    ],
-  },
-  {
-    id: 29,
-    stage: "Norming",
-    question: "When organizational workflows need optimization, you:",
-    options: [
-      { text: "Quickly implement changes that improve efficiency and results", color: "yellow" },
-      { text: "Encourage experimentation with innovative approaches and creative solutions", color: "red" },
-      { text: "Analyze current processes and design systematic improvements", color: "green" },
-      { text: "Involve the organization in co-creating better ways of working together", color: "blue" },
-    ],
-  },
-  {
-    id: 30,
-    stage: "Norming",
-    question: "Your succession planning and leadership development approach emphasizes:",
-    options: [
-      { text: "Identifying and fast-tracking high performers with proven results", color: "yellow" },
-      { text: "Developing visionary leaders who can drive future transformation", color: "red" },
-      { text: "Creating systematic leadership development and knowledge transfer", color: "green" },
-      { text: "Mentoring and coaching emerging talent with personalized development", color: "blue" },
-    ],
-  },
-
-  // PERFORMING STAGE - Questions 31-40 (Reaching Peak Productivity)
-  {
-    id: 31,
-    stage: "Performing",
-    question: "When the organization reaches peak productivity, you focus on:",
-    options: [
-      { text: "Pushing for even higher performance and competitive advantage", color: "yellow" },
-      { text: "Channeling organizational energy toward breakthrough innovations", color: "red" },
-      { text: "Optimizing systems for sustainable excellence and long-term growth", color: "green" },
-      { text: "Maintaining organizational cohesion while celebrating collective achievements", color: "blue" },
-    ],
-  },
-  {
-    id: 32,
-    stage: "Performing",
-    question: "Your approach to sustaining high organizational performance involves:",
-    options: [
-      { text: "Continuously raising performance bars and challenging the organization", color: "yellow" },
-      { text: "Keeping the organization inspired with evolving visions and creative challenges", color: "red" },
-      { text: "Monitoring key metrics and fine-tuning organizational processes regularly", color: "green" },
-      { text: "Investing in organizational development and preventing leadership burnout", color: "blue" },
-    ],
-  },
-  {
-    id: 33,
-    stage: "Performing",
-    question: "When managing high-performing global operations, your style is:",
-    options: [
-      { text: "Strategic direction with operational autonomy and clear accountability", color: "yellow" },
-      { text: "Visionary guidance with creative empowerment and innovative freedom", color: "red" },
-      { text: "Systematic oversight with quality assurance and performance optimization", color: "green" },
-      { text: "Supportive coaching with individual development and cultural sensitivity", color: "blue" },
-    ],
-  },
-  {
-    id: 34,
-    stage: "Performing",
-    question: "Your networking and industry relationship approach emphasizes:",
-    options: [
-      { text: "Strategic connections for mutual benefit and business advantage", color: "yellow" },
-      { text: "Inspiring relationships around shared vision and industry transformation", color: "red" },
-      { text: "Systematic relationship building and knowledge sharing over time", color: "green" },
-      { text: "Authentic connections based on genuine interest and mutual support", color: "blue" },
-    ],
-  },
-  {
-    id: 35,
-    stage: "Performing",
-    question: "When implementing advanced technology during peak performance, you:",
-    options: [
-      { text: "Adopt quickly for competitive advantage and operational efficiency", color: "yellow" },
-      { text: "Leverage technology for breakthrough innovation and market disruption", color: "red" },
-      { text: "Plan careful integration, training, and systematic implementation", color: "green" },
-      { text: "Consider organizational impact, culture, and individual adaptation needs", color: "blue" },
-    ],
-  },
-  {
-    id: 36,
-    stage: "Performing",
-    question: "Your approach to customer relationship management at scale focuses on:",
-    options: [
-      { text: "Delivering results that consistently exceed expectations and drive loyalty", color: "yellow" },
-      { text: "Creating emotionally engaging experiences and innovative value propositions", color: "red" },
-      { text: "Building systematic service excellence and operational consistency", color: "green" },
-      { text: "Developing deep, trust-based partnerships and long-term relationships", color: "blue" },
-    ],
-  },
-  {
-    id: 37,
-    stage: "Performing",
-    question: "When entering new markets during peak organizational performance, you:",
-    options: [
-      { text: "Move fast to capture first-mover advantage and market share", color: "yellow" },
-      { text: "Disrupt markets with innovative value propositions and creative approaches", color: "red" },
-      { text: "Conduct thorough market research and systematic entry planning", color: "green" },
-      { text: "Build local partnerships, relationships, and cultural understanding", color: "blue" },
-    ],
-  },
-  {
-    id: 38,
-    stage: "Performing",
-    question: "Your philosophy for maintaining competitive strategy centers on:",
-    options: [
-      { text: "Execution excellence and operational superiority", color: "yellow" },
-      { text: "Breakthrough differentiation and continuous innovation", color: "red" },
-      { text: "Systematic competitive analysis and strategic positioning", color: "green" },
-      { text: "Collaborative ecosystem advantages and partnership networks", color: "blue" },
-    ],
-  },
-  {
-    id: 39,
-    stage: "Performing",
-    question: "When managing corporate responsibility at organizational scale, you:",
-    options: [
-      { text: "Focus on strategic initiatives that drive measurable business value", color: "yellow" },
-      { text: "Lead transformative impact on society, environment, and industry", color: "red" },
-      { text: "Implement systematic measurement, reporting, and continuous improvement", color: "green" },
-      { text: "Demonstrate authentic commitment to all stakeholder wellbeing", color: "blue" },
-    ],
-  },
-  {
-    id: 40,
-    stage: "Performing",
-    question: "Your delegation style with high-performing leadership teams involves:",
-    options: [
-      { text: "Setting clear strategic outcomes and trusting teams to deliver excellence", color: "yellow" },
-      { text: "Inspiring teams with bigger picture purpose and creative empowerment", color: "red" },
-      { text: "Providing strategic frameworks while allowing innovative execution", color: "green" },
-      { text: "Matching strategic assignments to individual strengths and leadership styles", color: "blue" },
-    ],
-  },
-
-  // ADJOURNING STAGE - Questions 41-50 (Ending with Clarity and Reflection)
-  {
-    id: 41,
-    stage: "Adjourning",
-    question: "When major strategic initiatives come to completion, you focus on:",
-    options: [
-      { text: "Capturing measurable results and operational lessons for future efficiency", color: "yellow" },
-      { text: "Celebrating transformational achievements and inspiring future possibilities", color: "red" },
-      { text: "Documenting systematic processes and creating institutional knowledge repositories", color: "green" },
-      { text: "Honoring organizational relationships and supporting individual career transitions", color: "blue" },
-    ],
-  },
-  {
-    id: 42,
-    stage: "Adjourning",
-    question: "Your approach to organizational transition and closure includes:",
-    options: [
-      { text: "Efficient transition to next strategic priorities with clear operational handoffs", color: "yellow" },
-      { text: "Reflection on transformational impact and vision for future organizational endeavors", color: "red" },
-      { text: "Comprehensive documentation, evaluation, and systematic knowledge transfer", color: "green" },
-      { text: "Organizational appreciation and individual career development support", color: "blue" },
-    ],
-  },
-  {
-    id: 43,
-    stage: "Adjourning",
-    question: "When senior executives transition from your organization, you:",
-    options: [
-      { text: "Ensure smooth succession that maintains business continuity and performance", color: "yellow" },
-      { text: "Help them envision how their experience contributes to industry leadership", color: "red" },
-      { text: "Create detailed transition plans and systematic knowledge transfer protocols", color: "green" },
-      { text: "Provide ongoing mentoring and support during their leadership transition", color: "blue" },
-    ],
-  },
-  {
-    id: 44,
-    stage: "Adjourning",
-    question: "Your legacy focus when completing transformational leadership roles emphasizes:",
-    options: [
-      { text: "Measurable organizational impact and enhanced institutional capabilities", color: "yellow" },
-      { text: "Cultural transformation and inspiration for continued innovation", color: "red" },
-      { text: "Sustainable systems, processes, and institutional knowledge", color: "green" },
-      { text: "Developed leadership talent and strengthened organizational relationships", color: "blue" },
-    ],
-  },
-  {
-    id: 45,
-    stage: "Adjourning",
-    question: "When reflecting on organizational achievements, you measure success by:",
-    options: [
-      { text: "Achievement of strategic goals and quantifiable organizational results", color: "yellow" },
-      { text: "Breakthrough innovations and positive transformation across the industry", color: "red" },
-      { text: "Systematic improvements and sustainable operational excellence", color: "green" },
-      { text: "Individual leadership growth and strengthened organizational relationships", color: "blue" },
-    ],
-  },
-  {
-    id: 46,
-    stage: "Adjourning",
-    question: "Your approach to knowledge transfer and institutional memory involves:",
-    options: [
-      { text: "Capturing key strategic insights and operational best practices", color: "yellow" },
-      { text: "Sharing transformational stories and inspiring future innovation", color: "red" },
-      { text: "Creating comprehensive documentation and systematic knowledge repositories", color: "green" },
-      { text: "Mentoring relationships and experiential learning transfer", color: "blue" },
-    ],
-  },
-  {
-    id: 47,
-    stage: "Adjourning",
-    question: "When dissolving strategic partnerships or alliances, you:",
-    options: [
-      { text: "Focus on protecting mutual interests and maintaining future opportunities", color: "yellow" },
-      { text: "Celebrate shared achievements and envision potential future collaborations", color: "red" },
-      { text: "Execute systematic wind-down with comprehensive documentation", color: "green" },
-      { text: "Maintain relationships and provide support during transition periods", color: "blue" },
-    ],
-  },
-  {
-    id: 48,
-    stage: "Adjourning",
-    question: "Your final leadership communication with departing organizations emphasizes:",
-    options: [
-      { text: "Results achieved, capabilities built, and competitive position strengthened", color: "yellow" },
-      { text: "Transformational journey, cultural evolution, and inspirational future potential", color: "red" },
-      { text: "Systematic accomplishments, process improvements, and institutional learning", color: "green" },
-      { text: "Relationship appreciation, individual growth, and collective achievements", color: "blue" },
-    ],
-  },
-  {
-    id: 49,
-    stage: "Adjourning",
-    question: "When considering your ultimate leadership legacy, you focus on:",
-    options: [
-      { text: "Extraordinary organizational results, competitive achievements, and market impact", color: "yellow" },
-      { text: "Industry transformation, innovative breakthroughs, and inspirational influence", color: "red" },
-      { text: "Enduring institutional systems, operational excellence, and sustainable growth", color: "green" },
-      { text: "Leadership development, strengthened communities, and positive human impact", color: "blue" },
-    ],
-  },
-  {
-    id: 50,
-    stage: "Adjourning",
-    question: "When defining your ultimate leadership purpose and contribution, you:",
-    options: [
-      { text: "Drive exceptional organizational performance and create sustainable competitive advantage", color: "yellow" },
-      { text: "Inspire breakthrough change, innovation, and transformational impact across industries", color: "red" },
-      { text: "Build excellent, sustainable institutions and systematic organizational capabilities", color: "green" },
-      { text: "Serve stakeholders authentically and create lasting positive impact on people and communities", color: "blue" },
-    ],
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { questionSets, type AudienceType } from "@/data/adaptiveQuestions";
 
 const ProAssessment = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Get the audience type from URL parameters, default to 'professional'
+  const audienceType = (searchParams.get('audience') as AudienceType) || 'professional';
+  
+  // Get the appropriate question set based on audience
+  const proQuestions = questionSets[audienceType];
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAnswer = (color: string) => {
-    setSelectedAnswer(color);
+  // Show error if audience type not recognized
+  if (!proQuestions) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-bold text-red-600 mb-4">Invalid Assessment Type</h2>
+            <p className="text-muted-foreground mb-4">
+              The assessment type "{audienceType}" is not recognized.
+            </p>
+            <Button onClick={() => navigate('/assessment-selection?type=pro')}>
+              Go Back to Selection
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user has access to pro assessment
+  useEffect(() => {
+    const checkAccess = () => {
+      const paymentKey = `payment_verified_pro_${user?.id}`;
+      const paymentData = localStorage.getItem(paymentKey);
+      
+      if (!paymentData) {
+        navigate('/pricing');
+        return;
+      }
+    };
+
+    if (user) {
+      checkAccess();
+    }
+  }, [user, navigate]);
+
+  // Load progress when component mounts
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(`pro_assessment_progress_${user?.id}_${audienceType}`);
+    if (savedProgress) {
+      const progress = JSON.parse(savedProgress);
+      setCurrentQuestion(progress.currentQuestion || 0);
+      setAnswers(progress.answers || {});
+    }
+  }, [user?.id, audienceType]);
+
+  // Save progress whenever answers change
+  useEffect(() => {
+    if (user?.id && Object.keys(answers).length > 0) {
+      const progress = {
+        currentQuestion,
+        answers,
+        audienceType,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(`pro_assessment_progress_${user?.id}_${audienceType}`, JSON.stringify(progress));
+    }
+  }, [currentQuestion, answers, user?.id, audienceType]);
+
+  const currentQuestionData = proQuestions[currentQuestion];
+  const progress = ((currentQuestion + 1) / proQuestions.length) * 100;
+
+  useEffect(() => {
+    setSelectedAnswer(answers[currentQuestionData?.id] || "");
+  }, [currentQuestion, answers, currentQuestionData?.id]);
+
+  const handleAnswerSelect = (answer: string) => {
+    setSelectedAnswer(answer);
   };
 
   const handleNext = () => {
-    if (selectedAnswer) {
-      const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
-      setAnswers(newAnswers);
-      setSelectedAnswer("");
-
+    if (selectedAnswer && currentQuestionData) {
+      setAnswers(prev => ({
+        ...prev,
+        [currentQuestionData.id]: selectedAnswer
+      }));
+      
       if (currentQuestion < proQuestions.length - 1) {
-        const nextQuestion = currentQuestion + 1;
-        setCurrentQuestion(nextQuestion);
-        setSelectedAnswer(newAnswers[nextQuestion] || "");
+        setCurrentQuestion(prev => prev + 1);
       } else {
-        // Calculate advanced results
-        const colorCounts = { yellow: 0, red: 0, green: 0, blue: 0 };
-        Object.values(newAnswers).forEach((color) => {
-          colorCounts[color as keyof typeof colorCounts]++;
-        });
-
-        const sortedColors = Object.entries(colorCounts).sort(([,a], [,b]) => b - a);
-        const dominantColor = sortedColors[0][0];
-        const secondaryColor = sortedColors[1][0];
-        const tertiaryColor = sortedColors[2][0];
-
-        // Store pro results
-        localStorage.setItem('proAssessmentResults', JSON.stringify({
-          dominantColor,
-          secondaryColor,
-          tertiaryColor,
-          scores: colorCounts,
-          totalQuestions: proQuestions.length,
-          isPro: true,
-          colorDistribution: sortedColors
-        }));
-
-        navigate('/pro-results');
+        handleSubmit();
       }
+      setSelectedAnswer("");
     }
   };
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
-      const prevQuestion = currentQuestion - 1;
-      setCurrentQuestion(prevQuestion);
-      setSelectedAnswer(answers[prevQuestion] || "");
+      setCurrentQuestion(prev => prev - 1);
     }
   };
 
-  const progress = ((currentQuestion + 1) / proQuestions.length) * 100;
-  const currentQuestionData = proQuestions[currentQuestion];
-  
-  // Shuffle options for current question
-  const shuffledOptions = useMemo(() => {
-    return shuffleArray(currentQuestionData.options);
-  }, [currentQuestion]);
+  const calculateResults = () => {
+    const colorCounts = { yellow: 0, red: 0, green: 0, blue: 0 };
+    
+    Object.values(answers).forEach(answer => {
+      const selectedOption = proQuestions
+        .flatMap(q => q.options)
+        .find(option => option.text === answer);
+      
+      if (selectedOption) {
+        colorCounts[selectedOption.color]++;
+      }
+    });
+
+    const totalAnswers = Object.keys(answers).length;
+    const colorPercentages = {
+      yellow: Math.round((colorCounts.yellow / totalAnswers) * 100),
+      red: Math.round((colorCounts.red / totalAnswers) * 100),
+      green: Math.round((colorCounts.green / totalAnswers) * 100),
+      blue: Math.round((colorCounts.blue / totalAnswers) * 100),
+    };
+
+    const dominantColor = Object.entries(colorCounts).reduce((a, b) => 
+      colorCounts[a[0] as keyof typeof colorCounts] > colorCounts[b[0] as keyof typeof colorCounts] ? a : b
+    )[0];
+
+    return {
+      dominantColor,
+      colorPercentages,
+      colorCounts,
+      totalQuestions: proQuestions.length,
+      audienceType,
+      timestamp: new Date().toISOString()
+    };
+  };
+
+  const handleSubmit = async () => {
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      const results = calculateResults();
+      
+      const { error } = await supabase
+        .from('assessment_results')
+        .upsert({
+          user_id: user.id,
+          assessment_type: 'pro',
+          results: results
+        }, {
+          onConflict: 'user_id,assessment_type'
+        });
+
+      if (error) {
+        console.error('Error saving results:', error);
+        return;
+      }
+
+      // Clear progress from localStorage
+      localStorage.removeItem(`pro_assessment_progress_${user.id}_${audienceType}`);
+      
+      // Navigate to results with audience type
+      navigate(`/pro-results?audience=${audienceType}`);
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!currentQuestionData) {
+    return <div>Loading...</div>;
+  }
+
+  const getAudienceLabel = (type: AudienceType) => {
+    const labels = {
+      student: 'Student',
+      teacher: 'Teacher/Educator', 
+      professional: 'Professional',
+      entrepreneur: 'Entrepreneur',
+      executive: 'Executive',
+      manager: 'Manager',
+      coach: 'Coach/Athlete'
+    };
+    return labels[type] || type;
+  };
 
   return (
-    <ProtectedRoute requiresPayment={true} assessmentType="pro">
+    <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="bg-gradient-subtle py-8 px-4">
-          <div className="max-w-3xl mx-auto">
-            {/* Header with Progress */}
-            <div className="mb-8 animate-fade-in">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
-                    <Crown className="text-white w-4 h-4" />
-                  </div>
-                  <h1 className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                    Pro Deep Dive Assessment
-                  </h1>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">
-                    Question {currentQuestion + 1} of {proQuestions.length}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round(progress)}% Complete
-                  </div>
-                </div>
+        <div className="pt-16">
+          <div className="container-wide py-8 max-w-4xl mx-auto px-4">
+            
+            {/* Header */}
+            <div className="text-center mb-8 animate-fade-in">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Crown className="w-6 h-6 text-yellow-500" />
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                  Pro Assessment
+                </h1>
+                <Crown className="w-6 h-6 text-yellow-500" />
               </div>
-              <div className="relative">
-                <Progress value={progress} className="h-3 bg-muted/30" />
-                <div 
-                  className="absolute top-0 left-0 h-3 bg-gradient-brand rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
+              <p className="text-muted-foreground text-lg mb-2">
+                Context: <span className="font-semibold text-primary">{getAudienceLabel(audienceType)}</span>
+              </p>
+              <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                Comprehensive leadership assessment with advanced insights, team dynamics analysis, and strategic recommendations.
+                Questions are tailored to your selected context for maximum relevance.
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-8 animate-fade-in delay-200">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Question {currentQuestion + 1} of {proQuestions.length}
+                </span>
+                <span className="text-sm font-medium text-primary">
+                  {Math.round(progress)}% Complete
+                </span>
               </div>
+              <Progress value={progress} className="h-3 bg-muted" />
             </div>
 
             {/* Question Card */}
-            <Card className="shadow-elegant border-2 border-border/20 animate-scale-in">
+            <Card className="glass-card-strong border-primary/20 animate-fade-in delay-300">
               <CardHeader className="pb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-6 h-6 bg-gradient-hero rounded-full flex items-center justify-center animate-glow-pulse">
-                    <span className="text-white font-bold text-xs">{currentQuestion + 1}</span>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold">
+                    {currentQuestion + 1}
                   </div>
-                  <div className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
-                    {currentQuestionData.stage} Stage • Pro Deep Dive
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <div className="text-sm font-semibold text-primary mb-1">
-                    Team Development: {currentQuestionData.stage}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {currentQuestionData.stage === "Forming" && "Building connection and establishing organizational foundation"}
-                    {currentQuestionData.stage === "Storming" && "Navigating complex conflicts and organizational challenges"}
-                    {currentQuestionData.stage === "Norming" && "Establishing organizational flow and operational standards"}
-                    {currentQuestionData.stage === "Performing" && "Reaching peak organizational productivity and excellence"}
-                    {currentQuestionData.stage === "Adjourning" && "Ending with clarity, reflection, and legacy building"}
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+                      {currentQuestionData.stage}
+                    </p>
+                    <CardTitle className="text-xl md:text-2xl leading-tight text-foreground">
+                      {currentQuestionData.question}
+                    </CardTitle>
                   </div>
                 </div>
-                <CardTitle className="text-xl leading-relaxed text-foreground">
-                  {currentQuestionData.question}
-                </CardTitle>
               </CardHeader>
+              
               <CardContent className="space-y-4">
-                <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
-                  {shuffledOptions.map((option, index) => (
+                <RadioGroup 
+                  value={selectedAnswer} 
+                  onValueChange={handleAnswerSelect}
+                  className="space-y-4"
+                >
+                  {currentQuestionData.options.map((option, index) => (
                     <div 
                       key={index} 
-                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${
-                        selectedAnswer === option.color 
-                          ? 'border-primary bg-primary/5 shadow-glow' 
-                          : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
+                      className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer hover:shadow-md ${
+                        selectedAnswer === option.text 
+                          ? 'border-primary bg-primary/5 shadow-md' 
+                          : 'border-border hover:border-primary/50'
                       }`}
-                      onClick={() => handleAnswer(option.color)}
+                      onClick={() => handleAnswerSelect(option.text)}
                     >
                       <RadioGroupItem 
-                        value={option.color} 
+                        value={option.text} 
                         id={`option-${index}`}
                         className="mt-0.5 flex-shrink-0"
                       />
@@ -743,16 +309,18 @@ const ProAssessment = () => {
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">
-                  Your answers are not saved if you don't finish the quiz
+                  Your progress is automatically saved
                 </p>
               </div>
 
               <Button
                 onClick={handleNext}
-                disabled={!selectedAnswer}
+                disabled={!selectedAnswer || isSubmitting}
                 className="flex items-center gap-2 hover-scale"
               >
-                {currentQuestion === proQuestions.length - 1 ? 'Get Pro Results' : 'Next'}
+                {currentQuestion === proQuestions.length - 1 ? (
+                  isSubmitting ? 'Submitting...' : 'Get Pro Results'
+                ) : 'Next'}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
