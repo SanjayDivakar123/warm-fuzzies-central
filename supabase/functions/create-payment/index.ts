@@ -9,6 +9,7 @@ const corsHeaders = {
 serve(async (req) => {
   console.log("=== CREATE PAYMENT FUNCTION STARTED ===");
   console.log("Request method:", req.method);
+  console.log("Function deployed and ready!");
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
