@@ -61,7 +61,7 @@ const PaymentSuccess = () => {
   };
 
   const handleStartAssessment = () => {
-    navigate(`/${assessmentType}-assessment`);
+    navigate(`/assessment-selection?type=${assessmentType}`);
   };
 
   if (!user || !assessmentType) {

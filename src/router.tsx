@@ -9,6 +9,7 @@ import PremiumResults from "@/pages/PremiumResults";
 import ProAssessment from "@/pages/ProAssessment";
 import ProResults from "@/pages/ProResults";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import AssessmentSelection from "@/pages/AssessmentSelection";
 import Pricing from "@/pages/Pricing";
 import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
   {
     path: "/payment-success",
     element: <Layout><PaymentSuccess /></Layout>,
+  },
+  {
+    path: "/assessment-selection",
+    element: <Layout><AssessmentSelection /></Layout>,
   },
   {
     path: "/pricing",
