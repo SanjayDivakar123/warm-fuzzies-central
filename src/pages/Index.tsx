@@ -175,8 +175,8 @@ const Index = () => {
                 </h2>
               </div>
               
-              <div className="max-w-4xl mx-auto text-center">
-                <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed mb-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed mb-8 text-left">
                   <p className="text-lg mb-6">
                     When I started RoleColorFinder, I wasn't just building another assessment tool—I was building a new way for people to see themselves and each other. Teams fail not because of lack of talent, but because of misalignment. People clash, roles blur, and potential gets buried. I wanted to fix that.
                   </p>
