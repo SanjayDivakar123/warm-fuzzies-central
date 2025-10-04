@@ -29,6 +29,8 @@ export const exportToPDF = async (
     strengths: generateStrengths(reportData),
     developmentAreas: generateDevelopmentAreas(reportData),
   };
+  
+  const score = reportData.score || reportData.results?.score || reportData.percentage || 85;
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -42,7 +44,7 @@ export const exportToPDF = async (
     
     // Page 2: Detailed Results
     pdf.addPage();
-    createResultsPage(pdf, options, colorScheme, pageWidth, pageHeight);
+    createResultsPage(pdf, options, colorScheme, pageWidth, pageHeight, score);
     
     // Page 3: Action Plan
     pdf.addPage();
@@ -114,16 +116,27 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
   
+  // Add logo at top (if available)
+  try {
+    // Logo placeholder - centered at top
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+    pdf.text('ROLE COLOR FINDER', pageWidth / 2, 20, { align: 'center' });
+  } catch (e) {
+    console.log('Logo not available');
+  }
+  
   // Main title at top
   pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
   pdf.setFontSize(32);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('LEADERSHIP PROFILE REPORT', pageWidth / 2, 40, { align: 'center' });
+  pdf.text('LEADERSHIP PROFILE REPORT', pageWidth / 2, 45, { align: 'center' });
   
   // Subtitle
   pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Your Leadership Color', pageWidth / 2, 60, { align: 'center' });
+  pdf.text('Your Leadership Color', pageWidth / 2, 65, { align: 'center' });
   
   // Descriptive text
   pdf.setTextColor(80, 80, 80);
@@ -133,7 +146,7 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
     "Discover your unique leadership style through our comprehensive assessment. Whether you're a Fast Executor, Creative Motivator, Logical Systems Thinker, or Empathetic Connector, this professional analysis reveals your authentic leadership potential.",
     pageWidth - 50
   );
-  pdf.text(descLines, pageWidth / 2, 75, { align: 'center' });
+  pdf.text(descLines, pageWidth / 2, 80, { align: 'center' });
   
   // Premium analysis note
   pdf.setFontSize(9);
@@ -141,14 +154,14 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
     "Premium Analysis: Confidential professional report designed for HR leaders, executive coaches, and leadership development programs.",
     pageWidth - 50
   );
-  pdf.text(premiumNote, pageWidth / 2, 105, { align: 'center' });
+  pdf.text(premiumNote, pageWidth / 2, 110, { align: 'center' });
   
   // Call to action
   pdf.setTextColor(100, 100, 100);
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'italic');
-  pdf.text('Swipe to explore your detailed assessment results and personalized action plan.', pageWidth / 2, 130, { align: 'center' });
-  pdf.text('Your leadership journey starts here.', pageWidth / 2, 140, { align: 'center' });
+  pdf.text('Swipe to explore your detailed assessment results and personalized action plan.', pageWidth / 2, 135, { align: 'center' });
+  pdf.text('Your leadership journey starts here.', pageWidth / 2, 145, { align: 'center' });
   
   // Large color indicator circle in center
   const centerY = 180;
@@ -163,7 +176,7 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
   pdf.text(colorName, pageWidth / 2, centerY + 3, { align: 'center' });
 };
 
-const createResultsPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number) => {
+const createResultsPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number, score: number) => {
   let currentY = 25;
   
   // Page header
@@ -178,7 +191,7 @@ const createResultsPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: a
   pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
   pdf.setFontSize(48);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('85%', pageWidth / 2, currentY, { align: 'center' });
+  pdf.text(`${Math.round(score)}%`, pageWidth / 2, currentY, { align: 'center' });
   
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
