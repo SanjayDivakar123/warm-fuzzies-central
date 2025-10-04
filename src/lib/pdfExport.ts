@@ -110,176 +110,160 @@ const getColorScheme = (colorTheme: string) => {
 };
 
 const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number) => {
-  // Background gradient effect
-  pdf.setFillColor(colorScheme.light[0], colorScheme.light[1], colorScheme.light[2]);
+  // White background
+  pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
   
-  // Header banner
-  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.rect(0, 0, pageWidth, 60, 'F');
-  
-  // Company logo area
-  pdf.setFillColor(255, 255, 255);
-  pdf.circle(30, 30, 15, 'F');
-  
-  // Company name
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(24);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('ROLECOLOR ™️ FINDER', 55, 25);
-  
-  pdf.setFontSize(12);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text('Professional Leadership Assessment', 55, 35);
-  
-  // Date
-  pdf.setFontSize(10);
-  pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 50, 25);
-  
-  // Main title section
+  // Main title at top
   pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.setFontSize(36);
+  pdf.setFontSize(32);
   pdf.setFont('helvetica', 'bold');
-  const titleY = 100;
-  pdf.text('LEADERSHIP', pageWidth / 2, titleY, { align: 'center' });
-  pdf.text('PROFILE REPORT', pageWidth / 2, titleY + 15, { align: 'center' });
-  
-  // User's color result - large showcase
-  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.roundedRect(pageWidth / 2 - 40, titleY + 30, 80, 50, 10, 10, 'F');
-  
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(28);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(options.dominantColor || 'Leader', pageWidth / 2, titleY + 60, { align: 'center' });
+  pdf.text('LEADERSHIP PROFILE REPORT', pageWidth / 2, 40, { align: 'center' });
   
   // Subtitle
-  pdf.setTextColor(100, 100, 100);
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text('Your Leadership Color Profile', pageWidth / 2, titleY + 100, { align: 'center' });
-  
-  // Professional badge
-  pdf.setFillColor(colorScheme.secondary[0], colorScheme.secondary[1], colorScheme.secondary[2]);
-  pdf.roundedRect(pageWidth / 2 - 30, titleY + 120, 60, 20, 5, 5, 'F');
-  
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(12);
+  pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('PREMIUM ANALYSIS', pageWidth / 2, titleY + 135, { align: 'center' });
+  pdf.text('Your Leadership Color', pageWidth / 2, 60, { align: 'center' });
   
-  // Footer
-  pdf.setTextColor(120, 120, 120);
+  // Descriptive text
+  pdf.setTextColor(80, 80, 80);
   pdf.setFontSize(10);
-  pdf.text('Confidential Professional Report', pageWidth / 2, pageHeight - 20, { align: 'center' });
+  pdf.setFont('helvetica', 'normal');
+  const descLines = pdf.splitTextToSize(
+    "Discover your unique leadership style through our comprehensive assessment. Whether you're a Fast Executor, Creative Motivator, Logical Systems Thinker, or Empathetic Connector, this professional analysis reveals your authentic leadership potential.",
+    pageWidth - 50
+  );
+  pdf.text(descLines, pageWidth / 2, 75, { align: 'center' });
+  
+  // Premium analysis note
+  pdf.setFontSize(9);
+  const premiumNote = pdf.splitTextToSize(
+    "Premium Analysis: Confidential professional report designed for HR leaders, executive coaches, and leadership development programs.",
+    pageWidth - 50
+  );
+  pdf.text(premiumNote, pageWidth / 2, 105, { align: 'center' });
+  
+  // Call to action
+  pdf.setTextColor(100, 100, 100);
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'italic');
+  pdf.text('Swipe to explore your detailed assessment results and personalized action plan.', pageWidth / 2, 130, { align: 'center' });
+  pdf.text('Your leadership journey starts here.', pageWidth / 2, 140, { align: 'center' });
+  
+  // Large color indicator circle in center
+  const centerY = 180;
+  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+  pdf.circle(pageWidth / 2, centerY, 35, 'F');
+  
+  // Color label on circle
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'bold');
+  const colorName = options.dominantColor || 'Leader';
+  pdf.text(colorName, pageWidth / 2, centerY + 3, { align: 'center' });
 };
 
 const createResultsPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number) => {
-  let currentY = 30;
+  let currentY = 25;
   
   // Page header
-  pdf.setFillColor(colorScheme.light[0], colorScheme.light[1], colorScheme.light[2]);
-  pdf.rect(0, 0, pageWidth, 25, 'F');
-  
   pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.setFontSize(18);
+  pdf.setFontSize(20);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('DETAILED ASSESSMENT RESULTS', 20, 18);
+  pdf.text('Your Leadership Assessment Results', pageWidth / 2, currentY, { align: 'center' });
   
-  currentY = 40;
+  currentY = 50;
   
-  // Leadership Profile Section
-  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.rect(20, currentY, pageWidth - 40, 8, 'F');
+  // Overall Score - prominently at top
+  pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+  pdf.setFontSize(48);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('85%', pageWidth / 2, currentY, { align: 'center' });
   
-  pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('YOUR LEADERSHIP PROFILE', 25, currentY + 6);
+  pdf.text('Overall Leadership Score', pageWidth / 2, currentY + 12, { align: 'center' });
   
-  currentY += 20;
-  
-  // Profile description
-  pdf.setTextColor(60, 60, 60);
-  pdf.setFontSize(11);
+  pdf.setTextColor(80, 80, 80);
+  pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
-  const description = options.description || "Your leadership style demonstrates strong analytical thinking combined with excellent team collaboration skills.";
-  const descriptionLines = pdf.splitTextToSize(description, pageWidth - 50);
-  pdf.text(descriptionLines, 25, currentY);
-  currentY += descriptionLines.length * 5 + 10;
+  pdf.text('Strong leadership potential with excellent growth trajectory', pageWidth / 2, currentY + 22, { align: 'center' });
   
-  // Strengths Section
-  pdf.setFillColor(colorScheme.secondary[0], colorScheme.secondary[1], colorScheme.secondary[2]);
-  pdf.rect(20, currentY, (pageWidth - 50) / 2, 6, 'F');
+  currentY = 95;
+  
+  // Two column layout for Strengths and Growth
+  const leftColX = 20;
+  const rightColX = pageWidth / 2 + 5;
+  const colWidth = (pageWidth - 50) / 2;
+  
+  // Core Strengths (Left Column)
+  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+  pdf.rect(leftColX, currentY, colWidth, 8, 'F');
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('CORE STRENGTHS', 25, currentY + 4);
+  pdf.text('Core Strengths', leftColX + 5, currentY + 6);
   
-  currentY += 15;
-  
+  let strengthY = currentY + 18;
   const strengths = options.strengths || [
-    'Strategic Vision & Planning',
-    'Team Leadership & Motivation', 
-    'Decision Making Under Pressure',
-    'Effective Communication',
-    'Innovation & Creativity'
+    'Goal-Oriented Leadership',
+    'Quick Decision Making',
+    'Results-Driven Approach',
+    'Performance Optimization',
+    'Action Planning Excellence'
   ];
   
-  strengths.slice(0, 5).forEach((strength, index) => {
-    // Bullet point
+  strengths.slice(0, 5).forEach((strength) => {
     pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-    pdf.circle(27, currentY + 2, 1.5, 'F');
+    pdf.circle(leftColX + 7, strengthY + 2, 1.5, 'F');
     
     pdf.setTextColor(60, 60, 60);
-    pdf.setFontSize(10);
-    pdf.text(strength, 32, currentY + 4);
-    currentY += 8;
+    pdf.setFontSize(9);
+    pdf.text(strength, leftColX + 12, strengthY + 4);
+    strengthY += 7;
   });
   
-  // Development Areas Section  
-  const developmentY = 90;
+  // Growth Opportunities (Right Column)
   pdf.setFillColor(colorScheme.accent[0], colorScheme.accent[1], colorScheme.accent[2]);
-  pdf.rect(pageWidth / 2 + 5, developmentY, (pageWidth - 50) / 2, 6, 'F');
+  pdf.rect(rightColX, currentY, colWidth, 8, 'F');
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('GROWTH OPPORTUNITIES', pageWidth / 2 + 10, developmentY + 4);
+  pdf.text('Growth Opportunities', rightColX + 5, currentY + 6);
   
-  let devCurrentY = developmentY + 15;
-  
+  let growthY = currentY + 18;
   const developmentAreas = options.developmentAreas || [
-    'Delegation & Trust Building',
-    'Conflict Resolution',
-    'Public Speaking Confidence',
-    'Long-term Strategic Planning'
+    'Patience in Team Building',
+    'Detailed Strategic Planning',
+    'Collaborative Decision Making',
+    'Enhanced Emotional Awareness'
   ];
   
   developmentAreas.slice(0, 4).forEach((area) => {
     pdf.setFillColor(colorScheme.accent[0], colorScheme.accent[1], colorScheme.accent[2]);
-    pdf.circle(pageWidth / 2 + 12, devCurrentY + 2, 1.5, 'F');
+    pdf.circle(rightColX + 7, growthY + 2, 1.5, 'F');
     
     pdf.setTextColor(60, 60, 60);
-    pdf.setFontSize(10);
-    pdf.text(area, pageWidth / 2 + 17, devCurrentY + 4);
-    devCurrentY += 8;
+    pdf.setFontSize(9);
+    pdf.text(area, rightColX + 12, growthY + 4);
+    growthY += 7;
   });
   
-  // Leadership Metrics Section
+  // Assessment Areas Section
   currentY = 160;
-  pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+  pdf.setFillColor(colorScheme.light[0], colorScheme.light[1], colorScheme.light[2]);
   pdf.rect(20, currentY, pageWidth - 40, 8, 'F');
   
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(14);
+  pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
+  pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('LEADERSHIP CAPABILITY METRICS', 25, currentY + 6);
+  pdf.text('Assessment Areas', 25, currentY + 6);
   
-  currentY += 20;
+  currentY += 18;
   
-  // Create capability bars
+  // Create horizontal capability bars
   const capabilities = [
     { name: 'Strategic Vision', score: 88 },
     { name: 'Team Influence', score: 82 },
@@ -288,36 +272,28 @@ const createResultsPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: a
     { name: 'Innovation', score: 91 }
   ];
   
-  capabilities.forEach((capability) => {
+  const barHeight = 8;
+  const barSpacing = 15;
+  
+  capabilities.forEach((capability, index) => {
+    const barY = currentY + (index * barSpacing);
+    
     pdf.setTextColor(60, 60, 60);
-    pdf.setFontSize(10);
-    pdf.text(capability.name, 25, currentY + 4);
-    pdf.text(`${capability.score}%`, pageWidth - 35, currentY + 4);
+    pdf.setFontSize(9);
+    pdf.text(capability.name, 25, barY + 5);
     
     // Background bar
     pdf.setFillColor(230, 230, 230);
-    pdf.rect(25, currentY + 6, pageWidth - 80, 4, 'F');
+    pdf.rect(80, barY, pageWidth - 120, barHeight, 'F');
     
     // Progress bar
     pdf.setFillColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-    pdf.rect(25, currentY + 6, (pageWidth - 80) * (capability.score / 100), 4, 'F');
+    const progressWidth = (pageWidth - 120) * (capability.score / 100);
+    pdf.rect(80, barY, progressWidth, barHeight, 'F');
     
-    currentY += 15;
+    // Score text
+    pdf.text(`${capability.score}%`, pageWidth - 25, barY + 5);
   });
-  
-  // Overall Score Box
-  currentY += 10;
-  pdf.setFillColor(colorScheme.light[0], colorScheme.light[1], colorScheme.light[2]);
-  pdf.roundedRect(20, currentY, pageWidth - 40, 25, 5, 5, 'F');
-  
-  pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('OVERALL LEADERSHIP SCORE: 85%', pageWidth / 2, currentY + 12, { align: 'center' });
-  
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text('Strong leadership potential with excellent growth trajectory', pageWidth / 2, currentY + 20, { align: 'center' });
 };
 
 const createActionPlanPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number) => {
