@@ -9,8 +9,6 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
-import sanjaySignature from "@/assets/sanjay-signature.png";
-import sanjayPhoto from "@/assets/sanjay-photo.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const {
@@ -150,69 +148,6 @@ const Index = () => {
                       <div className="text-center">
                         <Sparkles className="w-8 h-8 text-yellow mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground font-medium">Free</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Founder's Message Section */}
-      <section className="section-padding">
-        <div className="container-wide">
-          <div className="max-w-5xl mx-auto">
-            <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20">
-              <div className="text-center mb-8">
-                <Badge variant="secondary" className="text-base px-6 py-3 mb-6 font-semibold">
-                  <Users className="w-5 h-5 mr-2" />
-                  A Message from Our Founder
-                </Badge>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-                  Why I Built <span className="gradient-text-primary">RoleColorFinder</span>
-                </h2>
-              </div>
-              
-              <div className="max-w-4xl mx-auto">
-                <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed mb-8 text-left">
-                  <p className="text-lg mb-6">
-                    When I started RoleColorFinder, I wasn't just building another assessment tool—I was building a new way for people to see themselves and each other. Teams fail not because of lack of talent, but because of misalignment. People clash, roles blur, and potential gets buried. I wanted to fix that.
-                  </p>
-                  
-                  <p className="text-lg mb-6">
-                    RoleColor™ is my answer: a simple, color-based system that brings clarity, balance, and trust to any group. What began as a small idea is now growing into a movement—helping schools, nonprofits, and businesses unlock the hidden strengths in their people.
-                  </p>
-                  
-                  <p className="text-lg mb-6">
-                    This isn't about filling out a quiz and moving on. It's about starting a conversation—about who you are, how you lead, and how you fit into something bigger. If RoleColorFinder helps you discover even one new strength, build one stronger relationship, or feel a little more aligned with your path, then it's doing its job.
-                  </p>
-                  
-                  <p className="text-lg mb-8">
-                    Thank you for being part of this journey. The future of leadership doesn't belong to a few—it belongs to all of us.
-                  </p>
-                </div>
-                
-                <div className="border-t border-primary/20 pt-8">
-                  <div className="flex flex-col items-center gap-6">
-                    <div className="flex items-center gap-6">
-                      <div className="relative">
-                        <img 
-                          src={sanjayPhoto} 
-                          alt="Sanjay Divakar, Founder & CEO" 
-                          className="w-20 h-20 object-cover rounded-full shadow-md border-2 border-primary/30"
-                        />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-primary rounded-full shadow-sm"></div>
-                      </div>
-                      <div className="text-left">
-                        <img 
-                          src={sanjaySignature} 
-                          alt="Sanjay Divakar Signature" 
-                          className="h-10 w-auto mb-1"
-                        />
-                        <p className="font-semibold text-foreground">Sanjay Divakar</p>
-                        <p className="text-sm text-muted-foreground">Founder & CEO, RoleColorFinder</p>
                       </div>
                     </div>
                   </div>
