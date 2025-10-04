@@ -97,6 +97,27 @@ const PremiumResults = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Calculate dynamic leadership score based on results
+  const calculateLeadershipScore = (results: PremiumResults): number => {
+    const { scores, totalQuestions } = results;
+    // Yellow and Red colors indicate higher leadership potential
+    const leadershipWeight = {
+      yellow: 1.0,  // High leadership
+      red: 0.9,     // Mid-high leadership
+      green: 0.85,  // Mid-high leadership
+      blue: 0.75    // Collaborative leadership
+    };
+    
+    const totalScore = Object.entries(scores).reduce((sum, [color, score]) => {
+      const weight = leadershipWeight[color as keyof typeof leadershipWeight];
+      return sum + (score / totalQuestions) * weight * 100;
+    }, 0);
+    
+    // Normalize to percentage (0-100)
+    const normalizedScore = Math.min(100, Math.round(totalScore));
+    return normalizedScore;
+  };
+
   const handleSaveResult = async () => {
     if (!user || !results || !resultName.trim()) {
       toast({
@@ -299,7 +320,7 @@ const PremiumResults = () => {
                     <Badge className={`${primaryColor.gradient} text-white border-0`}>
                       {primaryColor.leadershipLevel}
                     </Badge>
-                    <span className="text-2xl font-bold">85% Leadership Score</span>
+                    <span className="text-2xl font-bold">{calculateLeadershipScore(results)}% Leadership Score</span>
                   </div>
                   <p className="text-lg leading-relaxed mb-6">
                     Based on your assessment results, you demonstrate strong leadership potential. Your {primaryColor.name.toLowerCase()} 
