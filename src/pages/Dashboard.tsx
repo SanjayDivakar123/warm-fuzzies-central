@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,7 @@ interface AssessmentResult {
 const Dashboard = () => {
   const { user, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -356,11 +357,18 @@ const Dashboard = () => {
                               <Eye className="w-4 h-4 mr-2" />
                               Details
                             </Button>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/${assessment.assessment_type}-results`}>
-                                <ChevronRight className="w-4 h-4 mr-2" />
-                                View
-                              </Link>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => {
+                                // Store the assessment data in localStorage before navigating
+                                const storageKey = `${assessment.assessment_type}AssessmentResults`;
+                                localStorage.setItem(storageKey, JSON.stringify(assessment.results));
+                                navigate(`/${assessment.assessment_type}-results`);
+                              }}
+                            >
+                              <ChevronRight className="w-4 h-4 mr-2" />
+                              View
                             </Button>
                           </div>
                         </CardContent>
