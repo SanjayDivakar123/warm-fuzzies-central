@@ -313,67 +313,94 @@ const Dashboard = () => {
                     Assessment Results
                   </h2>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {assessments.map((assessment) => (
-                      <Card key={assessment.id} className="shadow-elegant border-border/20">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">
-                                {getAssessmentTypeLabel(assessment.assessment_type)}
-                              </CardTitle>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                <Calendar className="w-4 h-4" />
-                                {format(new Date(assessment.created_at), 'MMM dd, yyyy')}
+                    {assessments.map((assessment) => {
+                      // Check if assessment is completed (has actual results vs just payment status)
+                      const isCompleted = assessment.results.dominantColor || assessment.results.scores;
+                      const isPurchasedOnly = assessment.results.status === 'payment_completed' && !isCompleted;
+                      
+                      return (
+                        <Card key={assessment.id} className="shadow-elegant border-border/20">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg">
+                                  {getAssessmentTypeLabel(assessment.assessment_type)}
+                                </CardTitle>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {format(new Date(assessment.created_at), 'MMM dd, yyyy')}
+                                </div>
                               </div>
-                            </div>
-                            <Badge variant="outline" className="border-primary/30">
-                              {assessment.assessment_type}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {assessment.results.dominantColor && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium">Primary Role:</p>
-                              <Badge className={getColorBadgeStyle(assessment.results.dominantColor)}>
-                                {getColorLabel(assessment.results.dominantColor)}
+                              <Badge variant="outline" className="border-primary/30">
+                                {isPurchasedOnly ? 'Not Started' : assessment.assessment_type}
                               </Badge>
                             </div>
-                          )}
-                          <div className="flex gap-2 pt-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleDownloadReport(assessment)}
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setSelectedAssessment(assessment)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Details
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => {
-                                // Store the assessment data in localStorage before navigating
-                                const storageKey = `${assessment.assessment_type}AssessmentResults`;
-                                localStorage.setItem(storageKey, JSON.stringify(assessment.results));
-                                navigate(`/${assessment.assessment_type}-results`);
-                              }}
-                            >
-                              <ChevronRight className="w-4 h-4 mr-2" />
-                              View
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {isPurchasedOnly ? (
+                              <div className="space-y-3">
+                                <p className="text-sm text-muted-foreground">
+                                  Assessment purchased but not yet completed
+                                </p>
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  asChild
+                                  className="w-full"
+                                >
+                                  <Link to={`/${assessment.assessment_type}-assessment`}>
+                                    <ChevronRight className="w-4 h-4 mr-2" />
+                                    Start Assessment
+                                  </Link>
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                {assessment.results.dominantColor && (
+                                  <div className="space-y-2">
+                                    <p className="text-sm font-medium">Primary Role:</p>
+                                    <Badge className={getColorBadgeStyle(assessment.results.dominantColor)}>
+                                      {getColorLabel(assessment.results.dominantColor)}
+                                    </Badge>
+                                  </div>
+                                )}
+                                <div className="flex gap-2 pt-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleDownloadReport(assessment)}
+                                  >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => setSelectedAssessment(assessment)}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Details
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => {
+                                      // Store the assessment data in localStorage before navigating
+                                      const storageKey = `${assessment.assessment_type}AssessmentResults`;
+                                      localStorage.setItem(storageKey, JSON.stringify(assessment.results));
+                                      navigate(`/${assessment.assessment_type}-results`);
+                                    }}
+                                  >
+                                    <ChevronRight className="w-4 h-4 mr-2" />
+                                    View
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </section>
               )}
