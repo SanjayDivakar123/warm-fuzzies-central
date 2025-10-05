@@ -45,6 +45,10 @@ Disallow: *.log$
 Allow: /
 Allow: /pricing
 Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /about
+Allow: /contact
+Allow: /team-program
 
 # Crawl delay for heavy crawlers
 User-agent: AhrefsBot
@@ -56,5 +60,5 @@ Crawl-delay: 10
 User-agent: SemrushBot
 Crawl-delay: 10
 
-# Sitemap location (add when you create one)
-# Sitemap: https://yourdomain.com/sitemap.xml
+# Sitemap location
+Sitemap: https://rolecolorfinder.com/sitemap

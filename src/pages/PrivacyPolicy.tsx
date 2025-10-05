@@ -115,7 +115,8 @@ const PrivacyPolicy = () => {
             <h2 className="text-2xl font-semibold">7. Contact Us</h2>
             <p className="mt-3 text-muted-foreground">
               If you have questions about this policy or our data practices, please contact us at
-              <a href="mailto:privacy@example.com" className="ml-1 underline underline-offset-4 hover:text-foreground">privacy@example.com</a>.
+              <a href="mailto:privacy@rolecolorfinder.com" className="ml-1 underline underline-offset-4 hover:text-foreground">privacy@rolecolorfinder.com</a>
+              {" "}or visit our <Link to="/contact" className="underline underline-offset-4 hover:text-foreground">Contact Page</Link>.
             </p>
           </section>
 

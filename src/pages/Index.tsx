@@ -469,8 +469,10 @@ const Index = () => {
               <ul className="space-y-3">
                 <li><Link to="/auth" className="text-background/80 hover:text-background transition-colors text-sm">Sign In / Sign Up</Link></li>
                 <li><Link to="/reset-password" className="text-background/80 hover:text-background transition-colors text-sm">Reset Password</Link></li>
+                <li><Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm">About Us</Link></li>
+                <li><Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm">Contact</Link></li>
                 <li><Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm">Privacy Policy</Link></li>
-                
+                <li><Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
@@ -484,15 +486,18 @@ const Index = () => {
                 <span>All rights reserved.</span>
               </div>
               <div className="flex gap-6">
-                <Link to="/sitemap" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
-                  Sitemap
+                <Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                  About
+                </Link>
+                <Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                  Contact
                 </Link>
                 <Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
                   Privacy
                 </Link>
-                <a href="https://lovable.dev/support" target="_blank" rel="noopener noreferrer" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
-                  Support
-                </a>
+                <Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                  Terms
+                </Link>
               </div>
             </div>
           </div>

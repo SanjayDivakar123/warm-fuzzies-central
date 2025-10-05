@@ -16,6 +16,9 @@ import { ResetPassword } from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
 import Maintenance from "@/pages/Maintenance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
+import About from "@/pages/About";
+import Contact from "@/pages/Contact";
 import TeamProgram from "@/pages/TeamProgram";
 import Sitemap from "@/pages/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -91,6 +94,18 @@ export const router = createBrowserRouter([
   {
     path: "/privacy-policy",
     element: <Layout><PrivacyPolicy /></Layout>,
+  },
+  {
+    path: "/terms-of-service",
+    element: <Layout><TermsOfService /></Layout>,
+  },
+  {
+    path: "/about",
+    element: <Layout><About /></Layout>,
+  },
+  {
+    path: "/contact",
+    element: <Layout><Contact /></Layout>,
   },
   {
     path: "/team-program",

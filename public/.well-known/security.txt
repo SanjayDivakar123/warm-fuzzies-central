@@ -1,0 +1,7 @@
+Contact: mailto:security@rolecolorfinder.com
+Contact: https://rolecolorfinder.com/contact
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://rolecolorfinder.com/.well-known/security.txt
+Policy: https://rolecolorfinder.com/privacy-policy
+Hiring: https://rolecolorfinder.com/about
