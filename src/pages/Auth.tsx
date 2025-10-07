@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/navigation/Navbar";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles, Shield } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles, Shield, KeyRound } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +19,9 @@ export const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [verificationToken, setVerificationToken] = useState("");
+  const [tokenLoading, setTokenLoading] = useState(false);
   const { toast } = useToast();
   const { signUp, signIn, resetPassword, user } = useAuth();
   const navigate = useNavigate();
@@ -61,10 +66,45 @@ export const Auth = () => {
     } else {
       toast({
         title: "Check Your Email",
-        description: "We've sent you a confirmation link. Please check your email to complete signup.",
+        description: "We've sent you a confirmation link and token. Please check your email to complete signup.",
       });
+      setShowTokenDialog(true);
     }
     setLoading(false);
+  };
+
+  const handleVerifyToken = async () => {
+    if (!verificationToken || !email) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the verification token from your email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTokenLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: verificationToken,
+      type: 'email',
+    });
+
+    if (error) {
+      toast({
+        title: "Verification Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: "Your email has been verified. You can now sign in.",
+      });
+      setShowTokenDialog(false);
+      setVerificationToken("");
+    }
+    setTokenLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -363,6 +403,41 @@ export const Auth = () => {
           </div>
         </div>
       </div>
+
+      {/* Token Verification Dialog */}
+      <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Enter Verification Token
+            </DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit token from your email to verify your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="token">Verification Token</Label>
+              <Input
+                id="token"
+                placeholder="Enter 6-digit token"
+                value={verificationToken}
+                onChange={(e) => setVerificationToken(e.target.value)}
+                className="text-center text-lg tracking-widest font-mono"
+                maxLength={6}
+              />
+            </div>
+            <Button 
+              onClick={handleVerifyToken} 
+              className="w-full"
+              disabled={tokenLoading}
+            >
+              {tokenLoading ? "Verifying..." : "Verify Email"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
