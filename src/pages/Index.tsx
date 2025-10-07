@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -11,9 +12,20 @@ import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (searchParams.get('accverified') === 'true') {
+      toast({
+        title: "Account Verified!",
+        description: "Taking you to login page now...",
+      });
+      setTimeout(() => {
+        navigate('/auth');
+      }, 2000);
+    }
+  }, [searchParams, navigate]);
   return <div className="min-h-screen bg-background">
       <Navbar />
       
