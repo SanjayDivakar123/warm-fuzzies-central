@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,30 +7,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/navigation/Navbar";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [validSession, setValidSession] = useState(false);
   const { toast } = useToast();
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Check if this is a valid password reset session
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
+    // Check if user has a valid session (comes from password reset email)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Invalid Reset Link",
+          description: "This password reset link is invalid or has expired. Please request a new one.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+      } else {
+        setValidSession(true);
+      }
+    };
     
-    if (!accessToken || !refreshToken) {
-      toast({
-        title: "Invalid Reset Link",
-        description: "This password reset link is invalid or has expired.",
-        variant: "destructive",
-      });
-      navigate('/auth');
-    }
-  }, [searchParams, navigate, toast]);
+    checkSession();
+  }, [navigate, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +86,21 @@ export const ResetPassword = () => {
     }
     setLoading(false);
   };
+
+  if (!validSession) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle">
+        <Navbar />
+        <div className="flex items-center justify-center py-12 px-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <p>Verifying reset link...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
