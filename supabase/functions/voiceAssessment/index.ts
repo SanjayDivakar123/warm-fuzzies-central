@@ -20,9 +20,20 @@ serve(async (req) => {
     const body = await req.json();
     console.log('Received webhook:', JSON.stringify(body, null, 2));
 
-    const { event, session_id, phone_number, answer } = body;
+    // Normalize incoming payloads (supports Bland completion payloads)
+    const event = body.event ?? (body.completed ? 'call_completed' : undefined);
+    const session_id = body.session_id 
+      ?? body.metadata?.session_id 
+      ?? body.variables?.metadata?.session_id 
+      ?? body.variables?.session_id;
+    const phone_number = body.phone_number 
+      ?? body.variables?.phone_number 
+      ?? body.to 
+      ?? body.variables?.to;
+    const answer = body.answer;
 
     if (!session_id || !phone_number) {
+      console.error('Missing identifiers, derived values:', { session_id, phone_number });
       return new Response(
         JSON.stringify({ error: 'Missing session_id or phone_number' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -91,16 +102,28 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
-    } else if (event === 'call_completed') {
-      // Retrieve the assessment record
-      const { data: assessment, error: fetchError } = await supabase
+    } else if (event === 'call_completed' || body.completed === true) {
+      // Retrieve the assessment record by session first, then fallback by phone
+      let { data: assessment, error: fetchError } = await supabase
         .from('voice_assessments')
         .select('*')
         .eq('session_id', session_id)
         .maybeSingle();
 
-      if (fetchError || !assessment) {
-        console.error('Fetch error:', fetchError);
+      if ((!assessment || fetchError) && phone_number) {
+        const { data: fallback, error: fallbackError } = await supabase
+          .from('voice_assessments')
+          .select('*')
+          .eq('phone_number', phone_number)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (fallback) assessment = fallback;
+        if (!assessment) fetchError = fallbackError ?? fetchError;
+      }
+
+      if (!assessment) {
+        console.error('Assessment not found for session or phone:', { session_id, phone_number, fetchError });
         return new Response(
           JSON.stringify({ error: 'Assessment not found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
