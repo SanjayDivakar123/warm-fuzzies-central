@@ -73,10 +73,10 @@ export const VoiceAssessment = () => {
               <Phone className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4 bg-gradient-hero bg-clip-text text-transparent">
-              Voice Assessment
+              Take Our 25Q Test For Free!
             </h1>
             <p className="text-muted-foreground text-lg">
-              Complete your RoleColorFinder assessment over the phone
+              Discover your RoleColor leadership type with our voice assessment
             </p>
           </div>
 
