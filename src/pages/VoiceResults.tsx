@@ -191,7 +191,7 @@ export const VoiceResults = () => {
                     </div>
                     <div className="text-3xl font-bold">{item.score}</div>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round((item.score / totalScore) * 100)}%
+                      {totalScore > 0 ? Math.round((item.score / totalScore) * 100) : 0}%
                     </div>
                   </div>
                 ))}

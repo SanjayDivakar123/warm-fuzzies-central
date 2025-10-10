@@ -17,7 +17,13 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (_e) {
+      console.error('voiceAssessment: empty or invalid JSON body');
+      body = {};
+    }
     console.log('Received webhook:', JSON.stringify(body, null, 2));
 
     // Normalize incoming payloads (supports Bland completion payloads)
@@ -30,14 +36,19 @@ serve(async (req) => {
       ?? body.variables?.phone_number 
       ?? body.to 
       ?? body.variables?.to;
-    const answer = body.answer;
+    const rawAnswer = body.answer ?? body.choice ?? body.value ?? body.digit ?? body.selected_option ?? body.response ?? body.variables?.answer ?? body.variables?.choice ?? body.data?.answer;
+    let answer = typeof rawAnswer === 'string' ? rawAnswer.trim().toUpperCase() : undefined;
+    if (answer && /^[1-4]$/.test(answer)) {
+      const map: Record<string,string> = { '1':'A','2':'B','3':'C','4':'D' };
+      answer = map[answer];
+    }
 
     // Validate identifiers based on event type
     const isCompletionEvent = (event === 'call_completed' || body.completed === true);
     const isQuestionEvent = (event === 'question_answered');
 
-    if ((isQuestionEvent && (!session_id || !phone_number)) ||
-        (isCompletionEvent && (!session_id && !phone_number))) {
+    // For both events, allow either session_id OR phone_number (at least one)
+    if (((isQuestionEvent || isCompletionEvent) && (!session_id && !phone_number))) {
       console.error('Missing identifiers for event', { event, session_id, phone_number });
       return new Response(
         JSON.stringify({ error: 'Missing required identifiers' }),
@@ -63,40 +74,57 @@ serve(async (req) => {
         );
       }
 
-      // Fetch existing record or prepare new one
-      const { data: existing } = await supabase
-        .from('voice_assessments')
-        .select('*')
-        .eq('session_id', session_id)
-        .maybeSingle();
+      // Fetch existing assessment by session if provided, otherwise by phone (latest)
+      let existing: any = null;
+      if (session_id) {
+        const resp = await supabase
+          .from('voice_assessments')
+          .select('*')
+          .eq('session_id', session_id)
+          .maybeSingle();
+        existing = resp.data;
+      }
+      if (!existing && phone_number) {
+        const resp2 = await supabase
+          .from('voice_assessments')
+          .select('*')
+          .eq('phone_number', phone_number)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        existing = resp2.data;
+      }
+      if (!existing) {
+        console.error('No existing assessment found to update scores', { session_id, phone_number });
+        return new Response(
+          JSON.stringify({ error: 'Assessment not found for scoring' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const scores = {
-        score_yellow: existing?.score_yellow || 0,
-        score_red: existing?.score_red || 0,
-        score_green: existing?.score_green || 0,
-        score_blue: existing?.score_blue || 0,
+        score_yellow: existing.score_yellow || 0,
+        score_red: existing.score_red || 0,
+        score_green: existing.score_green || 0,
+        score_blue: existing.score_blue || 0,
       };
 
       // Increment the correct color score
       scores[`score_${color}` as keyof typeof scores] += 1;
 
-      // Upsert the record
-      const { error: upsertError } = await supabase
+      // Update the existing record by id and mark in_progress
+      const { error: updateErr } = await supabase
         .from('voice_assessments')
-        .upsert({
-          session_id,
-          phone_number,
-          assessment_type: 'professional_25q',
+        .update({
           ...scores,
           status: 'in_progress',
-        }, {
-          onConflict: 'session_id',
-        });
+        })
+        .eq('id', existing.id);
 
-      if (upsertError) {
-        console.error('Upsert error:', upsertError);
+      if (updateErr) {
+        console.error('Update error:', updateErr);
         return new Response(
-          JSON.stringify({ error: upsertError.message }),
+          JSON.stringify({ error: updateErr.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

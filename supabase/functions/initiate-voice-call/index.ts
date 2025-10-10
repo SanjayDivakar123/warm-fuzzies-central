@@ -144,6 +144,7 @@ NORMING STAGE - Establishing Flow
         webhook: `https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/voiceAssessment`,
         metadata: {
           session_id: sessionId,
+          phone_number,
         },
       }),
     });
