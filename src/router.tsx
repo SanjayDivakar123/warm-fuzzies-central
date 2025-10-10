@@ -22,6 +22,8 @@ import Contact from "@/pages/Contact";
 import TeamProgram from "@/pages/TeamProgram";
 import Sitemap from "@/pages/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
+import { VoiceAssessment } from "@/pages/VoiceAssessment";
+import { VoiceResults } from "@/pages/VoiceResults";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -114,6 +116,14 @@ export const router = createBrowserRouter([
   {
     path: "/sitemap",
     element: <Layout><Sitemap /></Layout>,
+  },
+  {
+    path: "/voice-assessment",
+    element: <Layout><VoiceAssessment /></Layout>,
+  },
+  {
+    path: "/voice-results",
+    element: <Layout><VoiceResults /></Layout>,
   },
   {
     path: "*",

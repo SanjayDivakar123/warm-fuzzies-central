@@ -7,13 +7,84 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      access_codes: {
+        Row: {
+          can_see_results: boolean
+          code: string
+          created_at: string
+          created_by_admin: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          is_used: boolean | null
+          max_uses: number | null
+          updated_at: string
+        }
+        Insert: {
+          can_see_results?: boolean
+          code: string
+          created_at?: string
+          created_by_admin?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_used?: boolean | null
+          max_uses?: number | null
+          updated_at?: string
+        }
+        Update: {
+          can_see_results?: boolean
+          code?: string
+          created_at?: string
+          created_by_admin?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_used?: boolean | null
+          max_uses?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_codes_created_by_admin_fkey"
+            columns: ["created_by_admin"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       assessment_results: {
         Row: {
           assessment_type: string
@@ -62,6 +133,229 @@ export type Database = {
           id?: string
           metadata?: Json | null
           source?: string
+        }
+        Relationships: []
+      }
+      school_classes: {
+        Row: {
+          admin_id: string
+          block: string
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id: string
+          block: string
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string
+          block?: string
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      school_students: {
+        Row: {
+          class_id: string
+          created_at: string
+          grade: string
+          id: string
+          name: string
+          role_color: string | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          grade: string
+          id?: string
+          name: string
+          role_color?: string | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          grade?: string
+          id?: string
+          name?: string
+          role_color?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "school_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_team_members: {
+        Row: {
+          id: string
+          student_id: string
+          team_id: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          team_id: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_team_members_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "school_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "school_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_teams: {
+        Row: {
+          access_code: string
+          class_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          access_code: string
+          class_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          access_code?: string
+          class_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_teams_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "school_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimonials: {
+        Row: {
+          advice_to_others: string
+          created_at: string
+          id: string
+          liked_most: string
+          name: string
+          organization: string
+          permission_level: string
+          problem_description: string
+          recommendation_score: number
+          results_benefits: string
+          role_title: string
+          updated_at: string
+          video_testimonial_interest: string
+        }
+        Insert: {
+          advice_to_others: string
+          created_at?: string
+          id?: string
+          liked_most: string
+          name: string
+          organization: string
+          permission_level: string
+          problem_description: string
+          recommendation_score: number
+          results_benefits: string
+          role_title: string
+          updated_at?: string
+          video_testimonial_interest: string
+        }
+        Update: {
+          advice_to_others?: string
+          created_at?: string
+          id?: string
+          liked_most?: string
+          name?: string
+          organization?: string
+          permission_level?: string
+          problem_description?: string
+          recommendation_score?: number
+          results_benefits?: string
+          role_title?: string
+          updated_at?: string
+          video_testimonial_interest?: string
+        }
+        Relationships: []
+      }
+      voice_assessments: {
+        Row: {
+          assessment_type: string
+          created_at: string
+          dominant_color: string | null
+          id: string
+          phone_number: string
+          score_blue: number
+          score_green: number
+          score_red: number
+          score_yellow: number
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_type?: string
+          created_at?: string
+          dominant_color?: string | null
+          id?: string
+          phone_number: string
+          score_blue?: number
+          score_green?: number
+          score_red?: number
+          score_yellow?: number
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_type?: string
+          created_at?: string
+          dominant_color?: string | null
+          id?: string
+          phone_number?: string
+          score_blue?: number
+          score_green?: number
+          score_red?: number
+          score_yellow?: number
+          session_id?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

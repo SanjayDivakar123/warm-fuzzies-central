@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.voiceAssessment]
 verify_jwt = false
+
+[functions.initiate-voice-call]
+verify_jwt = false
