@@ -32,10 +32,15 @@ serve(async (req) => {
       ?? body.variables?.to;
     const answer = body.answer;
 
-    if (!session_id || !phone_number) {
-      console.error('Missing identifiers, derived values:', { session_id, phone_number });
+    // Validate identifiers based on event type
+    const isCompletionEvent = (event === 'call_completed' || body.completed === true);
+    const isQuestionEvent = (event === 'question_answered');
+
+    if ((isQuestionEvent && (!session_id || !phone_number)) ||
+        (isCompletionEvent && (!session_id && !phone_number))) {
+      console.error('Missing identifiers for event', { event, session_id, phone_number });
       return new Response(
-        JSON.stringify({ error: 'Missing session_id or phone_number' }),
+        JSON.stringify({ error: 'Missing required identifiers' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -103,12 +108,19 @@ serve(async (req) => {
       );
 
     } else if (event === 'call_completed' || body.completed === true) {
-      // Retrieve the assessment record by session first, then fallback by phone
-      let { data: assessment, error: fetchError } = await supabase
-        .from('voice_assessments')
-        .select('*')
-        .eq('session_id', session_id)
-        .maybeSingle();
+      // Retrieve the assessment record by session if available, then fallback by phone
+      let assessment: any = null;
+      let fetchError: any = null;
+
+      if (session_id) {
+        const resp = await supabase
+          .from('voice_assessments')
+          .select('*')
+          .eq('session_id', session_id)
+          .maybeSingle();
+        assessment = resp.data;
+        fetchError = resp.error;
+      }
 
       if ((!assessment || fetchError) && phone_number) {
         const { data: fallback, error: fallbackError } = await supabase
@@ -149,7 +161,7 @@ serve(async (req) => {
           dominant_color: dominantColor,
           status: 'complete',
         })
-        .eq('session_id', session_id);
+        .eq('id', assessment.id);
 
       if (updateError) {
         console.error('Update error:', updateError);

@@ -51,6 +51,26 @@ export const VoiceAssessment = () => {
 
       // Show status info
       if (data.status === 'initiated') {
+        // Attempt to finalize via edge function in case webhook missed
+        try {
+          await supabase.functions.invoke('voiceAssessment', {
+            body: { completed: true, phone_number: lookupPhone },
+          });
+          const { data: refreshed } = await supabase
+            .from("voice_assessments")
+            .select("*")
+            .eq("phone_number", lookupPhone)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (refreshed?.status === 'complete') {
+            navigate(`/voice-results?phone=${encodeURIComponent(lookupPhone)}`);
+            return;
+          }
+        } catch (err) {
+          console.error("Finalize via function failed", err);
+        }
+
         toast({
           title: "Assessment In Progress",
           description: "Your call was initiated but not completed. Please finish the assessment by calling again.",
@@ -60,6 +80,26 @@ export const VoiceAssessment = () => {
       }
 
       if (data.status === 'in_progress') {
+        // Attempt to finalize via edge function in case webhook missed
+        try {
+          await supabase.functions.invoke('voiceAssessment', {
+            body: { completed: true, phone_number: lookupPhone },
+          });
+          const { data: refreshed } = await supabase
+            .from("voice_assessments")
+            .select("*")
+            .eq("phone_number", lookupPhone)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (refreshed?.status === 'complete') {
+            navigate(`/voice-results?phone=${encodeURIComponent(lookupPhone)}`);
+            return;
+          }
+        } catch (err) {
+          console.error("Finalize via function failed", err);
+        }
+
         toast({
           title: "Assessment In Progress",
           description: `You've answered some questions. Call back to finish! (${data.score_yellow + data.score_red + data.score_green + data.score_blue}/25 answered)`,
