@@ -34,7 +34,6 @@ export const VoiceAssessment = () => {
         .from("voice_assessments")
         .select("*")
         .eq("phone_number", lookupPhone)
-        .eq("status", "complete")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -43,9 +42,27 @@ export const VoiceAssessment = () => {
 
       if (!data) {
         toast({
-          title: "No Results Found",
-          description: "We couldn't find any completed assessments for this phone number.",
+          title: "No Assessment Found",
+          description: "We couldn't find any assessments for this phone number. Make sure you've completed the call.",
           variant: "destructive",
+        });
+        return;
+      }
+
+      // Show status info
+      if (data.status === 'initiated') {
+        toast({
+          title: "Assessment In Progress",
+          description: "Your call was initiated but not completed. Please finish the assessment by calling again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.status === 'in_progress') {
+        toast({
+          title: "Assessment In Progress",
+          description: `You've answered some questions. Call back to finish! (${data.score_yellow + data.score_red + data.score_green + data.score_blue}/25 answered)`,
         });
         return;
       }
