@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { Button } from "@/components/ui/button";
-import { Palette, Home, CreditCard, HelpCircle, Menu, X, User, LogOut, Users, Mail, Info } from "lucide-react";
+import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const location = useLocation();
@@ -62,24 +62,6 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
-              <MenubarMenu>
-                <MenubarTrigger asChild>
-                  <Link to="/about" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/about') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
-                    <Info className="w-4 h-4 mr-2" />
-                    About
-                  </Link>
-                </MenubarTrigger>
-              </MenubarMenu>
-
-              <MenubarMenu>
-                <MenubarTrigger asChild>
-                  <Link to="/contact" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/contact') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contact
-                  </Link>
-                </MenubarTrigger>
-              </MenubarMenu>
-
             </Menubar>
           </div>
 
@@ -134,14 +116,6 @@ export function Navbar() {
               <Link to="/team-program" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Users className="w-4 h-4 mr-2 inline" />
                 Team Program
-              </Link>
-              <Link to="/about" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/about') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                <Info className="w-4 h-4 mr-2 inline" />
-                About
-              </Link>
-              <Link to="/contact" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/contact') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                <Mail className="w-4 h-4 mr-2 inline" />
-                Contact
               </Link>
               
               <div className="px-3 py-2">
