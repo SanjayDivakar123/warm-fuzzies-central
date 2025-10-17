@@ -13,13 +13,14 @@ import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-
+  const {
+    user
+  } = useAuth();
   useEffect(() => {
     if (searchParams.get('accverified') === 'true') {
       toast({
         title: "Account Verified!",
-        description: "Taking you to login page now...",
+        description: "Taking you to login page now..."
       });
       setTimeout(() => {
         navigate('/auth');
@@ -299,73 +300,11 @@ const Index = () => {
 
       {/* Voice Assessment Promotion Section */}
       <section className="section-padding bg-gradient-to-br from-primary/5 via-background to-green/5 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-hero rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-green rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
+        
 
         <div className="container-wide relative">
           <div className="max-w-5xl mx-auto">
-            <div className="glass-card-strong rounded-3xl p-12 md:p-16 border-2 border-primary/30 shadow-colorful hover-lift">
-              <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-hero rounded-full mb-6 shadow-glow animate-bounce-gentle">
-                  <Phone className="w-10 h-10 text-white" />
-                </div>
-                
-                <Badge variant="secondary" className="text-base px-6 py-3 mb-6 font-semibold">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  New: Voice Assessment
-                </Badge>
-
-                <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6">
-                  Take Our 25Q Test <span className="gradient-text-primary">For Free!</span>
-                </h2>
-                
-                <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-                  No typing, no screens - just call and answer 25 questions to discover your RoleColor leadership type
-                </p>
-              </div>
-
-              <div className="bg-gradient-subtle rounded-2xl p-8 md:p-12 mb-10 border-2 border-primary/20">
-                <p className="text-sm text-muted-foreground mb-3 text-center">Call Now:</p>
-                <a 
-                  href="tel:+18086462957"
-                  className="block text-center"
-                >
-                  <span className="text-5xl md:text-6xl font-black bg-gradient-hero bg-clip-text text-transparent hover:scale-105 transition-transform inline-block">
-                    +1 (808) 646-2957
-                  </span>
-                </a>
-                <p className="text-center text-muted-foreground mt-4 text-lg">
-                  Available 24/7 • Takes 10-15 minutes
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-6 mb-10">
-                {[
-                  { icon: Phone, title: "Call the Number", desc: "Dial from any phone" },
-                  { icon: Brain, title: "Answer 25 Questions", desc: "Say A, B, C, or D" },
-                  { icon: CheckCircle, title: "Get Your Results", desc: "View online instantly" }
-                ].map((step, i) => (
-                  <div key={i} className="glass-card rounded-xl p-6 text-center hover-lift border border-primary/20">
-                    <div className="w-14 h-14 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-                      <step.icon className="w-7 h-7 text-white" />
-                    </div>
-                    <h3 className="font-bold text-foreground mb-2 text-lg">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground">{step.desc}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-center">
-                <Button variant="hero" size="xl" className="text-xl px-12 py-6 font-bold group" asChild>
-                  <Link to="/voice-assessment">
-                    Learn More About Voice Assessment
-                    <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
+            
           </div>
         </div>
       </section>
