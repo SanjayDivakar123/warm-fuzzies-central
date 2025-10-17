@@ -109,63 +109,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right Visual - Completely Redesigned */}
-            <div className="relative max-w-2xl mx-auto animate-fade-in delay-400">
-              <div className="relative group">
-                
-                {/* Background gradient orb */}
-                <div className="absolute inset-0 bg-gradient-hero rounded-3xl blur-3xl opacity-40 group-hover:opacity-60 transition-all duration-700 animate-glow-pulse scale-110"></div>
-                
-                {/* Main card */}
-                <div className="glass-card-strong rounded-3xl p-12 shadow-xl hover:shadow-2xl transition-all duration-700 relative border-2 border-primary/30 group-hover:border-primary/50 hover-lift">
-                  
-                  {/* Logo container with enhanced styling */}
-                  <div className="relative mb-10">
-                    <div className="w-48 h-48 bg-gradient-to-br from-card via-background to-accent/20 rounded-3xl flex items-center justify-center mx-auto border-3 border-primary/40 shadow-colorful hover:shadow-glow transition-all duration-500 hover:scale-105">
-                      <img src="/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png" alt="RoleColor ™️ Finder" className="w-24 h-auto filter drop-shadow-lg" />
-                    </div>
-                    
-                    {/* Floating accent elements */}
-                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-red rounded-full opacity-90 animate-bounce-gentle shadow-lg"></div>
-                    <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-gradient-green rounded-full opacity-90 animate-bounce-gentle delay-1000 shadow-lg"></div>
-                    <div className="absolute top-1/2 -right-8 w-6 h-6 bg-gradient-yellow rounded-full opacity-80 animate-bounce-gentle delay-500 shadow-md"></div>
-                    <div className="absolute top-1/4 -left-6 w-6 h-6 bg-gradient-blue rounded-full opacity-80 animate-bounce-gentle delay-1500 shadow-md"></div>
-                  </div>
-                  
-                  <div className="space-y-8 text-center">
-                    <div>
-                      <h3 className="text-3xl font-bold text-foreground mb-4">Discover Your Colors</h3>
-                      <p className="text-xl text-muted-foreground leading-relaxed">
-                        Take our assessment to reveal your unique color profile and unlock your leadership potential
-                      </p>
-                    </div>
-
-                    {/* Enhanced progress dots */}
-                    <div className="flex justify-center gap-3">
-                      {[0, 1, 2, 3].map(i => <div key={i} className="w-3 h-3 bg-gradient-primary rounded-full animate-pulse shadow-blue" style={{
-                      animationDelay: `${i * 300}ms`
-                    }}></div>)}
-                    </div>
-                    
-                    {/* Trust indicators */}
-                    <div className="flex justify-center gap-8 pt-6 border-t border-border/30">
-                      <div className="text-center">
-                        <Shield className="w-8 h-8 text-green mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground font-medium">Secure</p>
-                      </div>
-                      <div className="text-center">
-                        <Clock className="w-8 h-8 text-blue mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground font-medium">3 Minutes</p>
-                      </div>
-                      <div className="text-center">
-                        <Sparkles className="w-8 h-8 text-yellow mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground font-medium">Free</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
