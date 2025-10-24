@@ -118,6 +118,16 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Right Content - Halloween Pumpkin */}
+            <div className="hidden lg:flex items-center justify-center animate-fade-in delay-400">
+              <div className="relative">
+                <div className="text-[20rem] animate-gentle-bounce filter drop-shadow-[0_0_50px_rgba(255,117,24,0.5)]">
+                  🎃
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-yellow/20 rounded-full blur-3xl animate-pulse"></div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
