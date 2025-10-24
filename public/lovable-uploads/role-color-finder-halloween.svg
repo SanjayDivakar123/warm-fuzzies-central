@@ -1,25 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 568.34 202.75">
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 220">
   <defs>
     <style>
       .cls-1 {
         fill: #6D28D9;
       }
-
       .cls-2 {
         fill: #8B5CF6;
       }
-
       .cls-3 {
         fill: #FF7518;
       }
-
       .cls-4 {
         fill: #FF7518;
+      }
+      .cls-pumpkin {
+        fill: #FF7518;
+        filter: drop-shadow(0 0 10px rgba(255, 117, 24, 0.8));
+      }
+      .cls-pumpkin-face {
+        fill: #1a1a1a;
+      }
+      .cls-stem {
+        fill: #27bd73;
+      }
+      .cls-spooky {
+        fill: #6D28D9;
+        opacity: 0.3;
       }
     </style>
   </defs>
   <g id="Layer_1-2" data-name="Layer 1">
+    <!-- Spooky background elements -->
+    <ellipse class="cls-spooky" cx="50" cy="100" rx="30" ry="35" opacity="0.2"/>
+    <ellipse class="cls-spooky" cx="570" cy="100" rx="30" ry="35" opacity="0.2"/>
+    
+    <!-- Left Pumpkin -->
+    <g transform="translate(-10, 20)">
+      <!-- Pumpkin body -->
+      <ellipse class="cls-pumpkin" cx="25" cy="85" rx="20" ry="22"/>
+      <ellipse class="cls-pumpkin" cx="32" cy="85" rx="18" ry="24"/>
+      <ellipse class="cls-pumpkin" cx="39" cy="85" rx="20" ry="22"/>
+      <!-- Stem -->
+      <rect class="cls-stem" x="30" y="65" width="6" height="8" rx="2"/>
+      <!-- Scary face -->
+      <polygon class="cls-pumpkin-face" points="28,80 30,83 26,83"/>
+      <polygon class="cls-pumpkin-face" points="38,80 40,83 36,83"/>
+      <path class="cls-pumpkin-face" d="M27,88 Q32,93 37,88" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+      <polygon class="cls-pumpkin-face" points="29,91 31,89 33,91 35,89 31,93"/>
+    </g>
+    
+    <!-- Right Pumpkin -->
+    <g transform="translate(550, 15)">
+      <!-- Pumpkin body -->
+      <ellipse class="cls-pumpkin" cx="25" cy="90" rx="22" ry="24"/>
+      <ellipse class="cls-pumpkin" cx="33" cy="90" rx="20" ry="26"/>
+      <ellipse class="cls-pumpkin" cx="41" cy="90" rx="22" ry="24"/>
+      <!-- Stem -->
+      <rect class="cls-stem" x="31" y="68" width="7" height="9" rx="2"/>
+      <!-- Evil face -->
+      <polygon class="cls-pumpkin-face" points="27,84 29,88 25,88"/>
+      <polygon class="cls-pumpkin-face" points="39,84 41,88 37,88"/>
+      <path class="cls-pumpkin-face" d="M26,95 Q33,98 40,95" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+      <polygon class="cls-pumpkin-face" points="28,99 30,96 32,99 34,96 36,99 38,96 33,102"/>
+    </g>
+    
+    <!-- Mini pumpkins scattered -->
+    <g transform="translate(240, 10)">
+      <ellipse class="cls-pumpkin" cx="8" cy="12" rx="6" ry="7" opacity="0.7"/>
+      <ellipse class="cls-pumpkin" cx="13" cy="12" rx="5" ry="8" opacity="0.7"/>
+      <rect class="cls-stem" x="9" y="6" width="3" height="4" rx="1"/>
+    </g>
+    
+    <g transform="translate(480, 8)">
+      <ellipse class="cls-pumpkin" cx="10" cy="14" rx="7" ry="8" opacity="0.6"/>
+      <ellipse class="cls-pumpkin" cx="16" cy="14" rx="6" ry="9" opacity="0.6"/>
+      <rect class="cls-stem" x="11" y="7" width="3" height="4" rx="1"/>
+    </g>
+    
+    <!-- Original logo text with Halloween colors -->
     <g>
       <path class="cls-3" d="M44.39,91.76l-18.1-32.86h-5.08v32.86H0V4.71h35.59c6.86,0,12.71,1.2,17.55,3.6,4.84,2.4,8.45,5.68,10.85,9.86,2.4,4.18,3.6,8.83,3.6,13.95,0,5.79-1.63,10.95-4.9,15.5-3.27,4.55-8.08,7.77-14.45,9.67l20.09,34.47h-23.93ZM21.2,43.9h13.14c3.88,0,6.8-.95,8.74-2.85,1.94-1.9,2.91-4.59,2.91-8.06s-.97-5.91-2.91-7.81c-1.94-1.9-4.86-2.85-8.74-2.85h-13.14v21.58Z"/>
       <path class="cls-3" d="M85.98,88.41c-5.42-2.89-9.67-7.03-12.77-12.4-3.1-5.37-4.65-11.66-4.65-18.85s1.57-13.37,4.71-18.79c3.14-5.41,7.44-9.57,12.9-12.46,5.46-2.89,11.57-4.34,18.35-4.34s12.9,1.45,18.35,4.34c5.46,2.9,9.75,7.05,12.9,12.46,3.14,5.42,4.71,11.68,4.71,18.79s-1.59,13.37-4.77,18.79c-3.18,5.42-7.52,9.57-13.02,12.46-5.5,2.89-11.64,4.34-18.41,4.34s-12.88-1.45-18.29-4.34ZM114.62,69.94c2.85-2.98,4.28-7.23,4.28-12.77s-1.39-9.8-4.15-12.77c-2.77-2.98-6.18-4.46-10.23-4.46s-7.56,1.47-10.29,4.4c-2.73,2.94-4.09,7.21-4.09,12.83s1.34,9.8,4.03,12.77c2.69,2.98,6.05,4.46,10.11,4.46s7.5-1.49,10.35-4.46Z"/>
@@ -37,6 +96,17 @@
       <path class="cls-2" d="M309,172.25h-47.99c.33,4.3,1.71,7.59,4.15,9.86,2.44,2.27,5.43,3.41,8.99,3.41,5.29,0,8.97-2.23,11.04-6.7h22.57c-1.16,4.55-3.25,8.64-6.26,12.28-3.02,3.64-6.8,6.49-11.35,8.56-4.55,2.07-9.63,3.1-15.25,3.1-6.78,0-12.81-1.45-18.1-4.34-5.29-2.89-9.42-7.03-12.4-12.4-2.98-5.37-4.46-11.66-4.46-18.85s1.47-13.47,4.4-18.85c2.93-5.37,7.05-9.51,12.34-12.4,5.29-2.89,11.37-4.34,18.23-4.34s12.65,1.41,17.86,4.22c5.21,2.81,9.28,6.82,12.21,12.03,2.93,5.21,4.4,11.28,4.4,18.23,0,1.98-.12,4.05-.37,6.2ZM287.67,160.47c0-3.64-1.24-6.53-3.72-8.68-2.48-2.15-5.58-3.22-9.3-3.22s-6.55,1.03-8.99,3.1c-2.44,2.07-3.95,5-4.53,8.8h26.54Z"/>
       <path class="cls-2" d="M343.78,135.11c3.72-2.19,7.85-3.29,12.4-3.29v22.44h-5.83c-5.29,0-9.26,1.14-11.9,3.41-2.65,2.27-3.97,6.26-3.97,11.97v32.12h-21.2v-69.19h21.2v11.53c2.48-3.8,5.58-6.8,9.3-8.99Z"/>
       <path class="cls-1" d="M359.71,199.47c-2.36-2.19-3.53-4.9-3.53-8.12s1.18-6.08,3.53-8.31c2.36-2.23,5.39-3.35,9.11-3.35s6.63,1.12,8.99,3.35c2.36,2.23,3.53,5,3.53,8.31s-1.18,5.93-3.53,8.12c-2.36,2.19-5.35,3.29-8.99,3.29s-6.76-1.09-9.11-3.29Z"/>
+    </g>
+    
+    <!-- Bottom pumpkin decoration -->
+    <g transform="translate(250, 185)">
+      <ellipse class="cls-pumpkin" cx="12" cy="18" rx="9" ry="10" opacity="0.8"/>
+      <ellipse class="cls-pumpkin" cx="19" cy="18" rx="8" ry="11" opacity="0.8"/>
+      <ellipse class="cls-pumpkin" cx="26" cy="18" rx="9" ry="10" opacity="0.8"/>
+      <rect class="cls-stem" x="16" y="10" width="4" height="6" rx="1"/>
+      <polygon class="cls-pumpkin-face" points="15,16 17,18 13,18"/>
+      <polygon class="cls-pumpkin-face" points="23,16 25,18 21,18"/>
+      <path class="cls-pumpkin-face" d="M14,21 Q19,24 24,21" stroke="#1a1a1a" stroke-width="1" fill="none"/>
     </g>
   </g>
 </svg>
