@@ -26,6 +26,7 @@ import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
 import HauntedColorChallenge from "@/pages/HauntedColorChallenge";
 import RoleColorRoom from "@/pages/RoleColorRoom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout><Index /></Layout>,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: "/auth",

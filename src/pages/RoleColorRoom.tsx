@@ -14,12 +14,13 @@ interface Puzzle {
 
 export default function RoleColorRoom() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(180); // 3 minutes - much harder!
   const [currentPuzzle, setCurrentPuzzle] = useState(1);
   const [puzzles, setPuzzles] = useState<Puzzle[]>([
     { id: 1, solved: false, type: 'color-sequence' },
     { id: 2, solved: false, type: 'color-match' },
     { id: 3, solved: false, type: 'color-code' },
+    { id: 4, solved: false, type: 'color-sequence' },
   ]);
   const [escaped, setEscaped] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -98,24 +99,25 @@ export default function RoleColorRoom() {
     setGameStarted(true);
     setFailed(false);
     setEscaped(false);
-    setTimeLeft(300);
+    setTimeLeft(180); // 3 minutes
     setCurrentPuzzle(1);
     setPuzzles([
       { id: 1, solved: false, type: 'color-sequence' },
       { id: 2, solved: false, type: 'color-match' },
       { id: 3, solved: false, type: 'color-code' },
+      { id: 4, solved: false, type: 'color-sequence' },
     ]);
     setUserSequence([]);
     setCodeLock(['', '', '', '']);
     
-    // Initialize Puzzle 1: Random sequence
-    const randomSeq = Array.from({ length: 5 }, () => 
-      colors[Math.floor(Math.random() * 4)]
+    // Initialize Puzzle 1: Longer random sequence (7 colors!)
+    const randomSeq = Array.from({ length: 7 }, () => 
+      colors[Math.floor(Math.random() * 6)]
     );
     setSequence(randomSeq);
     
-    // Initialize Puzzle 2: Color pairs
-    const pairColors = ['red', 'red', 'blue', 'blue', 'green', 'green', 'yellow', 'yellow'];
+    // Initialize Puzzle 2: More pairs (12 cards!)
+    const pairColors = ['red', 'red', 'blue', 'blue', 'green', 'green', 'yellow', 'yellow', 'purple', 'purple', 'orange', 'orange'];
     const shuffled = pairColors.sort(() => Math.random() - 0.5);
     setColorPairs(shuffled.map(color => ({ color, revealed: false })));
     setSelectedPair([]);
@@ -123,7 +125,7 @@ export default function RoleColorRoom() {
 
   const showSequencePuzzle = () => {
     setShowSequence(true);
-    setTimeout(() => setShowSequence(false), 3000);
+    setTimeout(() => setShowSequence(false), 2000); // Only 2 seconds to memorize!
   };
 
   const handleSequenceClick = (color: string) => {
@@ -268,7 +270,7 @@ export default function RoleColorRoom() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Puzzles Solved</p>
               <p className="text-3xl font-bold text-green">
-                {puzzles.filter(p => p.solved).length}/3
+                {puzzles.filter(p => p.solved).length}/4
               </p>
             </div>
           </Card>
@@ -293,7 +295,7 @@ export default function RoleColorRoom() {
                 </h2>
                 {failed && (
                   <p className="text-xl text-muted-foreground">
-                    You solved {puzzles.filter(p => p.solved).length}/3 puzzles
+                    You solved {puzzles.filter(p => p.solved).length}/4 puzzles
                   </p>
                 )}
                 <Button 
@@ -340,11 +342,11 @@ export default function RoleColorRoom() {
                         Your sequence: {userSequence.length}/{sequence.length}
                       </p>
                       <div className="flex gap-2 justify-center flex-wrap">
-                        {['red', 'yellow', 'green', 'blue'].map(color => (
+                        {colors.map(color => (
                           <Button
                             key={color}
                             onClick={() => handleSequenceClick(color)}
-                            className="w-24 h-24 text-white font-bold text-lg"
+                            className="w-20 h-20 text-white font-bold text-sm"
                             style={{ backgroundColor: color }}
                           >
                             {color.toUpperCase()}
@@ -360,13 +362,13 @@ export default function RoleColorRoom() {
                   <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
                     {puzzles[1].solved ? '✅' : '🧩'} Puzzle 2: Match the Pairs
                   </h3>
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-4 gap-3">
                     {colorPairs.map((pair, i) => (
                       <button
                         key={i}
                         onClick={() => handlePairClick(i)}
                         disabled={!gameStarted || currentPuzzle < 2 || puzzles[1].solved}
-                        className={`h-24 rounded-lg border-4 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`h-20 rounded-lg border-4 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                           pair.revealed ? 'border-white' : 'border-muted bg-black/80'
                         }`}
                         style={{ backgroundColor: pair.revealed ? pair.color : 'transparent' }}
@@ -383,7 +385,7 @@ export default function RoleColorRoom() {
                     {puzzles[2].solved ? '✅ UNLOCKED!' : '🔒'} Puzzle 3: Crack the Code
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    💡 Hint: Primary sequence - starts hot, grows fresh, flies high, shines bright
+                    💡 Cryptic Hint: Fire's passion, nature's life, ocean's depth, sun's joy
                   </p>
                   <div className="flex gap-4 justify-center mb-4">
                     {codeLock.map((selected, index) => (
@@ -401,7 +403,7 @@ export default function RoleColorRoom() {
                             className="bg-black text-white border border-primary rounded px-2 py-1"
                           >
                             <option value="">Select</option>
-                            {['red', 'green', 'blue', 'yellow'].map(c => (
+                            {colors.map(c => (
                               <option key={c} value={c}>{c}</option>
                             ))}
                           </select>
@@ -409,6 +411,87 @@ export default function RoleColorRoom() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Puzzle 4: Final Speed Challenge */}
+                <div className={`p-6 rounded-lg border-2 ${puzzles[3].solved ? 'border-green bg-green/10' : currentPuzzle === 4 ? 'border-primary bg-primary/10' : 'border-muted bg-muted/5'}`}>
+                  <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    {puzzles[3].solved ? '✅' : '🧩'} Puzzle 4: FINAL CHALLENGE - Memory Under Pressure!
+                  </h3>
+                  <p className="text-sm text-destructive mb-4">
+                    ⚠️ The sequence will only show for 1.5 seconds! Better be quick! ⚠️
+                  </p>
+                  {currentPuzzle === 4 && !puzzles[3].solved && (
+                    <>
+                      {!puzzles[0].solved && (
+                        <Button 
+                          onClick={() => {
+                            const finalSeq = Array.from({ length: 8 }, () => 
+                              colors[Math.floor(Math.random() * 6)]
+                            );
+                            setSequence(finalSeq);
+                            setShowSequence(true);
+                            setTimeout(() => setShowSequence(false), 1500);
+                          }} 
+                          variant="outline"
+                          className="mb-4"
+                        >
+                          {showSequence ? 'MEMORIZE NOW!' : 'Show Final Sequence'}
+                        </Button>
+                      )}
+                      {showSequence && (
+                        <div className="flex gap-2 justify-center mb-4 p-4 bg-black/50 rounded-lg flex-wrap">
+                          {sequence.slice(0, 8).map((color, i) => (
+                            <div 
+                              key={i}
+                              className="w-12 h-12 rounded-lg shadow-lg"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {!showSequence && (
+                        <>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Your sequence: {userSequence.length}/8
+                          </p>
+                          <div className="flex gap-2 justify-center flex-wrap">
+                            {colors.map(color => (
+                              <Button
+                                key={color}
+                                onClick={() => {
+                                  if (puzzles[3].solved) return;
+                                  const newUserSeq = [...userSequence, color];
+                                  setUserSequence(newUserSeq);
+                                  
+                                  if (newUserSeq.length === 8) {
+                                    if (JSON.stringify(newUserSeq) === JSON.stringify(sequence.slice(0, 8))) {
+                                      setPuzzles(prev => prev.map(p => p.id === 4 ? { ...p, solved: true } : p));
+                                      toast({
+                                        title: "FINAL PUZZLE SOLVED! 🎃",
+                                        description: "The door is unlocked!",
+                                      });
+                                    } else {
+                                      setUserSequence([]);
+                                      toast({
+                                        title: "Wrong Sequence! 👻",
+                                        description: "Start over!",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="w-16 h-16 text-white font-bold text-xs"
+                                style={{ backgroundColor: color }}
+                              >
+                                {color.slice(0, 3).toUpperCase()}
+                              </Button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -419,10 +502,11 @@ export default function RoleColorRoom() {
         <Card className="max-w-6xl mx-auto mt-8 p-6 glass-card-strong">
           <h3 className="text-2xl font-bold mb-4 text-primary">How to Escape:</h3>
           <ul className="space-y-2 text-muted-foreground">
-            <li>🧩 <strong>Puzzle 1:</strong> Memorize the color sequence and repeat it perfectly</li>
-            <li>🎴 <strong>Puzzle 2:</strong> Find all matching color pairs by remembering positions</li>
-            <li>🔒 <strong>Puzzle 3:</strong> Use the clue to crack the 4-color code lock</li>
-            <li>⏰ <strong>Time Limit:</strong> 5 minutes to escape or you're trapped forever!</li>
+            <li>🧩 <strong>Puzzle 1:</strong> Memorize 7 colors in 2 seconds and repeat them perfectly</li>
+            <li>🎴 <strong>Puzzle 2:</strong> Find all 6 matching pairs (12 cards total!) by remembering positions</li>
+            <li>🔒 <strong>Puzzle 3:</strong> Crack the cryptic 4-color code using the mysterious hint</li>
+            <li>⚡ <strong>Puzzle 4:</strong> FINAL BOSS - Memorize 8 colors in only 1.5 seconds!</li>
+            <li>⏰ <strong>Time Limit:</strong> Only 3 minutes to escape or you are trapped forever!</li>
             <li>🏆 <strong>Escape Successfully:</strong> Win the ESCAPED25 code for a FREE assessment!</li>
           </ul>
         </Card>
