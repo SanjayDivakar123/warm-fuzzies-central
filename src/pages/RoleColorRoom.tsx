@@ -33,6 +33,7 @@ export default function RoleColorRoom() {
   // Puzzle 2: Color Matching
   const [colorPairs, setColorPairs] = useState<{color: string, revealed: boolean}[]>([]);
   const [selectedPair, setSelectedPair] = useState<number[]>([]);
+  const [pairLock, setPairLock] = useState(false);
   
   // Puzzle 3: Color Code Lock
   const [codeLock, setCodeLock] = useState<string[]>(['', '', '', '']);
@@ -154,48 +155,43 @@ export default function RoleColorRoom() {
   };
 
   const handlePairClick = (index: number) => {
-    if (!gameStarted || puzzles[1].solved || colorPairs[index].revealed) return;
-    
+    if (!gameStarted || currentPuzzle < 2 || puzzles[1].solved || pairLock || colorPairs[index].revealed) return;
+
     if (selectedPair.length === 0) {
       setSelectedPair([index]);
       setColorPairs(prev => prev.map((p, i) => i === index ? { ...p, revealed: true } : p));
-    } else if (selectedPair.length === 1 && selectedPair[0] !== index) {
+      return;
+    }
+
+    if (selectedPair.length === 1 && selectedPair[0] !== index) {
       const firstIndex = selectedPair[0];
-      setColorPairs(prev => prev.map((p, i) => i === index ? { ...p, revealed: true } : p));
-      
-      setTimeout(() => {
-        if (colorPairs[firstIndex].color === colorPairs[index].color) {
-          // Match found - keep them revealed
-          toast({
-            title: "Match Found! 🎃",
-            description: "Keep going!",
-          });
-          setSelectedPair([]);
-          
-          // Check if all pairs found after a brief delay
-          setTimeout(() => {
-            const allRevealed = colorPairs.every((p, i) => 
-              p.revealed || i === firstIndex || i === index
-            );
-            if (allRevealed) {
-              setPuzzles(p => p.map(puzzle => puzzle.id === 2 ? { ...puzzle, solved: true } : puzzle));
-              setCurrentPuzzle(3);
-              toast({
-                title: "Puzzle 2 Solved! 🎃",
-                description: "All pairs matched! Next puzzle awaits...",
-              });
-            }
-          }, 100);
-        } else {
-          // No match - hide both after showing them
-          setTimeout(() => {
-            setColorPairs(prev => prev.map((p, i) => 
-              i === firstIndex || i === index ? { ...p, revealed: false } : p
-            ));
-            setSelectedPair([]);
-          }, 400);
+      setPairLock(true);
+
+      // Reveal the second card immediately using a snapshot
+      const nextPairs = colorPairs.map((p, i) => i === index ? { ...p, revealed: true } : p);
+      const isMatch = nextPairs[firstIndex].color === nextPairs[index].color;
+      setColorPairs(nextPairs);
+
+      if (isMatch) {
+        toast({ title: "Match Found! 🎃", description: "Keep going!" });
+        setSelectedPair([]);
+        setPairLock(false);
+
+        // Check completion based on the updated snapshot
+        const allRevealed = nextPairs.every(p => p.revealed);
+        if (allRevealed) {
+          setPuzzles(p => p.map(puzzle => puzzle.id === 2 ? { ...puzzle, solved: true } : puzzle));
+          setCurrentPuzzle(3);
+          toast({ title: "Puzzle 2 Solved! 🎃", description: "All pairs matched! Next puzzle awaits..." });
         }
-      }, 600);
+      } else {
+        // Hide both after a short delay
+        setTimeout(() => {
+          setColorPairs(prev => prev.map((p, i) => (i === firstIndex || i === index) ? { ...p, revealed: false } : p));
+          setSelectedPair([]);
+          setPairLock(false);
+        }, 600);
+      }
     }
   };
 
@@ -369,7 +365,7 @@ export default function RoleColorRoom() {
                       <button
                         key={i}
                         onClick={() => handlePairClick(i)}
-                        disabled={!gameStarted || currentPuzzle < 2 || puzzles[1].solved}
+                        disabled={!gameStarted || currentPuzzle < 2 || puzzles[1].solved || pairLock}
                         className={`h-20 rounded-lg border-4 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                           pair.revealed ? 'border-white' : 'border-muted bg-black/80'
                         }`}
