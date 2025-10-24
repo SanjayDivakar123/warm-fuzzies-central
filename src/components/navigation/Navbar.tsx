@@ -17,7 +17,14 @@ export function Navbar() {
         <div className="flex h-20 items-center justify-between py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0 smooth-hover hover:scale-105">
-            <div className="relative">
+            <div 
+              className="relative"
+              onClick={(e) => {
+                e.preventDefault();
+                // @ts-ignore
+                window.trackLogoClicks?.();
+              }}
+            >
               <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-12 w-auto sm:h-16 md:h-20" />
               <div className="absolute inset-0 bg-gradient-primary opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300"></div>
             </div>

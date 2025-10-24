@@ -10,6 +10,7 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
+import { EasterEggs } from "@/components/EasterEggs";
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -28,6 +29,7 @@ const Index = () => {
     }
   }, [searchParams, navigate]);
   return <div className="min-h-screen bg-background">
+      <EasterEggs />
       <Navbar />
       
       {/* Hero Section - Completely Redesigned */}
@@ -39,13 +41,34 @@ const Index = () => {
         <div className="absolute bottom-32 right-[15%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-15 animate-bounce-gentle delay-1000"></div>
         <div className="absolute top-48 right-[25%] w-32 h-32 bg-gradient-yellow rounded-full blur-xl opacity-10 animate-bounce-gentle delay-500"></div>
         
-        {/* Floating Pumpkins */}
+        {/* Floating Pumpkins - one is clickable! */}
         <div className="absolute top-20 left-[5%] text-6xl animate-bounce-gentle opacity-80">🎃</div>
-        <div className="absolute top-40 right-[8%] text-5xl animate-gentle-bounce opacity-70">🎃</div>
+        <div 
+          className="absolute top-40 right-[8%] text-5xl animate-gentle-bounce opacity-70 cursor-pointer hover:scale-125 transition-transform"
+          onClick={() => {
+            // @ts-ignore
+            window.triggerEasterEgg?.('pumpkin');
+          }}
+          title="Something special about this one..."
+        >
+          ✨🎃✨
+        </div>
         <div className="absolute bottom-20 left-[15%] text-7xl animate-bounce-gentle delay-500 opacity-60">🎃</div>
         <div className="absolute bottom-40 right-[20%] text-4xl animate-gentle-bounce delay-1000 opacity-75">🎃</div>
         <div className="absolute top-[60%] left-[3%] text-5xl animate-bounce-gentle opacity-65">🎃</div>
         <div className="absolute top-[70%] right-[5%] text-6xl animate-gentle-bounce delay-700 opacity-70">🎃</div>
+        
+        {/* Hidden Ghost */}
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5 hover:opacity-100 transition-opacity cursor-pointer hover:animate-bounce"
+          onClick={() => {
+            // @ts-ignore
+            window.triggerEasterEgg?.('ghost');
+          }}
+          style={{ pointerEvents: 'all' }}
+        >
+          👻
+        </div>
         
         <div className="relative container-wide">
           <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
@@ -478,7 +501,16 @@ const Index = () => {
                 <span>&copy; {new Date().getFullYear()}</span>
                 <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-6 w-auto" />
                 <span>All rights reserved.</span>
-                <span>👻</span>
+                <span 
+                  className="cursor-pointer hover:scale-150 transition-transform"
+                  onClick={() => {
+                    // @ts-ignore
+                    window.triggerEasterEgg?.('footer');
+                  }}
+                  title="Is that a spider?!"
+                >
+                  🕷️
+                </span>
               </div>
               <div className="flex gap-6">
                 <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
