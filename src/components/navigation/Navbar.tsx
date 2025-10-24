@@ -18,7 +18,7 @@ export function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0 smooth-hover hover:scale-105">
             <div className="relative">
-              <img src="/lovable-uploads/role-color-finder-halloween.svg" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-8 w-auto sm:h-10" />
+              <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-8 w-auto sm:h-10" />
               <div className="absolute inset-0 bg-gradient-primary opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300"></div>
             </div>
           </Link>

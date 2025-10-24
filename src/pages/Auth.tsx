@@ -233,9 +233,9 @@ export const Auth = () => {
                     <CardHeader className="text-center pb-4">
                       <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-blue">
                         <img 
-                          src="/lovable-uploads/role-color-finder-halloween.svg" 
+                          src="/lovable-uploads/role-color-finder-halloween.png" 
                           alt="RoleColor ™️ Finder - Halloween Edition 🎃" 
-                          className="w-8 h-auto"
+                          className="w-12 h-auto p-1"
                         />
                       </div>
                       <CardTitle className="text-2xl font-bold">Welcome</CardTitle>

@@ -112,7 +112,7 @@ const Index = () => {
                   <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4">
                     <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs 
-                    <img src="/lovable-uploads/role-color-finder-halloween.svg" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-5 w-auto inline" />
+                    <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-5 w-auto inline" />
                   </a>
                 </Button>
               </div>
@@ -405,82 +405,92 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Enhanced Footer */}
-      <footer className="bg-footer text-background py-16">
-        <div className="container-wide">
+      {/* Halloween Themed Footer */}
+      <footer className="relative bg-gradient-to-b from-background to-[#0a0a0a] text-foreground py-16 overflow-hidden border-t-4 border-primary">
+        {/* Spooky Background Elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-10 left-10 text-8xl">🎃</div>
+          <div className="absolute top-20 right-20 text-6xl">👻</div>
+          <div className="absolute bottom-10 left-1/4 text-7xl">🎃</div>
+          <div className="absolute bottom-20 right-1/3 text-5xl">🕷️</div>
+        </div>
+        
+        <div className="container-wide relative z-10">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             
             {/* Logo & Description */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-6">
-                <img src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor ™️ Finder" className="h-8 w-auto" />
+                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-12 w-auto" />
               </div>
-              <p className="text-background/80 text-sm leading-relaxed mb-6">
+              <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                 Discover your unique leadership color profile with our science-backed assessment system.
               </p>
-              <div className="flex gap-4">
-                <div className="w-8 h-8 bg-gradient-red rounded-full"></div>
-                <div className="w-8 h-8 bg-gradient-yellow rounded-full"></div>
-                <div className="w-8 h-8 bg-gradient-green rounded-full"></div>
-                <div className="w-8 h-8 bg-gradient-blue rounded-full"></div>
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-gradient-red rounded-full shadow-red hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 bg-gradient-yellow rounded-full shadow-yellow hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 bg-gradient-green rounded-full shadow-green hover:scale-110 transition-transform"></div>
+                <div className="w-10 h-10 bg-gradient-blue rounded-full shadow-blue hover:scale-110 transition-transform"></div>
               </div>
             </div>
             
             {/* Main Pages */}
             <div>
-              <h3 className="font-bold gradient-text mb-4">Main Pages</h3>
+              <h3 className="font-bold text-primary mb-4 text-lg">Main Pages</h3>
               <ul className="space-y-3">
-                <li><Link to="/" className="text-background/80 hover:text-background transition-colors text-sm">Home</Link></li>
-                <li><Link to="/pricing" className="text-background/80 hover:text-background transition-colors text-sm">Pricing</Link></li>
-                <li><Link to="/team-program" className="text-background/80 hover:text-background transition-colors text-sm">Team Program</Link></li>
-                <li><Link to="/sitemap" className="text-background/80 hover:text-background transition-colors text-sm">Sitemap</Link></li>
+                <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Home</Link></li>
+                <li><Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Pricing</Link></li>
+                <li><Link to="/team-program" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Team Program</Link></li>
+                <li><Link to="/sitemap" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Sitemap</Link></li>
               </ul>
             </div>
             
             {/* Assessments */}
             <div>
-              <h3 className="font-bold gradient-text mb-4">Assessments</h3>
+              <h3 className="font-bold text-primary mb-4 text-lg">Assessments</h3>
               <ul className="space-y-3">
-                <li><Link to="/free-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Free Assessment</Link></li>
-                <li><Link to="/premium-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Premium Assessment</Link></li>
-                <li><Link to="/pro-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Pro Assessment</Link></li>
-                <li><Link to="/dashboard" className="text-background/80 hover:text-background transition-colors text-sm">Dashboard</Link></li>
+                <li><Link to="/free-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Free Assessment</Link></li>
+                <li><Link to="/premium-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Premium Assessment</Link></li>
+                <li><Link to="/pro-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Pro Assessment</Link></li>
+                <li><Link to="/dashboard" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Dashboard</Link></li>
               </ul>
             </div>
             
             {/* Account & Legal */}
             <div>
-              <h3 className="font-bold gradient-text mb-4">Account & Legal</h3>
+              <h3 className="font-bold text-primary mb-4 text-lg">Account & Legal</h3>
               <ul className="space-y-3">
-                <li><Link to="/auth" className="text-background/80 hover:text-background transition-colors text-sm">Sign In / Sign Up</Link></li>
-                <li><Link to="/reset-password" className="text-background/80 hover:text-background transition-colors text-sm">Reset Password</Link></li>
-                <li><Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm">About Us</Link></li>
-                <li><Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm">Contact</Link></li>
-                <li><Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm">Terms of Service</Link></li>
+                <li><Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Sign In / Sign Up</Link></li>
+                <li><Link to="/reset-password" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Reset Password</Link></li>
+                <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">About Us</Link></li>
+                <li><Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Contact</Link></li>
+                <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
           
           {/* Bottom Bar */}
-          <div className="border-t border-background/20 pt-8">
+          <div className="border-t border-primary/20 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-2 text-background/80 text-sm">
+              <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <span>🎃</span>
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img src="/lovable-uploads/role-color-finder-halloween.svg" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-4 w-auto" />
+                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-6 w-auto" />
                 <span>All rights reserved.</span>
+                <span>👻</span>
               </div>
               <div className="flex gap-6">
-                <Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
                   About
                 </Link>
-                <Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
                   Contact
                 </Link>
-                <Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                <Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
                   Privacy
                 </Link>
-                <Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
+                <Link to="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
                   Terms
                 </Link>
               </div>

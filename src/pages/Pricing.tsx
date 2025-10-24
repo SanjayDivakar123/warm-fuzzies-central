@@ -78,7 +78,7 @@ export default function Pricing() {
           </div>
           <div className="flex items-center justify-center mb-4 sm:mb-6">
             <img 
-              src="/lovable-uploads/role-color-finder-halloween.svg" 
+              src="/lovable-uploads/role-color-finder-halloween.png" 
               alt="RoleColor ™️ Finder - Halloween Edition 🎃" 
               className="h-12 sm:h-16 md:h-20 w-auto"
             />

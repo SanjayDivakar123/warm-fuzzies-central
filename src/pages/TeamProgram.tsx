@@ -254,7 +254,7 @@ const TeamProgram = () => {
                 <FileText className="w-4 h-4" />
                 Download: Why Every Team Needs 
                 <img 
-                  src="/lovable-uploads/role-color-finder-halloween.svg" 
+                  src="/lovable-uploads/role-color-finder-halloween.png" 
                   alt="RoleColor ™️ Finder - Halloween Edition 🎃" 
                   className="h-4 w-auto inline"
                 />
