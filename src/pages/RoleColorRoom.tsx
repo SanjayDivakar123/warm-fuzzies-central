@@ -205,9 +205,10 @@ export default function RoleColorRoom() {
     if (newCode.every(c => c !== '')) {
       if (JSON.stringify(newCode) === JSON.stringify(correctCode)) {
         setPuzzles(prev => prev.map(p => p.id === 3 ? { ...p, solved: true } : p));
+        setCurrentPuzzle(4);
         toast({
           title: "DOOR UNLOCKED! 🔓",
-          description: "You've escaped the room!",
+          description: "Final challenge unlocked!",
         });
       } else {
         setTimeout(() => {
@@ -421,22 +422,20 @@ export default function RoleColorRoom() {
                   </p>
                   {currentPuzzle === 4 && !puzzles[3].solved && (
                     <>
-                      {!puzzles[0].solved && (
-                        <Button 
-                          onClick={() => {
-                            const finalSeq = Array.from({ length: 8 }, () => 
-                              colors[Math.floor(Math.random() * 6)]
-                            );
-                            setSequence(finalSeq);
-                            setShowSequence(true);
-                            setTimeout(() => setShowSequence(false), 1500);
-                          }} 
-                          variant="outline"
-                          className="mb-4"
-                        >
-                          {showSequence ? 'MEMORIZE NOW!' : 'Show Final Sequence'}
-                        </Button>
-                      )}
+                      <Button 
+                        onClick={() => {
+                          const finalSeq = Array.from({ length: 8 }, () => 
+                            colors[Math.floor(Math.random() * 6)]
+                          );
+                          setSequence(finalSeq);
+                          setShowSequence(true);
+                          setTimeout(() => setShowSequence(false), 1500);
+                        }} 
+                        variant="outline"
+                        className="mb-4"
+                      >
+                        {showSequence ? 'MEMORIZE NOW!' : 'Show Final Sequence'}
+                      </Button>
                       {showSequence && (
                         <div className="flex gap-2 justify-center mb-4 p-4 bg-black/50 rounded-lg flex-wrap">
                           {sequence.slice(0, 8).map((color, i) => (
