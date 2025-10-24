@@ -112,7 +112,7 @@ const Index = () => {
                   <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4">
                     <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs 
-                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-5 w-auto inline" />
+                    <img src="/lovable-uploads/role-color-finder-halloween.svg" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-5 w-auto inline" />
                   </a>
                 </Button>
               </div>
@@ -467,7 +467,7 @@ const Index = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2 text-background/80 text-sm">
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-4 w-auto" />
+                <img src="/lovable-uploads/role-color-finder-halloween.svg" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-4 w-auto" />
                 <span>All rights reserved.</span>
               </div>
               <div className="flex gap-6">
