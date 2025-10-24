@@ -159,40 +159,42 @@ export default function RoleColorRoom() {
     if (selectedPair.length === 0) {
       setSelectedPair([index]);
       setColorPairs(prev => prev.map((p, i) => i === index ? { ...p, revealed: true } : p));
-    } else if (selectedPair.length === 1) {
+    } else if (selectedPair.length === 1 && selectedPair[0] !== index) {
       const firstIndex = selectedPair[0];
       setColorPairs(prev => prev.map((p, i) => i === index ? { ...p, revealed: true } : p));
       
       setTimeout(() => {
         if (colorPairs[firstIndex].color === colorPairs[index].color) {
-          // Match found!
+          // Match found - keep them revealed
           toast({
             title: "Match Found! 🎃",
             description: "Keep going!",
           });
-        } else {
-          // No match - hide both
-          setColorPairs(prev => prev.map((p, i) => 
-            i === firstIndex || i === index ? { ...p, revealed: false } : p
-          ));
-        }
-        setSelectedPair([]);
-        
-        // Check if all pairs found
-        setTimeout(() => {
-          setColorPairs(prev => {
-            const allRevealed = prev.every(p => p.revealed);
+          setSelectedPair([]);
+          
+          // Check if all pairs found after a brief delay
+          setTimeout(() => {
+            const allRevealed = colorPairs.every((p, i) => 
+              p.revealed || i === firstIndex || i === index
+            );
             if (allRevealed) {
               setPuzzles(p => p.map(puzzle => puzzle.id === 2 ? { ...puzzle, solved: true } : puzzle));
               setCurrentPuzzle(3);
               toast({
                 title: "Puzzle 2 Solved! 🎃",
-                description: "All pairs matched! Final puzzle awaits...",
+                description: "All pairs matched! Next puzzle awaits...",
               });
             }
-            return prev;
-          });
-        }, 100);
+          }, 100);
+        } else {
+          // No match - hide both after showing them
+          setTimeout(() => {
+            setColorPairs(prev => prev.map((p, i) => 
+              i === firstIndex || i === index ? { ...p, revealed: false } : p
+            ));
+            setSelectedPair([]);
+          }, 400);
+        }
       }, 600);
     }
   };
@@ -507,7 +509,7 @@ export default function RoleColorRoom() {
             <li>🔒 <strong>Puzzle 3:</strong> Crack the cryptic 4-color code using the mysterious hint</li>
             <li>⚡ <strong>Puzzle 4:</strong> FINAL BOSS - Memorize 8 colors in only 1.5 seconds!</li>
             <li>⏰ <strong>Time Limit:</strong> Only 3 minutes to escape or you are trapped forever!</li>
-            <li>🏆 <strong>Escape Successfully:</strong> Win the ESCAPED25 code for a FREE assessment!</li>
+            <li>🏆 <strong>Escape Successfully:</strong> Win a secret promo code for a FREE assessment!</li>
           </ul>
         </Card>
       </div>
