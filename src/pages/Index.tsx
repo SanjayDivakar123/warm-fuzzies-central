@@ -34,10 +34,18 @@ const Index = () => {
       <section className="relative section-padding overflow-hidden mesh-background">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
         
-        {/* Modern floating elements */}
+        {/* Halloween floating elements with pumpkins */}
         <div className="absolute top-32 left-[10%] w-64 h-64 bg-gradient-primary rounded-full blur-3xl opacity-20 animate-bounce-gentle"></div>
         <div className="absolute bottom-32 right-[15%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-15 animate-bounce-gentle delay-1000"></div>
         <div className="absolute top-48 right-[25%] w-32 h-32 bg-gradient-yellow rounded-full blur-xl opacity-10 animate-bounce-gentle delay-500"></div>
+        
+        {/* Floating Pumpkins */}
+        <div className="absolute top-20 left-[5%] text-6xl animate-bounce-gentle opacity-80">🎃</div>
+        <div className="absolute top-40 right-[8%] text-5xl animate-gentle-bounce opacity-70">🎃</div>
+        <div className="absolute bottom-20 left-[15%] text-7xl animate-bounce-gentle delay-500 opacity-60">🎃</div>
+        <div className="absolute bottom-40 right-[20%] text-4xl animate-gentle-bounce delay-1000 opacity-75">🎃</div>
+        <div className="absolute top-[60%] left-[3%] text-5xl animate-bounce-gentle opacity-65">🎃</div>
+        <div className="absolute top-[70%] right-[5%] text-6xl animate-gentle-bounce delay-700 opacity-70">🎃</div>
         
         <div className="relative container-wide">
           <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
