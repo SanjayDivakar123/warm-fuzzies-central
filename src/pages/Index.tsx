@@ -421,7 +421,7 @@ const Index = () => {
             {/* Logo & Description */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-6">
-                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-12 w-auto" />
+                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-16 w-auto" />
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                 Discover your unique leadership color profile with our science-backed assessment system.

@@ -80,7 +80,7 @@ export default function Pricing() {
             <img 
               src="/lovable-uploads/role-color-finder-halloween.png" 
               alt="RoleColor ™️ Finder - Halloween Edition 🎃" 
-              className="h-12 sm:h-16 md:h-20 w-auto"
+              className="h-16 sm:h-20 md:h-28 w-auto"
             />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
