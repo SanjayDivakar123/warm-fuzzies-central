@@ -17,7 +17,7 @@ interface FallingObject {
 export default function HauntedColorChallenge() {
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(5);
   const [objects, setObjects] = useState<FallingObject[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
@@ -25,7 +25,7 @@ export default function HauntedColorChallenge() {
   const gameLoopRef = useRef<number>();
   const nextIdRef = useRef(0);
 
-  const WINNING_SCORE = 66; // Spooky number and nearly impossible!
+  const WINNING_SCORE = 50; // Challenging but achievable!
   const colors = ['red', 'yellow', 'green', 'blue'] as const;
   const emojis = { red: '🎃', yellow: '⚡', green: '👻', blue: '💀' };
 
@@ -57,14 +57,8 @@ export default function HauntedColorChallenge() {
           y: obj.y + obj.speed,
         }));
 
-        // Remove objects that reached bottom and reduce lives
-        const filtered = updated.filter(obj => {
-          if (obj.y > 100) {
-            setLives(l => l - 1);
-            return false;
-          }
-          return true;
-        });
+        // Remove objects that reached bottom (no life penalty for natural fall-off)
+        const filtered = updated.filter(obj => obj.y <= 100);
 
         return filtered;
       });
@@ -138,7 +132,7 @@ export default function HauntedColorChallenge() {
     setObjects(prev => {
       let caught = false;
       const filtered = prev.filter(obj => {
-        if (!caught && obj.color === targetColor && obj.y > 60 && obj.y < 95) {
+        if (!caught && obj.color === targetColor && obj.y > 50 && obj.y < 95) {
           caught = true;
           setScore(s => s + 1);
           return false;
@@ -164,7 +158,7 @@ export default function HauntedColorChallenge() {
     setGameOver(false);
     setWon(false);
     setScore(0);
-    setLives(3);
+    setLives(5);
     setObjects([]);
     setSpeed(2);
     nextIdRef.current = 0;
