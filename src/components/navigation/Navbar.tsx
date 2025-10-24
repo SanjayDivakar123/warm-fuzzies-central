@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { Button } from "@/components/ui/button";
-import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users, Gamepad2 } from "lucide-react";
+import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users, Gamepad2, DoorOpen } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const location = useLocation();
@@ -78,6 +78,15 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
+              <MenubarMenu>
+                <MenubarTrigger asChild>
+                  <Link to="/escape-room" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 animate-pulse ${isActive('/escape-room') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
+                    <DoorOpen className="w-4 h-4 mr-2" />
+                    🔒 Escape Room
+                  </Link>
+                </MenubarTrigger>
+              </MenubarMenu>
+
             </Menubar>
           </div>
 
@@ -137,7 +146,11 @@ export function Navbar() {
                 <Gamepad2 className="w-4 h-4 mr-2 inline" />
                 🎃 Halloween Game
               </Link>
-              
+              <Link to="/escape-room" className={`block px-3 py-2 rounded-md text-base font-medium animate-pulse ${isActive('/escape-room') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <DoorOpen className="w-4 h-4 mr-2 inline" />
+                🔒 Escape Room
+              </Link>
+
               <div className="px-3 py-2">
                 <div className="space-y-2">
                   {user ? <>

@@ -25,6 +25,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
 import HauntedColorChallenge from "@/pages/HauntedColorChallenge";
+import RoleColorRoom from "@/pages/RoleColorRoom";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -129,6 +130,10 @@ export const router = createBrowserRouter([
   {
     path: "/haunted-challenge",
     element: <Layout><HauntedColorChallenge /></Layout>,
+  },
+  {
+    path: "/escape-room",
+    element: <Layout><RoleColorRoom /></Layout>,
   },
   {
     path: "*",
