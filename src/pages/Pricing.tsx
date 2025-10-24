@@ -75,10 +75,6 @@ export default function Pricing() {
             <Badge className="text-lg px-6 py-3 mb-4 bg-primary text-white animate-pulse shadow-glow">
               🎃 HALLOWEEN SPECIAL: 25% OFF ALL ASSESSMENTS!
             </Badge>
-            <div className="mt-4 glass-card-strong inline-block px-8 py-4 rounded-2xl border-2 border-yellow/50 shadow-yellow">
-              <p className="text-yellow text-xl sm:text-2xl font-bold mb-2">Use Code: <span className="text-3xl sm:text-4xl">HALLOWEEN25</span></p>
-              <p className="text-white/80 text-sm">at checkout for 25% off! 🕷️</p>
-            </div>
           </div>
           <div className="flex items-center justify-center mb-4 sm:mb-6">
             <img 
@@ -93,6 +89,14 @@ export default function Pricing() {
           <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
             Don't let this Halloween deal haunt you - grab 25% off before it vanishes! 🕷️
           </p>
+        </div>
+      </div>
+
+      {/* Discount Code Banner */}
+      <div className="container mx-auto px-4 -mt-8 relative z-10">
+        <div className="glass-card-strong max-w-2xl mx-auto px-8 py-6 rounded-2xl border-2 border-yellow/50 shadow-yellow text-center">
+          <p className="text-yellow text-xl sm:text-2xl font-bold mb-2">Use Code: <span className="text-3xl sm:text-4xl tracking-wider">HALLOWEEN25</span></p>
+          <p className="text-foreground/80 text-sm">at checkout for 25% off! 🕷️</p>
         </div>
       </div>
 
