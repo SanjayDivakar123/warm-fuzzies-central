@@ -476,7 +476,7 @@ const Index = () => {
               <div className="flex items-center gap-3 text-muted-foreground text-sm">
                 <span>🎃</span>
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-6 w-auto" />
+                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-6 w-auto" />
                 <span>All rights reserved.</span>
                 <span>👻</span>
               </div>
