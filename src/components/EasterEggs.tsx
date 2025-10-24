@@ -98,6 +98,14 @@ export const EasterEggs = () => {
     footer: {
       title: "🕷️ Spider Spotter!",
       description: "You found the hidden spider in the footer!"
+    },
+    triple: {
+      title: "⚡ Triple Threat!",
+      description: "Triple-click master! Your reflexes are supernatural!"
+    },
+    scroll: {
+      title: "🦇 Deep Diver!",
+      description: "You've reached the depths! Those who venture to the end find rewards!"
     }
   };
 
@@ -115,6 +123,62 @@ export const EasterEggs = () => {
       }
     };
   }, [logoClicks]);
+
+  useEffect(() => {
+    // Triple click detection
+    let clickCount = 0;
+    let clickTimer: NodeJS.Timeout;
+
+    const handleTripleClick = () => {
+      clickCount++;
+      
+      if (clickCount === 3) {
+        // @ts-ignore
+        window.triggerEasterEgg?.('triple');
+        clickCount = 0;
+      }
+
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+      }, 500);
+    };
+
+    document.addEventListener('click', handleTripleClick);
+    return () => {
+      document.removeEventListener('click', handleTripleClick);
+      clearTimeout(clickTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Scroll to bottom Easter egg
+    let scrollTimer: NodeJS.Timeout;
+    let atBottom = false;
+
+    const handleScroll = () => {
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollPosition >= documentHeight - 5 && !atBottom) {
+        atBottom = true;
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          // @ts-ignore
+          window.triggerEasterEgg?.('scroll');
+        }, 2000); // Must stay at bottom for 2 seconds
+      } else if (scrollPosition < documentHeight - 100) {
+        atBottom = false;
+        clearTimeout(scrollTimer);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimer);
+    };
+  }, []);
 
   return (
     <Dialog open={showModal} onOpenChange={setShowModal}>
