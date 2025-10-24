@@ -6,74 +6,73 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Copy, Skull, Ghost, Zap } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-interface FallingObject {
-  id: number;
+interface PumpkinChallenge {
   color: 'red' | 'yellow' | 'green' | 'blue';
-  x: number;
-  y: number;
-  speed: number;
+  timeLeft: number;
 }
 
 export default function HauntedColorChallenge() {
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(5);
-  const [objects, setObjects] = useState<FallingObject[]>([]);
+  const [currentPumpkin, setCurrentPumpkin] = useState<PumpkinChallenge | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
-  const [speed, setSpeed] = useState(2);
-  const gameLoopRef = useRef<number>();
-  const nextIdRef = useRef(0);
+  const timerRef = useRef<NodeJS.Timeout>();
 
   const WINNING_SCORE = 50; // Challenging but achievable!
+  const CHALLENGE_TIME = 3; // 3 seconds to click
   const colors = ['red', 'yellow', 'green', 'blue'] as const;
-  const emojis = { red: '🎃', yellow: '⚡', green: '👻', blue: '💀' };
+  const emojis = { red: '🎃', yellow: '🎃', green: '🎃', blue: '🎃' };
+
+  const spawnNewPumpkin = () => {
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    setCurrentPumpkin({
+      color: randomColor,
+      timeLeft: CHALLENGE_TIME,
+    });
+  };
 
   useEffect(() => {
-    if (!gameStarted || gameOver || won) return;
+    if (!gameStarted || gameOver || won || currentPumpkin) return;
+    
+    // Spawn a new pumpkin after a short delay
+    const spawnDelay = setTimeout(() => {
+      spawnNewPumpkin();
+    }, 800);
 
-    const spawnInterval = setInterval(() => {
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const newObject: FallingObject = {
-        id: nextIdRef.current++,
-        color: randomColor,
-        x: Math.random() * 80 + 10,
-        y: -10,
-        speed: speed + Math.random() * 2,
-      };
-      setObjects(prev => [...prev, newObject]);
-    }, Math.max(800 - score * 10, 300)); // Spawn faster as score increases
-
-    return () => clearInterval(spawnInterval);
-  }, [gameStarted, gameOver, won, score, speed]);
+    return () => clearTimeout(spawnDelay);
+  }, [gameStarted, gameOver, won, currentPumpkin]);
 
   useEffect(() => {
-    if (!gameStarted || gameOver || won) return;
+    if (!currentPumpkin || !gameStarted) return;
 
-    const gameLoop = () => {
-      setObjects(prev => {
-        const updated = prev.map(obj => ({
-          ...obj,
-          y: obj.y + obj.speed,
-        }));
-
-        // Remove objects that reached bottom (no life penalty for natural fall-off)
-        const filtered = updated.filter(obj => obj.y <= 100);
-
-        return filtered;
+    // Countdown timer
+    timerRef.current = setInterval(() => {
+      setCurrentPumpkin(prev => {
+        if (!prev) return null;
+        
+        const newTimeLeft = prev.timeLeft - 0.1;
+        
+        if (newTimeLeft <= 0) {
+          // Time's up! Lose a life
+          setLives(l => Math.max(l - 1, 0));
+          toast({
+            title: "Too Slow! 💀",
+            description: "The pumpkin vanished!",
+            variant: "destructive",
+          });
+          return null;
+        }
+        
+        return { ...prev, timeLeft: newTimeLeft };
       });
-
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-    };
-
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
+    }, 100);
 
     return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameStarted, gameOver, won]);
+  }, [currentPumpkin, gameStarted]);
 
   useEffect(() => {
     if (lives <= 0) {
@@ -119,38 +118,28 @@ export default function HauntedColorChallenge() {
     }
   }, [score]);
 
-  useEffect(() => {
-    // Speed increases every 10 points
-    if (score > 0 && score % 10 === 0) {
-      setSpeed(s => Math.min(s + 0.5, 8));
-    }
-  }, [score]);
 
   const handleColorClick = (targetColor: typeof colors[number]) => {
-    if (!gameStarted || gameOver || won) return;
+    if (!gameStarted || gameOver || won || !currentPumpkin) return;
 
-    setObjects(prev => {
-      let caught = false;
-      const filtered = prev.filter(obj => {
-        if (!caught && obj.color === targetColor && obj.y > 50 && obj.y < 95) {
-          caught = true;
-          setScore(s => s + 1);
-          return false;
-        }
-        return true;
+    if (currentPumpkin.color === targetColor) {
+      // Correct! Add point
+      setScore(s => s + 1);
+      setCurrentPumpkin(null);
+      toast({
+        title: "Perfect! 🎃",
+        description: "+1 point!",
       });
-
-      if (!caught) {
-        setLives(l => Math.max(l - 1, 0));
-        toast({
-          title: "Miss! 👻",
-          description: "Wrong timing or color!",
-          variant: "destructive",
-        });
-      }
-
-      return filtered;
-    });
+    } else {
+      // Wrong color! Lose a life
+      setLives(l => Math.max(l - 1, 0));
+      setCurrentPumpkin(null);
+      toast({
+        title: "Wrong Color! 👻",
+        description: "Try again!",
+        variant: "destructive",
+      });
+    }
   };
 
   const startGame = () => {
@@ -159,9 +148,7 @@ export default function HauntedColorChallenge() {
     setWon(false);
     setScore(0);
     setLives(5);
-    setObjects([]);
-    setSpeed(2);
-    nextIdRef.current = 0;
+    setCurrentPumpkin(null);
   };
 
   const copyCode = () => {
@@ -182,13 +169,13 @@ export default function HauntedColorChallenge() {
             🎃 The Haunted Color Gauntlet 💀
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
-            Catch falling spirits in their matching color zones!
+            Click the matching color within 3 seconds!
           </p>
           <p className="text-lg text-destructive font-bold">
             ⚠️ Reach {WINNING_SCORE} points to unlock the ultimate prize! ⚠️
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            (Legend says it's impossible... prove them wrong! 👻)
+            Fast reflexes needed! Can you beat the clock? ⚡
           </p>
         </div>
 
@@ -210,9 +197,9 @@ export default function HauntedColorChallenge() {
           </Card>
           <Card className="px-6 py-4 glass-card-strong border-yellow">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Speed</p>
+              <p className="text-sm text-muted-foreground">Timer</p>
               <p className="text-3xl font-bold text-yellow">
-                <Zap className="w-8 h-8 inline" />
+                {currentPumpkin ? `${currentPumpkin.timeLeft.toFixed(1)}s` : '---'}
               </p>
             </div>
           </Card>
@@ -221,20 +208,30 @@ export default function HauntedColorChallenge() {
         {/* Game Area */}
         <div className="max-w-4xl mx-auto">
           <Card className="relative h-[600px] overflow-hidden bg-gradient-to-b from-[#1a0a2e] to-[#0a0a0a] border-4 border-primary shadow-glow">
-            {/* Falling Objects */}
-            {objects.map(obj => (
-              <div
-                key={obj.id}
-                className="absolute text-6xl animate-pulse transition-all"
-                style={{
-                  left: `${obj.x}%`,
-                  top: `${obj.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                {emojis[obj.color]}
+            {/* Flashing Pumpkin */}
+            {currentPumpkin && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div 
+                  className={`text-[200px] animate-pulse transition-all duration-200 ${
+                    currentPumpkin.timeLeft < 1 ? 'animate-bounce' : ''
+                  }`}
+                  style={{
+                    filter: `drop-shadow(0 0 30px ${
+                      currentPumpkin.color === 'red' ? '#ef4444' :
+                      currentPumpkin.color === 'yellow' ? '#eab308' :
+                      currentPumpkin.color === 'green' ? '#22c55e' :
+                      '#3b82f6'
+                    })`,
+                    color: currentPumpkin.color === 'red' ? '#ef4444' :
+                           currentPumpkin.color === 'yellow' ? '#eab308' :
+                           currentPumpkin.color === 'green' ? '#22c55e' :
+                           '#3b82f6'
+                  }}
+                >
+                  🎃
+                </div>
               </div>
-            ))}
+            )}
 
             {/* Catch Zones */}
             <div className="absolute bottom-0 w-full h-32 grid grid-cols-4 gap-2 p-4 bg-black/50 backdrop-blur-sm border-t-4 border-primary">
@@ -281,10 +278,10 @@ export default function HauntedColorChallenge() {
         <Card className="max-w-4xl mx-auto mt-8 p-6 glass-card-strong">
           <h3 className="text-2xl font-bold mb-4 text-primary">How to Play:</h3>
           <ul className="space-y-2 text-muted-foreground">
-            <li>🎃 <strong>Catch</strong> falling spirits by clicking their matching color zone</li>
-            <li>⚡ <strong>Timing is everything</strong> - click when spirits reach the bottom zone</li>
-            <li>💀 <strong>Miss or wrong color?</strong> You lose a life!</li>
-            <li>👻 <strong>Speed increases</strong> every 10 points - can you keep up?</li>
+            <li>🎃 <strong>Watch the pumpkin</strong> flash in different colors!</li>
+            <li>⚡ <strong>React fast!</strong> You have 3 seconds to click the matching color</li>
+            <li>💀 <strong>Wrong color or too slow?</strong> You lose a life!</li>
+            <li>👻 <strong>Stay focused</strong> - the colors change randomly</li>
             <li>🏆 <strong>Reach {WINNING_SCORE} points</strong> to unlock the ultimate prize!</li>
           </ul>
         </Card>
