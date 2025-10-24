@@ -45,22 +45,22 @@ const Index = () => {
             {/* Left Content - Enhanced */}
             <div className="text-center lg:text-left space-y-12">
               
-              {/* Badge */}
-              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border border-primary/30 animate-fade-in">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-primary tracking-wide">Patent Pending System</span>
+              {/* Halloween Badge */}
+              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border-2 border-primary/50 animate-fade-in bg-gradient-primary shadow-glow">
+                <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                <span className="text-sm font-bold text-white tracking-wide">🎃 HALLOWEEN SPECIAL: 25% OFF!</span>
               </div>
               
-              {/* Main Headline */}
+              {/* Main Headline with Halloween Message */}
               <div className="space-y-6 animate-fade-in delay-200">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight text-balance">
-                  12 Weeks.
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight text-balance">
+                  <span className="text-foreground">Halloween can bring</span>
                   <br />
-                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-muted-foreground">Faster Decisions.</span>
+                  <span className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl gradient-text-primary font-bold">nightmares,</span>
                   <br />
-                  <span className="gradient-text-primary text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold">Cleaner Handoffs.</span>
+                  <span className="text-foreground">RoleColorFinder brings</span>
                   <br />
-                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-foreground">Stronger Pipeline.</span>
+                  <span className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl bg-gradient-to-r from-primary to-yellow bg-clip-text text-transparent font-bold">clarity to your career! 🎃</span>
                 </h1>
               </div>
 
