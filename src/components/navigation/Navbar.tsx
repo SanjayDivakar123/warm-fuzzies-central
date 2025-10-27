@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { Button } from "@/components/ui/button";
-import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users, Gamepad2, DoorOpen } from "lucide-react";
+import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const location = useLocation();
@@ -17,15 +17,8 @@ export function Navbar() {
         <div className="flex h-20 items-center justify-between py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0 smooth-hover hover:scale-105">
-            <div 
-              className="relative"
-              onClick={(e) => {
-                e.preventDefault();
-                // @ts-ignore
-                window.trackLogoClicks?.();
-              }}
-            >
-              <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-12 w-auto sm:h-16 md:h-20" />
+            <div className="relative">
+              <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-8 w-auto sm:h-10" />
               <div className="absolute inset-0 bg-gradient-primary opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300"></div>
             </div>
           </Link>
@@ -65,24 +58,6 @@ export function Navbar() {
                   <Link to="/team-program" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/team-program') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
                     <Users className="w-4 h-4 mr-2" />
                     Team Program
-                  </Link>
-                </MenubarTrigger>
-              </MenubarMenu>
-
-              <MenubarMenu>
-                <MenubarTrigger asChild>
-                  <Link to="/haunted-challenge" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 animate-pulse ${isActive('/haunted-challenge') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
-                    <Gamepad2 className="w-4 h-4 mr-2" />
-                    🎃 Halloween Game
-                  </Link>
-                </MenubarTrigger>
-              </MenubarMenu>
-
-              <MenubarMenu>
-                <MenubarTrigger asChild>
-                  <Link to="/escape-room" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 animate-pulse ${isActive('/escape-room') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
-                    <DoorOpen className="w-4 h-4 mr-2" />
-                    🔒 Escape Room
                   </Link>
                 </MenubarTrigger>
               </MenubarMenu>
@@ -142,15 +117,7 @@ export function Navbar() {
                 <Users className="w-4 h-4 mr-2 inline" />
                 Team Program
               </Link>
-              <Link to="/haunted-challenge" className={`block px-3 py-2 rounded-md text-base font-medium animate-pulse ${isActive('/haunted-challenge') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                <Gamepad2 className="w-4 h-4 mr-2 inline" />
-                🎃 Halloween Game
-              </Link>
-              <Link to="/escape-room" className={`block px-3 py-2 rounded-md text-base font-medium animate-pulse ${isActive('/escape-room') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                <DoorOpen className="w-4 h-4 mr-2 inline" />
-                🔒 Escape Room
-              </Link>
-
+              
               <div className="px-3 py-2">
                 <div className="space-y-2">
                   {user ? <>

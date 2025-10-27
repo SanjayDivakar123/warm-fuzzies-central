@@ -8,90 +8,91 @@ All colors MUST be HSL.
 
 @layer base {
 :root {
-    /* Halloween Spooky Palette */
-    --background: 25 35% 12%;
-    --foreground: 38 100% 95%;
+    /* Core Modern Palette */
+    --background: 225 25% 97%;
+    --foreground: 230 15% 15%;
 
-    --card: 25 25% 15%;
-    --card-foreground: 38 100% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 230 15% 15%;
 
-    --popover: 25 25% 15%;
-    --popover-foreground: 38 100% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 15% 15%;
 
-    --primary: 16 100% 60%;
+    --primary: 221 83% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 272 67% 35%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 218 25% 92%;
+    --secondary-foreground: 230 15% 15%;
 
-    --muted: 25 15% 25%;
-    --muted-foreground: 38 50% 70%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 230 8% 46%;
 
-    --accent: 272 67% 59%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 245 70% 95%;
+    --accent-foreground: 245 70% 15%;
 
     --destructive: 0 73% 59%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 25 20% 25%;
-    --input: 25 20% 25%;
-    --ring: 16 100% 60%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 58%;
 
-    /* Halloween Four-Color System - Spooky Tones */
-    --red: 0 85% 50%;
+    /* Vibrant Four-Color System with Rich, Fun Tones */
+    --red: 348 100% 65%;
     --red-foreground: 0 0% 100%;
-    --red-light: 0 85% 95%;
-    --red-dark: 0 85% 35%;
-    --red-glow: 0 85% 65%;
+    --red-light: 348 100% 95%;
+    --red-dark: 348 100% 55%;
+    --red-glow: 348 100% 75%;
 
-    --yellow: 45 100% 55%;
-    --yellow-foreground: 25 35% 12%;
+    --yellow: 45 100% 65%;
+    --yellow-foreground: 230 15% 15%;
     --yellow-light: 45 100% 95%;
-    --yellow-dark: 45 100% 40%;
-    --yellow-glow: 45 100% 70%;
+    --yellow-dark: 45 100% 55%;
+    --yellow-glow: 45 100% 75%;
 
-    --green: 130 48% 32%;
+    --green: 142 85% 55%;
     --green-foreground: 0 0% 100%;
-    --green-light: 130 48% 95%;
-    --green-dark: 130 48% 22%;
-    --green-glow: 130 48% 50%;
+    --green-light: 142 85% 95%;
+    --green-dark: 142 85% 45%;
+    --green-glow: 142 85% 70%;
 
-    --blue: 272 67% 59%;
+    --blue: 212 100% 60%;
     --blue-foreground: 0 0% 100%;
-    --blue-light: 272 67% 95%;
-    --blue-dark: 272 67% 45%;
-    --blue-glow: 272 67% 75%;
+    --blue-light: 212 100% 95%;
+    --blue-dark: 212 100% 50%;
+    --blue-glow: 212 100% 75%;
 
-    /* Spooky Halloween Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(16 100% 60%) 0%, hsl(272 67% 59%) 50%, hsl(0 0% 0%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(16 100% 50%) 0%, hsl(45 100% 55%) 50%, hsl(16 100% 50%) 100%);
-    --gradient-yellow: linear-gradient(135deg, hsl(45 100% 55%) 0%, hsl(45 100% 70%) 50%, hsl(45 100% 40%) 100%);
-    --gradient-red: linear-gradient(135deg, hsl(0 85% 50%) 0%, hsl(0 85% 65%) 50%, hsl(0 85% 35%) 100%);
-    --gradient-green: linear-gradient(135deg, hsl(130 48% 32%) 0%, hsl(130 48% 50%) 50%, hsl(130 48% 22%) 100%);
-    --gradient-blue: linear-gradient(135deg, hsl(272 67% 59%) 0%, hsl(272 67% 75%) 50%, hsl(272 67% 45%) 100%);
-    --gradient-brand: linear-gradient(45deg, hsl(16 100% 60%) 0%, hsl(45 100% 55%) 25%, hsl(272 67% 59%) 50%, hsl(0 85% 50%) 75%, hsl(16 100% 60%) 100%);
-    --gradient-soft: linear-gradient(135deg, hsl(25 35% 12%) 0%, hsl(16 100% 60% / 0.1) 50%, hsl(272 67% 59% / 0.1) 100%);
-    --gradient-colorful: linear-gradient(45deg, hsl(16 100% 60%) 0%, hsl(45 100% 55%) 20%, hsl(272 67% 59%) 40%, hsl(0 85% 50%) 60%, hsl(16 100% 60%) 80%, hsl(45 100% 55%) 100%);
-    --gradient-subtle: linear-gradient(135deg, hsl(25 35% 15%) 0%, hsl(16 100% 60% / 0.15) 50%, hsl(272 67% 59% / 0.15) 100%);
-    --gradient-rainbow: linear-gradient(90deg, hsl(16 100% 60%) 0%, hsl(45 100% 55%) 16.66%, hsl(130 48% 32%) 33.33%, hsl(272 67% 59%) 50%, hsl(0 85% 50%) 66.66%, hsl(16 100% 60%) 83.33%, hsl(45 100% 55%) 100%);
+    /* Super Vibrant and Fun Gradients with Light White Filter */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.15), hsl(0 0% 100% / 0.15));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(var(--green)) 50%, hsl(var(--blue)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
+    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)) 0%, hsl(45 100% 75%) 50%, hsl(var(--yellow-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
+    --gradient-red: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(348 100% 75%) 50%, hsl(var(--red-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
+    --gradient-green: linear-gradient(135deg, hsl(var(--green)) 0%, hsl(142 85% 65%) 50%, hsl(var(--green-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
+    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(212 100% 70%) 50%, hsl(var(--blue-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
+    --gradient-brand: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
+    --gradient-soft: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--yellow-light)) 30%, hsl(var(--blue-light)) 70%, hsl(220 15% 94%) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0.3));
+    --gradient-colorful: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 20%, hsl(var(--green)) 40%, hsl(var(--blue)) 60%, hsl(var(--red)) 80%, hsl(var(--yellow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
+    --gradient-subtle: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--blue-light)) 50%, hsl(var(--green-light)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.4), hsl(0 0% 100% / 0.4));
+    --gradient-rainbow: linear-gradient(90deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 16.66%, hsl(var(--green)) 33.33%, hsl(var(--blue)) 50%, hsl(var(--red)) 66.66%, hsl(var(--yellow)) 83.33%, hsl(var(--green)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
     --gradient-mesh: 
-      radial-gradient(circle at 20% 30%, hsl(16 100% 60% / 0.15) 0%, transparent 60%), 
-      radial-gradient(circle at 80% 20%, hsl(272 67% 59% / 0.12) 0%, transparent 60%), 
-      radial-gradient(circle at 30% 80%, hsl(0 85% 50% / 0.10) 0%, transparent 60%), 
-      radial-gradient(circle at 70% 70%, hsl(45 100% 55% / 0.08) 0%, transparent 60%),
-      radial-gradient(circle at 50% 50%, hsl(16 100% 60% / 0.05) 0%, transparent 80%);
+      radial-gradient(circle at 20% 30%, hsl(var(--red) / 0.15) 0%, transparent 60%), 
+      radial-gradient(circle at 80% 20%, hsl(var(--blue) / 0.12) 0%, transparent 60%), 
+      radial-gradient(circle at 30% 80%, hsl(var(--green) / 0.10) 0%, transparent 60%), 
+      radial-gradient(circle at 70% 70%, hsl(var(--yellow) / 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 50% 50%, hsl(var(--red) / 0.05) 0%, transparent 80%),
+      linear-gradient(0deg, hsl(0 0% 100% / 0.15), hsl(0 0% 100% / 0.15));
 
-    /* Spooky Shadow System */
-    --shadow-elegant: 0 25px 50px -12px hsl(16 100% 60% / 0.3), 0 8px 16px -8px hsl(0 0% 0% / 0.5);
-    --shadow-colorful: 0 25px 50px -12px hsl(16 100% 60% / 0.4), 0 8px 16px -8px hsl(272 67% 59% / 0.3), 0 4px 8px -4px hsl(45 100% 55% / 0.2);
-    --shadow-glow: 0 0 50px hsl(16 100% 60% / 0.6), 0 0 25px hsl(16 100% 60% / 0.4), 0 0 15px hsl(16 100% 60% / 0.3);
-    --shadow-red: 0 25px 50px -12px hsl(0 85% 50% / 0.5), 0 8px 20px -8px hsl(0 85% 50% / 0.3);
-    --shadow-yellow: 0 25px 50px -12px hsl(45 100% 55% / 0.4), 0 8px 20px -8px hsl(45 100% 55% / 0.3);
-    --shadow-green: 0 25px 50px -12px hsl(130 48% 32% / 0.5), 0 8px 20px -8px hsl(130 48% 32% / 0.3);
-    --shadow-blue: 0 25px 50px -12px hsl(272 67% 59% / 0.5), 0 8px 20px -8px hsl(272 67% 59% / 0.3);
-    --shadow-soft: 0 10px 25px -5px hsl(0 0% 0% / 0.3);
-    --shadow-xl: 0 35px 60px -12px hsl(0 0% 0% / 0.6);
-    --shadow-rainbow: 0 20px 40px -10px hsl(16 100% 60% / 0.3), 0 15px 30px -8px hsl(45 100% 55% / 0.2), 0 10px 20px -6px hsl(272 67% 59% / 0.2), 0 5px 10px -4px hsl(0 85% 50% / 0.2);
+    /* Fun and Vibrant Shadow System */
+    --shadow-elegant: 0 25px 50px -12px hsl(var(--foreground) / 0.08), 0 8px 16px -8px hsl(var(--foreground) / 0.04);
+    --shadow-colorful: 0 25px 50px -12px hsl(var(--blue) / 0.2), 0 8px 16px -8px hsl(var(--green) / 0.15), 0 4px 8px -4px hsl(var(--yellow) / 0.1);
+    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.4), 0 0 25px hsl(var(--blue) / 0.3), 0 0 15px hsl(var(--blue) / 0.2);
+    --shadow-red: 0 25px 50px -12px hsl(var(--red) / 0.3), 0 8px 20px -8px hsl(var(--red) / 0.2);
+    --shadow-yellow: 0 25px 50px -12px hsl(var(--yellow) / 0.3), 0 8px 20px -8px hsl(var(--yellow) / 0.2);
+    --shadow-green: 0 25px 50px -12px hsl(var(--green) / 0.3), 0 8px 20px -8px hsl(var(--green) / 0.2);
+    --shadow-blue: 0 25px 50px -12px hsl(var(--blue) / 0.3), 0 8px 20px -8px hsl(var(--blue) / 0.2);
+    --shadow-soft: 0 10px 25px -5px hsl(var(--foreground) / 0.04);
+    --shadow-xl: 0 35px 60px -12px hsl(var(--foreground) / 0.1);
+    --shadow-rainbow: 0 20px 40px -10px hsl(var(--red) / 0.15), 0 15px 30px -8px hsl(var(--yellow) / 0.1), 0 10px 20px -6px hsl(var(--green) / 0.1), 0 5px 10px -4px hsl(var(--blue) / 0.1);
 
     --radius: 1rem;
 

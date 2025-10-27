@@ -10,7 +10,6 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
-import { EasterEggs } from "@/components/EasterEggs";
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -29,46 +28,16 @@ const Index = () => {
     }
   }, [searchParams, navigate]);
   return <div className="min-h-screen bg-background">
-      <EasterEggs />
       <Navbar />
       
       {/* Hero Section - Completely Redesigned */}
       <section className="relative section-padding overflow-hidden mesh-background">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
         
-        {/* Halloween floating elements with pumpkins */}
+        {/* Modern floating elements */}
         <div className="absolute top-32 left-[10%] w-64 h-64 bg-gradient-primary rounded-full blur-3xl opacity-20 animate-bounce-gentle"></div>
         <div className="absolute bottom-32 right-[15%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-15 animate-bounce-gentle delay-1000"></div>
         <div className="absolute top-48 right-[25%] w-32 h-32 bg-gradient-yellow rounded-full blur-xl opacity-10 animate-bounce-gentle delay-500"></div>
-        
-        {/* Floating Pumpkins - one is clickable! */}
-        <div className="absolute top-20 left-[5%] text-6xl animate-bounce-gentle opacity-80">🎃</div>
-        <div 
-          className="absolute top-40 right-[8%] text-5xl animate-gentle-bounce opacity-70 cursor-pointer hover:scale-125 transition-transform"
-          onClick={() => {
-            // @ts-ignore
-            window.triggerEasterEgg?.('pumpkin');
-          }}
-          title="Something special about this one..."
-        >
-          ✨🎃✨
-        </div>
-        <div className="absolute bottom-20 left-[15%] text-7xl animate-bounce-gentle delay-500 opacity-60">🎃</div>
-        <div className="absolute bottom-40 right-[20%] text-4xl animate-gentle-bounce delay-1000 opacity-75">🎃</div>
-        <div className="absolute top-[60%] left-[3%] text-5xl animate-bounce-gentle opacity-65">🎃</div>
-        <div className="absolute top-[70%] right-[5%] text-6xl animate-gentle-bounce delay-700 opacity-70">🎃</div>
-        
-        {/* Hidden Ghost */}
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5 hover:opacity-100 transition-opacity cursor-pointer hover:animate-bounce"
-          onClick={() => {
-            // @ts-ignore
-            window.triggerEasterEgg?.('ghost');
-          }}
-          style={{ pointerEvents: 'all' }}
-        >
-          👻
-        </div>
         
         <div className="relative container-wide">
           <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
@@ -76,22 +45,22 @@ const Index = () => {
             {/* Left Content - Enhanced */}
             <div className="text-center lg:text-left space-y-12">
               
-              {/* Halloween Badge */}
-              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border-2 border-primary/50 animate-fade-in bg-gradient-primary shadow-glow">
-                <Sparkles className="w-5 h-5 text-white animate-pulse" />
-                <span className="text-sm font-bold text-white tracking-wide">🎃 HALLOWEEN SPECIAL: 25% OFF!</span>
+              {/* Badge */}
+              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border border-primary/30 animate-fade-in">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-sm font-bold text-primary tracking-wide">Patent Pending System</span>
               </div>
               
-              {/* Main Headline with Halloween Message */}
+              {/* Main Headline */}
               <div className="space-y-6 animate-fade-in delay-200">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight text-balance">
-                  <span className="text-foreground">Halloween can bring</span>
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight text-balance">
+                  12 Weeks.
                   <br />
-                  <span className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl gradient-text-primary font-bold">nightmares,</span>
+                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-muted-foreground">Faster Decisions.</span>
                   <br />
-                  <span className="text-foreground">RoleColorFinder brings</span>
+                  <span className="gradient-text-primary text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold">Cleaner Handoffs.</span>
                   <br />
-                  <span className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl bg-gradient-to-r from-primary to-yellow bg-clip-text text-transparent font-bold">clarity to your career! 🎃</span>
+                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-foreground">Stronger Pipeline.</span>
                 </h1>
               </div>
 
@@ -135,19 +104,9 @@ const Index = () => {
                   <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4">
                     <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs 
-                    <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-5 w-auto inline" />
+                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-5 w-auto inline" />
                   </a>
                 </Button>
-              </div>
-            </div>
-
-            {/* Right Content - Halloween Pumpkin */}
-            <div className="hidden lg:flex items-center justify-center animate-fade-in delay-400">
-              <div className="relative">
-                <div className="text-[20rem] animate-gentle-bounce filter drop-shadow-[0_0_50px_rgba(255,117,24,0.5)]">
-                  🎃
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-yellow/20 rounded-full blur-3xl animate-pulse"></div>
               </div>
             </div>
 
@@ -428,101 +387,82 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Halloween Themed Footer */}
-      <footer className="relative bg-gradient-to-b from-background to-[#0a0a0a] text-foreground py-16 overflow-hidden border-t-4 border-primary">
-        {/* Spooky Background Elements */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 text-8xl">🎃</div>
-          <div className="absolute top-20 right-20 text-6xl">👻</div>
-          <div className="absolute bottom-10 left-1/4 text-7xl">🎃</div>
-          <div className="absolute bottom-20 right-1/3 text-5xl">🕷️</div>
-        </div>
-        
-        <div className="container-wide relative z-10">
+      {/* Enhanced Footer */}
+      <footer className="bg-footer text-background py-16">
+        <div className="container-wide">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             
             {/* Logo & Description */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-6">
-                <img src="/lovable-uploads/role-color-finder-halloween.png" alt="RoleColor ™️ Finder - Halloween Edition 🎃" className="h-16 w-auto" />
+                <img src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor ™️ Finder" className="h-8 w-auto" />
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+              <p className="text-background/80 text-sm leading-relaxed mb-6">
                 Discover your unique leadership color profile with our science-backed assessment system.
               </p>
-              <div className="flex gap-3">
-                <div className="w-10 h-10 bg-gradient-red rounded-full shadow-red hover:scale-110 transition-transform"></div>
-                <div className="w-10 h-10 bg-gradient-yellow rounded-full shadow-yellow hover:scale-110 transition-transform"></div>
-                <div className="w-10 h-10 bg-gradient-green rounded-full shadow-green hover:scale-110 transition-transform"></div>
-                <div className="w-10 h-10 bg-gradient-blue rounded-full shadow-blue hover:scale-110 transition-transform"></div>
+              <div className="flex gap-4">
+                <div className="w-8 h-8 bg-gradient-red rounded-full"></div>
+                <div className="w-8 h-8 bg-gradient-yellow rounded-full"></div>
+                <div className="w-8 h-8 bg-gradient-green rounded-full"></div>
+                <div className="w-8 h-8 bg-gradient-blue rounded-full"></div>
               </div>
             </div>
             
             {/* Main Pages */}
             <div>
-              <h3 className="font-bold text-primary mb-4 text-lg">Main Pages</h3>
+              <h3 className="font-bold gradient-text mb-4">Main Pages</h3>
               <ul className="space-y-3">
-                <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Home</Link></li>
-                <li><Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Pricing</Link></li>
-                <li><Link to="/team-program" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Team Program</Link></li>
-                <li><Link to="/sitemap" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Sitemap</Link></li>
+                <li><Link to="/" className="text-background/80 hover:text-background transition-colors text-sm">Home</Link></li>
+                <li><Link to="/pricing" className="text-background/80 hover:text-background transition-colors text-sm">Pricing</Link></li>
+                <li><Link to="/team-program" className="text-background/80 hover:text-background transition-colors text-sm">Team Program</Link></li>
+                <li><Link to="/sitemap" className="text-background/80 hover:text-background transition-colors text-sm">Sitemap</Link></li>
               </ul>
             </div>
             
             {/* Assessments */}
             <div>
-              <h3 className="font-bold text-primary mb-4 text-lg">Assessments</h3>
+              <h3 className="font-bold gradient-text mb-4">Assessments</h3>
               <ul className="space-y-3">
-                <li><Link to="/free-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Free Assessment</Link></li>
-                <li><Link to="/premium-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Premium Assessment</Link></li>
-                <li><Link to="/pro-assessment" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Pro Assessment</Link></li>
-                <li><Link to="/dashboard" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Dashboard</Link></li>
+                <li><Link to="/free-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Free Assessment</Link></li>
+                <li><Link to="/premium-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Premium Assessment</Link></li>
+                <li><Link to="/pro-assessment" className="text-background/80 hover:text-background transition-colors text-sm">Pro Assessment</Link></li>
+                <li><Link to="/dashboard" className="text-background/80 hover:text-background transition-colors text-sm">Dashboard</Link></li>
               </ul>
             </div>
             
             {/* Account & Legal */}
             <div>
-              <h3 className="font-bold text-primary mb-4 text-lg">Account & Legal</h3>
+              <h3 className="font-bold gradient-text mb-4">Account & Legal</h3>
               <ul className="space-y-3">
-                <li><Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Sign In / Sign Up</Link></li>
-                <li><Link to="/reset-password" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Reset Password</Link></li>
-                <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">About Us</Link></li>
-                <li><Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Contact</Link></li>
-                <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors text-sm hover:translate-x-1 inline-block">Terms of Service</Link></li>
+                <li><Link to="/auth" className="text-background/80 hover:text-background transition-colors text-sm">Sign In / Sign Up</Link></li>
+                <li><Link to="/reset-password" className="text-background/80 hover:text-background transition-colors text-sm">Reset Password</Link></li>
+                <li><Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm">About Us</Link></li>
+                <li><Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm">Contact</Link></li>
+                <li><Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
           
           {/* Bottom Bar */}
-          <div className="border-t border-primary/20 pt-8">
+          <div className="border-t border-background/20 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-3 text-muted-foreground text-sm">
-                <span>🎃</span>
+              <div className="flex items-center gap-2 text-background/80 text-sm">
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-6 w-auto" />
+                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-4 w-auto" />
                 <span>All rights reserved.</span>
-                <span 
-                  className="cursor-pointer hover:scale-150 transition-transform"
-                  onClick={() => {
-                    // @ts-ignore
-                    window.triggerEasterEgg?.('footer');
-                  }}
-                  title="Is that a spider?!"
-                >
-                  🕷️
-                </span>
               </div>
               <div className="flex gap-6">
-                <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
+                <Link to="/about" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
                   About
                 </Link>
-                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
+                <Link to="/contact" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
                   Contact
                 </Link>
-                <Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
+                <Link to="/privacy-policy" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
                   Privacy
                 </Link>
-                <Link to="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium">
+                <Link to="/terms-of-service" className="text-background/80 hover:text-background transition-colors text-sm font-medium">
                   Terms
                 </Link>
               </div>

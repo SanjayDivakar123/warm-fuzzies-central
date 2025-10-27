@@ -25,13 +25,11 @@ export default function Pricing() {
     },
     {
       name: "Premium Assessment",
-      price: "$14.25",
-      originalPrice: "$19",
+      price: "$19",
       priceNote: "one-time",
       target: "Complete Analysis",
       description: "Full 25-question assessment with detailed insights",
       features: [
-        "🎃 25% Halloween Discount",
         "Complete 25-question quiz",
         "Full color profile analysis",
         "Role recommendations with salaries",
@@ -44,13 +42,11 @@ export default function Pricing() {
     },
     {
       name: "Pro Deep Dive",
-      price: "$36.75",
-      originalPrice: "$49",
+      price: "$49",
       priceNote: "one-time",
       target: "Master Analysis",
       description: "Ultimate 50-question assessment with comprehensive 3-page report",
       features: [
-        "🎃 25% Halloween Discount",
         "Extended 50-question deep assessment",
         "Advanced color blending analysis",
         "3-page comprehensive report",
@@ -71,32 +67,19 @@ export default function Pricing() {
       {/* Header */}
       <div className="bg-gradient-hero text-white py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
-          <div className="mb-4 sm:mb-6">
-            <Badge className="text-lg px-6 py-3 mb-4 bg-primary text-white animate-pulse shadow-glow">
-              🎃 HALLOWEEN SPECIAL: 25% OFF ALL ASSESSMENTS!
-            </Badge>
-          </div>
           <div className="flex items-center justify-center mb-4 sm:mb-6">
             <img 
-              src="/lovable-uploads/role-color-finder-halloween.png" 
-              alt="RoleColor ™️ Finder - Halloween Edition 🎃" 
-              className="h-16 sm:h-20 md:h-28 w-auto"
+              src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+              alt="RoleColor ™️ Finder" 
+              className="h-12 sm:h-16 md:h-20 w-auto"
             />
           </div>
           <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
-            Spooky Good Pricing 👻
+            Pricing Plans
           </p>
           <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-            Don't let this Halloween deal haunt you - grab 25% off before it vanishes! 🕷️
+            Choose the perfect plan for your needs - from individual discovery to enterprise solutions
           </p>
-        </div>
-      </div>
-
-      {/* Discount Code Banner */}
-      <div className="container mx-auto px-4 -mt-8 relative z-10">
-        <div className="glass-card-strong max-w-2xl mx-auto px-8 py-6 rounded-2xl border-2 border-yellow/50 shadow-yellow text-center">
-          <p className="text-yellow text-xl sm:text-2xl font-bold mb-2">Use Code: <span className="text-3xl sm:text-4xl tracking-wider">HALLOWEEN25</span></p>
-          <p className="text-foreground/80 text-sm">at checkout for 25% off! 🕷️</p>
         </div>
       </div>
 
@@ -117,12 +100,6 @@ export default function Pricing() {
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <CardDescription className="text-sm">{plan.target}</CardDescription>
                   <div className="mt-4">
-                    {plan.originalPrice && (
-                      <div className="mb-2">
-                        <span className="text-xl text-muted-foreground line-through">{plan.originalPrice}</span>
-                        <Badge className="ml-2 bg-primary text-white">🎃 25% OFF</Badge>
-                      </div>
-                    )}
                     <span className="text-3xl font-bold">{plan.price}</span>
                     {plan.priceNote && <span className="text-muted-foreground ml-2">{plan.priceNote}</span>}
                   </div>
