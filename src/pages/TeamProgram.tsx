@@ -10,19 +10,29 @@ import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "luci
 const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([100]);
   const calculatePrice = (count: number) => {
-    if (count <= 5000) {
-      // Scale from $20,000 (for 5 employees) to $100,000 (for 5,000 employees)
-      const basePrice = 20000;
-      const maxPrice = 100000;
-      const scaleFactor = (count - 5) / (5000 - 5);
-      return Math.round(basePrice + (maxPrice - basePrice) * scaleFactor);
+    // Tier pricing based on employee ranges
+    if (count <= 5) {
+      return 20000; // Starter tier
+    } else if (count <= 25) {
+      // Interpolate between 5 ($20k) and 25 ($75k)
+      const range = 25 - 5;
+      const position = count - 5;
+      return Math.round(20000 + (75000 - 20000) * (position / range));
+    } else if (count <= 100) {
+      // Interpolate between 25 ($75k) and 100 ($250k)
+      const range = 100 - 25;
+      const position = count - 25;
+      return Math.round(75000 + (250000 - 75000) * (position / range));
+    } else if (count <= 1000) {
+      // Interpolate between 100 ($250k) and 1,000 ($500k)
+      const range = 1000 - 100;
+      const position = count - 100;
+      return Math.round(250000 + (500000 - 250000) * (position / range));
     } else {
-      // For organizations larger than 5,000, continue scaling
-      // Add $10,000 for every additional 1,000 employees
-      const basePrice = 100000;
-      const additionalEmployees = count - 5000;
-      const additionalCost = Math.round(additionalEmployees / 1000 * 10000);
-      return basePrice + additionalCost;
+      // Interpolate between 1,000 ($500k) and 100,000 ($1,050k)
+      const range = 100000 - 1000;
+      const position = count - 1000;
+      return Math.round(500000 + (1050000 - 500000) * (position / range));
     }
   };
   const formatPrice = (price: number) => {
