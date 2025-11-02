@@ -77,7 +77,13 @@ const AssessmentDetails = ({ answers, results, type }: AssessmentDetailsProps) =
                   {Object.entries(results.scores).map(([color, score]) => (
                     <div key={color} className="flex items-center justify-between p-2 rounded border">
                       <span className="capitalize">{getColorLabel(color)}:</span>
-                      <Badge variant="outline">{score as number}%</Badge>
+                      <Badge variant="outline">{
+                        (() => {
+                          const total = results.totalQuestions || (Object.values(results.scores) as number[]).reduce((sum: number, val: number) => sum + Number(val), 0);
+                          const pct = total > 0 ? Math.round(((score as number) / total) * 100) : 0;
+                          return `${pct}%`;
+                        })()
+                      }</Badge>
                     </div>
                   ))}
                 </div>

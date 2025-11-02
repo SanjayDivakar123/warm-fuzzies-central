@@ -115,25 +115,20 @@ const ProResults = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Calculate dynamic leadership score based on results
+  // Calculate leadership score based on top two colors to avoid flat averages
   const calculateLeadershipScore = (results: ProResults): number => {
     const { scores, totalQuestions } = results;
-    // Yellow and Red colors indicate higher leadership potential
-    const leadershipWeight = {
-      yellow: 1.0,  // High leadership
-      red: 0.9,     // Mid-high leadership
-      green: 0.85,  // Mid-high leadership
-      blue: 0.75    // Collaborative leadership
-    };
-    
-    const totalScore = Object.entries(scores).reduce((sum, [color, score]) => {
-      const weight = leadershipWeight[color as keyof typeof leadershipWeight];
-      return sum + (score / totalQuestions) * weight * 100;
-    }, 0);
-    
-    // Normalize to percentage (0-100)
-    const normalizedScore = Math.min(100, Math.round(totalScore));
-    return normalizedScore;
+    const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+    const [primaryColor, primaryCount] = sorted[0] || ["", 0];
+    const [, secondaryCount] = sorted[1] || ["", 0];
+
+    const primaryPct = totalQuestions > 0 ? primaryCount / totalQuestions : 0;
+    const secondaryPct = totalQuestions > 0 ? secondaryCount / totalQuestions : 0;
+
+    // Weighted emphasis on dominant color
+    const score = (primaryPct * 0.7 + secondaryPct * 0.3) * 100;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
   };
 
   const handleSaveResult = async () => {
