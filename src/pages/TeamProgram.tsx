@@ -10,29 +10,11 @@ import { CheckCircle, Users, Target, FileText, Calendar, DollarSign } from "luci
 const TeamProgram = () => {
   const [employeeCount, setEmployeeCount] = useState([100]);
   const calculatePrice = (count: number) => {
-    // Tier pricing based on employee ranges
-    if (count <= 5) {
-      return 20000; // Starter tier
-    } else if (count <= 25) {
-      // Interpolate between 5 ($20k) and 25 ($75k)
-      const range = 25 - 5;
-      const position = count - 5;
-      return Math.round(20000 + (75000 - 20000) * (position / range));
-    } else if (count <= 100) {
-      // Interpolate between 25 ($75k) and 100 ($250k)
-      const range = 100 - 25;
-      const position = count - 25;
-      return Math.round(75000 + (250000 - 75000) * (position / range));
-    } else if (count <= 1000) {
-      // Interpolate between 100 ($250k) and 1,000 ($500k)
-      const range = 1000 - 100;
-      const position = count - 100;
-      return Math.round(250000 + (500000 - 250000) * (position / range));
+    // Per-employee pricing model
+    if (count <= 20) {
+      return count * 1000; // $1,000 per employee for up to 20
     } else {
-      // Interpolate between 1,000 ($500k) and 100,000 ($1,050k)
-      const range = 100000 - 1000;
-      const position = count - 1000;
-      return Math.round(500000 + (1050000 - 500000) * (position / range));
+      return count * 700; // $700 per employee for 21+
     }
   };
   const formatPrice = (price: number) => {
@@ -45,8 +27,8 @@ const TeamProgram = () => {
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 5;
-    const clampedValue = Math.max(5, Math.min(100000, value));
+    const value = parseInt(e.target.value) || 1;
+    const clampedValue = Math.max(1, Math.min(100000, value));
     setEmployeeCount([clampedValue]);
   };
   
@@ -56,7 +38,7 @@ const TeamProgram = () => {
     if (value <= 10000) return 50;
     return 100;
   };
-  const deliverables = ["Team Capability Map (skills, behaviors, leadership strengths)", "Gap Analysis (what's missing; impact & priority)", "Future Org Blueprint (how the team should be structured)", "Role Design Package for each critical gap", "Role Blueprint (purpose, scope, KPIs, reporting lines)", "Hiring Scorecard (competencies, evidence signals, red flags)", "Structured Interview Kit (questions + rubrics)", "Publish-ready Job Listing (inclusive, ATS-optimized)", "30-60-90 Onboarding Plan"];
+  const deliverables = ["12-week facilitated leadership experience", "Team analytics + group RoleColor heatmaps", "Custom onboarding & progress dashboards", "Access to RoleColorAI for adaptability tracking", "Option to certify internal facilitators", "Full assessments for all team members", "Live interactive workshops", "Leadership development tracking"];
   const timeline = [{
     weeks: "Weeks 1–2",
     activity: "Discovery & org mapping"
@@ -78,10 +60,10 @@ const TeamProgram = () => {
   }];
   const faqs = [{
     question: "How is pricing calculated?",
-    answer: "Pricing scales with organization size. Smaller teams start at $20,000, reaching $100,000 at 5,000 employees, then continuing to scale for larger organizations."
+    answer: "Simple per-employee pricing: $1,000 per employee for teams up to 20, and $700 per employee for teams of 21 or more."
   }, {
     question: "What's the typical outcome?",
-    answer: "A clear view of current capabilities, agreed gaps, and ready-to-hire role(s) with everything your hiring team needs."
+    answer: "Teams gain shared language around adaptability, improved collaboration, and measurable leadership development across all members."
   }];
   return <div className="min-h-screen bg-background">
       <Navbar />
@@ -94,14 +76,13 @@ const TeamProgram = () => {
             12-Week Program
           </Badge>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
-            Team Composition & Role Design Program
+            12-Week Leadership Alignment Program
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground mb-3 sm:mb-4">
-            Find the gaps. Design the roles. Hire with confidence.
+            Built for full-team cultural transformation.
           </p>
           <p className="text-base sm:text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            We map your team's capabilities, identify missing roles, and deliver a ready-to-hire package 
-            (role blueprint, hiring scorecard, interview kit, and a 30-60-90 onboarding plan).
+            Used by schools, nonprofits, and enterprise teams to hardwire adaptability.
           </p>
         </div>
 
@@ -115,18 +96,18 @@ const TeamProgram = () => {
           </CardHeader>
           <CardContent className="space-y-6 sm:space-y-8">
             <div>
-              <label className="text-sm font-medium mb-3 sm:mb-4 block">Number of employees:</label>
+              <label className="text-sm font-medium mb-3 sm:mb-4 block">Team size (number of employees):</label>
               
               {/* Input field for direct number entry */}
               <div className="mb-4 sm:mb-6">
                 <Input
                   type="number"
-                  min="5"
+                  min="1"
                   max="100000"
                   value={employeeCount[0]}
                   onChange={handleInputChange}
                   className="w-full text-center text-base sm:text-lg font-medium py-3"
-                  placeholder="Enter number of employees"
+                  placeholder="Enter team size"
                 />
               </div>
               
@@ -136,12 +117,12 @@ const TeamProgram = () => {
                   value={employeeCount} 
                   onValueChange={handleSliderChange} 
                   max={100000} 
-                  min={5}
+                  min={1}
                   step={getSliderStep(employeeCount[0])} 
                   className="w-full h-4 sm:h-6" 
                 />
                 <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3">
-                  <span>5</span>
+                  <span>1</span>
                   <span>100,000</span>
                 </div>
               </div>
@@ -149,8 +130,11 @@ const TeamProgram = () => {
             
             <div className="text-center">
               <p className="text-base sm:text-lg mb-2">You selected: <strong>{employeeCount[0].toLocaleString()} employees</strong></p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Price per employee: <strong>${employeeCount[0] <= 20 ? '1,000' : '700'}</strong>
+              </p>
               <div className="text-2xl sm:text-3xl font-bold text-primary mb-4">
-                Your custom price: {formatPrice(price)}
+                Total investment: {formatPrice(price)}
               </div>
             </div>
 
@@ -163,7 +147,7 @@ const TeamProgram = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              What you get in 12 weeks
+              What's included
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -246,7 +230,7 @@ const TeamProgram = () => {
               </a>
             </Button>
             <Button variant="outline" size="lg" className="px-8" asChild>
-              <a href={`mailto:sanjay@rolecolorfinder.com?subject=Team Composition & Role Design Program Inquiry&body=Hi Sanjay,%0D%0A%0D%0AI'm interested in the 12-Week Team Composition & Role Design Program.%0D%0A%0D%0AOrganization Details:%0D%0A- Number of employees: ${employeeCount[0].toLocaleString()}%0D%0A- Estimated program cost: ${formatPrice(price)}%0D%0A%0D%0AI'd like to discuss how this program can help us map our team's capabilities, identify missing roles, and create a ready-to-hire package.%0D%0A%0D%0APlease let me know your availability for a consultation.%0D%0A%0D%0ABest regards`}>
+              <a href={`mailto:sanjay@rolecolorfinder.com?subject=12-Week Leadership Alignment Program Inquiry&body=Hi Sanjay,%0D%0A%0D%0AI'm interested in the 12-Week Leadership Alignment Program.%0D%0A%0D%0AOrganization Details:%0D%0A- Number of employees: ${employeeCount[0].toLocaleString()}%0D%0A- Price per employee: $${employeeCount[0] <= 20 ? '1,000' : '700'}%0D%0A- Total investment: ${formatPrice(price)}%0D%0A%0D%0AI'd like to discuss how this program can transform our team's leadership and adaptability.%0D%0A%0D%0APlease let me know your availability for a consultation.%0D%0A%0D%0ABest regards`}>
                 Contact Sanjay to Get Started
               </a>
             </Button>
