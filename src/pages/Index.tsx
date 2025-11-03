@@ -310,35 +310,45 @@ const Index = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="section-padding bg-background border-t border-b border-cyan-500/20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-background to-black opacity-95"></div>
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
+      <section className="py-32 bg-black relative overflow-hidden border-t-2 border-b-2 border-cyan-500">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-px h-full bg-cyan-500/10"></div>
+          <div className="absolute top-0 right-1/3 w-px h-full bg-cyan-500/10"></div>
+        </div>
         
         <div className="container-wide relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight">
+          <div className="max-w-5xl mx-auto space-y-20">
+            
+            <div className="text-center space-y-6">
+              <h2 className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter uppercase">
                 THE SHIFT.
               </h2>
-              <p className="text-xl md:text-2xl text-cyan-400 font-light tracking-wide">
+              <div className="h-1 w-32 bg-cyan-500 mx-auto"></div>
+              <p className="text-2xl md:text-3xl text-cyan-400 font-light tracking-wide max-w-3xl mx-auto">
                 Because the world's changing faster than your excuses.
               </p>
             </div>
 
-            <div className="space-y-6 max-w-2xl mx-auto">
-              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
-                A weekly drop from your world — part leadership lab, part wake-up call — for people who want to stay relevant when everyone else is becoming obsolete.
+            <div className="space-y-12 max-w-3xl mx-auto">
+              <p className="text-xl md:text-2xl text-white font-light leading-relaxed">
+                A weekly drop — part leadership lab, part wake-up call.
               </p>
-              <p className="text-base md:text-lg text-white/70">
-                It's not news. It's a reality check.
+              
+              <p className="text-lg md:text-xl text-white/60 leading-relaxed">
+                For people who want to stay relevant when everyone else is becoming obsolete.
               </p>
-              <p className="text-base md:text-lg text-white/70">
-                It's for the builders, educators, leaders, and thinkers trying to survive the system while reinventing it.
-              </p>
+
+              <div className="space-y-4">
+                <p className="text-lg text-white/80">
+                  It's not news.
+                </p>
+                <p className="text-lg text-white/80">
+                  It's a reality check.
+                </p>
+              </div>
             </div>
 
-            <div className="pt-8">
+            <div className="max-w-xl mx-auto">
               <iframe 
                 src="https://embeds.beehiiv.com/0ca6cfd6-fe95-4e26-8ace-76fff956f217" 
                 data-test-id="beehiiv-embed" 
@@ -346,21 +356,21 @@ const Index = () => {
                 height="320" 
                 frameBorder="0" 
                 scrolling="no"
-                className="mx-auto rounded-lg"
+                className="mx-auto"
                 style={{
-                  borderRadius: '8px',
-                  border: '1px solid rgba(6, 182, 212, 0.2)',
+                  border: '2px solid rgba(6, 182, 212, 0.3)',
                   margin: '0',
                   backgroundColor: 'transparent'
                 }}
               />
             </div>
 
-            <div className="pt-4">
-              <p className="text-sm md:text-base text-cyan-400/80 font-light tracking-wide">
+            <div className="text-center pt-8">
+              <p className="text-base md:text-lg text-cyan-400 font-medium tracking-wide max-w-2xl mx-auto border-t border-b border-cyan-500/30 py-6">
                 Make one decision this week that scares the old version of you.
               </p>
             </div>
+
           </div>
         </div>
       </section>
