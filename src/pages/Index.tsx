@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { NewsletterForm } from "@/components/NewsletterForm";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
@@ -348,18 +349,7 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex justify-center">
-              <Button 
-                variant="outline" 
-                size="xl"
-                className="text-xl px-16 py-8 font-black uppercase tracking-wider bg-transparent border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all duration-300 transform hover:scale-105"
-                asChild
-              >
-                <a href="https://rolecolorfinder.beehiiv.com/" target="_blank" rel="noopener noreferrer">
-                  Subscribe Now
-                </a>
-              </Button>
-            </div>
+            <NewsletterForm />
 
             <div className="text-center pt-8">
               <p className="text-base md:text-lg text-cyan-400 font-medium tracking-wide max-w-2xl mx-auto border-t border-b border-cyan-500/30 py-6">
