@@ -8,7 +8,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { NewsletterForm } from "@/components/NewsletterForm";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
@@ -306,57 +305,6 @@ const Index = () => {
         <div className="container-wide relative">
           <div className="max-w-5xl mx-auto">
             
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-32 bg-black relative overflow-hidden border-t-2 border-b-2 border-cyan-500">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-px h-full bg-cyan-500/10"></div>
-          <div className="absolute top-0 right-1/3 w-px h-full bg-cyan-500/10"></div>
-        </div>
-        
-        <div className="container-wide relative z-10">
-          <div className="max-w-5xl mx-auto space-y-20">
-            
-            <div className="text-center space-y-6">
-              <h2 className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter uppercase">
-                THE SHIFT.
-              </h2>
-              <div className="h-1 w-32 bg-cyan-500 mx-auto"></div>
-              <p className="text-2xl md:text-3xl text-cyan-400 font-light tracking-wide max-w-3xl mx-auto">
-                Because the world's changing faster than your excuses.
-              </p>
-            </div>
-
-            <div className="space-y-12 max-w-3xl mx-auto">
-              <p className="text-xl md:text-2xl text-white font-light leading-relaxed">
-                A weekly drop — part leadership lab, part wake-up call.
-              </p>
-              
-              <p className="text-lg md:text-xl text-white/60 leading-relaxed">
-                For people who want to stay relevant when everyone else is becoming obsolete.
-              </p>
-
-              <div className="space-y-4">
-                <p className="text-lg text-white/80">
-                  It's not news.
-                </p>
-                <p className="text-lg text-white/80">
-                  It's a reality check.
-                </p>
-              </div>
-            </div>
-
-            <NewsletterForm />
-
-            <div className="text-center pt-8">
-              <p className="text-base md:text-lg text-cyan-400 font-medium tracking-wide max-w-2xl mx-auto border-t border-b border-cyan-500/30 py-6">
-                Make one decision this week that scares the old version of you.
-              </p>
-            </div>
-
           </div>
         </div>
       </section>
