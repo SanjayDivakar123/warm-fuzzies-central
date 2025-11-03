@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, X } from "lucide-react";
 
 export const NewsletterForm = () => {
   const [email, setEmail] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,10 +16,40 @@ export const NewsletterForm = () => {
     setShowConfirm(true);
   };
 
+  useEffect(() => {
+    if (showConfirm) {
+      // Close popup and show success after 10 seconds (when redirect happens)
+      const timer = setTimeout(() => {
+        setShowConfirm(false);
+        setIsSubscribed(true);
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showConfirm]);
+
   const handleClose = () => {
     setShowConfirm(false);
     setEmail("");
   };
+
+  if (isSubscribed) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-8">
+        <div className="space-y-4">
+          <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight">
+            WELCOME TO
+          </h3>
+          <h2 className="text-5xl md:text-6xl font-black text-cyan-400 uppercase tracking-tight">
+            THE SHIFT.
+          </h2>
+          <p className="text-white/60 text-lg pt-4">
+            Check your email to confirm your subscription.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
