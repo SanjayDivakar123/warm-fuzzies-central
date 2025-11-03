@@ -299,15 +299,7 @@ const Index = () => {
       </section>
 
       {/* Voice Assessment Promotion Section */}
-      <section className="section-padding bg-gradient-to-br from-primary/5 via-background to-green/5 relative overflow-hidden">
-        
-
-        <div className="container-wide relative">
-          <div className="max-w-5xl mx-auto">
-            
-          </div>
-        </div>
-      </section>
+      
 
       {/* FAQ Section */}
       <section className="section-padding bg-gradient-soft">
