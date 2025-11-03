@@ -309,6 +309,62 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Newsletter Section */}
+      <section className="section-padding bg-background border-t border-b border-cyan-500/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-background to-black opacity-95"></div>
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
+        
+        <div className="container-wide relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight">
+                THE SHIFT.
+              </h2>
+              <p className="text-xl md:text-2xl text-cyan-400 font-light tracking-wide">
+                Because the world's changing faster than your excuses.
+              </p>
+            </div>
+
+            <div className="space-y-6 max-w-2xl mx-auto">
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                A weekly drop from your world — part leadership lab, part wake-up call — for people who want to stay relevant when everyone else is becoming obsolete.
+              </p>
+              <p className="text-base md:text-lg text-white/70">
+                It's not news. It's a reality check.
+              </p>
+              <p className="text-base md:text-lg text-white/70">
+                It's for the builders, educators, leaders, and thinkers trying to survive the system while reinventing it.
+              </p>
+            </div>
+
+            <div className="pt-8">
+              <iframe 
+                src="https://embeds.beehiiv.com/0ca6cfd6-fe95-4e26-8ace-76fff956f217" 
+                data-test-id="beehiiv-embed" 
+                width="100%" 
+                height="320" 
+                frameBorder="0" 
+                scrolling="no"
+                className="mx-auto rounded-lg"
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid rgba(6, 182, 212, 0.2)',
+                  margin: '0',
+                  backgroundColor: 'transparent'
+                }}
+              />
+            </div>
+
+            <div className="pt-4">
+              <p className="text-sm md:text-base text-cyan-400/80 font-light tracking-wide">
+                Make one decision this week that scares the old version of you.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="section-padding bg-gradient-soft">
         <div className="container-wide">
