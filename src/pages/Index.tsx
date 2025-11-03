@@ -348,21 +348,17 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="max-w-xl mx-auto">
-              <iframe 
-                src="https://embeds.beehiiv.com/0ca6cfd6-fe95-4e26-8ace-76fff956f217" 
-                data-test-id="beehiiv-embed" 
-                width="100%" 
-                height="320" 
-                frameBorder="0" 
-                scrolling="no"
-                className="mx-auto"
-                style={{
-                  border: '2px solid rgba(6, 182, 212, 0.3)',
-                  margin: '0',
-                  backgroundColor: 'transparent'
-                }}
-              />
+            <div className="flex justify-center">
+              <Button 
+                variant="outline" 
+                size="xl"
+                className="text-xl px-16 py-8 font-black uppercase tracking-wider bg-transparent border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all duration-300 transform hover:scale-105"
+                asChild
+              >
+                <a href="https://rolecolorfinder.beehiiv.com/" target="_blank" rel="noopener noreferrer">
+                  Subscribe Now
+                </a>
+              </Button>
             </div>
 
             <div className="text-center pt-8">
