@@ -20,7 +20,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import TeamProgram from "@/pages/TeamProgram";
-import Sitemap from "@/pages/Sitemap";
+import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";

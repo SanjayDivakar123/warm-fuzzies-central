@@ -125,7 +125,6 @@ const Contact = () => {
               </p>
               <a 
                 href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" 
-                target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-semibold text-lg"
               >

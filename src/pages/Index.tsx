@@ -31,7 +31,7 @@ const Index = () => {
       <Navbar />
       
       {/* Hero Section - Completely Redesigned */}
-      <section className="relative section-padding overflow-hidden mesh-background">
+      <section className="relative section-padding overflow-hidden mesh-background" aria-label="Hero section">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
         
         {/* Modern floating elements */}
@@ -91,7 +91,7 @@ const Index = () => {
                   <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button variant="modern" size="xl" className="text-xl px-12 py-6 font-semibold" asChild>
-                  <a href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" target="_blank" rel="noopener noreferrer">
+                  <a href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" rel="noopener noreferrer">
                     <Clock className="mr-3 w-6 h-6" />
                     Book a 20-min Fit Call
                   </a>
@@ -101,10 +101,10 @@ const Index = () => {
               {/* Brochure Download */}
               <div className="animate-fade-in delay-800">
                 <Button variant="glass" size="lg" className="text-base px-8 py-4 hover-lift" asChild>
-                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4">
+                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-4">
                     <FileText className="w-6 h-6" />
                     Download: Why Every Team Needs 
-                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" className="h-5 w-auto inline" />
+                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" width="200" height="40" className="h-5 w-auto inline" />
                   </a>
                 </Button>
               </div>
@@ -115,7 +115,8 @@ const Index = () => {
       </section>
 
       {/* Philosophy Section - Enhanced */}
-      <section className="section-padding bg-gradient-soft relative overflow-hidden">
+      <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
+        <h2 className="sr-only">Our Philosophy on Contextual Leadership</h2>
         
         <div className="container-wide relative">
           <div className="text-center mb-20 animate-fade-in">
@@ -123,11 +124,11 @@ const Index = () => {
               Our Philosophy
             </Badge>
             
-            <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground mb-12 leading-tight text-balance">
+            <h3 className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground mb-12 leading-tight text-balance">
               Great teams don't just happen.
               <br />
               <span className="gradient-text-primary font-bold">They grow through stages.</span>
-            </h2>
+            </h3>
             
             <div className="max-w-6xl mx-auto">
               <blockquote className="text-2xl md:text-4xl lg:text-5xl font-light text-muted-foreground mb-10 leading-relaxed italic text-balance">
@@ -141,7 +142,7 @@ const Index = () => {
             <div className="grid lg:grid-cols-2 gap-20 items-center">
               <div className="space-y-12 animate-fade-in delay-200">
                 <div className="glass-card-strong rounded-3xl p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
-                  <h3 className="text-4xl font-bold text-foreground mb-8">Contextual Leadership</h3>
+                  <h4 className="text-4xl font-bold text-foreground mb-8">Contextual Leadership</h4>
                   <p className="text-xl text-muted-foreground leading-relaxed">
                     We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                   </p>
@@ -158,7 +159,7 @@ const Index = () => {
               <div className="relative animate-fade-in delay-400">
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-                  <img src={professionalTeamImage} alt="Professional team collaboration" className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10" />
+                  <img src={professionalTeamImage} alt="Professional team collaboration" width="800" height="600" className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent rounded-3xl z-20"></div>
                 </div>
               </div>
@@ -168,9 +169,9 @@ const Index = () => {
           {/* How Our Idea Works - Enhanced */}
           <div className="mb-20">
             <div className="text-center mb-16">
-              <h3 className="text-3xl md:text-5xl font-bold text-foreground mb-8">
+              <h4 className="text-3xl md:text-5xl font-bold text-foreground mb-8">
                 Here's how our <span className="gradient-text-primary">patent pending</span> idea works:
-              </h3>
+              </h4>
               
               <Badge variant="outline" className="text-lg px-8 py-4 border-primary/40 text-primary font-bold">
                 🔬 Patent Pending System
@@ -227,9 +228,9 @@ const Index = () => {
 
           {/* Color Roles - Enhanced */}
           <div className="mb-20">
-            <h3 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
+            <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
               Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor ™️ Profiles</span>:
-            </h3>
+            </h4>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
               {[{
@@ -276,11 +277,11 @@ const Index = () => {
       </section>
 
       {/* Team Program Section */}
-      <section className="section-padding">
+      <section className="section-padding" aria-label="Team Program">
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">Unlock Your Team's Potential with Our Team Program</h2>
+              <h3 className="text-4xl font-bold mb-6">Unlock Your Team's Potential with Our Team Program</h3>
               <p className="text-lg text-muted-foreground mb-8">
                 Our team program is designed to help teams understand each other better, communicate more effectively, and achieve their goals faster.
               </p>
@@ -292,7 +293,7 @@ const Index = () => {
               </Button>
             </div>
             <div>
-              <img src={heroImage} alt="Team Collaboration" className="rounded-lg shadow-md" />
+              <img src={heroImage} alt="Team Collaboration" width="800" height="600" className="rounded-lg shadow-md" />
             </div>
           </div>
         </div>
@@ -302,16 +303,16 @@ const Index = () => {
       
 
       {/* FAQ Section */}
-      <section className="section-padding bg-gradient-soft">
+      <section className="section-padding bg-gradient-soft" aria-label="Frequently Asked Questions">
         <div className="container-wide">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
               <HelpCircle className="w-5 h-5 mr-2" />
               Frequently Asked Questions
             </Badge>
-            <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
+            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
               Got Questions? <span className="gradient-text-primary">We've Got Answers</span>
-            </h2>
+            </h3>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Everything you need to know about our leadership assessment and team development approach.
             </p>
