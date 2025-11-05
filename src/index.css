@@ -228,7 +228,7 @@ All colors MUST be HSL.
   }
 
   .section-padding {
-    @apply py-24 lg:py-32;
+    @apply py-12 sm:py-16 md:py-20 lg:py-24 xl:py-32;
   }
 
   .container-wide {

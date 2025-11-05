@@ -105,13 +105,13 @@ const Team = () => {
         </div>
 
         {/* Team Members */}
-        <div className="space-y-16">
+        <div className="space-y-8 md:space-y-16">
           {teamMembers.map((member, index) => (
             <Card key={index} className="overflow-hidden border-border/50 hover-lift">
               <CardContent className="p-0">
-                <div className="grid md:grid-cols-[300px_1fr] gap-8">
+                <div className="flex flex-col md:grid md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr] gap-0 md:gap-8">
                   {/* Image */}
-                  <div className="relative h-80 md:h-auto">
+                  <div className="relative h-64 sm:h-80 md:h-auto min-h-[400px]">
                     <img 
                       src={member.image} 
                       alt={member.name}
@@ -121,13 +121,13 @@ const Team = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-8 md:p-12">
+                  <div className="p-6 sm:p-8 md:p-10 lg:p-12">
                     <div className="mb-6">
-                      <h2 className="text-3xl md:text-4xl font-bold mb-2">{member.name}</h2>
-                      <p className="text-xl text-primary font-semibold mb-4">{member.title}</p>
+                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{member.name}</h2>
+                      <p className="text-lg sm:text-xl text-primary font-semibold mb-4">{member.title}</p>
                       
                       {/* Contact Info */}
-                      <div className="space-y-2 text-muted-foreground">
+                      <div className="space-y-2 text-sm sm:text-base text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
                           <span>{member.location}</span>
@@ -170,9 +170,9 @@ const Team = () => {
                     </div>
 
                     {/* Bio */}
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none">
                       {member.bio.split('\n\n').map((paragraph, i) => (
-                        <p key={i} className="text-muted-foreground leading-relaxed mb-4">
+                        <p key={i} className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-3 sm:mb-4">
                           {paragraph}
                         </p>
                       ))}

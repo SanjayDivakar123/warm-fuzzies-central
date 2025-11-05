@@ -52,47 +52,47 @@ const Index = () => {
               </div>
               
               {/* Main Headline */}
-              <div className="space-y-6 animate-fade-in delay-200">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight text-balance">
+              <div className="space-y-4 sm:space-y-6 animate-fade-in delay-200">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-balance">
                   12 Weeks.
                   <br />
-                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-muted-foreground">Faster Decisions.</span>
+                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-muted-foreground">Faster Decisions.</span>
                   <br />
-                  <span className="gradient-text-primary text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold">Cleaner Handoffs.</span>
+                  <span className="gradient-text-primary text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">Cleaner Handoffs.</span>
                   <br />
-                  <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-light text-foreground">Stronger Pipeline.</span>
+                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-foreground">Stronger Pipeline.</span>
                 </h1>
               </div>
 
               {/* Enhanced Social Proof */}
-              <div className="glass-card-strong rounded-2xl p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
-                <div className="flex items-center justify-center lg:justify-start gap-8">
-                  <div className="flex -space-x-4">
-                    {['from-red to-red-glow', 'from-green to-green-glow', 'from-yellow to-yellow-glow', 'from-blue to-blue-glow'].map((gradient, i) => <div key={i} className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} border-4 border-background shadow-xl hover-lift`}></div>)}
+              <div className="glass-card-strong rounded-2xl p-4 sm:p-6 md:p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 sm:gap-6 md:gap-8">
+                  <div className="flex -space-x-3 sm:-space-x-4">
+                    {['from-red to-red-glow', 'from-green to-green-glow', 'from-yellow to-yellow-glow', 'from-blue to-blue-glow'].map((gradient, i) => <div key={i} className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br ${gradient} border-2 sm:border-3 md:border-4 border-background shadow-xl hover-lift`}></div>)}
                   </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-3 mb-3">
+                  <div className="text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
                       <div className="flex">
-                        {[...Array(5)].map((_, i) => <Star key={i} className="w-6 h-6 fill-yellow text-yellow" />)}
+                        {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-yellow text-yellow" />)}
                       </div>
-                      <span className="text-2xl font-bold text-foreground">4.8/5</span>
+                      <span className="text-xl sm:text-2xl font-bold text-foreground">4.8/5</span>
                     </div>
-                    <p className="text-lg text-muted-foreground font-medium">
-                      "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold">• 3 min quiz</span>
+                    <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-medium">
+                      "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold block sm:inline">• 3 min quiz</span>
                     </p>
                   </div>
                 </div>
               </div>
               
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-6 animate-fade-in delay-600">
-                <Button variant="hero" size="xl" className="text-xl px-12 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 animate-fade-in delay-600">
+                <Button variant="hero" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-bold group w-full sm:w-auto" onClick={() => navigate('/free-assessment')}>
                   Start Your Free Assessment
-                  <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <Button variant="modern" size="xl" className="text-xl px-12 py-6 font-semibold" asChild>
+                <Button variant="modern" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-semibold w-full sm:w-auto" asChild>
                   <a href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" rel="noopener noreferrer">
-                    <Clock className="mr-3 w-6 h-6" />
+                    <Clock className="mr-2 sm:mr-3 w-5 h-5 sm:w-6 sm:h-6" />
                     Book a 20-min Fit Call
                   </a>
                 </Button>
@@ -100,11 +100,13 @@ const Index = () => {
               
               {/* Brochure Download */}
               <div className="animate-fade-in delay-800">
-                <Button variant="glass" size="lg" className="text-base px-8 py-4 hover-lift" asChild>
-                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-4">
-                    <FileText className="w-6 h-6" />
-                    Download: Why Every Team Needs 
-                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" width="200" height="40" className="h-5 w-auto inline" />
+                <Button variant="glass" size="lg" className="text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 hover-lift w-full sm:w-auto" asChild>
+                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <span>Download: Why Every Team Needs</span>
+                    </div>
+                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" width="200" height="40" className="h-4 sm:h-5 w-auto" />
                   </a>
                 </Button>
               </div>
@@ -124,17 +126,17 @@ const Index = () => {
               Our Philosophy
             </Badge>
             
-            <h3 className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground mb-12 leading-tight text-balance">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-foreground mb-8 sm:mb-10 md:mb-12 leading-tight text-balance">
               Great teams don't just happen.
               <br />
               <span className="gradient-text-primary font-bold">They grow through stages.</span>
             </h3>
             
             <div className="max-w-6xl mx-auto">
-              <blockquote className="text-2xl md:text-4xl lg:text-5xl font-light text-muted-foreground mb-10 leading-relaxed italic text-balance">
+              <blockquote className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-muted-foreground mb-6 sm:mb-8 md:mb-10 leading-relaxed italic text-balance">
                 "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
               </blockquote>
-              <cite className="text-primary font-bold text-xl">— Bruce Tuckman, developer of the team development model</cite>
+              <cite className="text-primary font-bold text-base sm:text-lg md:text-xl">— Bruce Tuckman, developer of the team development model</cite>
             </div>
           </div>
 
@@ -183,7 +185,7 @@ const Index = () => {
                 Every user takes a 25-question diagnostic designed around real group psychology, especially Tuckman's Five Stages of Team Development:
               </p>
               
-              <div className="grid md:grid-cols-5 gap-8 mb-16">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
                 {[{
                 icon: Users,
                 color: 'red',
@@ -210,11 +212,11 @@ const Index = () => {
                 title: 'Adjourning',
                 desc: 'Ending with clarity'
               }].map((stage, i) => <div key={i} className="text-center hover-lift">
-                    <div className={`w-24 h-24 bg-gradient-${stage.color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-${stage.color} hover:scale-110 transition-transform duration-300`}>
-                      <stage.icon className="w-12 h-12 text-white" />
+                    <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-${stage.color} rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 shadow-${stage.color} hover:scale-110 transition-transform duration-300`}>
+                      <stage.icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
                     </div>
-                    <h4 className="font-bold text-foreground mb-3 text-xl">{stage.title}</h4>
-                    <p className="text-base text-muted-foreground">{stage.desc}</p>
+                    <h4 className="font-bold text-foreground mb-2 sm:mb-3 text-sm sm:text-base md:text-lg lg:text-xl">{stage.title}</h4>
+                    <p className="text-xs sm:text-sm md:text-base text-muted-foreground">{stage.desc}</p>
                   </div>)}
               </div>
 
@@ -232,7 +234,7 @@ const Index = () => {
               Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor ™️ Profiles</span>:
             </h4>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
               {[{
               icon: Target,
               color: 'yellow',
@@ -257,12 +259,12 @@ const Index = () => {
               name: 'Blue',
               desc: 'Innovation-focused visionaries (strategists, designers, researchers)',
               gradient: 'gradient-blue'
-            }].map((role, i) => <div key={i} className="glass-card rounded-2xl p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
-                  <div className={`w-16 h-16 bg-${role.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-${role.color}`}>
-                    <role.icon className="w-8 h-8 text-white" />
+            }].map((role, i) => <div key={i} className="glass-card rounded-2xl p-6 sm:p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-${role.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-${role.color}`}>
+                    <role.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                   </div>
-                  <h4 className={`font-bold text-${role.color} mb-4 text-xl group-hover:text-${role.color}/80 transition-colors duration-300`}>{role.name}</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">{role.desc}</p>
+                  <h4 className={`font-bold text-${role.color} mb-3 sm:mb-4 text-lg sm:text-xl group-hover:text-${role.color}/80 transition-colors duration-300`}>{role.name}</h4>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{role.desc}</p>
                 </div>)}
             </div>
 
@@ -279,21 +281,21 @@ const Index = () => {
       {/* Team Program Section */}
       <section className="section-padding" aria-label="Team Program">
         <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h3 className="text-4xl font-bold mb-6">Unlock Your Team's Potential with Our Team Program</h3>
-              <p className="text-lg text-muted-foreground mb-8">
+          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">Unlock Your Team's Potential with Our Team Program</h3>
+              <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
                 Our team program is designed to help teams understand each other better, communicate more effectively, and achieve their goals faster.
               </p>
-              <Button variant="hero" size="lg" className="group" asChild>
+              <Button variant="hero" size="lg" className="group w-full sm:w-auto" asChild>
                 <Link to="/team-program">
                   Learn More About the Team Program
                   <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </div>
-            <div>
-              <img src={heroImage} alt="Team Collaboration" width="800" height="600" className="rounded-lg shadow-md" />
+            <div className="order-1 lg:order-2">
+              <img src={heroImage} alt="Team Collaboration" width="800" height="600" className="rounded-lg shadow-md w-full h-auto" />
             </div>
           </div>
         </div>
