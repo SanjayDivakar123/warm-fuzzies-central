@@ -11,13 +11,15 @@ import {
   BarChart, 
   Users, 
   Settings,
-  Phone
+  Phone,
+  UserCircle
 } from "lucide-react";
 
 const Sitemap = () => {
   const pages = [
     { name: "Home", path: "/", icon: Home },
     { name: "About Us", path: "/about", icon: Info },
+    { name: "Our Team", path: "/team", icon: UserCircle },
     { name: "Contact", path: "/contact", icon: Mail },
     { name: "Pricing", path: "/pricing", icon: DollarSign },
     { name: "Free Assessment", path: "/free-assessment", icon: BarChart },

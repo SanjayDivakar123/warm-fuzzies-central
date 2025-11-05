@@ -20,6 +20,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import TeamProgram from "@/pages/TeamProgram";
+import Team from "@/pages/Team";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
@@ -112,6 +113,10 @@ export const router = createBrowserRouter([
   {
     path: "/team-program",
     element: <Layout><TeamProgram /></Layout>,
+  },
+  {
+    path: "/team",
+    element: <Layout><Team /></Layout>,
   },
   {
     path: "/sitemap",

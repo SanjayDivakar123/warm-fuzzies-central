@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { Button } from "@/components/ui/button";
-import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users } from "lucide-react";
+import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const location = useLocation();
@@ -62,6 +62,15 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
+              <MenubarMenu>
+                <MenubarTrigger asChild>
+                  <Link to="/team" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/team') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    Our Team
+                  </Link>
+                </MenubarTrigger>
+              </MenubarMenu>
+
             </Menubar>
           </div>
 
@@ -116,6 +125,10 @@ export function Navbar() {
               <Link to="/team-program" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Users className="w-4 h-4 mr-2 inline" />
                 Team Program
+              </Link>
+              <Link to="/team" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <UserCircle className="w-4 h-4 mr-2 inline" />
+                Our Team
               </Link>
               
               <div className="px-3 py-2">
