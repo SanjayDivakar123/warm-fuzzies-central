@@ -21,6 +21,9 @@ import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import TeamProgram from "@/pages/TeamProgram";
 import Team from "@/pages/Team";
+import SanjayDivakar from "@/pages/team/SanjayDivakar";
+import JenniferKlein from "@/pages/team/JenniferKlein";
+import KaponoCiotti from "@/pages/team/KaponoCiotti";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
@@ -117,6 +120,18 @@ export const router = createBrowserRouter([
   {
     path: "/team",
     element: <Layout><Team /></Layout>,
+  },
+  {
+    path: "/team/sanjay-divakar",
+    element: <Layout><SanjayDivakar /></Layout>,
+  },
+  {
+    path: "/team/jennifer-klein",
+    element: <Layout><JenniferKlein /></Layout>,
+  },
+  {
+    path: "/team/kapono-ciotti",
+    element: <Layout><KaponoCiotti /></Layout>,
   },
   {
     path: "/sitemap",
