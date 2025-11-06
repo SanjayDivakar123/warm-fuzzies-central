@@ -148,17 +148,102 @@ export default function SharedResult() {
           </CardContent>
         </Card>
 
-        {resultData.strengths && resultData.strengths.length > 0 && (
+        {/* Color Analysis Section */}
+        {resultData.colorScores && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Key Strengths</CardTitle>
+              <CardTitle>Color Balance Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(resultData.colorScores).map(([color, score]: [string, any]) => (
+                  <div key={color}>
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium capitalize">{color}</span>
+                      <span className="text-muted-foreground">{score}%</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full bg-gradient-to-r ${colorData[color]?.gradient || 'from-gray-400 to-gray-500'}`}
+                        style={{ width: `${score}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Primary Color Detailed Analysis */}
+        {colorInfo && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Primary Leadership Style: {colorInfo.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {resultData.strengths && resultData.strengths.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Core Strengths</h3>
+                  <ul className="space-y-2">
+                    {resultData.strengths.map((strength: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-primary">✓</span>
+                        <span>{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {resultData.developmentAreas && resultData.developmentAreas.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Development Opportunities</h3>
+                  <ul className="space-y-2">
+                    {resultData.developmentAreas.map((area: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-muted-foreground">→</span>
+                        <span>{area}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Secondary Color Analysis */}
+        {resultData.secondaryColor && colorData[resultData.secondaryColor] && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Secondary Influence: {colorData[resultData.secondaryColor].name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                {colorData[resultData.secondaryColor].description}
+              </p>
+              {resultData.secondaryColorScore && (
+                <div className="text-sm text-muted-foreground">
+                  Secondary Color Strength: {resultData.secondaryColorScore}%
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ideal Career Roles */}
+        {resultData.idealRoles && resultData.idealRoles.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Ideal Career Roles</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {resultData.strengths.map((strength: string, index: number) => (
+                {resultData.idealRoles.map((role: string, index: number) => (
                   <li key={index} className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>{strength}</span>
+                    <span className="text-primary">★</span>
+                    <span>{role}</span>
                   </li>
                 ))}
               </ul>
@@ -166,20 +251,63 @@ export default function SharedResult() {
           </Card>
         )}
 
-        {resultData.developmentAreas && resultData.developmentAreas.length > 0 && (
+        {/* Communication Style */}
+        {resultData.communicationStyle && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Development Areas</CardTitle>
+              <CardTitle>Communication Style</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2">
-                {resultData.developmentAreas.map((area: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-muted-foreground">→</span>
-                    <span>{area}</span>
+              <p className="text-muted-foreground">{resultData.communicationStyle}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Work Environment Preferences */}
+        {resultData.workEnvironment && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Ideal Work Environment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{resultData.workEnvironment}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Additional Insights */}
+        {resultData.insights && resultData.insights.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Additional Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {resultData.insights.map((insight: string, index: number) => (
+                  <li key={index} className="text-muted-foreground">
+                    {insight}
                   </li>
                 ))}
               </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Next Steps */}
+        {resultData.nextSteps && resultData.nextSteps.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Next Steps for Development</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-2">
+                {resultData.nextSteps.map((step: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-primary font-semibold">{index + 1}.</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
             </CardContent>
           </Card>
         )}
