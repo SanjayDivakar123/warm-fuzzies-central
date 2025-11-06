@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Crown, Download, Share2, Trophy, Target, Lightbulb, Users, TrendingUp, Brain, MapPin, Calendar, Star, ChevronRight, Save } from "lucide-react";
+import { Crown, Download, Share2, Trophy, Target, Lightbulb, Users, TrendingUp, Brain, MapPin, Calendar, Star, ChevronRight, Save, Link2, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -293,6 +293,24 @@ const ProResults = () => {
       });
     }
   };
+
+  const handleCopyShareLink = () => {
+    if (!shareableCode) {
+      toast({
+        title: "Save Required",
+        description: "Please save your assessment first to get a shareable link.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/result/${shareableCode}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: shareUrl,
+    });
+  };
   if (!results) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
@@ -344,7 +362,13 @@ const ProResults = () => {
                 {primaryColor.description}
               </p>
               
-              <div className="flex justify-center gap-4 mb-8">
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                {shareableCode && (
+                  <Button onClick={handleCopyShareLink} size="lg" className="min-w-[200px]">
+                    <Link2 className="w-4 h-4 mr-2" />
+                    Copy Share Link
+                  </Button>
+                )}
                 {user && (
                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
