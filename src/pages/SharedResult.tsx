@@ -148,49 +148,40 @@ export default function SharedResult() {
           </CardContent>
         </Card>
 
-        {resultData.strengths && resultData.strengths.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Key Strengths</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {resultData.strengths.map((strength: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>{strength}</span>
-                  </li>
-                ))}
+        {/* Preview Badge */}
+        <Card className="mb-6 border-2 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4">
+                <span className="text-sm font-semibold">Preview Only</span>
+              </div>
+              <p className="text-muted-foreground mb-2">
+                This is a preview of the assessment results. 
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Take your own assessment to see your complete leadership profile including:
+              </p>
+              <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                <li>✓ Detailed strengths analysis</li>
+                <li>✓ Personalized development areas</li>
+                <li>✓ Career role recommendations</li>
+                <li>✓ Complete leadership breakdown</li>
+                <li>✓ Downloadable PDF report</li>
               </ul>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {resultData.developmentAreas && resultData.developmentAreas.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Development Areas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {resultData.developmentAreas.map((area: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-muted-foreground">→</span>
-                    <span>{area}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="text-center mt-8">
-          <p className="text-muted-foreground mb-4">
-            Want to discover your own leadership style?
+        <div className="text-center mt-8 space-y-4">
+          <p className="text-lg font-semibold">
+            Ready to discover your own leadership style?
           </p>
-          <Button onClick={() => navigate("/")} size="lg">
-            Take the Assessment
+          <Button onClick={() => navigate("/")} size="lg" className="min-w-[200px]">
+            Take Your Free Assessment
           </Button>
+          <p className="text-sm text-muted-foreground">
+            Quick 5-minute assessment • Instant results • No credit card required
+          </p>
         </div>
       </div>
     </div>
