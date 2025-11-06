@@ -228,19 +228,30 @@ const PremiumResults = () => {
     if (savedResults) {
       setResults(JSON.parse(savedResults));
       
-      // Fetch shareable code if user is logged in
+      // Fetch or generate shareable code if user is logged in
       if (user) {
-        supabase
-          .from('assessment_results')
-          .select('shareable_code')
-          .eq('user_id', user.id)
-          .eq('assessment_type', 'premium')
-          .single()
-          .then(({ data }) => {
-            if (data?.shareable_code) {
-              setShareableCode(data.shareable_code);
-            }
-          });
+        const fetchOrCreateShareableCode = async () => {
+          const { data, error } = await supabase
+            .from('assessment_results')
+            .select('shareable_code')
+            .eq('user_id', user.id)
+            .eq('assessment_type', 'premium')
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error fetching shareable code:', error);
+            return;
+          }
+
+          if (data?.shareable_code) {
+            setShareableCode(data.shareable_code);
+          } else {
+            // No saved assessment yet, code will be generated on save
+            console.log('No saved assessment found - will generate code on save');
+          }
+        };
+
+        fetchOrCreateShareableCode();
       }
     } else {
       navigate('/');
