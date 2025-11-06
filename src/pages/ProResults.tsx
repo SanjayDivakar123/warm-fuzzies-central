@@ -136,10 +136,19 @@ const ProResults = () => {
   };
 
   const handleSaveResult = async () => {
-    if (!user || !results || !resultName.trim()) {
+    if (!results || !resultName.trim()) {
       toast({
         title: "Save Failed",
-        description: !user ? "Please sign in to save results" : "Please enter a name for your assessment",
+        description: "Please enter a name for your assessment",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your assessment results",
         variant: "destructive"
       });
       return;
@@ -160,11 +169,15 @@ const ProResults = () => {
             scores: results.scores,
             totalQuestions: results.totalQuestions,
             isPro: results.isPro,
-            colorDistribution: results.colorDistribution
+            colorDistribution: results.colorDistribution,
+            leadershipScore: calculateLeadershipScore(results)
           }
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -172,11 +185,11 @@ const ProResults = () => {
       });
       setIsDialogOpen(false);
       setResultName("");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving assessment:', error);
       toast({
         title: "Save Failed",
-        description: "There was an error saving your assessment. Please try again.",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -197,17 +210,24 @@ const ProResults = () => {
     if (!results) return;
     
     const primaryColor = colorData[results.dominantColor as keyof typeof colorData];
+    const secondaryColor = colorData[results.secondaryColor as keyof typeof colorData];
     
     try {
       await exportToPDF({
         type: 'pro',
+        color: results.dominantColor,
+        score: calculateLeadershipScore(results),
         results: {
           dominantColor: results.dominantColor,
           secondaryColor: results.secondaryColor,
           tertiaryColor: results.tertiaryColor,
           scores: results.scores,
-          colorDistribution: results.colorDistribution
+          colorDistribution: results.colorDistribution,
+          score: calculateLeadershipScore(results)
         },
+        strengths: primaryColor.strengths,
+        developmentAreas: primaryColor.developmentAreas,
+        description: primaryColor.description,
         date: new Date().toISOString()
       }, `Pro-Leadership-Analysis-${primaryColor.name.replace(' ', '-')}.pdf`);
       
@@ -216,6 +236,7 @@ const ProResults = () => {
         description: "Your comprehensive leadership report has been saved.",
       });
     } catch (error) {
+      console.error('Error exporting PDF:', error);
       toast({
         title: "Export Failed",
         description: "Please try again or contact support.",

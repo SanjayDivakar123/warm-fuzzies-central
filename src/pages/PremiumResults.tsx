@@ -118,10 +118,19 @@ const PremiumResults = () => {
   };
 
   const handleSaveResult = async () => {
-    if (!user || !results || !resultName.trim()) {
+    if (!results || !resultName.trim()) {
       toast({
         title: "Save Failed",
-        description: !user ? "Please sign in to save results" : "Please enter a name for your assessment",
+        description: "Please enter a name for your assessment",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your assessment results",
         variant: "destructive"
       });
       return;
@@ -140,11 +149,15 @@ const PremiumResults = () => {
             secondaryColor: results.secondaryColor,
             scores: results.scores,
             totalQuestions: results.totalQuestions,
-            isPremium: results.isPremium
+            isPremium: results.isPremium,
+            leadershipScore: calculateLeadershipScore(results)
           }
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -152,11 +165,11 @@ const PremiumResults = () => {
       });
       setIsDialogOpen(false);
       setResultName("");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving assessment:', error);
       toast({
         title: "Save Failed",
-        description: "There was an error saving your assessment. Please try again.",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -173,11 +186,17 @@ const PremiumResults = () => {
     try {
       await exportToPDF({
         type: 'premium',
+        color: results.dominantColor,
+        score: calculateLeadershipScore(results),
         results: {
           dominantColor: results.dominantColor,
           secondaryColor: results.secondaryColor,
-          scores: results.scores
+          scores: results.scores,
+          score: calculateLeadershipScore(results)
         },
+        strengths: dominantColorData.strengths,
+        developmentAreas: dominantColorData.developmentAreas,
+        description: dominantColorData.description,
         date: new Date().toISOString()
       }, `Premium-Leadership-Analysis-${dominantColorData.name.replace(' ', '-')}.pdf`);
       
