@@ -97,23 +97,23 @@ const PremiumResults = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Calculate leadership score based on top two colors to avoid flat averages
+  // Calculate leadership score (calibrated): dominant + half of secondary
   const calculateLeadershipScore = (results: PremiumResults): number => {
     const { scores } = results;
     const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
-    const [primaryColor, primaryCount] = sorted[0] || ["", 0];
+    const [, primaryCount] = sorted[0] || ["", 0];
     const [, secondaryCount] = sorted[1] || ["", 0];
 
-    // Calculate total responses across all colors
-    const totalResponses = Object.values(scores).reduce((sum, count) => sum + count, 0);
+    // Total across all colors (handles both counts and normalized values)
+    const total = Object.values(scores).reduce((sum, n) => sum + n, 0);
+    if (total <= 0) return 0;
 
-    const primaryPct = totalResponses > 0 ? primaryCount / totalResponses : 0;
-    const secondaryPct = totalResponses > 0 ? secondaryCount / totalResponses : 0;
+    const primaryPct = primaryCount / total;
+    const secondaryPct = secondaryCount / total;
 
-    // Weighted emphasis on dominant color
-    const score = (primaryPct * 0.7 + secondaryPct * 0.3) * 100;
-
-    return Math.max(0, Math.min(100, Math.round(score)));
+    // Calibrated so strong dominance maps near 100, balanced profiles land mid-high
+    const combined = primaryPct + 0.5 * secondaryPct; // max <= 1 by construction
+    return Math.max(0, Math.min(100, Math.round(combined * 100)));
   };
 
   const handleSaveResult = async () => {
