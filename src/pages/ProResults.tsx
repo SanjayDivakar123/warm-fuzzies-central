@@ -115,23 +115,24 @@ const ProResults = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Calculate leadership score (calibrated): dominant + half of secondary
+  // Calculate leadership score (calibrated): emphasize primary, keep floor at 60
   const calculateLeadershipScore = (results: ProResults): number => {
     const { scores } = results;
     const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
-    const [, primaryCount] = sorted[0] || ["", 0];
-    const [, secondaryCount] = sorted[1] || ["", 0];
+    const [, primary] = sorted[0] || ["", 0];
+    const [, secondary] = sorted[1] || ["", 0];
 
     // Total across all colors (handles both counts and normalized values)
     const total = Object.values(scores).reduce((sum, n) => sum + n, 0);
     if (total <= 0) return 0;
 
-    const primaryPct = primaryCount / total;
-    const secondaryPct = secondaryCount / total;
+    const primaryPct = Number(primary) / total;
+    const secondaryPct = Number(secondary) / total;
 
-    // Calibrated so strong dominance maps near 100, balanced profiles land mid-high
-    const combined = primaryPct + 0.5 * secondaryPct; // max <= 1 by construction
-    return Math.max(0, Math.min(100, Math.round(combined * 100)));
+    // Weighted dominance mapping to keep scores meaningful (60–100 range)
+    const weighted = primaryPct * 0.8 + secondaryPct * 0.2;
+    const score = Math.round(60 + 40 * weighted);
+    return Math.min(100, Math.max(60, score));
   };
 
   const handleSaveResult = async () => {
