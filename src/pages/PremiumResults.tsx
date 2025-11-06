@@ -140,7 +140,7 @@ const PremiumResults = () => {
     try {
       const { error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'premium',
           results: {
@@ -152,6 +152,8 @@ const PremiumResults = () => {
             isPremium: results.isPremium,
             leadershipScore: calculateLeadershipScore(results)
           }
+        }, {
+          onConflict: 'user_id,assessment_type'
         });
 
       if (error) {

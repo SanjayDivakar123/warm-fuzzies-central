@@ -158,7 +158,7 @@ const ProResults = () => {
     try {
       const { error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'pro',
           results: {
@@ -172,6 +172,8 @@ const ProResults = () => {
             colorDistribution: results.colorDistribution,
             leadershipScore: calculateLeadershipScore(results)
           }
+        }, {
+          onConflict: 'user_id,assessment_type'
         });
 
       if (error) {
