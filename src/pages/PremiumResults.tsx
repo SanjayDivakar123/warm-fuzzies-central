@@ -99,13 +99,16 @@ const PremiumResults = () => {
 
   // Calculate leadership score based on top two colors to avoid flat averages
   const calculateLeadershipScore = (results: PremiumResults): number => {
-    const { scores, totalQuestions } = results;
+    const { scores } = results;
     const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
     const [primaryColor, primaryCount] = sorted[0] || ["", 0];
     const [, secondaryCount] = sorted[1] || ["", 0];
 
-    const primaryPct = totalQuestions > 0 ? primaryCount / totalQuestions : 0;
-    const secondaryPct = totalQuestions > 0 ? secondaryCount / totalQuestions : 0;
+    // Calculate total responses across all colors
+    const totalResponses = Object.values(scores).reduce((sum, count) => sum + count, 0);
+
+    const primaryPct = totalResponses > 0 ? primaryCount / totalResponses : 0;
+    const secondaryPct = totalResponses > 0 ? secondaryCount / totalResponses : 0;
 
     // Weighted emphasis on dominant color
     const score = (primaryPct * 0.7 + secondaryPct * 0.3) * 100;

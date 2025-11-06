@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/navigation/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Linkedin, MapPin, Globe, ArrowLeft } from "lucide-react";
+import { Mail, MapPin, Globe, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -64,12 +64,6 @@ const SanjayDivakar = () => {
                   <Globe className="w-4 h-4" />
                   <a href="https://www.rolecolorfinder.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     www.rolecolorfinder.com
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Linkedin className="w-4 h-4" />
-                  <a href="https://www.linkedin.com/in/sanjayrcf" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    LinkedIn Profile
                   </a>
                 </div>
                 <div className="text-sm">
