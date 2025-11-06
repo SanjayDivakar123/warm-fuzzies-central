@@ -4,14 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Mail, MapPin, Globe, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-
 const SanjayDivakar = () => {
   useEffect(() => {
     const title = "Sanjay Divakar - Founder & CEO | Role Color Finder";
     const description = "Meet Sanjay Divakar, Founder & CEO of RoleColorFinder. A visionary entrepreneur redefining leadership development through color-based psychology.";
-
     document.title = title;
-
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
@@ -20,9 +17,7 @@ const SanjayDivakar = () => {
     }
     meta.setAttribute("content", description);
   }, []);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container-wide section-padding">
@@ -37,11 +32,7 @@ const SanjayDivakar = () => {
           <div className="grid md:grid-cols-[300px_1fr] gap-12 mb-12">
             {/* Square Profile Image */}
             <div className="mx-auto md:mx-0">
-              <img 
-                src="https://sol.rolecolorfinder.com/wp-content/uploads/2025/10/Sanjay-roleColor-1.jpg"
-                alt="Sanjay Divakar"
-                className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl"
-              />
+              <img src="https://sol.rolecolorfinder.com/wp-content/uploads/2025/10/Sanjay-roleColor-1.jpg" alt="Sanjay Divakar" className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl" />
             </div>
 
             {/* Header Info */}
@@ -66,9 +57,7 @@ const SanjayDivakar = () => {
                     www.rolecolorfinder.com
                   </a>
                 </div>
-                <div className="text-sm">
-                  <span className="font-semibold text-foreground">Languages:</span> English, Tamil
-                </div>
+                
               </div>
             </div>
           </div>
@@ -89,8 +78,6 @@ const SanjayDivakar = () => {
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default SanjayDivakar;
