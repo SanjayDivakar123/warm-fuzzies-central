@@ -93,6 +93,7 @@ const PremiumResults = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareableCode, setShareableCode] = useState<string>("");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -138,7 +139,7 @@ const PremiumResults = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
         .upsert({
           user_id: user.id,
@@ -154,11 +155,17 @@ const PremiumResults = () => {
           }
         }, {
           onConflict: 'user_id,assessment_type'
-        });
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
+      }
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
       }
 
       toast({
@@ -220,25 +227,44 @@ const PremiumResults = () => {
     const savedResults = localStorage.getItem('premiumAssessmentResults');
     if (savedResults) {
       setResults(JSON.parse(savedResults));
+      
+      // Fetch shareable code if user is logged in
+      if (user) {
+        supabase
+          .from('assessment_results')
+          .select('shareable_code')
+          .eq('user_id', user.id)
+          .eq('assessment_type', 'premium')
+          .single()
+          .then(({ data }) => {
+            if (data?.shareable_code) {
+              setShareableCode(data.shareable_code);
+            }
+          });
+      }
     } else {
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, user]);
 
   const handleShare = () => {
+    const shareUrl = shareableCode 
+      ? `${window.location.origin}/result/${shareableCode}`
+      : window.location.href;
+    
     const shareData = {
       title: `My Leadership Color Profile - ${colorData[results!.dominantColor as keyof typeof colorData].name}`,
       text: `I'm a ${colorData[results!.dominantColor as keyof typeof colorData].name}! Take the assessment to discover your leadership style.`,
-      url: window.location.href,
+      url: shareUrl,
     };
 
     if (navigator.share) {
       navigator.share(shareData);
     } else {
-      navigator.clipboard.writeText(shareData.url);
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: "Results link has been copied to your clipboard.",
+        description: shareableCode ? "Your shareable results link has been copied!" : "Results link has been copied to your clipboard.",
       });
     }
   };

@@ -91,6 +91,7 @@ export type Database = {
           created_at: string
           id: string
           results: Json
+          shareable_code: string
           updated_at: string
           user_id: string
         }
@@ -99,6 +100,7 @@ export type Database = {
           created_at?: string
           id?: string
           results: Json
+          shareable_code?: string
           updated_at?: string
           user_id: string
         }
@@ -107,6 +109,7 @@ export type Database = {
           created_at?: string
           id?: string
           results?: Json
+          shareable_code?: string
           updated_at?: string
           user_id?: string
         }
@@ -364,7 +367,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_shareable_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

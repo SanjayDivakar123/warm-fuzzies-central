@@ -111,6 +111,7 @@ const ProResults = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareableCode, setShareableCode] = useState<string>("");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -156,7 +157,7 @@ const ProResults = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
         .upsert({
           user_id: user.id,
@@ -174,11 +175,17 @@ const ProResults = () => {
           }
         }, {
           onConflict: 'user_id,assessment_type'
-        });
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
+      }
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
       }
 
       toast({
@@ -203,10 +210,25 @@ const ProResults = () => {
     const savedResults = localStorage.getItem('proAssessmentResults');
     if (savedResults) {
       setResults(JSON.parse(savedResults));
+      
+      // Fetch shareable code if user is logged in
+      if (user) {
+        supabase
+          .from('assessment_results')
+          .select('shareable_code')
+          .eq('user_id', user.id)
+          .eq('assessment_type', 'pro')
+          .single()
+          .then(({ data }) => {
+            if (data?.shareable_code) {
+              setShareableCode(data.shareable_code);
+            }
+          });
+      }
     } else {
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, user]);
 
   const handleExportPDF = async () => {
     if (!results) return;
@@ -251,19 +273,23 @@ const ProResults = () => {
     if (!results) return;
     const primaryColor = colorData[results.dominantColor as keyof typeof colorData];
     
+    const shareUrl = shareableCode 
+      ? `${window.location.origin}/result/${shareableCode}`
+      : window.location.href;
+    
     const shareData = {
       title: `My Pro Leadership Analysis - ${primaryColor.name}`,
       text: `I completed the Pro Deep Dive assessment and I'm a ${primaryColor.name}! Discover your leadership style.`,
-      url: window.location.href,
+      url: shareUrl,
     };
 
     if (navigator.share) {
       navigator.share(shareData);
     } else {
-      navigator.clipboard.writeText(shareData.url);
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: "Pro results link has been copied to your clipboard.",
+        description: shareableCode ? "Your shareable results link has been copied!" : "Pro results link has been copied to your clipboard.",
       });
     }
   };

@@ -28,6 +28,7 @@ import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
+import SharedResult from "@/pages/SharedResult";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -144,6 +145,10 @@ export const router = createBrowserRouter([
   {
     path: "/voice-results",
     element: <Layout><VoiceResults /></Layout>,
+  },
+  {
+    path: "/result/:code",
+    element: <Layout><SharedResult /></Layout>,
   },
   {
     path: "*",
