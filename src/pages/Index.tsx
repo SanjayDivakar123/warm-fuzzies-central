@@ -30,73 +30,94 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section - Completely Redesigned */}
-      <section className="relative section-padding overflow-hidden mesh-background" aria-label="Hero section">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80"></div>
-        
-        {/* Modern floating elements */}
-        <div className="absolute top-32 left-[10%] w-64 h-64 bg-gradient-primary rounded-full blur-3xl opacity-20 animate-bounce-gentle"></div>
-        <div className="absolute bottom-32 right-[15%] w-48 h-48 bg-gradient-green rounded-full blur-2xl opacity-15 animate-bounce-gentle delay-1000"></div>
-        <div className="absolute top-48 right-[25%] w-32 h-32 bg-gradient-yellow rounded-full blur-xl opacity-10 animate-bounce-gentle delay-500"></div>
+      {/* Hero Section - Values Bridge Style */}
+      <section className="relative section-padding overflow-hidden" aria-label="Hero section">
+        <div className="absolute inset-0 bg-background"></div>
         
         <div className="relative container-wide">
-          <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
+          <div className="max-w-5xl mx-auto">
             
-            {/* Left Content - Enhanced */}
-            <div className="text-center lg:text-left space-y-12">
-              
-              {/* Badge */}
-              <div className="inline-flex items-center gap-3 glass-card-strong px-6 py-3 rounded-full border border-primary/30 animate-fade-in">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-primary tracking-wide">Patent Pending System</span>
-              </div>
-              
-              {/* Main Headline */}
-              <div className="space-y-4 sm:space-y-6 animate-fade-in delay-200">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-balance">
-                  Discover the leadership style
-                  <br />
-                  <span className="gradient-text-primary text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">that makes you shine.</span>
-                  <br />
-                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-muted-foreground">Then, learn how to adapt.</span>
-                </h1>
-              </div>
+            {/* Main Headline - Centered, Large Serif */}
+            <div className="text-center space-y-8 mb-16">
+              <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium text-foreground leading-tight text-balance">
+                Discover the leadership style
+                <br />
+                <span className="block">that makes you shine.</span>
+                <br />
+                <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-muted-foreground">Then, learn how to adapt.</span>
+              </h1>
+            </div>
 
-              {/* Enhanced Social Proof */}
-              <div className="glass-card-strong rounded-2xl p-4 sm:p-6 md:p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
-                <div className="text-center lg:text-left">
-                  <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-yellow text-yellow" />)}
-                    </div>
-                    <span className="text-xl sm:text-2xl font-bold text-foreground">4.8/5</span>
-                  </div>
-                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-medium">
-                    "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold block sm:inline">• 3 min quiz</span>
-                  </p>
+            {/* Pastel Circles with Icons - Scrolling Row */}
+            <div className="mb-16 overflow-hidden">
+              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 flex-wrap max-w-6xl mx-auto px-4">
+                {/* Yellow Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-yellow-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Red Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-red-light flex items-center justify-center">
+                  <Heart className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-red-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Green Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-green-light flex items-center justify-center">
+                  <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Blue Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-blue-light flex items-center justify-center">
+                  <Lightbulb className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Additional smaller circles for variety */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-yellow-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-red-light flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-red-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-green-light flex items-center justify-center">
+                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-blue-light flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-blue-dark" strokeWidth={1.5} />
                 </div>
               </div>
-              
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 animate-fade-in delay-600">
-                <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-bold group w-full sm:w-auto" onClick={() => navigate('/free-assessment')}>
-                  Start Your Free Assessment
-                  <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-              
-              {/* Brochure Download */}
-              <div className="animate-fade-in delay-800">
-                <Button variant="glass" size="lg" className="text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 hover-lift w-full sm:w-auto" asChild>
-                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
-                      <span>Download: Why Every Team Needs</span>
-                    </div>
-                    <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor ™️ Finder" width="200" height="40" className="h-4 sm:h-5 w-auto" />
-                  </a>
-                </Button>
-              </div>
+            </div>
+
+            {/* Description Text */}
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <p className="text-lg sm:text-xl md:text-2xl text-foreground leading-relaxed">
+                Receive your unique RoleColor™ profile, contextual leadership insights, 
+                and practical strategies to adapt your strengths across different team stages and challenges.
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <div className="text-center">
+              <Button 
+                variant="default" 
+                size="lg" 
+                className="text-lg px-12 py-6 font-semibold rounded-full" 
+                onClick={() => navigate('/free-assessment')}
+              >
+                Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Brochure Download */}
+            <div className="text-center mt-8">
+              <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
+                <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-3">
+                  <FileText className="w-5 h-5" />
+                  <span>Download Brochure</span>
+                </a>
+              </Button>
             </div>
 
           </div>
