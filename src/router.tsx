@@ -26,6 +26,7 @@ import JenniferKlein from "@/pages/team/JenniferKlein";
 import KaponoCiotti from "@/pages/team/KaponoCiotti";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
+import { Footer } from "@/components/Footer";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
 import SharedResult from "@/pages/SharedResult";
@@ -34,6 +35,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
     {children}
+    <Footer />
   </>
 );
 
