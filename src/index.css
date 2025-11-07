@@ -27,70 +27,70 @@ All colors MUST be HSL.
     --muted: 40 20% 92%;
     --muted-foreground: 25 25% 45%;
 
-    --accent: 45 75% 75%;
+    --accent: 45 100% 65%;
     --accent-foreground: 25 30% 25%;
 
-    --destructive: 0 70% 60%;
+    --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 40 20% 88%;
     --input: 40 20% 88%;
-    --ring: 45 75% 75%;
+    --ring: 45 100% 65%;
 
-    /* Soft Pastel RoleColor™ Palette */
-    --red: 355 70% 75%;
-    --red-foreground: 25 30% 25%;
-    --red-light: 355 75% 92%;
-    --red-dark: 355 65% 62%;
-    --red-glow: 355 70% 80%;
+    /* Vibrant RoleColor™ Palette */
+    --red: 348 100% 65%;
+    --red-foreground: 0 0% 100%;
+    --red-light: 348 100% 95%;
+    --red-dark: 348 100% 55%;
+    --red-glow: 348 100% 75%;
 
-    --yellow: 45 80% 75%;
+    --yellow: 45 100% 65%;
     --yellow-foreground: 25 30% 25%;
-    --yellow-light: 45 85% 92%;
-    --yellow-dark: 45 75% 62%;
-    --yellow-glow: 45 80% 80%;
+    --yellow-light: 45 100% 95%;
+    --yellow-dark: 45 100% 55%;
+    --yellow-glow: 45 100% 75%;
 
-    --green: 142 45% 72%;
-    --green-foreground: 25 30% 25%;
-    --green-light: 142 50% 92%;
-    --green-dark: 142 40% 60%;
-    --green-glow: 142 45% 78%;
+    --green: 142 85% 55%;
+    --green-foreground: 0 0% 100%;
+    --green-light: 142 85% 95%;
+    --green-dark: 142 85% 45%;
+    --green-glow: 142 85% 70%;
 
-    --blue: 212 60% 75%;
-    --blue-foreground: 25 30% 25%;
-    --blue-light: 212 65% 92%;
-    --blue-dark: 212 55% 62%;
-    --blue-glow: 212 60% 80%;
+    --blue: 212 100% 60%;
+    --blue-foreground: 0 0% 100%;
+    --blue-light: 212 100% 95%;
+    --blue-dark: 212 100% 50%;
+    --blue-glow: 212 100% 75%;
 
-    /* Subtle, Elegant Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(45 80% 75% / 0.2), hsl(212 60% 75% / 0.2));
-    --gradient-primary: linear-gradient(135deg, hsl(212 60% 75%), hsl(142 45% 72%));
-    --gradient-yellow: linear-gradient(135deg, hsl(45 80% 75%), hsl(45 75% 62%));
-    --gradient-red: linear-gradient(135deg, hsl(355 70% 75%), hsl(355 65% 62%));
-    --gradient-green: linear-gradient(135deg, hsl(142 45% 72%), hsl(142 40% 60%));
-    --gradient-blue: linear-gradient(135deg, hsl(212 60% 75%), hsl(212 55% 62%));
-    --gradient-brand: linear-gradient(135deg, hsl(45 80% 75%), hsl(355 70% 75%), hsl(142 45% 72%), hsl(212 60% 75%));
+    /* Elegant Gradients with Your Colors */
+    --gradient-hero: linear-gradient(135deg, hsl(45 100% 65% / 0.15), hsl(212 100% 60% / 0.15));
+    --gradient-primary: linear-gradient(135deg, hsl(212 100% 60%), hsl(142 85% 55%));
+    --gradient-yellow: linear-gradient(135deg, hsl(45 100% 65%), hsl(45 100% 55%));
+    --gradient-red: linear-gradient(135deg, hsl(348 100% 65%), hsl(348 100% 55%));
+    --gradient-green: linear-gradient(135deg, hsl(142 85% 55%), hsl(142 85% 45%));
+    --gradient-blue: linear-gradient(135deg, hsl(212 100% 60%), hsl(212 100% 50%));
+    --gradient-brand: linear-gradient(135deg, hsl(45 100% 65%), hsl(348 100% 65%), hsl(142 85% 55%), hsl(212 100% 60%));
     --gradient-soft: linear-gradient(180deg, hsl(40 30% 98%), hsl(40 30% 96%));
-    --gradient-colorful: linear-gradient(135deg, hsl(45 80% 75% / 0.15), hsl(355 70% 75% / 0.15), hsl(142 45% 72% / 0.15), hsl(212 60% 75% / 0.15));
+    --gradient-colorful: linear-gradient(135deg, hsl(45 100% 65% / 0.2), hsl(348 100% 65% / 0.2), hsl(142 85% 55% / 0.2), hsl(212 100% 60% / 0.2));
     --gradient-subtle: linear-gradient(180deg, hsl(40 30% 98%), hsl(40 25% 94%));
-    --gradient-rainbow: linear-gradient(90deg, hsl(45 80% 75%) 0%, hsl(355 70% 75%) 25%, hsl(142 45% 72%) 50%, hsl(212 60% 75%) 75%, hsl(45 80% 75%) 100%);
+    --gradient-rainbow: linear-gradient(90deg, hsl(45 100% 65%) 0%, hsl(348 100% 65%) 25%, hsl(142 85% 55%) 50%, hsl(212 100% 60%) 75%, hsl(45 100% 65%) 100%);
     --gradient-mesh: 
-      radial-gradient(circle at 20% 30%, hsl(355 70% 75% / 0.12) 0%, transparent 60%), 
-      radial-gradient(circle at 80% 20%, hsl(212 60% 75% / 0.10) 0%, transparent 60%), 
-      radial-gradient(circle at 30% 80%, hsl(142 45% 72% / 0.08) 0%, transparent 60%), 
-      radial-gradient(circle at 70% 70%, hsl(45 80% 75% / 0.06) 0%, transparent 60%);
+      radial-gradient(circle at 20% 30%, hsl(348 100% 65% / 0.12) 0%, transparent 60%), 
+      radial-gradient(circle at 80% 20%, hsl(212 100% 60% / 0.10) 0%, transparent 60%), 
+      radial-gradient(circle at 30% 80%, hsl(142 85% 55% / 0.08) 0%, transparent 60%), 
+      radial-gradient(circle at 70% 70%, hsl(45 100% 65% / 0.06) 0%, transparent 60%);
 
-    /* Soft Shadows */
+    /* Soft Shadows with Vibrant Accents */
     --shadow-elegant: 0 4px 24px hsl(25 30% 25% / 0.08);
-    --shadow-colorful: 0 8px 32px hsl(45 80% 75% / 0.2);
-    --shadow-glow: 0 0 40px hsl(45 80% 75% / 0.15);
-    --shadow-red: 0 8px 24px hsl(355 70% 75% / 0.2);
-    --shadow-yellow: 0 8px 24px hsl(45 80% 75% / 0.2);
-    --shadow-green: 0 8px 24px hsl(142 45% 72% / 0.2);
-    --shadow-blue: 0 8px 24px hsl(212 60% 75% / 0.2);
+    --shadow-colorful: 0 8px 32px hsl(45 100% 65% / 0.25);
+    --shadow-glow: 0 0 40px hsl(45 100% 65% / 0.2);
+    --shadow-red: 0 8px 24px hsl(348 100% 65% / 0.25);
+    --shadow-yellow: 0 8px 24px hsl(45 100% 65% / 0.25);
+    --shadow-green: 0 8px 24px hsl(142 85% 55% / 0.25);
+    --shadow-blue: 0 8px 24px hsl(212 100% 60% / 0.25);
     --shadow-soft: 0 2px 16px hsl(25 30% 25% / 0.06);
     --shadow-xl: 0 12px 40px hsl(25 30% 25% / 0.1);
-    --shadow-rainbow: 0 8px 32px hsl(45 80% 75% / 0.15);
+    --shadow-rainbow: 0 8px 32px hsl(45 100% 65% / 0.15);
 
     --radius: 1rem;
 
@@ -104,7 +104,7 @@ All colors MUST be HSL.
     --sidebar-accent: 40 20% 88%;
     --sidebar-accent-foreground: 25 30% 25%;
     --sidebar-border: 40 20% 88%;
-    --sidebar-ring: 45 75% 75%;
+    --sidebar-ring: 45 100% 65%;
   }
 
   .dark {
@@ -127,24 +127,24 @@ All colors MUST be HSL.
     --muted: 25 15% 16%;
     --muted-foreground: 40 20% 60%;
 
-    --accent: 45 70% 60%;
+    --accent: 45 95% 65%;
     --accent-foreground: 25 25% 8%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 80% 60%;
     --destructive-foreground: 40 25% 92%;
 
     --border: 25 15% 20%;
     --input: 25 15% 20%;
-    --ring: 45 70% 60%;
+    --ring: 45 95% 65%;
 
     --sidebar-background: 25 20% 6%;
     --sidebar-foreground: 40 25% 88%;
-    --sidebar-primary: 45 70% 60%;
+    --sidebar-primary: 45 95% 65%;
     --sidebar-primary-foreground: 25 25% 8%;
     --sidebar-accent: 25 15% 18%;
     --sidebar-accent-foreground: 40 25% 88%;
     --sidebar-border: 25 15% 20%;
-    --sidebar-ring: 45 70% 60%;
+    --sidebar-ring: 45 95% 65%;
   }
 }
 
@@ -161,7 +161,7 @@ All colors MUST be HSL.
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif font-semibold tracking-tight;
+    @apply font-heading font-semibold tracking-tight;
     letter-spacing: -0.02em;
     line-height: 1.15;
   }
