@@ -66,21 +66,16 @@ const Index = () => {
 
               {/* Enhanced Social Proof */}
               <div className="glass-card-strong rounded-2xl p-4 sm:p-6 md:p-8 border border-primary/20 animate-fade-in delay-400 hover-lift">
-                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 sm:gap-6 md:gap-8">
-                  <div className="flex -space-x-3 sm:-space-x-4">
-                    {['from-red to-red-glow', 'from-green to-green-glow', 'from-yellow to-yellow-glow', 'from-blue to-blue-glow'].map((gradient, i) => <div key={i} className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br ${gradient} border-2 sm:border-3 md:border-4 border-background shadow-xl hover-lift`}></div>)}
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-yellow text-yellow" />)}
-                      </div>
-                      <span className="text-xl sm:text-2xl font-bold text-foreground">4.8/5</span>
+                <div className="text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-yellow text-yellow" />)}
                     </div>
-                    <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-medium">
-                      "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold block sm:inline">• 3 min quiz</span>
-                    </p>
+                    <span className="text-xl sm:text-2xl font-bold text-foreground">4.8/5</span>
                   </div>
+                  <p className="text-sm sm:text-base md:text-lg text-muted-foreground font-medium">
+                    "Finally, a quiz that doesn't put me in a box!" <span className="text-primary font-semibold block sm:inline">• 3 min quiz</span>
+                  </p>
                 </div>
               </div>
               
