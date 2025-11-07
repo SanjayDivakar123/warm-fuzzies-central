@@ -167,7 +167,7 @@ const FreeResults = () => {
   const generateShareText = () => {
     if (!results) return "";
     const colorData = colorPreviewData[results.dominantColor as keyof typeof colorPreviewData];
-    return `I just found out I'm a ${colorData.emoji} ${colorData.name}. What color are you? Take the RoleColor ™️ test 👇\n${window.location.origin}\n#MyColorRole #LeadershipStyle #RoleColor`;
+    return `I just found out I'm a ${colorData.emoji} ${colorData.name}. What color are you? Take the RoleColor™ test 👇\n${window.location.origin}\n#MyColorRole #LeadershipStyle #RoleColor`;
   };
 
   const handleCopyShare = () => {

@@ -239,7 +239,7 @@ const Index = () => {
           {/* Color Roles - Enhanced */}
           <div className="mb-20">
             <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
-              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor ™️ Profiles</span>:
+              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor™ Profiles</span>:
             </h4>
             
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
@@ -278,7 +278,7 @@ const Index = () => {
 
             <div className="text-center">
               <Button variant="default" size="xl" className="text-xl px-16 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
-                Discover Your RoleColor ™️ Profile
+                Discover Your RoleColor™ Profile
                 <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -351,7 +351,7 @@ const Index = () => {
                   How do I get started?
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™️ profile.
+                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™ profile.
                 </AccordionContent>
               </AccordionItem>
 

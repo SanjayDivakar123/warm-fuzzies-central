@@ -234,7 +234,7 @@ export const Auth = () => {
                       <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-blue">
                         <img 
                           src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
-                          alt="RoleColor ™️ Finder" 
+                          alt="RoleColor™ Finder" 
                           className="w-8 h-auto"
                         />
                       </div>
