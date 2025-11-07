@@ -19,7 +19,7 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
-import TeamProgram from "@/pages/TeamProgram";
+
 import Team from "@/pages/Team";
 import SanjayDivakar from "@/pages/team/SanjayDivakar";
 import JenniferKlein from "@/pages/team/JenniferKlein";
@@ -113,10 +113,6 @@ export const router = createBrowserRouter([
   {
     path: "/contact",
     element: <Layout><Contact /></Layout>,
-  },
-  {
-    path: "/team-program",
-    element: <Layout><TeamProgram /></Layout>,
   },
   {
     path: "/team",

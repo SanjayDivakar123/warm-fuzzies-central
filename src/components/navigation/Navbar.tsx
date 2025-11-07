@@ -53,14 +53,6 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
-              <MenubarMenu>
-                <MenubarTrigger asChild>
-                  <Link to="/team-program" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/team-program') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Team Program
-                  </Link>
-                </MenubarTrigger>
-              </MenubarMenu>
 
               <MenubarMenu>
                 <MenubarTrigger asChild>
@@ -121,10 +113,6 @@ export function Navbar() {
               <Link to="/free-assessment" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/free-assessment') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Palette className="w-4 h-4 mr-2 inline" />
                 Free Assessment
-              </Link>
-              <Link to="/team-program" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team-program') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                <Users className="w-4 h-4 mr-2 inline" />
-                Team Program
               </Link>
               <Link to="/team" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <UserCircle className="w-4 h-4 mr-2 inline" />

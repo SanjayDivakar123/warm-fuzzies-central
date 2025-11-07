@@ -278,28 +278,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Team Program Section */}
-      <section className="section-padding" aria-label="Team Program">
-        <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">Unlock Your Team's Potential with Our Team Program</h3>
-              <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-                Our team program is designed to help teams understand each other better, communicate more effectively, and achieve their goals faster.
-              </p>
-              <Button variant="hero" size="lg" className="group w-full sm:w-auto" asChild>
-                <Link to="/team-program">
-                  Learn More About the Team Program
-                  <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </div>
-            <div className="order-1 lg:order-2">
-              <img src={heroImage} alt="Team Collaboration" width="800" height="600" className="rounded-lg shadow-md w-full h-auto" />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Voice Assessment Promotion Section */}
       
