@@ -54,13 +54,11 @@ const Index = () => {
               {/* Main Headline */}
               <div className="space-y-4 sm:space-y-6 animate-fade-in delay-200">
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-balance">
-                  12 Weeks.
+                  Discover the leadership style
                   <br />
-                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-muted-foreground">Faster Decisions.</span>
+                  <span className="gradient-text-primary text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">that makes you shine.</span>
                   <br />
-                  <span className="gradient-text-primary text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">Cleaner Handoffs.</span>
-                  <br />
-                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-foreground">Stronger Pipeline.</span>
+                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-muted-foreground">Then, learn how to adapt.</span>
                 </h1>
               </div>
 
