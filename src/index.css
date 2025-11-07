@@ -8,151 +8,143 @@ All colors MUST be HSL.
 
 @layer base {
 :root {
-    /* Core Modern Palette */
-    --background: 225 25% 97%;
-    --foreground: 230 15% 15%;
+    /* Warm Beige/Cream Background - Professional & Playful */
+    --background: 40 30% 96%;
+    --foreground: 25 30% 25%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 15% 15%;
+    --card-foreground: 25 30% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 15% 15%;
+    --popover-foreground: 25 30% 25%;
 
-    --primary: 221 83% 58%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 25 30% 25%;
+    --primary-foreground: 40 30% 96%;
 
-    --secondary: 218 25% 92%;
-    --secondary-foreground: 230 15% 15%;
+    --secondary: 40 20% 88%;
+    --secondary-foreground: 25 30% 25%;
 
-    --muted: 220 13% 95%;
-    --muted-foreground: 230 8% 46%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 25 25% 45%;
 
-    --accent: 245 70% 95%;
-    --accent-foreground: 245 70% 15%;
+    --accent: 45 75% 75%;
+    --accent-foreground: 25 30% 25%;
 
-    --destructive: 0 73% 59%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 58%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 45 75% 75%;
 
-    /* Vibrant Four-Color System with Rich, Fun Tones */
-    --red: 348 100% 65%;
-    --red-foreground: 0 0% 100%;
-    --red-light: 348 100% 95%;
-    --red-dark: 348 100% 55%;
-    --red-glow: 348 100% 75%;
+    /* Soft Pastel RoleColor™ Palette */
+    --red: 355 70% 75%;
+    --red-foreground: 25 30% 25%;
+    --red-light: 355 75% 92%;
+    --red-dark: 355 65% 62%;
+    --red-glow: 355 70% 80%;
 
-    --yellow: 45 100% 65%;
-    --yellow-foreground: 230 15% 15%;
-    --yellow-light: 45 100% 95%;
-    --yellow-dark: 45 100% 55%;
-    --yellow-glow: 45 100% 75%;
+    --yellow: 45 80% 75%;
+    --yellow-foreground: 25 30% 25%;
+    --yellow-light: 45 85% 92%;
+    --yellow-dark: 45 75% 62%;
+    --yellow-glow: 45 80% 80%;
 
-    --green: 142 85% 55%;
-    --green-foreground: 0 0% 100%;
-    --green-light: 142 85% 95%;
-    --green-dark: 142 85% 45%;
-    --green-glow: 142 85% 70%;
+    --green: 142 45% 72%;
+    --green-foreground: 25 30% 25%;
+    --green-light: 142 50% 92%;
+    --green-dark: 142 40% 60%;
+    --green-glow: 142 45% 78%;
 
-    --blue: 212 100% 60%;
-    --blue-foreground: 0 0% 100%;
-    --blue-light: 212 100% 95%;
-    --blue-dark: 212 100% 50%;
-    --blue-glow: 212 100% 75%;
+    --blue: 212 60% 75%;
+    --blue-foreground: 25 30% 25%;
+    --blue-light: 212 65% 92%;
+    --blue-dark: 212 55% 62%;
+    --blue-glow: 212 60% 80%;
 
-    /* Super Vibrant and Fun Gradients with Light White Filter */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.15), hsl(0 0% 100% / 0.15));
-    --gradient-primary: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(var(--green)) 50%, hsl(var(--blue)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
-    --gradient-yellow: linear-gradient(135deg, hsl(var(--yellow)) 0%, hsl(45 100% 75%) 50%, hsl(var(--yellow-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
-    --gradient-red: linear-gradient(135deg, hsl(var(--red)) 0%, hsl(348 100% 75%) 50%, hsl(var(--red-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
-    --gradient-green: linear-gradient(135deg, hsl(var(--green)) 0%, hsl(142 85% 65%) 50%, hsl(var(--green-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
-    --gradient-blue: linear-gradient(135deg, hsl(var(--blue)) 0%, hsl(212 100% 70%) 50%, hsl(var(--blue-glow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0.25));
-    --gradient-brand: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 25%, hsl(var(--green)) 50%, hsl(var(--blue)) 75%, hsl(var(--red)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
-    --gradient-soft: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--yellow-light)) 30%, hsl(var(--blue-light)) 70%, hsl(220 15% 94%) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0.3));
-    --gradient-colorful: linear-gradient(45deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 20%, hsl(var(--green)) 40%, hsl(var(--blue)) 60%, hsl(var(--red)) 80%, hsl(var(--yellow)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
-    --gradient-subtle: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--blue-light)) 50%, hsl(var(--green-light)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.4), hsl(0 0% 100% / 0.4));
-    --gradient-rainbow: linear-gradient(90deg, hsl(var(--red)) 0%, hsl(var(--yellow)) 16.66%, hsl(var(--green)) 33.33%, hsl(var(--blue)) 50%, hsl(var(--red)) 66.66%, hsl(var(--yellow)) 83.33%, hsl(var(--green)) 100%), linear-gradient(0deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0.2));
+    /* Subtle, Elegant Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(45 80% 75% / 0.2), hsl(212 60% 75% / 0.2));
+    --gradient-primary: linear-gradient(135deg, hsl(212 60% 75%), hsl(142 45% 72%));
+    --gradient-yellow: linear-gradient(135deg, hsl(45 80% 75%), hsl(45 75% 62%));
+    --gradient-red: linear-gradient(135deg, hsl(355 70% 75%), hsl(355 65% 62%));
+    --gradient-green: linear-gradient(135deg, hsl(142 45% 72%), hsl(142 40% 60%));
+    --gradient-blue: linear-gradient(135deg, hsl(212 60% 75%), hsl(212 55% 62%));
+    --gradient-brand: linear-gradient(135deg, hsl(45 80% 75%), hsl(355 70% 75%), hsl(142 45% 72%), hsl(212 60% 75%));
+    --gradient-soft: linear-gradient(180deg, hsl(40 30% 98%), hsl(40 30% 96%));
+    --gradient-colorful: linear-gradient(135deg, hsl(45 80% 75% / 0.15), hsl(355 70% 75% / 0.15), hsl(142 45% 72% / 0.15), hsl(212 60% 75% / 0.15));
+    --gradient-subtle: linear-gradient(180deg, hsl(40 30% 98%), hsl(40 25% 94%));
+    --gradient-rainbow: linear-gradient(90deg, hsl(45 80% 75%) 0%, hsl(355 70% 75%) 25%, hsl(142 45% 72%) 50%, hsl(212 60% 75%) 75%, hsl(45 80% 75%) 100%);
     --gradient-mesh: 
-      radial-gradient(circle at 20% 30%, hsl(var(--red) / 0.15) 0%, transparent 60%), 
-      radial-gradient(circle at 80% 20%, hsl(var(--blue) / 0.12) 0%, transparent 60%), 
-      radial-gradient(circle at 30% 80%, hsl(var(--green) / 0.10) 0%, transparent 60%), 
-      radial-gradient(circle at 70% 70%, hsl(var(--yellow) / 0.08) 0%, transparent 60%),
-      radial-gradient(circle at 50% 50%, hsl(var(--red) / 0.05) 0%, transparent 80%),
-      linear-gradient(0deg, hsl(0 0% 100% / 0.15), hsl(0 0% 100% / 0.15));
+      radial-gradient(circle at 20% 30%, hsl(355 70% 75% / 0.12) 0%, transparent 60%), 
+      radial-gradient(circle at 80% 20%, hsl(212 60% 75% / 0.10) 0%, transparent 60%), 
+      radial-gradient(circle at 30% 80%, hsl(142 45% 72% / 0.08) 0%, transparent 60%), 
+      radial-gradient(circle at 70% 70%, hsl(45 80% 75% / 0.06) 0%, transparent 60%);
 
-    /* Fun and Vibrant Shadow System */
-    --shadow-elegant: 0 25px 50px -12px hsl(var(--foreground) / 0.08), 0 8px 16px -8px hsl(var(--foreground) / 0.04);
-    --shadow-colorful: 0 25px 50px -12px hsl(var(--blue) / 0.2), 0 8px 16px -8px hsl(var(--green) / 0.15), 0 4px 8px -4px hsl(var(--yellow) / 0.1);
-    --shadow-glow: 0 0 50px hsl(var(--blue) / 0.4), 0 0 25px hsl(var(--blue) / 0.3), 0 0 15px hsl(var(--blue) / 0.2);
-    --shadow-red: 0 25px 50px -12px hsl(var(--red) / 0.3), 0 8px 20px -8px hsl(var(--red) / 0.2);
-    --shadow-yellow: 0 25px 50px -12px hsl(var(--yellow) / 0.3), 0 8px 20px -8px hsl(var(--yellow) / 0.2);
-    --shadow-green: 0 25px 50px -12px hsl(var(--green) / 0.3), 0 8px 20px -8px hsl(var(--green) / 0.2);
-    --shadow-blue: 0 25px 50px -12px hsl(var(--blue) / 0.3), 0 8px 20px -8px hsl(var(--blue) / 0.2);
-    --shadow-soft: 0 10px 25px -5px hsl(var(--foreground) / 0.04);
-    --shadow-xl: 0 35px 60px -12px hsl(var(--foreground) / 0.1);
-    --shadow-rainbow: 0 20px 40px -10px hsl(var(--red) / 0.15), 0 15px 30px -8px hsl(var(--yellow) / 0.1), 0 10px 20px -6px hsl(var(--green) / 0.1), 0 5px 10px -4px hsl(var(--blue) / 0.1);
+    /* Soft Shadows */
+    --shadow-elegant: 0 4px 24px hsl(25 30% 25% / 0.08);
+    --shadow-colorful: 0 8px 32px hsl(45 80% 75% / 0.2);
+    --shadow-glow: 0 0 40px hsl(45 80% 75% / 0.15);
+    --shadow-red: 0 8px 24px hsl(355 70% 75% / 0.2);
+    --shadow-yellow: 0 8px 24px hsl(45 80% 75% / 0.2);
+    --shadow-green: 0 8px 24px hsl(142 45% 72% / 0.2);
+    --shadow-blue: 0 8px 24px hsl(212 60% 75% / 0.2);
+    --shadow-soft: 0 2px 16px hsl(25 30% 25% / 0.06);
+    --shadow-xl: 0 12px 40px hsl(25 30% 25% / 0.1);
+    --shadow-rainbow: 0 8px 32px hsl(45 80% 75% / 0.15);
 
     --radius: 1rem;
 
     /* Custom footer color */
-    --footer: 219 25% 26%;
+    --footer: 25 30% 20%;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-foreground: 25 30% 25%;
+    --sidebar-primary: 25 30% 25%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 40 20% 88%;
+    --sidebar-accent-foreground: 25 30% 25%;
+    --sidebar-border: 40 20% 88%;
+    --sidebar-ring: 45 75% 75%;
   }
 
   .dark {
-    /* Dark Mode Modern Palette */
-    --background: 230 25% 5%;
-    --foreground: 225 15% 92%;
+    /* Dark Mode with Warm Tones */
+    --background: 25 25% 8%;
+    --foreground: 40 25% 92%;
 
-    --card: 230 20% 7%;
-    --card-foreground: 225 15% 92%;
+    --card: 25 20% 10%;
+    --card-foreground: 40 25% 92%;
 
-    --popover: 230 20% 7%;
-    --popover-foreground: 225 15% 92%;
+    --popover: 25 20% 10%;
+    --popover-foreground: 40 25% 92%;
 
-    --primary: 221 83% 65%;
-    --primary-foreground: 230 25% 5%;
+    --primary: 40 25% 92%;
+    --primary-foreground: 25 25% 8%;
 
-    --secondary: 230 15% 12%;
-    --secondary-foreground: 225 15% 92%;
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 40 25% 92%;
 
-    --muted: 230 15% 10%;
-    --muted-foreground: 225 8% 58%;
+    --muted: 25 15% 16%;
+    --muted-foreground: 40 20% 60%;
 
-    --accent: 221 83% 15%;
-    --accent-foreground: 221 83% 85%;
+    --accent: 45 70% 60%;
+    --accent-foreground: 25 25% 8%;
 
-    --destructive: 0 73% 65%;
-    --destructive-foreground: 230 25% 5%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 40 25% 92%;
 
-    --border: 230 15% 15%;
-    --input: 230 15% 15%;
-    --ring: 221 83% 65%;
+    --border: 25 15% 20%;
+    --input: 25 15% 20%;
+    --ring: 45 70% 60%;
 
-    /* Dark Mode Color System */
-    --red: 355 78% 65%;
-    --green: 142 71% 55%;
-    --yellow: 45 93% 65%;
-    --blue: 221 83% 65%;
-
-    --sidebar-background: 230 20% 6%;
-    --sidebar-foreground: 225 15% 88%;
-    --sidebar-primary: 221 83% 65%;
-    --sidebar-primary-foreground: 230 25% 5%;
-    --sidebar-accent: 230 15% 12%;
-    --sidebar-accent-foreground: 225 15% 88%;
-    --sidebar-border: 230 15% 15%;
-    --sidebar-ring: 221 83% 65%;
+    --sidebar-background: 25 20% 6%;
+    --sidebar-foreground: 40 25% 88%;
+    --sidebar-primary: 45 70% 60%;
+    --sidebar-primary-foreground: 25 25% 8%;
+    --sidebar-accent: 25 15% 18%;
+    --sidebar-accent-foreground: 40 25% 88%;
+    --sidebar-border: 25 15% 20%;
+    --sidebar-ring: 45 70% 60%;
   }
 }
 
@@ -169,14 +161,14 @@ All colors MUST be HSL.
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-serif font-semibold tracking-tight;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.15;
   }
 
-  h1 { font-size: clamp(2.5rem, 8vw, 4rem); }
-  h2 { font-size: clamp(2rem, 6vw, 3rem); }
-  h3 { font-size: clamp(1.5rem, 4vw, 2rem); }
+  h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); }
+  h2 { font-size: clamp(2rem, 5vw, 3.5rem); }
+  h3 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
 
   .text-balance {
     text-wrap: balance;
