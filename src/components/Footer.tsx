@@ -11,15 +11,9 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-6">
               <img src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor ™️ Finder" className="h-8 w-auto" />
             </div>
-            <p className="text-background/80 text-sm leading-relaxed mb-6">
+            <p className="text-background/80 text-sm leading-relaxed">
               Discover your unique leadership color profile with our science-backed assessment system.
             </p>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 bg-gradient-red rounded-full"></div>
-              <div className="w-8 h-8 bg-gradient-yellow rounded-full"></div>
-              <div className="w-8 h-8 bg-gradient-green rounded-full"></div>
-              <div className="w-8 h-8 bg-gradient-blue rounded-full"></div>
-            </div>
           </div>
           
           {/* Main Pages */}

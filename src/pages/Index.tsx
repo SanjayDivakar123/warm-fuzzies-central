@@ -85,12 +85,6 @@ const Index = () => {
                   Start Your Free Assessment
                   <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <Button variant="modern" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-semibold w-full sm:w-auto" asChild>
-                  <a href="https://app.reclaim.ai/m/sanjayd/12-week-fit-call" rel="noopener noreferrer">
-                    <Clock className="mr-2 sm:mr-3 w-5 h-5 sm:w-6 sm:h-6" />
-                    Book a 20-min Fit Call
-                  </a>
-                </Button>
               </div>
               
               {/* Brochure Download */}
