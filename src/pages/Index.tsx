@@ -323,7 +323,7 @@ const Index = () => {
                   What does it cost?
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  The basic assessment is completely free! We also offer premium reports ($29) with detailed insights and action plans, and professional reports ($99) with team-building recommendations. Our Team Program pricing varies by organization size. We believe everyone should have access to understanding their leadership style, which is why we start with a free option.
+                  The basic assessment is completely free! We also offer Premium reports ($19) with detailed insights and action plans, and Pro Deep Dive reports ($49) with comprehensive team-building recommendations. We believe everyone should have access to understanding their leadership style, which is why we start with a free option.
                 </AccordionContent>
               </AccordionItem>
 
@@ -332,7 +332,7 @@ const Index = () => {
                   How do I get started?
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™️ profile. If you want to explore team applications, you can book a 20-minute fit call with our team to discuss your specific needs and objectives.
+                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™️ profile.
                 </AccordionContent>
               </AccordionItem>
 
