@@ -317,7 +317,7 @@ const FreeAssessment = () => {
               </div>
 
               <Button
-                variant="hero"
+                variant="default"
                 size="lg"
                 onClick={handleNext}
                 disabled={!selectedAnswer}

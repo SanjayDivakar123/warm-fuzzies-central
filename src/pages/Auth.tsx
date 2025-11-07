@@ -304,7 +304,7 @@ export const Auth = () => {
                             
                             <Button 
                               type="submit" 
-                              variant="hero" 
+                              variant="default"
                               size="lg" 
                               className="w-full py-3 font-bold group" 
                               disabled={loading}
@@ -384,7 +384,7 @@ export const Auth = () => {
                             
                             <Button 
                               type="submit" 
-                              variant="hero" 
+                              variant="default" 
                               size="lg" 
                               className="w-full py-3 font-bold group" 
                               disabled={loading}

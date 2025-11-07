@@ -81,7 +81,7 @@ const Index = () => {
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 animate-fade-in delay-600">
-                <Button variant="hero" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-bold group w-full sm:w-auto" onClick={() => navigate('/free-assessment')}>
+                <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 font-bold group w-full sm:w-auto" onClick={() => navigate('/free-assessment')}>
                   Start Your Free Assessment
                   <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -258,7 +258,7 @@ const Index = () => {
             </div>
 
             <div className="text-center">
-              <Button variant="hero" size="xl" className="text-xl px-16 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
+              <Button variant="default" size="xl" className="text-xl px-16 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
                 Discover Your RoleColor ™️ Profile
                 <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </Button>

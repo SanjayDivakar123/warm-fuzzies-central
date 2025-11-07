@@ -85,7 +85,7 @@ export function Navbar() {
                     Sign In
                   </Link>
                 </Button>
-                <Button variant="hero" size="sm" asChild>
+                <Button variant="default" size="sm" asChild>
                   <Link to="/free-assessment">
                     Get Started
                   </Link>
