@@ -287,8 +287,41 @@ const Index = () => {
       </section>
 
 
-      {/* Voice Assessment Promotion Section */}
-      
+      {/* Testimonials Section */}
+      <section className="section-padding bg-background" aria-label="Testimonials">
+        <div className="container-wide">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
+              <Star className="w-5 h-5 mr-2" />
+              Testimonials
+            </Badge>
+            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
+              What Leaders Are <span className="gradient-text-primary">Saying</span>
+            </h3>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
+              <div className="flex items-start gap-4 mb-6">
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+              </div>
+              
+              <blockquote className="text-xl md:text-2xl text-foreground leading-relaxed mb-8 italic">
+                "Loved the simplicity and effectiveness of the test- it was engaging and focused only on leadership which was interesting. I was quite intrigued by the accuracy of the results. All the best Sanjay and RoleColorFinder."
+              </blockquote>
+              
+              <div className="border-t border-border pt-6">
+                <p className="text-lg font-semibold text-foreground mb-1">Divakar Vijayasarathy</p>
+                <p className="text-base text-muted-foreground">Founder and CEO of DVS Advisory Group</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* FAQ Section */}
       <section className="section-padding bg-gradient-soft" aria-label="Frequently Asked Questions">
