@@ -30,64 +30,83 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-{/* Hero Section - Mantis Inspired Minimalist */}
+      {/* Hero Section - Values Bridge Style */}
       <section className="relative section-padding overflow-hidden" aria-label="Hero section">
         <div className="absolute inset-0 bg-background"></div>
         
         <div className="relative container-wide">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             
-            {/* Main Headline - Bold, Minimalist Typography */}
-            <div className="text-center space-y-16 mb-24">
-              <h1 className="font-heading text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-medium text-foreground leading-[0.95] tracking-tighter text-balance">
-                we discover
+            {/* Main Headline - Centered, Large Serif */}
+            <div className="text-center space-y-8 mb-16">
+              <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium text-foreground leading-tight text-balance">we discover
+
+leadership
+styles.<br />
+                <span className="block">that makes you shine.</span>
                 <br />
-                <span className="block mt-4">leadership</span>
-                <br />
-                <span className="block mt-4">styles.</span>
+                <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-muted-foreground">Then, learn how to adapt.</span>
               </h1>
-              
-              <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground leading-relaxed max-w-4xl mx-auto font-light">
-                Then, we help you adapt.
-              </p>
             </div>
 
-            {/* Pastel Circles with Icons - Simplified */}
-            <div className="mb-24 overflow-hidden">
-              <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap max-w-4xl mx-auto">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-yellow-light flex items-center justify-center transition-transform duration-500 hover:scale-110">
-                  <Target className="w-12 h-12 md:w-16 md:h-16 text-yellow-dark" strokeWidth={1.5} />
+            {/* Pastel Circles with Icons - Scrolling Row */}
+            <div className="mb-16 overflow-hidden">
+              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 flex-wrap max-w-6xl mx-auto px-4">
+                {/* Yellow Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-yellow-dark" strokeWidth={1.5} />
                 </div>
                 
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-red-light flex items-center justify-center transition-transform duration-500 hover:scale-110">
-                  <Heart className="w-12 h-12 md:w-16 md:h-16 text-red-dark" strokeWidth={1.5} />
+                {/* Red Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-red-light flex items-center justify-center">
+                  <Heart className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-red-dark" strokeWidth={1.5} />
                 </div>
                 
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-green-light flex items-center justify-center transition-transform duration-500 hover:scale-110">
-                  <Brain className="w-12 h-12 md:w-16 md:h-16 text-green-dark" strokeWidth={1.5} />
+                {/* Green Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-green-light flex items-center justify-center">
+                  <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-dark" strokeWidth={1.5} />
                 </div>
                 
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-blue-light flex items-center justify-center transition-transform duration-500 hover:scale-110">
-                  <Lightbulb className="w-12 h-12 md:w-16 md:h-16 text-blue-dark" strokeWidth={1.5} />
+                {/* Blue Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-blue-light flex items-center justify-center">
+                  <Lightbulb className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-dark" strokeWidth={1.5} />
                 </div>
+                
+                {/* Additional smaller circles for variety */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-yellow-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-red-light flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-red-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-green-light flex items-center justify-center">
+                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-dark" strokeWidth={1.5} />
+                </div>
+                
+                
               </div>
             </div>
 
+            {/* Description Text */}
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <p className="text-lg sm:text-xl md:text-2xl text-foreground leading-relaxed">
+                Receive your unique RoleColor™ profile, contextual leadership insights, 
+                and practical strategies to adapt your strengths across different team stages and challenges.
+              </p>
+            </div>
+
             {/* CTA Button */}
-            <div className="text-center mb-12">
-              <Button 
-                variant="default" 
-                size="lg" 
-                className="text-lg px-12 py-7 font-medium rounded-full hover:scale-105 transition-transform duration-300" 
-                onClick={() => navigate('/free-assessment')}
-              >
-                Get Started <ArrowRight className="ml-2 w-5 h-5" />
+            <div className="text-center">
+              <Button variant="default" size="lg" className="text-lg px-12 py-6 font-semibold rounded-full" onClick={() => navigate('/free-assessment')}>
+                Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
 
             {/* Brochure Download */}
-            <div className="text-center">
-              <Button variant="ghost" size="lg" className="text-base px-8 py-4 text-muted-foreground hover:text-foreground" asChild>
+            <div className="text-center mt-8">
+              <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
                 <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-3">
                   <FileText className="w-5 h-5" />
                   <span>Download Brochure</span>
@@ -99,53 +118,53 @@ const Index = () => {
         </div>
       </section>
 
-{/* Philosophy Section - Minimalist */}
-      <section className="section-padding bg-muted/30 relative overflow-hidden" aria-label="Our Philosophy">
+      {/* Philosophy Section - Enhanced */}
+      <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
         <h2 className="sr-only">Our Philosophy on Contextual Leadership</h2>
         
         <div className="container-wide relative">
-          <div className="text-center mb-32 animate-fade-in">
-            <p className="text-base uppercase tracking-wider text-muted-foreground mb-12 font-medium">
+          <div className="text-center mb-20 animate-fade-in">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
               Our Philosophy
-            </p>
+            </Badge>
             
-            <h3 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-foreground mb-16 leading-tight tracking-tighter text-balance">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-foreground mb-8 sm:mb-10 md:mb-12 leading-tight text-balance">
               Great teams don't just happen.
               <br />
-              <span className="block mt-4 text-primary">They grow through stages.</span>
+              <span className="gradient-text-primary font-bold">They grow through stages.</span>
             </h3>
             
-            <div className="max-w-5xl mx-auto">
-              <blockquote className="text-2xl sm:text-3xl md:text-4xl font-light text-muted-foreground mb-8 leading-relaxed text-balance">
+            <div className="max-w-6xl mx-auto">
+              <blockquote className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-muted-foreground mb-6 sm:mb-8 md:mb-10 leading-relaxed italic text-balance">
                 "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
               </blockquote>
-              <cite className="text-foreground font-medium text-lg sm:text-xl">— Bruce Tuckman</cite>
+              <cite className="text-primary font-bold text-base sm:text-lg md:text-xl">— Bruce Tuckman, developer of the team development model</cite>
             </div>
           </div>
 
-<div className="max-w-6xl mx-auto mb-32">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8 animate-fade-in delay-200">
-                <div className="border border-border rounded-2xl p-12 hover-lift bg-card">
-                  <h4 className="text-3xl md:text-4xl font-medium text-foreground mb-6 tracking-tight">Contextual Leadership</h4>
-                  <p className="text-xl text-muted-foreground leading-relaxed font-light">
-                    We believe in <strong className="text-foreground font-medium">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+          <div className="max-w-7xl mx-auto mb-24">
+            <div className="grid lg:grid-cols-2 gap-20 items-center">
+              <div className="space-y-12 animate-fade-in delay-200">
+                <div className="glass-card-strong rounded-3xl p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
+                  <h4 className="text-4xl font-bold text-foreground mb-8">Contextual Leadership</h4>
+                  <p className="text-xl text-muted-foreground leading-relaxed">
+                    We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                   </p>
                 </div>
                 
-                <div className="border-2 border-primary/20 rounded-2xl p-12 bg-primary/5 hover-lift">
-                  <p className="text-xl text-foreground leading-relaxed font-light">
-                    Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges.
-                  </p>
-                  <p className="text-2xl text-foreground font-medium mt-6 tracking-tight">
-                    Effective leaders adapt, they don't impose.
+                <div className="glass-card-strong rounded-3xl p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
+                  <p className="text-xl text-foreground leading-relaxed">
+                    Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
+                    <strong className="gradient-text-primary text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
                   </p>
                 </div>
               </div>
               
               <div className="relative animate-fade-in delay-400">
                 <div className="relative group">
-                  <img src={professionalTeamImage} alt="Professional team collaboration" width="800" height="600" className="rounded-2xl shadow-lg w-full h-auto hover-lift relative z-10" />
+                  <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                  <img src={professionalTeamImage} alt="Professional team collaboration" width="800" height="600" className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent rounded-3xl z-20"></div>
                 </div>
               </div>
             </div>
