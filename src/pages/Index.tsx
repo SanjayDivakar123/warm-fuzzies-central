@@ -302,12 +302,15 @@ const Index = () => {
 
           <div className="max-w-4xl mx-auto">
             <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
-              <div className="flex items-start gap-4 mb-6">
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+              <div className="flex items-start gap-2 mb-6">
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <div className="relative w-6 h-6 flex-shrink-0">
+                  <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 absolute" style={{ clipPath: 'inset(0 50% 0 0)' }} />
+                  <Star className="w-6 h-6 text-yellow-500 absolute" />
+                </div>
               </div>
               
               <blockquote className="text-xl md:text-2xl text-foreground leading-relaxed mb-8 italic">
