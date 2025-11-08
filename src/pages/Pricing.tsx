@@ -65,7 +65,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Navbar />
       {/* Header */}
-      <div className="bg-gradient-hero text-white py-12 sm:py-16">
+      <div className="bg-gradient-hero py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="sr-only">Pricing Plans - Role Color Finder</h1>
           <div className="flex items-center justify-center mb-4 sm:mb-6">
@@ -77,10 +77,10 @@ export default function Pricing() {
               className="h-12 sm:h-16 md:h-20 w-auto"
             />
           </div>
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8">
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground mb-6 sm:mb-8">
             Pricing Plans
           </p>
-          <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-foreground/80 max-w-2xl mx-auto leading-relaxed">
             Choose the perfect plan for your needs - from individual discovery to enterprise solutions
           </p>
         </div>
