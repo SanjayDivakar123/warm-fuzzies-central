@@ -65,15 +65,37 @@ const SanjayDivakar = () => {
           {/* Full Bio */}
           <div className="prose prose-lg max-w-none">
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              Sanjay Divakar is the founder and CEO of RoleColorFinder, a company redefining leadership development through color-based psychology and adaptive learning. A visionary entrepreneur from Greenwich, Connecticut, Sanjay created RoleColorFinder to help individuals and organizations understand how they lead—and how they can lead better.
+              Sanjay Divakar is the Founder & CEO of RoleColorFinder, a leadership development company redefining how people understand and grow their leadership style using color-based psychology and adaptive learning.
             </p>
             
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              Bridging psychology, technology, and human behavior, Sanjay's mission is to make leadership development accessible, evidence-based, and deeply personal. Under his leadership, RoleColorFinder has built partnerships with global education leaders and is rapidly growing as a platform for schools and companies seeking to unlock the full potential of their teams.
+              A forward-thinking entrepreneur from Greenwich, Connecticut, Sanjay is obsessed (productively) with one question:<br />
+              <em>"How do you help someone lead better—starting with who they already are?"</em>
+            </p>
+            
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              To answer that, he designed RoleColorFinder—an assessment and learning platform used by schools, companies, and emerging leaders to uncover their natural leadership tendencies and rapidly close the gap between potential and performance.
+            </p>
+            
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              Sanjay's approach blends psychology, technology, and human behavior. His work is grounded in credibility—not hype. He has completed formal leadership and innovation training from two of the world's top institutions:
+            </p>
+            
+            <ul className="text-lg text-muted-foreground leading-relaxed mb-6 space-y-2">
+              <li><strong>Leadership Skills</strong>, Indian Institute of Management Ahmedabad (IIM-A)</li>
+              <li><strong>Strategic Innovation: Building & Sustaining Innovative Organizations</strong>, University of Illinois (Gies College of Business)</li>
+            </ul>
+            
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              These programs reinforce his commitment to evidence-based leadership—not fluffy motivational quotes.
+            </p>
+            
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              Under his direction, RoleColorFinder is rapidly building partnerships across education and business, helping teams improve communication, collaboration, and accountability.
             </p>
             
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Sanjay believes adaptability is the ultimate skill—and that leadership begins with self-awareness and the courage to evolve.
+              Sanjay believes adaptability is the ultimate competitive edge—and that leadership begins with self-awareness and the courage to evolve.
             </p>
           </div>
         </div>
