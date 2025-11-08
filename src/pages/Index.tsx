@@ -84,9 +84,7 @@ const Index = () => {
                   <Settings className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-dark" strokeWidth={1.5} />
                 </div>
                 
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-blue-light flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-blue-dark" strokeWidth={1.5} />
-                </div>
+                
               </div>
             </div>
 
@@ -100,12 +98,7 @@ const Index = () => {
 
             {/* CTA Button */}
             <div className="text-center">
-              <Button 
-                variant="default" 
-                size="lg" 
-                className="text-lg px-12 py-6 font-semibold rounded-full" 
-                onClick={() => navigate('/free-assessment')}
-              >
+              <Button variant="default" size="lg" className="text-lg px-12 py-6 font-semibold rounded-full" onClick={() => navigate('/free-assessment')}>
                 Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
@@ -308,7 +301,9 @@ const Index = () => {
                 <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                 <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                 <div className="relative w-6 h-6 flex-shrink-0">
-                  <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 absolute" style={{ clipPath: 'inset(0 50% 0 0)' }} />
+                  <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 absolute" style={{
+                  clipPath: 'inset(0 50% 0 0)'
+                }} />
                   <Star className="w-6 h-6 text-yellow-500 absolute" />
                 </div>
               </div>
