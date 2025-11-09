@@ -9,7 +9,7 @@ import { Lock, CreditCard } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiresPayment?: boolean;
-  assessmentType?: 'premium' | 'pro';
+  assessmentType?: 'premium' | 'pro' | 'student';
 }
 
 export const ProtectedRoute = ({ 

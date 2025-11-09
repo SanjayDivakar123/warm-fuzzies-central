@@ -4,6 +4,8 @@ import { Auth } from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import FreeAssessment from "@/pages/FreeAssessment";
 import FreeResults from "@/pages/FreeResults";
+import StudentAssessment from "@/pages/StudentAssessment";
+import StudentResults from "@/pages/StudentResults";
 import PremiumAssessment from "@/pages/PremiumAssessment";
 import PremiumResults from "@/pages/PremiumResults";
 import ProAssessment from "@/pages/ProAssessment";
@@ -59,6 +61,14 @@ export const router = createBrowserRouter([
   {
     path: "/free-results",
     element: <Layout><FreeResults /></Layout>,
+  },
+  {
+    path: "/student-assessment",
+    element: <Layout><StudentAssessment /></Layout>,
+  },
+  {
+    path: "/student-results",
+    element: <Layout><StudentResults /></Layout>,
   },
   {
     path: "/premium-assessment",

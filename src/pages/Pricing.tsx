@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, Star, Users, Building, UserCheck, Palette } from "lucide-react"
+import { Check, Star, Users, Building, UserCheck, Palette, GraduationCap } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { PaymentButton } from "@/components/payment/PaymentButton"
@@ -22,6 +22,24 @@ export default function Pricing() {
       cta: "Try Free Preview",
       popular: false,
       icon: Palette
+    },
+    {
+      name: "Student Assessment",
+      price: "$9.50",
+      priceNote: "one-time • 50% student discount",
+      target: "For Students",
+      description: "Complete 25-question assessment designed specifically for students",
+      features: [
+        "25 student-focused questions",
+        "Full leadership profile analysis",
+        "Career path recommendations",
+        "Study tips matched to your style",
+        "Student-customized PDF report"
+      ],
+      cta: "Get Student Assessment",
+      popular: false,
+      icon: GraduationCap,
+      badge: "Student Price"
     },
     {
       name: "Premium Assessment",
@@ -90,12 +108,17 @@ export default function Pricing() {
         {/* Individual Plans */}
         <div className="mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {individualPlans.map((plan) => (
               <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary shadow-lg sm:scale-105' : ''}`}>
                 {plan.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     Most Popular
+                  </Badge>
+                )}
+                {plan.badge && !plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green text-white">
+                    {plan.badge}
                   </Badge>
                 )}
                 <CardHeader className="text-center">
@@ -104,7 +127,7 @@ export default function Pricing() {
                   <CardDescription className="text-sm">{plan.target}</CardDescription>
                   <div className="mt-4">
                     <span className="text-3xl font-bold">{plan.price}</span>
-                    {plan.priceNote && <span className="text-muted-foreground ml-2">{plan.priceNote}</span>}
+                    {plan.priceNote && <span className="text-muted-foreground ml-2 text-xs block mt-1">{plan.priceNote}</span>}
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
                 </CardHeader>
@@ -125,6 +148,16 @@ export default function Pricing() {
                         {plan.cta}
                       </Link>
                     </Button>
+                  ) : plan.name === "Student Assessment" ? (
+                    <PaymentButton 
+                      productType="premium"
+                      customAmount={950}
+                      customDescription="Student Leadership Assessment - 50% Student Discount"
+                      className="w-full" 
+                      variant="outline"
+                    >
+                      {plan.cta}
+                    </PaymentButton>
                   ) : plan.name === "Premium Assessment" ? (
                     <PaymentButton 
                       productType="premium" 
