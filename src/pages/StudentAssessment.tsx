@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const studentQuestions = [
+  // Section A: Leadership & Initiative (Q1–Q5)
   {
     id: 1,
     stage: "Leadership & Initiative",
@@ -69,6 +70,7 @@ const studentQuestions = [
       { text: "Envision and innovate for the future", color: "blue" },
     ],
   },
+  // Section B: Collaboration & Communication (Q6–Q10)
   {
     id: 6,
     stage: "Collaboration & Communication",
@@ -124,6 +126,7 @@ const studentQuestions = [
       { text: "The idea generator", color: "blue" },
     ],
   },
+  // Section C: Problem-Solving & Decision-Making (Q11–Q15)
   {
     id: 11,
     stage: "Problem-Solving & Decision-Making",
@@ -179,6 +182,7 @@ const studentQuestions = [
       { text: "Redesign it in a new way", color: "blue" },
     ],
   },
+  // Section D: Adaptability & Creativity (Q16–Q20)
   {
     id: 16,
     stage: "Adaptability & Creativity",
@@ -234,6 +238,7 @@ const studentQuestions = [
       { text: "Create and innovate freely", color: "blue" },
     ],
   },
+  // Section E: Self-Awareness & Reflection (Q21–Q25)
   {
     id: 21,
     stage: "Self-Awareness & Reflection",
