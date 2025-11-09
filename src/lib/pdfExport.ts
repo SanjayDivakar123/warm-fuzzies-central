@@ -19,18 +19,24 @@ export const exportToPDF = async (
   filename: string
 ) => {
   // Convert reportData to PDFExportOptions format
+  const dominantColorValue = reportData.color || reportData.results?.dominantColor || "yellow";
+  
   const options: PDFExportOptions = {
     title: "Leadership Assessment Report",
     subtitle: reportData.type || "Assessment",
     colorTheme: getColorThemeFromData(reportData),
-    dominantColor: reportData.color || reportData.results?.dominantColor || "Leader",
-    secondaryColor: reportData.results?.secondaryColor,
+    dominantColor: getColorProfileName(dominantColorValue),
+    secondaryColor: reportData.results?.secondaryColor ? getColorProfileName(reportData.results.secondaryColor) : undefined,
     description: generateDescription(reportData),
     strengths: generateStrengths(reportData),
     developmentAreas: generateDevelopmentAreas(reportData),
   };
   
-  const score = reportData.score || reportData.results?.score || reportData.percentage || 85;
+  const score = reportData.score || 
+                (reportData.results?.scores && reportData.results?.totalQuestions 
+                  ? Math.round((reportData.results.scores[dominantColorValue] / reportData.results.totalQuestions) * 100)
+                  : reportData.percentage || 85);
+  
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -40,7 +46,7 @@ export const exportToPDF = async (
     const colorScheme = getColorScheme(options.colorTheme);
     
     // Page 1: Cover Page
-    createCoverPage(pdf, options, colorScheme, pageWidth, pageHeight);
+    createCoverPage(pdf, options, colorScheme, pageWidth, pageHeight, reportData);
     
     // Page 2: Detailed Results
     pdf.addPage();
@@ -58,6 +64,16 @@ export const exportToPDF = async (
     console.error('PDF Export Error:', error);
     throw new Error('Failed to generate PDF. Please try again.');
   }
+};
+
+const getColorProfileName = (color: string): string => {
+  const names = {
+    yellow: "Fast Executor",
+    red: "Creative Motivator",
+    green: "Logical Systems Thinker",
+    blue: "Empathetic Connector"
+  };
+  return names[color as keyof typeof names] || "Leader";
 };
 
 const getColorThemeFromData = (reportData: any): 'red' | 'yellow' | 'green' | 'blue' => {
@@ -111,7 +127,7 @@ const getColorScheme = (colorTheme: string) => {
   return schemes[colorTheme as keyof typeof schemes] || schemes.blue;
 };
 
-const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number) => {
+const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any, pageWidth: number, pageHeight: number, reportData?: any) => {
   // White background
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -127,33 +143,38 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
     console.log('Logo not available');
   }
   
+  // Check if student assessment
+  const isStudent = reportData?.isStudent || reportData?.type?.toLowerCase().includes('student');
+  
   // Main title at top
   pdf.setTextColor(colorScheme.primary[0], colorScheme.primary[1], colorScheme.primary[2]);
   pdf.setFontSize(32);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('LEADERSHIP PROFILE REPORT', pageWidth / 2, 45, { align: 'center' });
+  pdf.text(isStudent ? 'STUDENT LEADERSHIP REPORT' : 'LEADERSHIP PROFILE REPORT', pageWidth / 2, 45, { align: 'center' });
   
   // Subtitle
   pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Your Leadership Color', pageWidth / 2, 65, { align: 'center' });
+  pdf.text('Your RoleColor™ Profile', pageWidth / 2, 65, { align: 'center' });
   
   // Descriptive text
   pdf.setTextColor(80, 80, 80);
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
-  const descLines = pdf.splitTextToSize(
-    "Discover your unique leadership style through our comprehensive assessment. Whether you're a Fast Executor, Creative Motivator, Logical Systems Thinker, or Empathetic Connector, this professional analysis reveals your authentic leadership potential.",
-    pageWidth - 50
-  );
+  
+  const descText = isStudent 
+    ? "Discover your unique student leadership style through our comprehensive assessment. Whether you're a Fast Executor, Creative Motivator, Logical Systems Thinker, or Empathetic Connector, this analysis reveals your authentic leadership potential and provides actionable insights for your academic and career journey."
+    : "Discover your unique leadership style through our comprehensive assessment. Whether you're a Fast Executor, Creative Motivator, Logical Systems Thinker, or Empathetic Connector, this professional analysis reveals your authentic leadership potential.";
+  
+  const descLines = pdf.splitTextToSize(descText, pageWidth - 50);
   pdf.text(descLines, pageWidth / 2, 80, { align: 'center' });
   
-  // Premium analysis note
+  // Premium/Student analysis note
   pdf.setFontSize(9);
-  const premiumNote = pdf.splitTextToSize(
-    "Premium Analysis: Confidential professional report designed for HR leaders, executive coaches, and leadership development programs.",
-    pageWidth - 50
-  );
+  const noteText = isStudent
+    ? "Student Leadership Analysis: Designed specifically for students to understand their leadership strengths and prepare for future career success."
+    : "Premium Analysis: Confidential professional report designed for HR leaders, executive coaches, and leadership development programs.";
+  const premiumNote = pdf.splitTextToSize(noteText, pageWidth - 50);
   pdf.text(premiumNote, pageWidth / 2, 110, { align: 'center' });
   
   // Call to action
@@ -161,7 +182,7 @@ const createCoverPage = (pdf: jsPDF, options: PDFExportOptions, colorScheme: any
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'italic');
   pdf.text('Swipe to explore your detailed assessment results and personalized action plan.', pageWidth / 2, 135, { align: 'center' });
-  pdf.text('Your leadership journey starts here.', pageWidth / 2, 145, { align: 'center' });
+  pdf.text(isStudent ? 'Your student leadership journey starts here.' : 'Your leadership journey starts here.', pageWidth / 2, 145, { align: 'center' });
   
   // Large color indicator circle in center
   const centerY = 180;

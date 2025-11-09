@@ -258,6 +258,19 @@ const StudentResults50 = () => {
               {profile.tagline}
             </p>
             
+            {/* Leadership Score */}
+            <div className="flex justify-center mt-8">
+              <div className="glass-card-strong rounded-3xl p-8 border-2 border-primary/20">
+                <p className="text-sm font-semibold text-muted-foreground mb-2">Overall Leadership Score</p>
+                <p className="text-5xl font-black text-primary">
+                  {Math.round((results.scores[results.dominantColor] / results.totalQuestions) * 100)}%
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {results.scores[results.dominantColor]} out of {results.totalQuestions} answers
+                </p>
+              </div>
+            </div>
+            
             <div className="flex flex-wrap justify-center gap-4 pt-6">
               <Button onClick={handleDownloadPDF} size="lg" className="gap-2">
                 <Download className="w-5 h-5" />
