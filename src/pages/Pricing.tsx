@@ -42,6 +42,25 @@ export default function Pricing() {
       badge: "Student Price"
     },
     {
+      name: "Student Pro Deep Dive",
+      price: "$24.50",
+      priceNote: "one-time • 50% student discount",
+      target: "For Ambitious Students",
+      description: "Ultimate 50-question student assessment with comprehensive 3-page report",
+      features: [
+        "Extended 50-question deep assessment",
+        "Advanced color blending analysis",
+        "3-page comprehensive student report",
+        "Career transition roadmap",
+        "Leadership development plan for students",
+        "Interview & internship strategy guide"
+      ],
+      cta: "Get Student Pro",
+      popular: false,
+      icon: GraduationCap,
+      badge: "Student Price"
+    },
+    {
       name: "Premium Assessment",
       price: "$19",
       priceNote: "one-time",
@@ -108,7 +127,7 @@ export default function Pricing() {
         {/* Individual Plans */}
         <div className="mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-6">
             {individualPlans.map((plan) => (
               <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary shadow-lg sm:scale-105' : ''}`}>
                 {plan.popular && (
@@ -153,6 +172,16 @@ export default function Pricing() {
                       productType="premium"
                       customAmount={950}
                       customDescription="Student Leadership Assessment - 50% Student Discount"
+                      className="w-full" 
+                      variant="outline"
+                    >
+                      {plan.cta}
+                    </PaymentButton>
+                  ) : plan.name === "Student Pro Deep Dive" ? (
+                    <PaymentButton 
+                      productType="pro"
+                      customAmount={2450}
+                      customDescription="Student Pro Deep Dive - 50% Student Discount"
                       className="w-full" 
                       variant="outline"
                     >

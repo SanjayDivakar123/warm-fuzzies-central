@@ -6,6 +6,8 @@ import FreeAssessment from "@/pages/FreeAssessment";
 import FreeResults from "@/pages/FreeResults";
 import StudentAssessment from "@/pages/StudentAssessment";
 import StudentResults from "@/pages/StudentResults";
+import StudentAssessment50 from "@/pages/StudentAssessment50";
+import StudentResults50 from "@/pages/StudentResults50";
 import PremiumAssessment from "@/pages/PremiumAssessment";
 import PremiumResults from "@/pages/PremiumResults";
 import ProAssessment from "@/pages/ProAssessment";
@@ -69,6 +71,14 @@ export const router = createBrowserRouter([
   {
     path: "/student-results",
     element: <Layout><StudentResults /></Layout>,
+  },
+  {
+    path: "/student-pro-assessment",
+    element: <Layout><StudentAssessment50 /></Layout>,
+  },
+  {
+    path: "/student-pro-results",
+    element: <Layout><StudentResults50 /></Layout>,
   },
   {
     path: "/premium-assessment",
