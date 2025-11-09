@@ -22,22 +22,23 @@ export const ProtectedRoute = ({
   const location = useLocation();
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const preview = new URLSearchParams(location.search).get('preview') === '1';
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !preview) {
       // Redirect to auth page with return path
       navigate('/auth', { 
         state: { from: location },
         replace: true 
       });
     }
-  }, [user, loading, navigate, location]);
+  }, [user, loading, navigate, location, preview]);
 
   useEffect(() => {
-    if (user && requiresPayment && assessmentType) {
+    if (user && requiresPayment && assessmentType && !preview) {
       checkPaymentStatus();
     }
-  }, [user, requiresPayment, assessmentType]);
+  }, [user, requiresPayment, assessmentType, preview]);
 
   const checkPaymentStatus = async () => {
     if (!user) return;
@@ -109,6 +110,11 @@ export const ProtectedRoute = ({
     navigate('/pricing');
   };
 
+  // Preview mode bypasses auth and payment checks for quick reviews
+  if (preview) {
+    return <>{children}</>;
+  }
+
   if (loading || checkingPayment) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -122,12 +128,12 @@ export const ProtectedRoute = ({
     );
   }
 
-  if (!user) {
+  if (!user && !preview) {
     return null; // Will redirect via useEffect
   }
 
   // Show payment required screen if payment verification fails
-  if (requiresPayment && !paymentVerified) {
+  if (requiresPayment && !paymentVerified && !preview) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -138,7 +144,7 @@ export const ProtectedRoute = ({
             
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {assessmentType === 'premium' ? 'Premium' : 'Professional'} Access Required
+                {assessmentType === 'premium' ? 'Premium' : assessmentType === 'pro' ? 'Professional' : 'Student'} Access Required
               </h2>
               <p className="text-muted-foreground">
                 This assessment requires a {assessmentType} plan purchase to access.
@@ -152,7 +158,7 @@ export const ProtectedRoute = ({
                 size="lg"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                Upgrade to {assessmentType === 'premium' ? 'Premium' : 'Professional'}
+                View Pricing
               </Button>
               
               <Button 
