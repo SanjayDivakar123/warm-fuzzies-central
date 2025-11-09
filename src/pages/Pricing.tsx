@@ -172,6 +172,8 @@ export default function Pricing() {
                       productType="premium"
                       customAmount={950}
                       customDescription="Student Leadership Assessment - 50% Student Discount"
+                      successType="student"
+                      successPath="/student-assessment"
                       className="w-full" 
                       variant="outline"
                     >
@@ -182,6 +184,8 @@ export default function Pricing() {
                       productType="pro"
                       customAmount={2450}
                       customDescription="Student Pro Deep Dive - 50% Student Discount"
+                      successType="student"
+                      successPath="/student-pro-assessment"
                       className="w-full" 
                       variant="outline"
                     >
