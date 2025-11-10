@@ -154,6 +154,27 @@ export default function Pricing() {
           </div>
         </div>
 
+        {/* Testimonial Section */}
+        <div className="mb-12 sm:mb-16">
+          <div className="max-w-3xl mx-auto">
+            <Card className="bg-muted/50 border-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex gap-1 mb-4 justify-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-lg text-center mb-4 italic">
+                  "RoleColorFinder helped me discover my ideal career path"
+                </p>
+                <p className="text-center text-muted-foreground font-medium">
+                  — Amit Suthar
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         {/* CTA Section */}
         <div className="text-center bg-muted rounded-lg p-6 sm:p-8">
           <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Discover Your Leadership Color?</h3>
