@@ -9,7 +9,7 @@ import { Lock, CreditCard } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiresPayment?: boolean;
-  assessmentType?: 'premium' | 'pro' | 'student';
+  assessmentType?: 'premium' | 'pro';
 }
 
 export const ProtectedRoute = ({ 
@@ -22,23 +22,22 @@ export const ProtectedRoute = ({
   const location = useLocation();
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
-  const preview = new URLSearchParams(location.search).get('preview') === '1';
 
   useEffect(() => {
-    if (!loading && !user && !preview) {
+    if (!loading && !user) {
       // Redirect to auth page with return path
       navigate('/auth', { 
         state: { from: location },
         replace: true 
       });
     }
-  }, [user, loading, navigate, location, preview]);
+  }, [user, loading, navigate, location]);
 
   useEffect(() => {
-    if (user && requiresPayment && assessmentType && !preview) {
+    if (user && requiresPayment && assessmentType) {
       checkPaymentStatus();
     }
-  }, [user, requiresPayment, assessmentType, preview]);
+  }, [user, requiresPayment, assessmentType]);
 
   const checkPaymentStatus = async () => {
     if (!user) return;
@@ -110,11 +109,6 @@ export const ProtectedRoute = ({
     navigate('/pricing');
   };
 
-  // Preview mode bypasses auth and payment checks for quick reviews
-  if (preview) {
-    return <>{children}</>;
-  }
-
   if (loading || checkingPayment) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -128,12 +122,12 @@ export const ProtectedRoute = ({
     );
   }
 
-  if (!user && !preview) {
+  if (!user) {
     return null; // Will redirect via useEffect
   }
 
   // Show payment required screen if payment verification fails
-  if (requiresPayment && !paymentVerified && !preview) {
+  if (requiresPayment && !paymentVerified) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -144,7 +138,7 @@ export const ProtectedRoute = ({
             
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {assessmentType === 'premium' ? 'Premium' : assessmentType === 'pro' ? 'Professional' : 'Student'} Access Required
+                {assessmentType === 'premium' ? 'Premium' : 'Professional'} Access Required
               </h2>
               <p className="text-muted-foreground">
                 This assessment requires a {assessmentType} plan purchase to access.
@@ -158,7 +152,7 @@ export const ProtectedRoute = ({
                 size="lg"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                View Pricing
+                Upgrade to {assessmentType === 'premium' ? 'Premium' : 'Professional'}
               </Button>
               
               <Button 

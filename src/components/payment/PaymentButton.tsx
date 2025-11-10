@@ -14,8 +14,6 @@ interface PaymentButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   customAmount?: number;
   customDescription?: string;
-  successType?: "premium" | "pro" | "team" | "student";
-  successPath?: string;
 }
 
 export const PaymentButton = ({ 
@@ -25,9 +23,7 @@ export const PaymentButton = ({
   variant = "default",
   size = "default",
   customAmount,
-  customDescription,
-  successType,
-  successPath
+  customDescription
 }: PaymentButtonProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -52,11 +48,9 @@ export const PaymentButton = ({
     try {
       setLoading(true);
       
-      const redirectType = successType ?? productType;
-      const nextParam = successPath ? `&next=${encodeURIComponent(successPath)}` : '';
       const paymentData = {
         productType,
-        successUrl: `${window.location.origin}/payment-success?type=${redirectType}${nextParam}`,
+        successUrl: `${window.location.origin}/payment-success?type=${productType}`,
         cancelUrl: `${window.location.origin}/pricing`,
         ...(customAmount && { customAmount }),
         ...(customDescription && { customDescription })

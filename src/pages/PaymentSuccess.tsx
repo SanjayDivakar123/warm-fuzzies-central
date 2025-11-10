@@ -13,7 +13,7 @@ const PaymentSuccess = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const assessmentType = searchParams.get('type') as 'premium' | 'pro' | 'student';
+  const assessmentType = searchParams.get('type') as 'premium' | 'pro';
 
   useEffect(() => {
     // Store the successful payment in the database
@@ -61,8 +61,7 @@ const PaymentSuccess = () => {
   };
 
   const handleStartAssessment = () => {
-    const nextPath = searchParams.get('next');
-    navigate(nextPath || `/${assessmentType}-assessment`);
+    navigate(`/${assessmentType}-assessment`);
   };
 
   if (!user || !assessmentType) {
