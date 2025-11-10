@@ -289,8 +289,7 @@ styles.<br />
               <Star className="w-5 h-5 mr-2" />
               Testimonials
             </Badge>
-            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
-              What Leaders Are <span className="gradient-text-primary">Saying</span>
+            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">What Users Are Saying<span className="gradient-text-primary">Saying</span>
             </h3>
           </div>
 
