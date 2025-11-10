@@ -293,7 +293,7 @@ styles.<br />
             </h3>
           </div>
 
-          <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
               <div className="flex items-start gap-2 mb-6">
                 <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
@@ -315,6 +315,24 @@ styles.<br />
               <div className="border-t border-border pt-6">
                 <p className="text-lg font-semibold text-foreground mb-1">Divakar Vijayasarathy</p>
                 <p className="text-base text-muted-foreground">Founder and CEO of DVS Advisory Group</p>
+              </div>
+            </div>
+
+            <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
+              <div className="flex items-start gap-2 mb-6">
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+              </div>
+              
+              <blockquote className="text-xl md:text-2xl text-foreground leading-relaxed mb-8 italic">
+                "RoleColorFinder helped me discover my ideal career path"
+              </blockquote>
+              
+              <div className="border-t border-border pt-6">
+                <p className="text-lg font-semibold text-foreground mb-1">Amit Suthar</p>
               </div>
             </div>
           </div>
