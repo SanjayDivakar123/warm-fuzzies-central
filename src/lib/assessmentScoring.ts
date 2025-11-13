@@ -87,28 +87,26 @@ export function calculateResults(
   const primaryColor = sortedColors[0][0];
   const secondaryColor = sortedColors[1][0];
 
-  // Calculate spectrum position based on ordered colors (primary first)
+  // Calculate spectrum position based on primary and secondary colors
   // The spectrum will be ordered: [primary, secondary, other1, other2]
-  // We need to calculate where the user falls on this spectrum
-  const allColors: ColorType[] = ['Red', 'Yellow', 'Green', 'Blue'];
-  const colorOrder = [primaryColor, secondaryColor];
-  const remainingColors = allColors.filter(c => !colorOrder.includes(c));
-  const orderedColors = [...colorOrder, ...remainingColors];
+  // Position the marker primarily in the primary color's section (0-25%)
+  // with slight adjustment toward secondary based on their relative scores
+  const primaryScore = colorScores[primaryColor];
+  const secondaryScore = colorScores[secondaryColor];
   
-  // Map each color to its position in the ordered spectrum (0%, 25%, 50%, 75%)
-  const positionMap: Partial<Record<ColorType, number>> = {};
-  positionMap[orderedColors[0]] = 12.5;  // Center of first quarter
-  positionMap[orderedColors[1]] = 37.5;  // Center of second quarter
-  positionMap[orderedColors[2]] = 62.5;  // Center of third quarter
-  positionMap[orderedColors[3]] = 87.5;  // Center of fourth quarter
+  // Base position in primary color section (12.5% = center of first quarter)
+  let spectrumPosition = 12.5;
   
-  // Calculate weighted position based on color scores
-  const totalScore = Object.values(colorScores).reduce((sum, score) => sum + score, 0);
-  const weightedPosition = Object.entries(colorScores).reduce((sum, [color, score]) => {
-    const pos = positionMap[color as ColorType] || 50;
-    return sum + (pos * score / totalScore);
-  }, 0);
-  const spectrumPosition = Math.round(weightedPosition);
+  // If secondary color is significant, shift slightly toward it
+  const totalPrimarySecondary = primaryScore + secondaryScore;
+  if (totalPrimarySecondary > 0 && secondaryScore > primaryScore * 0.5) {
+    // Shift up to 12.5% toward secondary based on ratio
+    const secondaryInfluence = (secondaryScore / totalPrimarySecondary) - 0.5;
+    spectrumPosition += secondaryInfluence * 25;
+  }
+  
+  // Ensure position stays within reasonable bounds
+  spectrumPosition = Math.max(5, Math.min(30, Math.round(spectrumPosition)));
 
   // Calculate category scores based on assessment type
   const categoryRanges = totalQuestions === 25 ? CATEGORY_RANGES_25Q : CATEGORY_RANGES_50Q;
