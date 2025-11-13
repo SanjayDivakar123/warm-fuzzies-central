@@ -436,7 +436,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* Strength Snapshot */}
-          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing" style={{ marginBottom: '40px' }}>
+          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing" style={{ marginBottom: '70px' }}>
             <h3 className="font-bold text-2xl mb-4">Strength Snapshot</h3>
             
             {/* Your Strengths */}
@@ -475,7 +475,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Make Decisions */}
           {analysis.decisionMaking && (
-            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: '30px' }}>
+            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: '50px' }}>
               <h4 className="font-bold mb-2">How You Make Decisions</h4>
               <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
             </div>
