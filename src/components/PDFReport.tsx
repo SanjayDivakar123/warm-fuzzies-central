@@ -281,7 +281,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* Color Profile - Only Strengths on Page 1 */}
-          <div className="mb-8 page-break-avoid" style={{ marginBottom: '20px' }}>
+          <div className="mb-8 page-break-avoid" style={{ marginBottom: '60px' }}>
             <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Your Color Profile</h3>
             
             {/* Strengths */}
@@ -351,7 +351,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Leadership Stage - Still on Page 2 */}
           {analysis.leadershipStage && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: '20px' }}>
+            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: '60px' }}>
               <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Stage</h3>
               <div className="inline-block px-4 py-2 rounded-full mb-3" style={{ backgroundColor: primaryColor.hex }}>
                 <span className="text-white font-bold">{analysis.leadershipStage}</span>
