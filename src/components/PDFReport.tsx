@@ -323,16 +323,6 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             </div>
           </div>
 
-          {/* Team Fit & Collaboration */}
-          {analysis.teamFit && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
-                Team Fit & Collaboration
-              </h3>
-              <p className="text-gray-700 leading-relaxed">{analysis.teamFit}</p>
-            </div>
-          )}
-
           {/* Leadership Stage Analysis */}
           {analysis.leadershipStage && (
             <div className="mb-8 p-6 rounded-lg border-2 page-break-avoid section-spacing" style={{ borderColor: primaryColor.hex, marginTop: "50px" }}>
@@ -357,24 +347,32 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* 30-Day Action Plan */}
-          {(analysis.actionPlan30Days || analysis.quickTips) && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}10` }}>
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
-                30-Day Action Plan
+          <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}10` }}>
+            <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+              30-Day Action Plan
+            </h3>
+            <ul className="space-y-3">
+              {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || []).map(
+                (item: string, i: number) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span
+                      className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ backgroundColor: primaryColor.hex }}
+                    />
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ),
+              )}
+            </ul>
+          </div>
+
+          {/* Team Fit & Collaboration */}
+          {analysis.teamFit && (
+            <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
+              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
+                Team Fit & Collaboration
               </h3>
-              <ul className="space-y-3">
-                {(analysis.actionPlan30Days || analysis.quickTips || []).map(
-                  (item: string, i: number) => (
-                    <li key={i} className="flex gap-3 text-sm">
-                      <span
-                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ backgroundColor: primaryColor.hex }}
-                      />
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ),
-                )}
-              </ul>
+              <p className="text-gray-700 leading-relaxed">{analysis.teamFit}</p>
             </div>
           )}
         </>
