@@ -1,7 +1,9 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 
 type AssessmentType = "50q-teacher" | "50q-student" | "25q-teacher" | "25q-student";
 
@@ -105,24 +107,10 @@ const TeacherReport50Q = () => (
         <CardTitle className="text-2xl">Leadership Stage Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground mb-4">[Placeholder: Deep dive into the {PLACEHOLDER_DATA.leadershipStage} stage characteristics, typical behaviors, team impact, and development opportunities]</p>
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <h4 className="font-semibold mb-2">Strengths at This Stage</h4>
-            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li>[Placeholder strength 1]</li>
-              <li>[Placeholder strength 2]</li>
-              <li>[Placeholder strength 3]</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-2">Growth Opportunities</h4>
-            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li>[Placeholder opportunity 1]</li>
-              <li>[Placeholder opportunity 2]</li>
-              <li>[Placeholder opportunity 3]</li>
-            </ul>
-          </div>
+        <p className="text-muted-foreground mb-4">[Placeholder: Deep dive into the {PLACEHOLDER_DATA.leadershipStage} stage and what it means for professional development]</p>
+        <div className="space-y-2">
+          <p className="text-sm"><strong>Current Stage:</strong> {PLACEHOLDER_DATA.leadershipStage}</p>
+          <p className="text-sm text-muted-foreground">[Placeholder: Characteristics of this stage, typical behaviors, and growth opportunities]</p>
         </div>
       </CardContent>
     </Card>
@@ -130,47 +118,43 @@ const TeacherReport50Q = () => (
     {/* Personalized Summary */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Personalized Summary</CardTitle>
+        <CardTitle className="text-2xl">Personalized Leadership Summary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated paragraph 1 - Introduction to the individual's unique leadership profile in the RCF voice]
-        </p>
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated paragraph 2 - Specific insights about their color combination and what makes their approach distinctive]
-        </p>
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated paragraph 3 - Forward-looking perspective on their leadership potential and development path]
-        </p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 1: AI-generated summary written in RCF voice, highlighting unique leadership strengths and patterns based on color profile and assessment responses]</p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 2: How this leadership style impacts team dynamics, decision-making, and collaboration in educational settings]</p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 3: Key insights about growth areas and how to leverage natural strengths for maximum impact]</p>
       </CardContent>
     </Card>
 
     {/* Growth Plan */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">One-Page Growth Plan</CardTitle>
+        <CardTitle className="text-2xl">Professional Growth Plan</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <h4 className="font-semibold mb-2">Immediate Actions (Next 30 Days)</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Specific action item 1]</li>
-            <li>[Placeholder: Specific action item 2]</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Medium-Term Goals (3-6 Months)</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Development goal 1]</li>
-            <li>[Placeholder: Development goal 2]</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Long-Term Development (6-12 Months)</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Strategic objective 1]</li>
-          </ul>
-        </div>
+      <CardContent>
+        <ul className="space-y-3">
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Specific action item 1 for professional development]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Specific action item 2 focusing on leadership strengths]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Specific action item 3 for team collaboration]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Specific action item 4 for classroom/school impact]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Specific action item 5 for continuous improvement]</span>
+          </li>
+        </ul>
       </CardContent>
     </Card>
 
@@ -180,23 +164,9 @@ const TeacherReport50Q = () => (
         <CardTitle className="text-2xl">Team Fit & Collaboration Map</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 h-64">
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-muted-foreground">[Quadrant 1: Placeholder]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-muted-foreground">[Quadrant 2: Placeholder]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-muted-foreground">[Quadrant 3: Placeholder]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-muted-foreground">[Quadrant 4: Placeholder]</p>
-          </div>
+        <div className="aspect-square max-w-md mx-auto bg-muted rounded-lg flex items-center justify-center">
+          <p className="text-muted-foreground text-center p-8">[Placeholder: Heat-map or quadrant visualization showing collaboration strengths and team fit dynamics]</p>
         </div>
-        <p className="text-sm text-muted-foreground mt-4">
-          [Placeholder: Explanation of heat-map/quadrant visualization and what it means for team collaboration]
-        </p>
       </CardContent>
     </Card>
   </div>
@@ -207,7 +177,7 @@ const StudentReport50Q = () => (
     {/* Summary */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-3xl">Your Leadership Color Profile</CardTitle>
+        <CardTitle className="text-3xl">Your Leadership Colors</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid md:grid-cols-2 gap-6">
@@ -229,13 +199,15 @@ const StudentReport50Q = () => (
             </div>
           </div>
         </div>
-        
+
         <div>
-          <h3 className="font-semibold mb-2">Your Leadership Stage</h3>
-          <Badge className="text-lg py-2 px-4">{PLACEHOLDER_DATA.leadershipStage}</Badge>
-          <p className="text-sm text-muted-foreground mt-2">
-            [Placeholder: Student-friendly explanation of what this stage means]
-          </p>
+          <h3 className="font-semibold mb-3">Leadership Spectrum</h3>
+          <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full">
+            <div 
+              className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2"
+              style={{ left: `${PLACEHOLDER_DATA.spectrumPosition}%` }}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -243,19 +215,17 @@ const StudentReport50Q = () => (
     {/* Color Profile for Group Work */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">How You Work in Groups</CardTitle>
+        <CardTitle className="text-2xl">Your Color in Group Projects</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">
-          [Placeholder: Friendly explanation of how their color profile shows up in group projects, clubs, and team activities]
-        </p>
+        <p className="text-muted-foreground">[Placeholder: Friendly explanation of how your colors show up in group work, clubs, and team activities]</p>
       </CardContent>
     </Card>
 
     {/* Category Breakdown */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Your Strengths & Style</CardTitle>
+        <CardTitle className="text-2xl">Your Leadership Strengths</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {Object.entries(PLACEHOLDER_DATA.categories).map(([category, score]) => (
@@ -273,68 +243,63 @@ const StudentReport50Q = () => (
       </CardContent>
     </Card>
 
+    {/* Leadership Stage */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Your Leadership Level</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Badge className="text-lg py-2 px-4 mb-4">{PLACEHOLDER_DATA.leadershipStage}</Badge>
+        <p className="text-muted-foreground">[Placeholder: What this stage means for students, with examples from school, sports, and clubs]</p>
+      </CardContent>
+    </Card>
+
     {/* Personalized Summary */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">What This Means for You</CardTitle>
+        <CardTitle className="text-2xl">What Makes You Unique</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated summary paragraph 1 - Direct, friendly tone]
-        </p>
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated summary paragraph 2 - Encouraging and motivating]
-        </p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 1: Encouraging summary of leadership style in student-friendly language]</p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 2: How to use these strengths in school and activities]</p>
       </CardContent>
     </Card>
 
     {/* Growth Plan */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Your Growth Plan</CardTitle>
+        <CardTitle className="text-2xl">Ways to Grow as a Leader</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <h4 className="font-semibold mb-2">Try This Week</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Simple, actionable item for school/clubs]</li>
-            <li>[Placeholder: Simple, actionable item for sports/activities]</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">This Month's Challenge</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Slightly bigger goal]</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Your Big Goal</h4>
-          <ul className="list-disc list-inside text-muted-foreground space-y-2">
-            <li>[Placeholder: Inspiring long-term objective]</li>
-          </ul>
-        </div>
+      <CardContent>
+        <ul className="space-y-3">
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Growth action for school]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Growth action for clubs/activities]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Growth action for sports/teams]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Growth action for friendships]</span>
+          </li>
+        </ul>
       </CardContent>
     </Card>
 
-    {/* Team Fit Map */}
+    {/* Team Fit */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Best Team Roles for You</CardTitle>
+        <CardTitle className="text-2xl">How You Work with Others</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 h-48">
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-sm text-muted-foreground">[Role Type 1]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-sm text-muted-foreground">[Role Type 2]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-sm text-muted-foreground">[Role Type 3]</p>
-          </div>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <p className="text-center text-sm text-muted-foreground">[Role Type 4]</p>
-          </div>
+        <div className="aspect-square max-w-md mx-auto bg-muted rounded-lg flex items-center justify-center">
+          <p className="text-muted-foreground text-center p-8">[Placeholder: Simple visualization showing team dynamics and collaboration style]</p>
         </div>
       </CardContent>
     </Card>
@@ -361,80 +326,84 @@ const TeacherReport25Q = () => (
             </div>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">Secondary Color</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-green-500" />
-              <p className="text-2xl font-bold">{PLACEHOLDER_DATA.secondaryColor}</p>
-            </div>
+            <h3 className="font-semibold mb-2">Leadership Stage</h3>
+            <Badge className="text-lg py-2 px-4">{PLACEHOLDER_DATA.leadershipStage}</Badge>
           </div>
         </div>
-        
+
         <div>
-          <h3 className="font-semibold mb-2">Leadership Stage</h3>
-          <Badge className="text-lg py-2 px-4">{PLACEHOLDER_DATA.leadershipStage}</Badge>
+          <h3 className="font-semibold mb-3">Spectrum Position</h3>
+          <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full">
+            <div 
+              className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2"
+              style={{ left: `${PLACEHOLDER_DATA.spectrumPosition}%` }}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
 
-    {/* Short-Form Color Profile */}
+    {/* Short-form Color Profile */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Your Leadership Profile</CardTitle>
+        <CardTitle className="text-2xl">Your Color Profile</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">
-          [Placeholder: Brief but professional summary of color profile and what it means for classroom leadership]
-        </p>
+        <p className="text-muted-foreground">[Placeholder: Concise overview of primary color characteristics and leadership approach]</p>
       </CardContent>
     </Card>
 
-    {/* Condensed Categories */}
+    {/* Condensed Category Breakdown */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Key Category Insights</CardTitle>
+        <CardTitle className="text-2xl">Key Leadership Areas</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {["Decision-Making", "Communication Style", "Team Dynamics", "Motivation Drivers", "Collaboration"].map((category) => {
-          const score = PLACEHOLDER_DATA.categories[category as keyof typeof PLACEHOLDER_DATA.categories];
-          return (
-            <div key={category}>
-              <div className="flex justify-between mb-2">
-                <h4 className="font-semibold">{category}</h4>
-                <span className="text-sm text-muted-foreground">{score}/100</span>
-              </div>
-              <Progress value={score} className="h-2" />
-              <p className="text-sm text-muted-foreground mt-2">
-                [Placeholder: Brief insight about {category.toLowerCase()}]
-              </p>
+        {["Decision-Making", "Communication Style", "Team Dynamics", "Conflict Behavior", "Motivation Drivers"].map((category) => (
+          <div key={category}>
+            <div className="flex justify-between mb-2">
+              <h4 className="font-semibold">{category}</h4>
+              <span className="text-sm text-muted-foreground">{PLACEHOLDER_DATA.categories[category as keyof typeof PLACEHOLDER_DATA.categories]}/100</span>
             </div>
-          );
-        })}
+            <Progress value={PLACEHOLDER_DATA.categories[category as keyof typeof PLACEHOLDER_DATA.categories]} className="h-2" />
+            <p className="text-sm text-muted-foreground mt-2">
+              [Placeholder: Brief insight about {category.toLowerCase()}]
+            </p>
+          </div>
+        ))}
       </CardContent>
     </Card>
 
     {/* Personalized Summary */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Personalized Summary</CardTitle>
+        <CardTitle className="text-2xl">Summary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-muted-foreground">
-          [Placeholder: AI-generated concise summary in RCF voice]
-        </p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 1: Brief AI-generated summary in professional tone]</p>
+        <p className="text-muted-foreground">[Placeholder Paragraph 2: Key takeaways for school context]</p>
       </CardContent>
     </Card>
 
-    {/* School-Context Growth Plan */}
+    {/* School-context Growth Plan */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">School-Context Growth Plan</CardTitle>
+        <CardTitle className="text-2xl">School Context Growth Plan</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <ul className="list-disc list-inside text-muted-foreground space-y-2">
-          <li>[Placeholder: Classroom-specific action 1]</li>
-          <li>[Placeholder: Classroom-specific action 2]</li>
-          <li>[Placeholder: Team collaboration action]</li>
-          <li>[Placeholder: Professional development suggestion]</li>
+      <CardContent>
+        <ul className="space-y-3">
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Action for classroom leadership]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Action for staff collaboration]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary font-bold">•</span>
+            <span className="text-muted-foreground">[Placeholder: Action for student engagement]</span>
+          </li>
         </ul>
       </CardContent>
     </Card>
@@ -449,64 +418,62 @@ const StudentReport25Q = () => (
         <CardTitle className="text-3xl">Your Leadership Color</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-blue-500" />
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-16 h-16 rounded-full bg-blue-500" />
           <div>
             <p className="text-3xl font-bold">{PLACEHOLDER_DATA.primaryColor}</p>
-            <p className="text-muted-foreground">with {PLACEHOLDER_DATA.secondaryColor} energy</p>
-            <p className="text-sm text-muted-foreground mt-1">Score: {PLACEHOLDER_DATA.score}/100</p>
+            <p className="text-muted-foreground">Score: {PLACEHOLDER_DATA.score}/100</p>
           </div>
         </div>
-        <p className="text-muted-foreground">
-          [Placeholder: Fun, encouraging explanation of what this color combo means]
-        </p>
+
+        <div>
+          <h3 className="font-semibold mb-3">Your Leadership Style</h3>
+          <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full">
+            <div 
+              className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2"
+              style={{ left: `${PLACEHOLDER_DATA.spectrumPosition}%` }}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
 
     {/* Strength Snapshot */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Your Superpowers</CardTitle>
+        <CardTitle className="text-2xl">Your Top Strengths</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg bg-accent/50">
-            <h4 className="font-semibold mb-1">✨ Top Strength 1</h4>
-            <p className="text-sm text-muted-foreground">[Placeholder description]</p>
-          </div>
-          <div className="p-4 rounded-lg bg-accent/50">
-            <h4 className="font-semibold mb-1">🎯 Top Strength 2</h4>
-            <p className="text-sm text-muted-foreground">[Placeholder description]</p>
-          </div>
-          <div className="p-4 rounded-lg bg-accent/50">
-            <h4 className="font-semibold mb-1">🚀 Top Strength 3</h4>
-            <p className="text-sm text-muted-foreground">[Placeholder description]</p>
-          </div>
-          <div className="p-4 rounded-lg bg-accent/50">
-            <h4 className="font-semibold mb-1">💪 Top Strength 4</h4>
-            <p className="text-sm text-muted-foreground">[Placeholder description]</p>
-          </div>
+      <CardContent className="grid md:grid-cols-2 gap-4">
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-semibold mb-2">💪 Strength 1</h4>
+          <p className="text-sm text-muted-foreground">[Placeholder: First key strength]</p>
+        </div>
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-semibold mb-2">🎯 Strength 2</h4>
+          <p className="text-sm text-muted-foreground">[Placeholder: Second key strength]</p>
+        </div>
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-semibold mb-2">⭐ Strength 3</h4>
+          <p className="text-sm text-muted-foreground">[Placeholder: Third key strength]</p>
+        </div>
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-semibold mb-2">🚀 Strength 4</h4>
+          <p className="text-sm text-muted-foreground">[Placeholder: Fourth key strength]</p>
         </div>
       </CardContent>
     </Card>
 
-    {/* Group-Work Behavior */}
+    {/* Group-work Behavior */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">How You Show Up in Groups</CardTitle>
+        <CardTitle className="text-2xl">How You Lead in Groups</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <h4 className="font-semibold mb-2">In Class Projects</h4>
-          <p className="text-sm text-muted-foreground">[Placeholder: What role you naturally take]</p>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">In Sports & Activities</h4>
-          <p className="text-sm text-muted-foreground">[Placeholder: Your team contribution style]</p>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">With Friends</h4>
-          <p className="text-sm text-muted-foreground">[Placeholder: Your social leadership style]</p>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">[Placeholder: Fun, motivating description of group work style]</p>
+        <div className="space-y-2">
+          <p className="text-sm"><strong>In class projects:</strong> [Placeholder behavior]</p>
+          <p className="text-sm"><strong>In sports/activities:</strong> [Placeholder behavior]</p>
+          <p className="text-sm"><strong>With friends:</strong> [Placeholder behavior]</p>
         </div>
       </CardContent>
     </Card>
@@ -514,20 +481,22 @@ const StudentReport25Q = () => (
     {/* Mini Growth Plan */}
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Your Next Steps</CardTitle>
+        <CardTitle className="text-2xl">Quick Growth Tips</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="p-4 rounded-lg bg-primary/10 border-l-4 border-primary">
-          <h4 className="font-semibold mb-1">🎯 This Week</h4>
-          <p className="text-sm">[Placeholder: One simple challenge]</p>
-        </div>
-        <div className="p-4 rounded-lg bg-primary/10 border-l-4 border-primary">
-          <h4 className="font-semibold mb-1">🌟 This Month</h4>
-          <p className="text-sm">[Placeholder: One exciting goal]</p>
-        </div>
-        <div className="p-4 rounded-lg bg-primary/10 border-l-4 border-primary">
-          <h4 className="font-semibold mb-1">🚀 Your Big Dream</h4>
-          <p className="text-sm">[Placeholder: One inspiring vision]</p>
+      <CardContent>
+        <div className="space-y-3">
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-sm font-semibold mb-1">This week, try:</p>
+            <p className="text-sm">[Placeholder: One actionable tip]</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-sm font-semibold mb-1">This month, focus on:</p>
+            <p className="text-sm">[Placeholder: One growth focus]</p>
+          </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-sm font-semibold mb-1">Dream big:</p>
+            <p className="text-sm">[Placeholder: One inspiring vision]</p>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -536,6 +505,7 @@ const StudentReport25Q = () => (
 
 const LeadershipResults = () => {
   const { type } = useParams<{ type: AssessmentType }>();
+  const navigate = useNavigate();
 
   const getReportTitle = () => {
     switch (type) {
@@ -570,6 +540,13 @@ const LeadershipResults = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
       <div className="max-w-5xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <Button variant="ghost" onClick={() => navigate("/leadership-assessment")} className="gap-2">
+            <Home className="h-4 w-4" />
+            Back to Assessment
+          </Button>
+        </div>
+        
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="gradient-text-primary">Your Leadership</span> Assessment Results
