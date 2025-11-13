@@ -405,54 +405,27 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {/* 25Q Student Report Sections */}
       {is25QStudent && analysis && (
         <>
-          {/* Leadership Spectrum */}
-          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
-            <h3 className="font-bold text-2xl mb-4">Your Leadership Color</h3>
-            
-            {/* Primary and Secondary in one row */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div className="text-center">
-                <h4 className="font-bold text-xl mb-2">Primary Color</h4>
-                <div 
-                  className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center"
-                  style={{ backgroundColor: primaryColor.hex }}
-                >
-                  <span className="text-white font-bold text-lg">{results.colorScores[results.primaryColor]}/100</span>
-                </div>
-                <p className="font-semibold">{primaryColor.name}</p>
-              </div>
-              <div className="text-center">
-                <h4 className="font-bold text-xl mb-2">Secondary Color</h4>
-                <div 
-                  className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center"
-                  style={{ backgroundColor: secondaryColor.hex }}
-                >
-                  <span className="text-white font-bold text-lg">{results.colorScores[results.secondaryColor]}/100</span>
-                </div>
-                <p className="font-semibold">{secondaryColor.name}</p>
+          {/* Color Breakdown - Right after the top Primary/Secondary colors */}
+          {analysis.condensedCategories && (
+            <div className="mb-8 page-break-avoid section-spacing">
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
+              <div className="space-y-4">
+                {["Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style"].map((category) => {
+                  const categoryData = analysis.condensedCategories[category];
+                  if (!categoryData) return null;
+                  return (
+                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-bold text-lg">{category}</h4>
+                        <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">{categoryData.interpretation}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Leadership Spectrum Gradient Bar */}
-            <h4 className="font-bold text-xl mb-3">Leadership Spectrum</h4>
-            <div className="relative h-8 rounded-full mb-4" style={{ 
-              background: 'linear-gradient(to right, #ef4444 0%, #f59e0b 25%, #22c55e 50%, #eab308 75%, #3b82f6 100%)' 
-            }}>
-              <div 
-                className="absolute w-4 h-4 rounded-full bg-gray-800 border-2 border-white" 
-                style={{ 
-                  top: '50%', 
-                  transform: 'translate(-50%, -50%)',
-                  left: `${results.colorScores[results.primaryColor]}%`
-                }}
-              />
-            </div>
-            
-            {/* Color Description */}
-            {analysis.colorDescription && (
-              <p className="text-gray-700 leading-relaxed">{analysis.colorDescription}</p>
-            )}
-          </div>
+          )}
 
           {/* Strength Snapshot */}
           <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
@@ -518,7 +491,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             )}
           </div>
 
-          {/* Mini Growth Plan */}
+          {/* Mini Growth Plan - Moved to end */}
           {analysis.miniGrowthPlan && (
             <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
               <h3 className="font-bold text-2xl mb-4">Mini Growth Plan</h3>
