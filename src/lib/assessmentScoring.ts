@@ -87,11 +87,26 @@ export function calculateResults(
   const primaryColor = sortedColors[0][0];
   const secondaryColor = sortedColors[1][0];
 
-  // Calculate spectrum position (0-100 scale)
-  // Map colors to spectrum: Red=0, Yellow=25, Green=50, Blue=75
-  const colorPositions = { Red: 0, Yellow: 25, Green: 50, Blue: 75 };
+  // Calculate spectrum position based on ordered colors (primary first)
+  // The spectrum will be ordered: [primary, secondary, other1, other2]
+  // We need to calculate where the user falls on this spectrum
+  const allColors: ColorType[] = ['Red', 'Yellow', 'Green', 'Blue'];
+  const colorOrder = [primaryColor, secondaryColor];
+  const remainingColors = allColors.filter(c => !colorOrder.includes(c));
+  const orderedColors = [...colorOrder, ...remainingColors];
+  
+  // Map each color to its position in the ordered spectrum (0%, 25%, 50%, 75%)
+  const positionMap: Partial<Record<ColorType, number>> = {};
+  positionMap[orderedColors[0]] = 12.5;  // Center of first quarter
+  positionMap[orderedColors[1]] = 37.5;  // Center of second quarter
+  positionMap[orderedColors[2]] = 62.5;  // Center of third quarter
+  positionMap[orderedColors[3]] = 87.5;  // Center of fourth quarter
+  
+  // Calculate weighted position based on color scores
+  const totalScore = Object.values(colorScores).reduce((sum, score) => sum + score, 0);
   const weightedPosition = Object.entries(colorScores).reduce((sum, [color, score]) => {
-    return sum + (colorPositions[color as ColorType] * score / 100);
+    const pos = positionMap[color as ColorType] || 50;
+    return sum + (pos * score / totalScore);
   }, 0);
   const spectrumPosition = Math.round(weightedPosition);
 
