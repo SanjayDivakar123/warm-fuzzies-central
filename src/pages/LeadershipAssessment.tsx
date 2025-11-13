@@ -761,6 +761,9 @@ const LeadershipAssessment = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <img src="/rcf-logo.png" alt="RCF Logo" className="h-16 w-auto" />
+          </div>
 
           <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
@@ -833,6 +836,9 @@ const LeadershipAssessment = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
       <div className="max-w-3xl mx-auto">
+        <div className="mb-8">
+          <img src="/rcf-logo.png" alt="RCF Logo" className="h-16 w-auto mb-6" />
+        </div>
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
