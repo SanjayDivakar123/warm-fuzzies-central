@@ -1,13 +1,15 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Home, Loader2 } from "lucide-react";
+import { Home, Loader2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateResults, type AssessmentResults } from "@/lib/assessmentScoring";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const COLOR_INFO = {
   Yellow: { bg: "bg-yellow-500", name: "Yellow - The Doer" },
@@ -554,6 +556,8 @@ const LeadershipResults = () => {
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [analysis, setAnalysis] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const processResults = async () => {
@@ -599,7 +603,63 @@ const LeadershipResults = () => {
     return titles[type as keyof typeof titles] || "Assessment";
   };
 
+  const handleDownloadPDF = async () => {
+    if (!reportRef.current || !results) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 10;
+      
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+      
+      pdf.save(`${getTitle().replace(/\s+/g, '-')}-Report.pdf`);
+      toast({ title: "Success!", description: "Your report has been downloaded as PDF." });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({ title: "Error", description: "Failed to generate PDF. Please try again.", variant: "destructive" });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   if (!results) return <div className="flex items-center justify-center p-12"><Loader2 className="h-6 w-6 animate-spin" /><p className="ml-3">Calculating...</p></div>;
+
+  const primaryColorRGB: Record<string, string> = {
+    'Red': 'rgb(239, 68, 68)',
+    'Yellow': 'rgb(234, 179, 8)',
+    'Green': 'rgb(34, 197, 94)',
+    'Blue': 'rgb(59, 130, 246)'
+  };
+  
+  const secondaryColorRGB: Record<string, string> = {
+    'Red': 'rgba(239, 68, 68, 0.2)',
+    'Yellow': 'rgba(234, 179, 8, 0.2)',
+    'Green': 'rgba(34, 197, 94, 0.2)',
+    'Blue': 'rgba(59, 130, 246, 0.2)'
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
@@ -607,14 +667,55 @@ const LeadershipResults = () => {
         <div className="flex justify-end mb-6">
           <Button variant="ghost" onClick={() => navigate("/leadership-assessment")} className="gap-2"><Home className="h-4 w-4" />Back to Assessments</Button>
         </div>
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="gradient-text-primary">{getTitle()} Report</span></h1>
-          <p className="text-lg text-muted-foreground">Your personalized leadership color profile</p>
+        <div ref={reportRef}>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="gradient-text-primary">{getTitle()} Report</span></h1>
+            <p className="text-lg text-muted-foreground">Your personalized leadership color profile</p>
+          </div>
+          {type === "50q-student" && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {type === "25q-student" && <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {type === "50q-teacher" && <TeacherReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {type === "25q-teacher" && <TeacherReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
         </div>
-        {type === "50q-student" && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
-        {type === "25q-student" && <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
-        {type === "50q-teacher" && <TeacherReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
-        {type === "25q-teacher" && <TeacherReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
+        
+        {/* PDF Download Section */}
+        <Card className="mt-8" style={{ 
+          background: `linear-gradient(135deg, ${secondaryColorRGB[results.secondaryColor]} 0%, ${secondaryColorRGB[results.primaryColor]} 100%)`,
+          borderColor: primaryColorRGB[results.primaryColor]
+        }}>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center" style={{ color: primaryColorRGB[results.primaryColor] }}>
+              Download Your Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <p className="text-center text-muted-foreground">
+              Save your personalized leadership assessment report as a PDF to share or keep for your records.
+            </p>
+            <Button 
+              onClick={handleDownloadPDF} 
+              disabled={isGeneratingPDF || isLoading}
+              size="lg"
+              className="gap-2"
+              style={{ 
+                backgroundColor: primaryColorRGB[results.primaryColor],
+                color: 'white'
+              }}
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="h-5 w-5" />
+                  Download PDF Report
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
