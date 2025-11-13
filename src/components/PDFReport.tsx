@@ -470,6 +470,14 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             )}
           </div>
 
+          {/* Gradient Divider Line */}
+          <div 
+            className="h-1 rounded-full my-8" 
+            style={{ 
+              background: `linear-gradient(to right, ${primaryColor.hex}, ${secondaryColor.hex})` 
+            }}
+          />
+
           {/* Your Group-Work Behavior - Title */}
           <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
 
