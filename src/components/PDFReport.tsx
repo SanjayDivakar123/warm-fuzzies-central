@@ -551,6 +551,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             )}
           </div>
 
+          {/* PAGE BREAK - Force entire "Your Group-Work Behavior" section to start on page 2 */}
+          <div className="page-break-before"></div>
+
           {/* Gradient Divider Line */}
           <div
             className="h-1 rounded-full my-8"
@@ -558,9 +561,6 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
               background: `linear-gradient(to right, ${primaryColor.hex}, ${secondaryColor.hex})`,
             }}
           />
-
-          {/* PAGE BREAK - Force "Your Group-Work Behavior" to start on page 2 */}
-          <div className="page-break-before"></div>
 
           {/* Your Group-Work Behavior - Title */}
           <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
