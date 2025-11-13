@@ -500,11 +500,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           </div>
 
           {/* Mini Growth Plan - Moved to end */}
-          {(analysis.miniGrowthPlan || analysis.quickTips) && (
+          {(analysis.miniGrowthPlan || analysis.quickTips || analysis.growthPlan) && (
             <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
               <h3 className="font-bold text-2xl mb-4">Mini Growth Plan</h3>
               <ul className="space-y-3">
-                {(analysis.miniGrowthPlan || analysis.quickTips || []).map((item: string, i: number) => (
+                {(analysis.miniGrowthPlan || analysis.quickTips || analysis.growthPlan || []).map((item: string, i: number) => (
                   <li key={i} className="flex gap-3 text-sm">
                     <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: primaryColor.hex }} />
                     <span className="text-gray-700">{item}</span>
