@@ -151,7 +151,7 @@ export const router = createBrowserRouter([
     element: <Layout><SharedResult /></Layout>,
   },
   {
-    path: "/leadership-assessment",
+    path: "/leadership-assessment-privatedemo",
     element: <Layout><LeadershipAssessment /></Layout>,
   },
   {
