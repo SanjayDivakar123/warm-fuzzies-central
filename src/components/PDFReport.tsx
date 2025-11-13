@@ -470,34 +470,32 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             )}
           </div>
 
-          {/* Your Group-Work Behavior */}
-          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
-            <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
-            
-            {/* How You Make Decisions */}
-            {analysis.decisionMaking && (
-              <div className="mb-4">
-                <h4 className="font-bold mb-2">How You Make Decisions</h4>
-                <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
-              </div>
-            )}
+          {/* Your Group-Work Behavior - Title */}
+          <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
 
-            {/* How You Help Your Team */}
-            {analysis.teamHelp && (
-              <div className="mb-4">
-                <h4 className="font-bold mb-2">How You Help Your Team</h4>
-                <p className="text-sm text-gray-700">{analysis.teamHelp}</p>
-              </div>
-            )}
+          {/* How You Make Decisions */}
+          {analysis.decisionMaking && (
+            <div className="mb-6 p-6 rounded-lg border page-break-avoid">
+              <h4 className="font-bold mb-2">How You Make Decisions</h4>
+              <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
+            </div>
+          )}
 
-            {/* How You Handle Problems */}
-            {analysis.problemHandling && (
-              <div>
-                <h4 className="font-bold mb-2">How You Handle Problems</h4>
-                <p className="text-sm text-gray-700">{analysis.problemHandling}</p>
-              </div>
-            )}
-          </div>
+          {/* How You Help Your Team */}
+          {analysis.teamHelp && (
+            <div className="mb-6 p-6 rounded-lg border page-break-avoid">
+              <h4 className="font-bold mb-2">How You Help Your Team</h4>
+              <p className="text-sm text-gray-700">{analysis.teamHelp}</p>
+            </div>
+          )}
+
+          {/* How You Handle Problems */}
+          {analysis.problemHandling && (
+            <div className="mb-8 p-6 rounded-lg border page-break-avoid">
+              <h4 className="font-bold mb-2">How You Handle Problems</h4>
+              <p className="text-sm text-gray-700">{analysis.problemHandling}</p>
+            </div>
+          )}
 
           {/* Mini Growth Plan - Moved to end */}
           {(analysis.miniGrowthPlan || analysis.quickTips || analysis.growthPlan) && (
