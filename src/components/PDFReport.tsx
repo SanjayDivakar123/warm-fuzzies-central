@@ -150,7 +150,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Color Profile - Condensed */}
           {analysis?.colorProfile && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginBottom: "100px" }}>
               <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>
                 Color Profile
               </h3>
