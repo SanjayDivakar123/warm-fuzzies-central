@@ -88,12 +88,20 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
         </div>
       </div>
 
-      {/* Leadership Stage */}
-      {analysis?.leadershipStage && (
+      {/* Leadership Stage - Hidden for 25Q Student, shown for others */}
+      {!is25QStudent && analysis?.leadershipStage && (
         <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
           <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>Leadership Stage</h3>
           <p className="text-2xl font-semibold mb-2">{analysis.leadershipStage}</p>
           {analysis.stageDescription && <p className="text-gray-700">{analysis.stageDescription}</p>}
+        </div>
+      )}
+
+      {/* Color Spectrum Description - Only for 25Q Student */}
+      {is25QStudent && analysis?.colorDescription && (
+        <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
+          <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Spectrum</h3>
+          <p className="text-gray-700 leading-relaxed">{analysis.colorDescription}</p>
         </div>
       )}
 
@@ -492,11 +500,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           </div>
 
           {/* Mini Growth Plan - Moved to end */}
-          {analysis.miniGrowthPlan && (
+          {(analysis.miniGrowthPlan || analysis.quickTips) && (
             <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
               <h3 className="font-bold text-2xl mb-4">Mini Growth Plan</h3>
               <ul className="space-y-3">
-                {analysis.miniGrowthPlan.map((item: string, i: number) => (
+                {(analysis.miniGrowthPlan || analysis.quickTips || []).map((item: string, i: number) => (
                   <li key={i} className="flex gap-3 text-sm">
                     <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: primaryColor.hex }} />
                     <span className="text-gray-700">{item}</span>
