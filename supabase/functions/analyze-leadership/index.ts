@@ -40,7 +40,7 @@ Tone: ${isStudent ? 'Friendly, direct, motivating for middle/high school student
     if (assessmentType === '50q-student') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-JSON fields: colorDescription (1 paragraph ONLY about ${primaryColor} and ${secondaryColor}), strengths (3-4 items), groupBehavior, communicationStyle, pressureHandling (2 sentences each), leadershipStage, stageDescription, growthPlan (5 strings), teamFitInsight (2 sentences about ${primaryColor} and ${secondaryColor} only)`;
+JSON fields: colorDescription (1 paragraph ONLY about ${primaryColor} and ${secondaryColor}), strengths (3-4 items), groupBehavior, communicationStyle, pressureHandling (2 sentences each), leadershipStage, stageDescription, growthPlan (5 strings), teamFitInsight (2 sentences about ${primaryColor} and ${secondaryColor} only), categoryInsights (object with keys: "Decision-Making", "Communication Style", "Team Dynamics", "Conflict Behavior", "Motivation Drivers", "Stress Behavior", "Collaboration", "Self-Management", each containing: explanation (1 simple sentence), schoolExample (1 sentence example from school life))`;
     } else if (assessmentType === '25q-student') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
@@ -48,7 +48,7 @@ JSON fields: colorDescription (1 paragraph ONLY about ${primaryColor} and ${seco
     } else if (assessmentType === '50q-teacher') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-JSON fields: executiveSummary (3 sentences), strengths (4 items), blindSpots (2-3 items), teamLeadership, conflictHandling, stressReactions, motivators (2 sentences each), leadershipStage, stageDescription (3 sentences), behavioralIndicators (3 items), risks (2 items), opportunities (2 items), startDoing (2 items), stopDoing (2 items), continueDoing (2 items), thirtyDayActions (3 items), teamFitInsight (2 sentences)`;
+JSON fields: executiveSummary (3 sentences), strengths (4 items), blindSpots (2-3 items), teamLeadership, conflictHandling, stressReactions, motivators (2 sentences each), leadershipStage, stageDescription (3 sentences), behavioralIndicators (3 items), risks (2 items), opportunities (2 items), startDoing (2 items), stopDoing (2 items), continueDoing (2 items), thirtyDayActions (3 items), teamFitInsight (2 sentences), categoryInsights (object with keys: "Decision-Making", "Communication Style", "Team Dynamics", "Conflict Behavior", "Motivation Drivers", "Stress Behavior", "Collaboration", "Self-Management", each containing: interpretation (2 sentences), classroomExample (1 sentence), strength (1 sentence), watchOut (1 sentence))`;
     } else {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 

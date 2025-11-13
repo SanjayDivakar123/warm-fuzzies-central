@@ -105,9 +105,20 @@ const StudentReport50Q = ({ results, analysis, isLoading }: any) => (
       <CardHeader><CardTitle className="text-2xl">Category Breakdown</CardTitle></CardHeader>
       <CardContent className="space-y-6">
         {Object.entries(results.categoryScores).map(([cat, score]: [string, any]) => (
-          <div key={cat}>
-            <div className="flex justify-between mb-2"><h4 className="font-semibold">{cat}</h4><span className="text-sm text-muted-foreground">{score}/100</span></div>
+          <div key={cat} className="space-y-2">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold">{cat}</h4>
+              <span className="text-sm text-muted-foreground">{score}/100</span>
+            </div>
             <Progress value={score} className="h-2" />
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mt-2" />
+            ) : analysis?.categoryInsights?.[cat] && (
+              <div className="mt-3 space-y-2 text-sm">
+                <p className="text-muted-foreground">{analysis.categoryInsights[cat].explanation}</p>
+                <p className="text-muted-foreground italic">Example: {analysis.categoryInsights[cat].schoolExample}</p>
+              </div>
+            )}
           </div>
         ))}
       </CardContent>
