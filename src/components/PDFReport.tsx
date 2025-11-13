@@ -559,6 +559,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             }}
           />
 
+          {/* PAGE BREAK - Force "Your Group-Work Behavior" to start on page 2 */}
+          <div className="page-break-before"></div>
+
           {/* Your Group-Work Behavior - Title */}
           <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
 
