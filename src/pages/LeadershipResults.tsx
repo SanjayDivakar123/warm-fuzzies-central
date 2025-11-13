@@ -667,10 +667,10 @@ const LeadershipResults = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
+      <div className="fixed top-4 right-4 z-50">
+        <Button variant="ghost" onClick={() => navigate("/leadership-assessment-privatedemo")} className="gap-2"><Home className="h-4 w-4" />Back to Assessments</Button>
+      </div>
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-6">
-          <Button variant="ghost" onClick={() => navigate("/leadership-assessment-privatedemo")} className="gap-2"><Home className="h-4 w-4" />Back to Assessments</Button>
-        </div>
         <div ref={reportRef}>
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="gradient-text-primary">{getTitle()} Report</span></h1>
