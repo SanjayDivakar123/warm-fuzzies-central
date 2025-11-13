@@ -588,7 +588,8 @@ const LeadershipResults = () => {
           console.error('AI error:', error);
           toast({ title: "Analysis incomplete", description: "Results calculated but couldn't generate insights.", variant: "default" });
         } else if (data) {
-          setAnalysis(data);
+          // Edge function returns an array, extract the first element
+          setAnalysis(Array.isArray(data) ? data[0] : data);
         }
       } catch (error) {
         console.error('Error:', error);
