@@ -64,10 +64,11 @@ JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), co
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: systemPrompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no additional text. Ensure all JSON arrays and objects are properly formatted with no trailing commas.' },
           { role: 'user', content: userPrompt }
         ],
-        response_format: { type: 'json_object' }
+        response_format: { type: 'json_object' },
+        temperature: 0.7
       }),
     });
 
@@ -92,6 +93,8 @@ JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), co
     const data = await response.json();
     const content = data.choices[0].message.content;
     
+    console.log('Raw AI response:', content);
+    
     // Strip markdown code blocks if present
     let cleanContent = content.trim();
     if (cleanContent.startsWith('```json')) {
@@ -100,7 +103,19 @@ JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), co
       cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
     
-    const analysis = JSON.parse(cleanContent);
+    // Additional cleaning: remove any trailing commas before closing braces/brackets
+    cleanContent = cleanContent.replace(/,(\s*[}\]])/g, '$1');
+    
+    console.log('Cleaned content:', cleanContent);
+    
+    let analysis;
+    try {
+      analysis = JSON.parse(cleanContent);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Content that failed to parse:', cleanContent);
+      throw new Error(`Failed to parse AI response: ${parseError.message}`);
+    }
     
     // Ensure arrays are arrays of strings
     const ensureStringArray = (arr: any) => {
