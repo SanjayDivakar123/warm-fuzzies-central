@@ -1329,6 +1329,37 @@ const LeadershipAssessment = () => {
   const questions = randomizedQuestions.length > 0 ? randomizedQuestions : getBaseQuestions();
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
+  // Keyboard navigation: 1-4 to select, Enter to submit
+  useEffect(() => {
+    if (!assessmentType) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const currentOptions = questions[currentQuestion]?.options;
+      if (!currentOptions) return;
+
+      // Number keys 1-4 to select answers
+      if (e.key >= '1' && e.key <= '4') {
+        const index = parseInt(e.key) - 1;
+        if (index < currentOptions.length) {
+          handleAnswer(currentOptions[index].value);
+        }
+      }
+
+      // Enter key to go to next question or submit
+      if (e.key === 'Enter' && answers[currentQuestion]) {
+        e.preventDefault();
+        if (currentQuestion === questions.length - 1) {
+          handleSubmit();
+        } else {
+          handleNext();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [assessmentType, currentQuestion, answers, questions]);
+
   // Type selection screen
   if (!assessmentType) {
     return (
