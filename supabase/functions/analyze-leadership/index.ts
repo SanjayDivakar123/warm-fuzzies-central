@@ -30,36 +30,28 @@ RCF Leadership Colors:
 - Yellow: Action-oriented leaders who drive execution and results
 - Green: Analytical and structured leaders who solve problems logically
 
-Leadership Stages (Tuckman's Stages):
-- Forming → Yellow (action and structure)
-- Storming → Red (vision and motivation)
-- Norming → Blue (creativity and innovation)
-- Performing → Green (analysis and optimization)
-- Adapting → Adaptive Leader (blend of colors)
-
 Tone: ${isStudent ? 'Friendly, direct, motivating for middle/high school students' : 'Professional but human for educators'}`;
 
-    const userPrompt = `Generate content for a ${assessmentType} leadership assessment report.
+    // Generate specific content based on assessment type
+    let userPrompt = '';
+    
+    if (assessmentType === '50q-student') {
+      userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-Primary Color: ${primaryColor}
-Secondary Color: ${secondaryColor}
-Color Scores: Yellow=${colorScores.Yellow}/100, Red=${colorScores.Red}/100, Green=${colorScores.Green}/100, Blue=${colorScores.Blue}/100
+JSON fields: colorDescription (1 paragraph), strengths (3-4 items), groupBehavior, communicationStyle, pressureHandling (2 sentences each), leadershipStage, stageDescription, growthPlan (5 strings), teamFitInsight (2 sentences)`;
+    } else if (assessmentType === '25q-student') {
+      userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-Generate a JSON response with these exact fields:
-1. profileSummary: ${isStudent ? '2-3 paragraphs explaining their leadership style in group work, written in a friendly and motivating tone' : '2-3 paragraphs analyzing their professional leadership style, written in a professional but human tone'}
-2. leadershipStage: Based on their primary color, determine the stage:
-   - Yellow (highest score) = "Forming Stage - The Executor"
-   - Red (highest score) = "Storming Stage - The Motivator"  
-   - Blue (highest score) = "Norming Stage - The Innovator"
-   - Green (highest score) = "Performing Stage - The Analyst"
-   - Balanced scores (within 15% of each other) = "Adapting Stage - The Adaptive Leader"
-3. stageDescription: 2-3 sentences about their current stage and what it means
-4. growthPlan: Array of exactly ${is50Question ? '5' : '3'} strings (NOT objects). Each string should be a complete actionable item focused on ${isStudent ? 'school, clubs, sports, and group projects' : 'classroom leadership, school culture, and professional development'}. Example: ["Try leading one small group activity this week", "Practice active listening in team discussions"]
-5. teamFitInsight: 2 sentences about their collaboration strengths and how they work with others
+JSON fields: colorDescription (1 paragraph), strengths (3 items), growthAreas (2 items), decisionMaking, teamHelp, problemHandling (1 paragraph each), leadershipStage, growthPlan (3 strings starting with "One thing to try:", "One habit to build:", "One thing to avoid:")`;
+    } else if (assessmentType === '50q-teacher') {
+      userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-CRITICAL: The growthPlan MUST be an array of strings, not objects. Each item should be a complete sentence starting with an action verb.
+JSON fields: executiveSummary (3 sentences), strengths (4 items), blindSpots (2-3 items), teamLeadership, conflictHandling, stressReactions, motivators (2 sentences each), leadershipStage, stageDescription (3 sentences), behavioralIndicators (3 items), risks (2 items), opportunities (2 items), startDoing (2 items), stopDoing (2 items), continueDoing (2 items), thirtyDayActions (3 items), teamFitInsight (2 sentences)`;
+    } else {
+      userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-Keep language ${isStudent ? 'energizing, relatable, and age-appropriate for middle/high school students' : 'professional, insightful, and relevant for educators'}.`;
+JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), colorProfile (1 paragraph), leadershipStage, stageDescription (2 sentences), growthPlan (4 strings), teamFitInsight (2 sentences)`;
+    }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -79,13 +71,13 @@ Keep language ${isStudent ? 'energizing, relatable, and age-appropriate for midd
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded.' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }), {
+        return new Response(JSON.stringify({ error: 'Payment required.' }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -108,17 +100,21 @@ Keep language ${isStudent ? 'energizing, relatable, and age-appropriate for midd
     
     const analysis = JSON.parse(cleanContent);
     
-    // Ensure growthPlan is an array of strings
-    if (analysis.growthPlan && Array.isArray(analysis.growthPlan)) {
-      analysis.growthPlan = analysis.growthPlan.map((item: any) => {
+    // Ensure arrays are arrays of strings
+    const ensureStringArray = (arr: any) => {
+      if (!Array.isArray(arr)) return [];
+      return arr.map((item: any) => {
         if (typeof item === 'string') return item;
         if (typeof item === 'object' && item !== null) {
-          // Extract string value from object if needed
           return item.item || item.text || item.action || JSON.stringify(item);
         }
         return String(item);
       });
-    }
+    };
+
+    if (analysis.growthPlan) analysis.growthPlan = ensureStringArray(analysis.growthPlan);
+    if (analysis.strengths) analysis.strengths = ensureStringArray(analysis.strengths);
+    if (analysis.growthAreas) analysis.growthAreas = ensureStringArray(analysis.growthAreas);
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
