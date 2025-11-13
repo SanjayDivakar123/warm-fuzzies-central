@@ -30,6 +30,8 @@ RCF Leadership Colors:
 - Yellow: Action-oriented leaders who drive execution and results
 - Green: Analytical and structured leaders who solve problems logically
 
+CRITICAL RULE: Only discuss the PRIMARY and SECONDARY colors in your analysis. NEVER mention other colors beyond these two.
+
 Tone: ${isStudent ? 'Friendly, direct, motivating for middle/high school students' : 'Professional but human for educators'}`;
 
     // Generate specific content based on assessment type
@@ -38,11 +40,11 @@ Tone: ${isStudent ? 'Friendly, direct, motivating for middle/high school student
     if (assessmentType === '50q-student') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-JSON fields: colorDescription (1 paragraph), strengths (3-4 items), groupBehavior, communicationStyle, pressureHandling (2 sentences each), leadershipStage, stageDescription, growthPlan (5 strings), teamFitInsight (2 sentences)`;
+JSON fields: colorDescription (1 paragraph ONLY about ${primaryColor} and ${secondaryColor}), strengths (3-4 items), groupBehavior, communicationStyle, pressureHandling (2 sentences each), leadershipStage, stageDescription, growthPlan (5 strings), teamFitInsight (2 sentences about ${primaryColor} and ${secondaryColor} only)`;
     } else if (assessmentType === '25q-student') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-JSON fields: colorDescription (1 paragraph), strengths (3 items), growthAreas (2 items), decisionMaking, teamHelp, problemHandling (1 paragraph each), leadershipStage, growthPlan (3 strings starting with "One thing to try:", "One habit to build:", "One thing to avoid:")`;
+JSON fields: colorDescription (1 paragraph ONLY about ${primaryColor} and ${secondaryColor}), strengths (3 items), growthAreas (2 items), decisionMaking, teamHelp, problemHandling (1 paragraph each), leadershipStage, growthPlan (3 strings starting with "One thing to try:", "One habit to build:", "One thing to avoid:")`;
     } else if (assessmentType === '50q-teacher') {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
