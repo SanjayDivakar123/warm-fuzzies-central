@@ -150,7 +150,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Color Profile - Condensed */}
           {analysis?.colorProfile && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginBottom: "100px" }}>
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginBottom: "150px" }}>
               <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>
                 Color Profile
               </h3>
@@ -324,7 +324,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           </div>
 
           {/* 30-Day Action Plan */}
-          <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}10` }}>
+          <div
+            className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
+            style={{ backgroundColor: `${primaryColor.hex}10` }}
+          >
             <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
               30-Day Action Plan
             </h3>
@@ -340,10 +343,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500 text-sm italic">Action plan items will appear here based on your assessment results.</p>
+              <p className="text-gray-500 text-sm italic">
+                Action plan items will appear here based on your assessment results.
+              </p>
             )}
           </div>
-
 
           {/* Team Fit & Collaboration */}
           {analysis.teamFit && (
