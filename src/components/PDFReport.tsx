@@ -418,7 +418,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {analysis.leadershipStage && (
             <div
               className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
-              style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: "25px", marginTop: "50px" }}
+              style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: "25px", marginTop: "150px" }}
             >
               <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
                 Your Leadership Stage
