@@ -30,6 +30,8 @@ import { Footer } from "@/components/Footer";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
 import SharedResult from "@/pages/SharedResult";
+import LeadershipAssessment from "@/pages/LeadershipAssessment";
+import LeadershipResults from "@/pages/LeadershipResults";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -147,6 +149,14 @@ export const router = createBrowserRouter([
   {
     path: "/result/:code",
     element: <Layout><SharedResult /></Layout>,
+  },
+  {
+    path: "/leadership-assessment",
+    element: <Layout><LeadershipAssessment /></Layout>,
+  },
+  {
+    path: "/leadership-results/:type",
+    element: <Layout><LeadershipResults /></Layout>,
   },
   {
     path: "*",
