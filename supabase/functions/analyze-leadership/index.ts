@@ -90,7 +90,16 @@ Keep language ${isStudent ? 'energizing and relatable' : 'professional and insig
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    const analysis = JSON.parse(content);
+    
+    // Strip markdown code blocks if present
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    const analysis = JSON.parse(cleanContent);
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
