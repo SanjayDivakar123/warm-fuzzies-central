@@ -429,6 +429,36 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
               </ul>
             </div>
           )}
+
+          {/* Color Profile - Condensed */}
+          {analysis.colorProfile && (
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+              <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>Color Profile</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">{analysis.colorProfile}</p>
+            </div>
+          )}
+
+          {/* Category Breakdown */}
+          {analysis.condensedCategories && (
+            <div className="mb-8 page-break-avoid section-spacing">
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
+              <div className="space-y-4">
+                {["Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style"].map((category) => {
+                  const categoryData = analysis.condensedCategories[category];
+                  if (!categoryData) return null;
+                  return (
+                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-bold text-lg">{category}</h4>
+                        <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">{categoryData.interpretation}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       )}
 
