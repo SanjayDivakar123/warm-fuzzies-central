@@ -154,6 +154,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
               <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>
                 Color Profile
               </h3>
+              <div className="flex gap-0 h-1 my-3">
+                <div className="flex-1" style={{ backgroundColor: primaryColor.hex }}></div>
+                <div className="flex-1" style={{ backgroundColor: secondaryColor.hex }}></div>
+              </div>
               <p className="text-gray-700 text-sm leading-relaxed">{analysis.colorProfile}</p>
             </div>
           )}
