@@ -64,7 +64,7 @@ const LeadershipAssessment = () => {
 
           <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
-              <span className="gradient-text-primary">RCF Teacher/Student Leadership</span> Color Assessment
+              <span className="gradient-text-primary">RCF Leadership</span> Color Assessment
             </h1>
             <p className="text-xl text-muted-foreground">Select your assessment type to begin</p>
           </div>
