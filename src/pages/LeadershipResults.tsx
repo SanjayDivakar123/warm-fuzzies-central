@@ -16,31 +16,25 @@ const COLOR_INFO = {
   Blue: { bg: "bg-blue-500", name: "Blue - The Creator" }
 };
 
-const ColorSpectrum = ({ position, colorScores }: { position: number; colorScores: Record<string, number> }) => {
-  // Create gradient stops based on color scores
-  const red = colorScores.Red || 0;
-  const yellow = colorScores.Yellow || 0;
-  const green = colorScores.Green || 0;
-  const blue = colorScores.Blue || 0;
+const ColorSpectrum = ({ position, primaryColor, secondaryColor }: { position: number; primaryColor: string; secondaryColor: string }) => {
+  // Order colors based on primary and secondary
+  const colorOrder = [primaryColor, secondaryColor];
+  const allColors = ['Red', 'Yellow', 'Green', 'Blue'];
+  const remainingColors = allColors.filter(c => !colorOrder.includes(c));
+  const orderedColors = [...colorOrder, ...remainingColors];
   
-  // Normalize scores to create gradient
-  const total = red + yellow + green + blue;
-  const redPct = (red / total) * 100;
-  const yellowPct = ((red + yellow) / total) * 100;
-  const greenPct = ((red + yellow + green) / total) * 100;
+  const colorMap: Record<string, string> = {
+    'Red': 'bg-red-500',
+    'Yellow': 'bg-yellow-500',
+    'Green': 'bg-green-500',
+    'Blue': 'bg-blue-500'
+  };
   
   return (
-    <div className="relative h-8 rounded-full overflow-hidden" style={{
-      background: `linear-gradient(to right, 
-        rgb(239, 68, 68) 0%, 
-        rgb(239, 68, 68) ${redPct}%, 
-        rgb(234, 179, 8) ${redPct}%, 
-        rgb(234, 179, 8) ${yellowPct}%, 
-        rgb(34, 197, 94) ${yellowPct}%, 
-        rgb(34, 197, 94) ${greenPct}%, 
-        rgb(59, 130, 246) ${greenPct}%, 
-        rgb(59, 130, 246) 100%)`
-    }}>
+    <div className="relative h-8 rounded-full overflow-hidden flex">
+      {orderedColors.map((color) => (
+        <div key={color} className={`flex-1 ${colorMap[color]}`} />
+      ))}
       <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg" style={{ left: `${position}%` }} />
     </div>
   );
@@ -73,7 +67,7 @@ const StudentReport50Q = ({ results, analysis, isLoading }: any) => (
         </div>
         <div>
           <h3 className="font-semibold mb-3">Leadership Spectrum</h3>
-          <ColorSpectrum position={results.spectrumPosition} colorScores={results.colorScores} />
+          <ColorSpectrum position={results.spectrumPosition} primaryColor={results.primaryColor} secondaryColor={results.secondaryColor} />
         </div>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis && (
           <>
@@ -169,9 +163,9 @@ const StudentReport25Q = ({ results, analysis, isLoading }: any) => (
             </div>
           </div>
         </div>
-        <div><h3 className="font-semibold mb-3">Leadership Spectrum</h3><ColorSpectrum position={results.spectrumPosition} colorScores={results.colorScores} /></div>
+        <div><h3 className="font-semibold mb-3">Leadership Spectrum</h3><ColorSpectrum position={results.spectrumPosition} primaryColor={results.primaryColor} secondaryColor={results.secondaryColor} /></div>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis && (
-          <><Badge className="text-lg py-2 px-4">{analysis.leadershipStage}</Badge><p className="text-muted-foreground">{analysis.colorDescription}</p></>
+          <p className="text-muted-foreground">{analysis.colorDescription}</p>
         )}
       </CardContent>
     </Card>
