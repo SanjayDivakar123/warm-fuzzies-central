@@ -567,7 +567,7 @@ const LeadershipResults = () => {
         const { answers } = location.state || {};
         if (!answers || !type) {
           toast({ title: "No assessment data", description: "Please complete an assessment first.", variant: "destructive" });
-          navigate("/leadership-assessment");
+          navigate("/leadership-assessment-privatedemo");
           return;
         }
 
@@ -669,7 +669,7 @@ const LeadershipResults = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-end mb-6">
-          <Button variant="ghost" onClick={() => navigate("/leadership-assessment")} className="gap-2"><Home className="h-4 w-4" />Back to Assessments</Button>
+          <Button variant="ghost" onClick={() => navigate("/leadership-assessment-privatedemo")} className="gap-2"><Home className="h-4 w-4" />Back to Assessments</Button>
         </div>
         <div ref={reportRef}>
           <div className="text-center mb-12">
