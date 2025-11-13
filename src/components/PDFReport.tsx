@@ -356,7 +356,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
               <div className="inline-block px-4 py-2 rounded-full mb-3" style={{ backgroundColor: primaryColor.hex }}>
                 <span className="text-white font-bold">{analysis.leadershipStage}</span>
               </div>
-              <p className="text-gray-700">{analysis.stageDescription}</p>
+              <p className="text-gray-700" style={{ minHeight: '3em', lineHeight: '1.5em' }}>{analysis.stageDescription}</p>
             </div>
           )}
 
