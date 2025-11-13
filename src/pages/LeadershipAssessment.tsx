@@ -785,7 +785,7 @@ const LeadershipAssessment = () => {
             </Card>
 
             <Card
-              className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
+              className="cursor-pointer hover:border-primary transition-all hover:shadow-lg student-assessment-card"
               onClick={() => handleSelectType("50q-student")}
             >
               <CardHeader>
@@ -811,7 +811,7 @@ const LeadershipAssessment = () => {
             </Card>
 
             <Card
-              className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
+              className="cursor-pointer hover:border-primary transition-all hover:shadow-lg student-assessment-card"
               onClick={() => handleSelectType("25q-student")}
             >
               <CardHeader>
