@@ -438,9 +438,9 @@ const TeacherReport50Q = ({ results, analysis, isLoading }: any) => (
 
 const TeacherReport25Q = ({ results, analysis, isLoading }: any) => (
   <div className="space-y-8">
-    {/* Summary */}
+    {/* SECTION 1 - Summary */}
     <Card>
-      <CardHeader><CardTitle className="text-3xl">Professional Leadership Summary</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-3xl">Leadership Summary</CardTitle></CardHeader>
       <CardContent className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -467,24 +467,24 @@ const TeacherReport25Q = ({ results, analysis, isLoading }: any) => (
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis && (
           <>
             {analysis.leadershipStage && (
-              <div className="bg-primary/10 p-4 rounded-lg">
-                <h4 className="font-bold mb-1">Current Stage: {analysis.leadershipStage}</h4>
-                <p className="text-muted-foreground text-sm">{analysis.stageDescription}</p>
+              <div className="bg-primary/10 p-4 rounded-lg mb-4">
+                <h4 className="font-bold mb-1">Stage</h4>
+                <p className="text-lg font-semibold">{analysis.leadershipStage}</p>
               </div>
             )}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold mb-3 text-emerald-600">Strengths</h4>
+                <h4 className="font-semibold mb-3 text-emerald-600">3 Strengths</h4>
                 <ul className="space-y-2">
-                  {analysis.strengths?.map((s: string, i: number) => (
+                  {analysis.strengths?.slice(0, 3).map((s: string, i: number) => (
                     <li key={i} className="flex gap-2"><span className="text-emerald-600">✓</span><span className="text-sm">{s}</span></li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-3 text-amber-600">Watch-Outs</h4>
+                <h4 className="font-semibold mb-3 text-amber-600">3 Watch-Outs</h4>
                 <ul className="space-y-2">
-                  {analysis.watchOuts?.map((w: string, i: number) => (
+                  {analysis.watchOuts?.slice(0, 3).map((w: string, i: number) => (
                     <li key={i} className="flex gap-2"><span className="text-amber-600">⚠</span><span className="text-sm">{w}</span></li>
                   ))}
                 </ul>
@@ -495,9 +495,9 @@ const TeacherReport25Q = ({ results, analysis, isLoading }: any) => (
       </CardContent>
     </Card>
 
-    {/* Color Profile Short */}
+    {/* SECTION 2 - Color Profile (Short Form) */}
     <Card>
-      <CardHeader><CardTitle className="text-2xl">Your Color Profile</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-2xl">Color Profile</CardTitle></CardHeader>
       <CardContent>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis?.colorProfile && (
           <p className="text-muted-foreground leading-relaxed">{analysis.colorProfile}</p>
@@ -505,40 +505,41 @@ const TeacherReport25Q = ({ results, analysis, isLoading }: any) => (
       </CardContent>
     </Card>
 
-    {/* Growth Plan */}
+    {/* SECTION 3 - Category Breakdown (Condensed) */}
+    <Card>
+      <CardHeader><CardTitle className="text-2xl">Category Breakdown</CardTitle></CardHeader>
+      <CardContent className="space-y-6">
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis?.condensedCategories && 
+          ['Communication', 'Decision-Making', 'Conflict', 'Team Behavior', 'Stress Style'].map((category) => {
+            const categoryData = analysis.condensedCategories[category];
+            if (!categoryData) return null;
+            return (
+              <div key={category} className="border-l-4 border-primary/30 pl-4">
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-semibold text-lg">{category}</h4>
+                  <Badge variant="outline">{categoryData.score}/100</Badge>
+                </div>
+                <p className="text-muted-foreground">{categoryData.interpretation}</p>
+              </div>
+            );
+          })
+        }
+      </CardContent>
+    </Card>
+
+    {/* SECTION 4 - Growth Plan */}
     <Card>
       <CardHeader><CardTitle className="text-2xl">Growth Plan</CardTitle></CardHeader>
       <CardContent>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis?.growthPlan && (
           <ul className="space-y-3">
-            {analysis.growthPlan.map((item: string, i: number) => (
+            {analysis.growthPlan.slice(0, 4).map((item: string, i: number) => (
               <li key={i} className="flex gap-3">
                 <span className="text-primary font-bold">{i + 1}.</span>
                 <span>{item}</span>
               </li>
             ))}
           </ul>
-        )}
-      </CardContent>
-    </Card>
-
-    {/* Team Fit */}
-    <Card>
-      <CardHeader><CardTitle className="text-2xl">Team Fit</CardTitle></CardHeader>
-      <CardContent>
-        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis?.teamFitInsight && (
-          <div>
-            <p className="text-muted-foreground mb-4">{analysis.teamFitInsight}</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(results.colorScores).map(([color, score]: [string, any]) => (
-                <div key={color} className="text-center p-4 rounded-lg bg-muted/30">
-                  <div className={`w-16 h-16 rounded-full ${COLOR_INFO[color as keyof typeof COLOR_INFO].bg} mx-auto mb-2`} />
-                  <p className="font-semibold">{color}</p>
-                  <p className="text-2xl font-bold">{score}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
       </CardContent>
     </Card>
