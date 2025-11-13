@@ -343,14 +343,36 @@ const PLACEHOLDER_QUESTIONS: Question[] = [
   ]},
 ];
 
+// Shuffle array utility function
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// Randomize question options while preserving color mapping
+const randomizeQuestionOptions = (questions: Question[]): Question[] => {
+  return questions.map(q => ({
+    ...q,
+    options: shuffleArray(q.options)
+  }));
+};
+
 const LeadershipAssessment = () => {
   const navigate = useNavigate();
   const [assessmentType, setAssessmentType] = useState<AssessmentType | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [randomizedQuestions, setRandomizedQuestions] = useState<Question[]>([]);
 
   const handleSelectType = (type: AssessmentType) => {
     setAssessmentType(type);
+    // Randomize options when starting the assessment
+    const baseQuestions = type === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS;
+    setRandomizedQuestions(randomizeQuestionOptions(baseQuestions));
   };
 
   const handleAnswer = (value: string) => {
@@ -358,7 +380,7 @@ const LeadershipAssessment = () => {
   };
 
   const handleNext = () => {
-    if (currentQuestion < PLACEHOLDER_QUESTIONS.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -376,7 +398,7 @@ const LeadershipAssessment = () => {
     });
   };
 
-  const questions = assessmentType === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS;
+  const questions = randomizedQuestions.length > 0 ? randomizedQuestions : (assessmentType === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS);
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   // Type selection screen
