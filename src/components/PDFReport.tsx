@@ -519,7 +519,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Strength Snapshot */}
           <div
             className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing"
-            style={{ marginBottom: "200px" }}
+            style={{ marginBottom: "225px" }}
           >
             <h3 className="font-bold text-2xl mb-4">Strength Snapshot</h3>
 
