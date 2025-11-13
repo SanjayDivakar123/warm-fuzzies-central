@@ -324,11 +324,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           </div>
 
           {/* 30-Day Action Plan */}
-          {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || analysis.miniGrowthPlan) && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}10` }}>
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
-                30-Day Action Plan
-              </h3>
+          <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}10` }}>
+            <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+              30-Day Action Plan
+            </h3>
+            {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || analysis.miniGrowthPlan) ? (
               <ul className="space-y-3">
                 {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || analysis.miniGrowthPlan || []).map(
                   (item: string, i: number) => (
@@ -342,8 +342,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                   ),
                 )}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-500 text-sm italic">Action plan items will appear here based on your assessment results.</p>
+            )}
+          </div>
+
 
           {/* Team Fit & Collaboration */}
           {analysis.teamFit && (
