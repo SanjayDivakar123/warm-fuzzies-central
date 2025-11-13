@@ -52,7 +52,7 @@ JSON fields: executiveSummary (3 sentences), strengths (4 items), blindSpots (2-
     } else {
       userPrompt = `Primary: ${primaryColor}, Secondary: ${secondaryColor}, Scores: Y=${colorScores.Yellow}, R=${colorScores.Red}, G=${colorScores.Green}, B=${colorScores.Blue}
 
-JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), colorProfile (1 paragraph), leadershipStage, stageDescription (2 sentences), growthPlan (4 strings), teamFitInsight (2 sentences)`;
+JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), colorProfile (1 paragraph), leadershipStage, stageDescription (2 sentences), condensedCategories (object with keys: "Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style", each containing: score (number 0-100 based on color pattern), interpretation (1 paragraph school-context specific)), growthPlan (4 strings school-context specific)`;
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
