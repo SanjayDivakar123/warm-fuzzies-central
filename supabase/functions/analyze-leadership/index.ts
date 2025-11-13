@@ -45,14 +45,21 @@ Primary Color: ${primaryColor}
 Secondary Color: ${secondaryColor}
 Color Scores: Yellow=${colorScores.Yellow}/100, Red=${colorScores.Red}/100, Green=${colorScores.Green}/100, Blue=${colorScores.Blue}/100
 
-Generate a JSON response with:
-1. profileSummary: ${isStudent ? '2-3 paragraphs explaining their leadership style in group work' : '2-3 paragraphs analyzing their professional leadership style'}
-2. leadershipStage: One of [Starting Leader, Developing Leader, Confident Leader, Collaborative Leader, Adaptive Leader]
-3. stageDescription: 2 sentences about their current stage
-4. growthPlan: Array of ${is50Question ? '5' : '3'} actionable items focused on ${isStudent ? 'school, clubs, sports, group projects' : 'classroom, school leadership, professional development'}
-5. teamFitInsight: 2 sentences about collaboration strengths
+Generate a JSON response with these exact fields:
+1. profileSummary: ${isStudent ? '2-3 paragraphs explaining their leadership style in group work, written in a friendly and motivating tone' : '2-3 paragraphs analyzing their professional leadership style, written in a professional but human tone'}
+2. leadershipStage: Based on their primary color, determine the stage:
+   - Yellow (highest score) = "Forming Stage - The Executor"
+   - Red (highest score) = "Storming Stage - The Motivator"  
+   - Blue (highest score) = "Norming Stage - The Innovator"
+   - Green (highest score) = "Performing Stage - The Analyst"
+   - Balanced scores (within 15% of each other) = "Adapting Stage - The Adaptive Leader"
+3. stageDescription: 2-3 sentences about their current stage and what it means
+4. growthPlan: Array of exactly ${is50Question ? '5' : '3'} strings (NOT objects). Each string should be a complete actionable item focused on ${isStudent ? 'school, clubs, sports, and group projects' : 'classroom leadership, school culture, and professional development'}. Example: ["Try leading one small group activity this week", "Practice active listening in team discussions"]
+5. teamFitInsight: 2 sentences about their collaboration strengths and how they work with others
 
-Keep language ${isStudent ? 'energizing and relatable' : 'professional and insightful'}.`;
+CRITICAL: The growthPlan MUST be an array of strings, not objects. Each item should be a complete sentence starting with an action verb.
+
+Keep language ${isStudent ? 'energizing, relatable, and age-appropriate for middle/high school students' : 'professional, insightful, and relevant for educators'}.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -100,6 +107,18 @@ Keep language ${isStudent ? 'energizing and relatable' : 'professional and insig
     }
     
     const analysis = JSON.parse(cleanContent);
+    
+    // Ensure growthPlan is an array of strings
+    if (analysis.growthPlan && Array.isArray(analysis.growthPlan)) {
+      analysis.growthPlan = analysis.growthPlan.map((item: any) => {
+        if (typeof item === 'string') return item;
+        if (typeof item === 'object' && item !== null) {
+          // Extract string value from object if needed
+          return item.item || item.text || item.action || JSON.stringify(item);
+        }
+        return String(item);
+      });
+    }
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

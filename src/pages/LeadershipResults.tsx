@@ -441,10 +441,13 @@ const LeadershipResults = () => {
           return;
         }
 
+        // Determine total questions based on assessment type
+        const totalQuestions = type?.includes('25q') ? 25 : 50;
+
         // Build color mapping from answers (value -> color)
         const questionColors: Record<number, Record<string, "Yellow" | "Red" | "Green" | "Blue">> = {};
         
-        // For 50q-student, map from the actual questions
+        // For all assessments, map from the actual questions
         // The answers store option values which map to colors
         Object.keys(answers).forEach((qId) => {
           const id = parseInt(qId);
@@ -457,7 +460,7 @@ const LeadershipResults = () => {
           };
         });
 
-        const calculatedResults = calculateResults(answers, questionColors);
+        const calculatedResults = calculateResults(answers, questionColors, totalQuestions);
         setResults(calculatedResults);
 
         // Call AI analysis
