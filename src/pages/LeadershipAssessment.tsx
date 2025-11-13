@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Home } from "lucide-react";
+import { ArrowLeft, ArrowRight, Home, Lock } from "lucide-react";
 
 type AssessmentType = "50q-teacher" | "50q-student" | "25q-teacher" | "25q-student";
 
@@ -691,10 +691,80 @@ const randomizeQuestionOptions = (questions: Question[]): Question[] => {
 
 const LeadershipAssessment = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [assessmentType, setAssessmentType] = useState<AssessmentType | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [randomizedQuestions, setRandomizedQuestions] = useState<Question[]>([]);
+
+  // Access control - change this code to your own secret
+  const ACCESS_CODE = "demo2024";
+  const SESSION_KEY = "leadership_demo_access";
+
+  useEffect(() => {
+    // Check if access is already granted in session
+    const sessionAccess = sessionStorage.getItem(SESSION_KEY);
+    
+    if (sessionAccess === "granted") {
+      setHasAccess(true);
+      setIsCheckingAccess(false);
+      return;
+    }
+
+    // Check URL parameter
+    const accessParam = searchParams.get("access");
+    
+    if (accessParam === ACCESS_CODE) {
+      sessionStorage.setItem(SESSION_KEY, "granted");
+      setHasAccess(true);
+    } else {
+      setHasAccess(false);
+    }
+    
+    setIsCheckingAccess(false);
+  }, [searchParams]);
+
+  // Show loading state while checking access
+  if (isCheckingAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if no valid code
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-2xl">Access Required</CardTitle>
+            <CardDescription>
+              This assessment is private and requires an access link.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground mb-6">
+              Please request the access link from your administrator to continue.
+            </p>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <Home className="h-4 w-4 mr-2" />
+              Return Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSelectType = (type: AssessmentType) => {
     setAssessmentType(type);
