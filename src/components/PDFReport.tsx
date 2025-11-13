@@ -40,7 +40,8 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       <div 
         className="rounded-lg p-8 mb-8 text-center"
         style={{
-          background: `linear-gradient(135deg, ${primaryColor.hex} 0%, ${secondaryColor.hex} 100%)`
+          background: `linear-gradient(135deg, ${primaryColor.hex} 0%, ${secondaryColor.hex} 100%)`,
+          breakInside: 'avoid'
         }}
       >
         <h1 className="text-4xl font-bold text-white mb-2">{getTitle()}</h1>
@@ -48,7 +49,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       </div>
 
       {/* Primary and Secondary Colors */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-8" style={{ breakInside: 'avoid' }}>
         <div className="text-center p-6 rounded-lg border-2" style={{ borderColor: primaryColor.hex }}>
           <div 
             className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
@@ -73,7 +74,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
       {/* Leadership Stage */}
       {analysis?.leadershipStage && (
-        <div className="mb-8 p-6 rounded-lg" style={{ backgroundColor: `${primaryColor.hex}15` }}>
+        <div className="mb-8 p-6 rounded-lg" style={{ backgroundColor: `${primaryColor.hex}15`, breakInside: 'avoid' }}>
           <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>Leadership Stage</h3>
           <p className="text-2xl font-semibold mb-2">{analysis.leadershipStage}</p>
           {analysis.stageDescription && <p className="text-gray-700">{analysis.stageDescription}</p>}
@@ -84,7 +85,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {is25QTeacher && (
         <>
           {/* Strengths and Watch-Outs */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 gap-6 mb-8" style={{ breakInside: 'avoid' }}>
             <div className="p-6 rounded-lg border-2 border-emerald-500">
               <h3 className="font-bold text-xl mb-4 text-emerald-700">Strengths</h3>
               <ul className="space-y-2">
@@ -111,7 +112,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Color Profile */}
           {analysis?.colorProfile && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50">
+            <div className="mb-8 p-6 rounded-lg bg-gray-50" style={{ breakInside: 'avoid' }}>
               <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>Color Profile</h3>
               <p className="text-gray-700 leading-relaxed">{analysis.colorProfile}</p>
             </div>
@@ -126,7 +127,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                   const categoryData = analysis.condensedCategories[category];
                   if (!categoryData) return null;
                   return (
-                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4" style={{ borderLeftColor: primaryColor.hex }}>
+                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4" style={{ borderLeftColor: primaryColor.hex, breakInside: 'avoid' }}>
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-bold text-lg">{category}</h4>
                         <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
@@ -141,7 +142,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Growth Plan */}
           {analysis?.growthPlan && (
-            <div className="p-6 rounded-lg" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
+            <div className="p-6 rounded-lg" style={{ backgroundColor: `${secondaryColor.hex}15`, breakInside: 'avoid' }}>
               <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Growth Plan</h3>
               <ul className="space-y-3">
                 {analysis.growthPlan.slice(0, 4).map((item: string, i: number) => (
@@ -161,14 +162,14 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
         <>
           {/* Executive Summary */}
           {analysis.executiveSummary && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50">
+            <div className="mb-8 p-6 rounded-lg bg-gray-50" style={{ breakInside: 'avoid' }}>
               <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Executive Summary</h3>
               <p className="text-gray-700 leading-relaxed">{analysis.executiveSummary}</p>
             </div>
           )}
 
           {/* Strengths & Blind Spots */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 gap-6 mb-8" style={{ breakInside: 'avoid' }}>
             <div className="p-6 rounded-lg border-2 border-emerald-500">
               <h3 className="font-bold text-xl mb-4 text-emerald-700">Strengths</h3>
               <ul className="space-y-2">
@@ -199,7 +200,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
               <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Analysis</h3>
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(analysis.categoryInsights).map(([category, data]: [string, any]) => (
-                  <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4" style={{ borderLeftColor: primaryColor.hex }}>
+                  <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4" style={{ borderLeftColor: primaryColor.hex, breakInside: 'avoid' }}>
                     <h4 className="font-bold mb-2">{category}</h4>
                     <p className="text-xs text-gray-700">{data.interpretation}</p>
                   </div>
@@ -209,7 +210,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* Growth Plan */}
-          <div className="p-6 rounded-lg mb-4" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
+          <div className="p-6 rounded-lg mb-4" style={{ backgroundColor: `${secondaryColor.hex}15`, breakInside: 'avoid' }}>
             <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Growth Plan</h3>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
@@ -246,7 +247,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
         <>
           {/* Color Description */}
           {analysis.colorDescription && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50">
+            <div className="mb-8 p-6 rounded-lg bg-gray-50" style={{ breakInside: 'avoid' }}>
               <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Style</h3>
               <p className="text-gray-700 leading-relaxed">{analysis.colorDescription}</p>
             </div>
@@ -254,7 +255,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Strengths */}
           {analysis.strengths && (
-            <div className="mb-8 p-6 rounded-lg border-2 border-emerald-500">
+            <div className="mb-8 p-6 rounded-lg border-2 border-emerald-500" style={{ breakInside: 'avoid' }}>
               <h3 className="font-bold text-xl mb-4 text-emerald-700">Your Strengths</h3>
               <ul className="space-y-2">
                 {analysis.strengths.map((s: string, i: number) => (
@@ -269,7 +270,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Growth Plan */}
           {analysis.growthPlan && (
-            <div className="p-6 rounded-lg" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
+            <div className="p-6 rounded-lg" style={{ backgroundColor: `${secondaryColor.hex}15`, breakInside: 'avoid' }}>
               <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Your Growth Plan</h3>
               <ul className="space-y-3">
                 {analysis.growthPlan.map((item: string, i: number) => (
