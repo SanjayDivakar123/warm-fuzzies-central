@@ -328,19 +328,16 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
               30-Day Action Plan
             </h3>
-            {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || analysis.miniGrowthPlan) ? (
+            {analysis.thirtyDayActions && analysis.thirtyDayActions.length > 0 ? (
               <ul className="space-y-3">
-                {(analysis.actionPlan30Days || analysis.quickTips || analysis.growthPlan || analysis.miniGrowthPlan || []).map(
-                  (item: string, i: number) => (
-                    <li key={i} className="flex gap-3 text-sm">
-                      <span
-                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ backgroundColor: primaryColor.hex }}
-                      />
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ),
-                )}
+                {analysis.thirtyDayActions.map((action: string, i: number) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span className="font-bold" style={{ color: primaryColor.hex }}>
+                      {i + 1}.
+                    </span>
+                    <span className="text-gray-700">{action}</span>
+                  </li>
+                ))}
               </ul>
             ) : (
               <p className="text-gray-500 text-sm italic">Action plan items will appear here based on your assessment results.</p>
