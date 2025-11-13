@@ -267,8 +267,8 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {/* 50Q Student Report Sections */}
       {is50QStudent && analysis && (
         <>
-          <div className="page-break-before"></div>
-
+          {/* Page 1 Content */}
+          
           {/* Leadership Summary Section */}
           {analysis.groupBehavior && (
             <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
@@ -280,13 +280,13 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             </div>
           )}
 
-          {/* Color Profile Card */}
-          <div className="mb-8 page-break-avoid section-spacing">
+          {/* Color Profile - Last thing on Page 1 */}
+          <div className="mb-8 page-break-avoid">
             <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Your Color Profile</h3>
             
             {/* Strengths */}
             {analysis.strengths && (
-              <div className="mb-4 p-6 rounded-lg border-2 border-emerald-500">
+              <div className="p-6 rounded-lg border-2 border-emerald-500">
                 <h4 className="font-bold text-lg mb-3 text-emerald-700">Strengths</h4>
                 <ul className="space-y-2">
                   {analysis.strengths.map((s: string, i: number) => (
@@ -298,22 +298,25 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                 </ul>
               </div>
             )}
+          </div>
 
-            {/* Communication & Pressure Handling */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {analysis.communicationStyle && (
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-2">How You Communicate</h4>
-                  <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
-                </div>
-              )}
-              {analysis.pressureHandling && (
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-2">How You Handle Pressure</h4>
-                  <p className="text-sm text-gray-700">{analysis.pressureHandling}</p>
-                </div>
-              )}
-            </div>
+          {/* PAGE 2 STARTS HERE */}
+          <div className="page-break-before"></div>
+
+          {/* Communication & Pressure Handling */}
+          <div className="grid grid-cols-2 gap-4 mb-8 page-break-avoid section-spacing">
+            {analysis.communicationStyle && (
+              <div className="p-4 rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-2">How You Communicate</h4>
+                <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
+              </div>
+            )}
+            {analysis.pressureHandling && (
+              <div className="p-4 rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-2">How You Handle Pressure</h4>
+                <p className="text-sm text-gray-700">{analysis.pressureHandling}</p>
+              </div>
+            )}
           </div>
 
           {/* Category Breakdown */}
@@ -346,8 +349,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             </div>
           )}
 
-          {/* Leadership Stage */}
+          {/* PAGE 3 STARTS HERE */}
           <div className="page-break-before"></div>
+
+          {/* Leadership Stage */}
           {analysis.leadershipStage && (
             <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
               <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Stage</h3>
