@@ -24,18 +24,26 @@ const ColorSpectrum = ({ position, primaryColor, secondaryColor }: { position: n
   const orderedColors = [...colorOrder, ...remainingColors];
   
   const colorMap: Record<string, string> = {
-    'Red': 'bg-red-500',
-    'Yellow': 'bg-yellow-500',
-    'Green': 'bg-green-500',
-    'Blue': 'bg-blue-500'
+    'Red': 'rgb(239, 68, 68)',
+    'Yellow': 'rgb(234, 179, 8)',
+    'Green': 'rgb(34, 197, 94)',
+    'Blue': 'rgb(59, 130, 246)'
   };
   
+  // Create smooth gradient with blending
+  const gradient = `linear-gradient(to right, 
+    ${colorMap[orderedColors[0]]} 0%, 
+    ${colorMap[orderedColors[0]]} 15%,
+    ${colorMap[orderedColors[1]]} 35%,
+    ${colorMap[orderedColors[1]]} 40%,
+    ${colorMap[orderedColors[2]]} 60%,
+    ${colorMap[orderedColors[2]]} 65%,
+    ${colorMap[orderedColors[3]]} 85%,
+    ${colorMap[orderedColors[3]]} 100%)`;
+  
   return (
-    <div className="relative h-8 rounded-full overflow-hidden flex">
-      {orderedColors.map((color) => (
-        <div key={color} className={`flex-1 ${colorMap[color]}`} />
-      ))}
-      <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg" style={{ left: `${position}%` }} />
+    <div className="relative h-8 rounded-full overflow-hidden shadow-lg" style={{ background: gradient }}>
+      <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg animate-pulse" style={{ left: `${position}%` }} />
     </div>
   );
 };
