@@ -101,24 +101,23 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {is25QTeacher && (
         <>
           {/* Strengths and Watch-Outs */}
-          <div className="page-break-before"></div>
-          <div className="grid grid-cols-2 gap-6 mb-8 page-break-avoid section-spacing">
-            <div className="p-6 rounded-lg border-2 border-emerald-500">
-              <h3 className="font-bold text-xl mb-4 text-emerald-700">Strengths</h3>
-              <ul className="space-y-2">
+          <div className="grid grid-cols-2 gap-6 mb-6 page-break-avoid section-spacing">
+            <div className="p-4 rounded-lg border-2 border-emerald-500">
+              <h3 className="font-bold text-lg mb-3 text-emerald-700">Strengths</h3>
+              <ul className="space-y-1">
                 {analysis?.strengths?.slice(0, 3).map((s: string, i: number) => (
-                  <li key={i} className="flex gap-2 text-sm">
+                  <li key={i} className="flex gap-2 text-xs">
                     <span className="text-emerald-600 font-bold">✓</span>
                     <span>{s}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="p-6 rounded-lg border-2 border-amber-500">
-              <h3 className="font-bold text-xl mb-4 text-amber-700">Watch-Outs</h3>
-              <ul className="space-y-2">
+            <div className="p-4 rounded-lg border-2 border-amber-500">
+              <h3 className="font-bold text-lg mb-3 text-amber-700">Watch-Outs</h3>
+              <ul className="space-y-1">
                 {analysis?.watchOuts?.slice(0, 3).map((w: string, i: number) => (
-                  <li key={i} className="flex gap-2 text-sm">
+                  <li key={i} className="flex gap-2 text-xs">
                     <span className="text-amber-600 font-bold">⚠</span>
                     <span>{w}</span>
                   </li>
@@ -127,13 +126,16 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             </div>
           </div>
 
-          {/* Color Profile */}
+          {/* Color Profile - Condensed */}
           {analysis?.colorProfile && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
-              <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>Color Profile</h3>
-              <p className="text-gray-700 leading-relaxed">{analysis.colorProfile}</p>
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+              <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>Color Profile</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">{analysis.colorProfile}</p>
             </div>
           )}
+
+          {/* Force page break before Category Breakdown */}
+          <div className="page-break-before"></div>
 
           {/* Category Breakdown */}
           {analysis?.condensedCategories && (
