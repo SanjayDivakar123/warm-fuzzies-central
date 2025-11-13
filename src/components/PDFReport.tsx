@@ -303,9 +303,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* PAGE 2 STARTS HERE */}
           <div className="page-break-before"></div>
 
-          {/* How You Communicate - Starts Page 2 */}
+          {/* How You Communicate - Starts Page 2 with 20px spacing */}
           {analysis.communicationStyle && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginTop: '20px' }}>
               <h4 className="font-semibold mb-2">How You Communicate</h4>
               <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
             </div>
@@ -361,11 +361,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* PAGE 3 STARTS HERE */}
-          <div className="page-break-before" style={{ marginTop: '10px' }}></div>
+          <div className="page-break-before"></div>
 
-          {/* Growth Plan - Starts Page 3 */}
+          {/* Growth Plan - Starts Page 3 with 15px spacing */}
           {analysis.growthPlan && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
+            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${secondaryColor.hex}15`, marginTop: '15px' }}>
               <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Your Growth Plan</h3>
               <ul className="space-y-3">
                 {analysis.growthPlan.map((item: string, i: number) => (
