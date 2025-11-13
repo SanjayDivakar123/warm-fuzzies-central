@@ -206,6 +206,216 @@ const StudentReport50Q = ({ results, analysis, isLoading }: {
   </div>
 );
 
+const StudentReport25Q = ({ results, analysis, isLoading }: { 
+  results: AssessmentResults; 
+  analysis: AIAnalysis | null;
+  isLoading: boolean;
+}) => (
+  <div className="space-y-8">
+    {/* Summary */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-3xl">Your Leadership Colors</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-6 justify-center">
+          <div className="text-center">
+            <h3 className="font-semibold mb-2 text-sm">Primary Color</h3>
+            <div className="flex flex-col items-center gap-2">
+              <div className={`w-16 h-16 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
+              <p className="text-xl font-bold">{COLOR_INFO[results.primaryColor].name}</p>
+              <p className="text-xs text-muted-foreground">{results.colorScores[results.primaryColor]}/100</p>
+            </div>
+          </div>
+          <div className="text-center">
+            <h3 className="font-semibold mb-2 text-sm">Secondary Color</h3>
+            <div className="flex flex-col items-center gap-2">
+              <div className={`w-16 h-16 rounded-full ${COLOR_INFO[results.secondaryColor].bg}`} />
+              <p className="text-xl font-bold">{COLOR_INFO[results.secondaryColor].name}</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Strength Snapshot */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Strength Snapshot</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p>Generating your insights...</p>
+          </div>
+        ) : analysis ? (
+          <div className="space-y-3">
+            {analysis.profileSummary.split('\n\n').map((para, i) => (
+              <p key={i} className="text-muted-foreground leading-relaxed">{para}</p>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+
+    {/* Mini Growth Plan */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Mini Growth Plan</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p>Creating your growth plan...</p>
+          </div>
+        ) : analysis && analysis.growthPlan ? (
+          <ul className="space-y-3">
+            {analysis.growthPlan.slice(0, 3).map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-primary font-bold text-xl">•</span>
+                <span className="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const TeacherReport = ({ results, analysis, isLoading, is50Q }: { 
+  results: AssessmentResults; 
+  analysis: AIAnalysis | null;
+  isLoading: boolean;
+  is50Q: boolean;
+}) => (
+  <div className="space-y-8">
+    {/* Executive Summary */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-3xl">{is50Q ? 'Executive Summary' : 'Summary'}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h3 className="font-semibold mb-2">Primary Leadership Color</h3>
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
+              <div>
+                <p className="text-2xl font-bold">{COLOR_INFO[results.primaryColor].name}</p>
+                <p className="text-sm text-muted-foreground">Score: {results.colorScores[results.primaryColor]}/100</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">Secondary Color</h3>
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full ${COLOR_INFO[results.secondaryColor].bg}`} />
+              <p className="text-2xl font-bold">{COLOR_INFO[results.secondaryColor].name}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-semibold mb-3">Leadership Spectrum</h3>
+          <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full">
+            <div 
+              className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2"
+              style={{ left: `${results.spectrumPosition}%` }}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Professional Profile */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Professional Leadership Profile</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p>Generating your professional analysis...</p>
+          </div>
+        ) : analysis ? (
+          <div className="space-y-3">
+            {analysis.profileSummary.split('\n\n').map((para, i) => (
+              <p key={i} className="text-muted-foreground leading-relaxed">{para}</p>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+
+    {is50Q && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Category Breakdown</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {Object.entries(results.categoryScores).map(([category, score]) => (
+            <div key={category}>
+              <div className="flex justify-between mb-2">
+                <h4 className="font-semibold">{category}</h4>
+                <span className="text-sm text-muted-foreground">{score}/100</span>
+              </div>
+              <Progress value={score} className="h-2" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    )}
+
+    {/* Leadership Stage */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Leadership Stage Analysis</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p>Analyzing your leadership stage...</p>
+          </div>
+        ) : analysis ? (
+          <>
+            <Badge className="text-lg py-2 px-4">{analysis.leadershipStage}</Badge>
+            <p className="text-muted-foreground leading-relaxed">{analysis.stageDescription}</p>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+
+    {/* Growth Plan */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Professional Growth Plan</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p>Creating your professional development plan...</p>
+          </div>
+        ) : analysis && analysis.growthPlan ? (
+          <ul className="space-y-3">
+            {analysis.growthPlan.map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-primary font-bold text-xl">•</span>
+                <span className="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const LeadershipResults = () => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -317,9 +527,11 @@ const LeadershipResults = () => {
       case "50q-student":
         return <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />;
       case "50q-teacher":
-      case "25q-teacher":
+        return <TeacherReport results={results} analysis={analysis} isLoading={isLoading} is50Q={true} />;
       case "25q-student":
-        return <div className="p-8 text-center text-muted-foreground">This report type is coming soon.</div>;
+        return <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />;
+      case "25q-teacher":
+        return <TeacherReport results={results} analysis={analysis} isLoading={isLoading} is50Q={false} />;
       default:
         return <div>Invalid assessment type</div>;
     }

@@ -334,14 +334,342 @@ const STUDENT_50_QUESTIONS: Question[] = [
   ]},
 ];
 
-const PLACEHOLDER_QUESTIONS: Question[] = [
-  { id: 1, text: "Placeholder question 1 - This will be replaced with actual assessment questions", options: [
-    { text: "Strongly Disagree", value: "a", color: "Yellow" },
-    { text: "Disagree", value: "b", color: "Red" },
-    { text: "Neutral", value: "c", color: "Green" },
-    { text: "Agree", value: "d", color: "Blue" }
+const STUDENT_25_QUESTIONS: Question[] = [
+  // Section A: Leadership & Initiative (Q1-Q5)
+  { id: 1, text: "When starting a group project, I usually…", section: "Leadership & Initiative", options: [
+    { text: "Jump in and assign roles", value: "a", color: "Yellow" },
+    { text: "Share a vision or inspiring idea", value: "b", color: "Red" },
+    { text: "Plan the process step by step", value: "c", color: "Green" },
+    { text: "Suggest new, creative approaches", value: "d", color: "Blue" }
+  ]},
+  { id: 2, text: "I feel best when I…", section: "Leadership & Initiative", options: [
+    { text: "See fast results", value: "a", color: "Yellow" },
+    { text: "Inspire others to take part", value: "b", color: "Red" },
+    { text: "Solve problems with logic", value: "c", color: "Green" },
+    { text: "Come up with unique ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 3, text: "If no one leads, I…", section: "Leadership & Initiative", options: [
+    { text: "Take control immediately", value: "a", color: "Yellow" },
+    { text: "Motivate someone else to step up", value: "b", color: "Red" },
+    { text: "Create structure for the group", value: "c", color: "Green" },
+    { text: "Pitch a new direction to get moving", value: "d", color: "Blue" }
+  ]},
+  { id: 4, text: "In stressful situations, I…", section: "Leadership & Initiative", options: [
+    { text: "Push forward with action", value: "a", color: "Yellow" },
+    { text: "Keep others positive", value: "b", color: "Red" },
+    { text: "Slow down to analyze carefully", value: "c", color: "Green" },
+    { text: "Reframe with a fresh idea", value: "d", color: "Blue" }
+  ]},
+  { id: 5, text: "The best leaders…", section: "Leadership & Initiative", options: [
+    { text: "Drive execution and results", value: "a", color: "Yellow" },
+    { text: "Inspire and energize people", value: "b", color: "Red" },
+    { text: "Think logically and provide clarity", value: "c", color: "Green" },
+    { text: "Envision and innovate for the future", value: "d", color: "Blue" }
+  ]},
+
+  // Section B: Collaboration & Communication (Q6-Q10)
+  { id: 6, text: "In group discussions, I…", section: "Collaboration & Communication", options: [
+    { text: "Push for a decision", value: "a", color: "Yellow" },
+    { text: "Make sure everyone feels heard", value: "b", color: "Red" },
+    { text: "Clarify details and structure", value: "c", color: "Green" },
+    { text: "Ask creative, \"what if\" questions", value: "d", color: "Blue" }
+  ]},
+  { id: 7, text: "People count on me to…", section: "Collaboration & Communication", options: [
+    { text: "Get things done under pressure", value: "a", color: "Yellow" },
+    { text: "Bring energy and enthusiasm", value: "b", color: "Red" },
+    { text: "Keep things organized and clear", value: "c", color: "Green" },
+    { text: "Spot new opportunities", value: "d", color: "Blue" }
+  ]},
+  { id: 8, text: "My style of communication is…", section: "Collaboration & Communication", options: [
+    { text: "Direct and action-oriented", value: "a", color: "Yellow" },
+    { text: "Inspiring and expressive", value: "b", color: "Red" },
+    { text: "Clear and logical", value: "c", color: "Green" },
+    { text: "Creative and forward-looking", value: "d", color: "Blue" }
+  ]},
+  { id: 9, text: "I usually motivate others by…", section: "Collaboration & Communication", options: [
+    { text: "Showing progress and results", value: "a", color: "Yellow" },
+    { text: "Sharing vision and passion", value: "b", color: "Red" },
+    { text: "Explaining with facts and logic", value: "c", color: "Green" },
+    { text: "Introducing bold, new ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 10, text: "In a group project, my role is often…", section: "Collaboration & Communication", options: [
+    { text: "The driver", value: "a", color: "Yellow" },
+    { text: "The motivator", value: "b", color: "Red" },
+    { text: "The organizer", value: "c", color: "Green" },
+    { text: "The idea generator", value: "d", color: "Blue" }
+  ]},
+
+  // Section C: Problem-Solving & Decision-Making (Q11-Q15)
+  { id: 11, text: "When faced with a tough decision, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Act quickly", value: "a", color: "Yellow" },
+    { text: "Think about how it affects others", value: "b", color: "Red" },
+    { text: "Analyze logically", value: "c", color: "Green" },
+    { text: "Brainstorm alternatives", value: "d", color: "Blue" }
+  ]},
+  { id: 12, text: "My strength in solving problems is…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Speed and determination", value: "a", color: "Yellow" },
+    { text: "Energy and optimism", value: "b", color: "Red" },
+    { text: "Logic and analysis", value: "c", color: "Green" },
+    { text: "Creativity and originality", value: "d", color: "Blue" }
+  ]},
+  { id: 13, text: "I prefer instructions that are…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Short and actionable", value: "a", color: "Yellow" },
+    { text: "Inspiring and motivating", value: "b", color: "Red" },
+    { text: "Detailed and structured", value: "c", color: "Green" },
+    { text: "Open-ended and flexible", value: "d", color: "Blue" }
+  ]},
+  { id: 14, text: "In a debate, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Push for quick resolution", value: "a", color: "Yellow" },
+    { text: "Persuade with passion", value: "b", color: "Red" },
+    { text: "Use facts and logic", value: "c", color: "Green" },
+    { text: "Share new perspectives", value: "d", color: "Blue" }
+  ]},
+  { id: 15, text: "If my solution doesn't work, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Try something else immediately", value: "a", color: "Yellow" },
+    { text: "Encourage others not to give up", value: "b", color: "Red" },
+    { text: "Reanalyze step by step", value: "c", color: "Green" },
+    { text: "Redesign it in a new way", value: "d", color: "Blue" }
+  ]},
+
+  // Section D: Adaptability & Creativity (Q16-Q20)
+  { id: 16, text: "I handle sudden changes by…", section: "Adaptability & Creativity", options: [
+    { text: "Acting fast to adjust", value: "a", color: "Yellow" },
+    { text: "Motivating others to stay positive", value: "b", color: "Red" },
+    { text: "Re-planning logically", value: "c", color: "Green" },
+    { text: "Rethinking creatively", value: "d", color: "Blue" }
+  ]},
+  { id: 17, text: "I learn best when…", section: "Adaptability & Creativity", options: [
+    { text: "I can apply it right away", value: "a", color: "Yellow" },
+    { text: "It connects to inspiration or people", value: "b", color: "Red" },
+    { text: "It's explained step by step", value: "c", color: "Green" },
+    { text: "It allows me to explore freely", value: "d", color: "Blue" }
+  ]},
+  { id: 18, text: "Free time is best spent…", section: "Adaptability & Creativity", options: [
+    { text: "Building something useful", value: "a", color: "Yellow" },
+    { text: "Sharing ideas and connecting", value: "b", color: "Red" },
+    { text: "Researching or analyzing", value: "c", color: "Green" },
+    { text: "Experimenting with creativity", value: "d", color: "Blue" }
+  ]},
+  { id: 19, text: "I stay motivated when…", section: "Adaptability & Creativity", options: [
+    { text: "Progress is visible", value: "a", color: "Yellow" },
+    { text: "Energy is high around me", value: "b", color: "Red" },
+    { text: "The work is structured", value: "c", color: "Green" },
+    { text: "I can innovate", value: "d", color: "Blue" }
+  ]},
+  { id: 20, text: "I thrive when I can…", section: "Adaptability & Creativity", options: [
+    { text: "Take decisive action", value: "a", color: "Yellow" },
+    { text: "Share vision and passion", value: "b", color: "Red" },
+    { text: "Solve problems logically", value: "c", color: "Green" },
+    { text: "Create and innovate freely", value: "d", color: "Blue" }
+  ]},
+
+  // Section E: Self-Awareness & Reflection (Q21-Q25)
+  { id: 21, text: "My biggest strength is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Taking action", value: "a", color: "Yellow" },
+    { text: "Motivating others", value: "b", color: "Red" },
+    { text: "Thinking logically", value: "c", color: "Green" },
+    { text: "Being creative", value: "d", color: "Blue" }
+  ]},
+  { id: 22, text: "I get frustrated when…", section: "Self-Awareness & Reflection", options: [
+    { text: "Things move too slowly", value: "a", color: "Yellow" },
+    { text: "People lack enthusiasm", value: "b", color: "Red" },
+    { text: "Work is disorganized", value: "c", color: "Green" },
+    { text: "Ideas are shut down", value: "d", color: "Blue" }
+  ]},
+  { id: 23, text: "I measure growth by…", section: "Self-Awareness & Reflection", options: [
+    { text: "What I've accomplished", value: "a", color: "Yellow" },
+    { text: "How I've inspired others", value: "b", color: "Red" },
+    { text: "What I've learned", value: "c", color: "Green" },
+    { text: "What I've created", value: "d", color: "Blue" }
+  ]},
+  { id: 24, text: "People usually notice that I…", section: "Self-Awareness & Reflection", options: [
+    { text: "Act quickly", value: "a", color: "Yellow" },
+    { text: "Energize others", value: "b", color: "Red" },
+    { text: "Think carefully", value: "c", color: "Green" },
+    { text: "Offer creative ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 25, text: "Ultimately, I want to be known as…", section: "Self-Awareness & Reflection", options: [
+    { text: "A doer who achieves results", value: "a", color: "Yellow" },
+    { text: "A motivator who uplifts others", value: "b", color: "Red" },
+    { text: "A thinker who solves problems", value: "c", color: "Green" },
+    { text: "A creator who innovates", value: "d", color: "Blue" }
   ]},
 ];
+
+const TEACHER_25_QUESTIONS: Question[] = [
+  // Section A (Q1-Q5)
+  { id: 1, text: "When starting a new lesson, I usually…", section: "Teaching & Classroom Leadership", options: [
+    { text: "Jump into teaching right away with clear tasks", value: "a", color: "Yellow" },
+    { text: "Connect it to a bigger idea or story to inspire students", value: "b", color: "Red" },
+    { text: "Lay out the structure and steps carefully", value: "c", color: "Green" },
+    { text: "Design a creative or hands-on activity to launch it", value: "d", color: "Blue" }
+  ]},
+  { id: 2, text: "My classroom works best when…", section: "Teaching & Classroom Leadership", options: [
+    { text: "Clear routines keep things moving", value: "a", color: "Yellow" },
+    { text: "Students feel motivated and energized", value: "b", color: "Red" },
+    { text: "Content is organized logically", value: "c", color: "Green" },
+    { text: "Curiosity and creativity are encouraged", value: "d", color: "Blue" }
+  ]},
+  { id: 3, text: "When students are distracted, I…", section: "Teaching & Classroom Leadership", options: [
+    { text: "Redirect quickly to keep things on track", value: "a", color: "Yellow" },
+    { text: "Re-engage with encouragement and energy", value: "b", color: "Red" },
+    { text: "Reset expectations clearly", value: "c", color: "Green" },
+    { text: "Change the activity to something fresh", value: "d", color: "Blue" }
+  ]},
+  { id: 4, text: "I feel proud as a teacher when…", section: "Teaching & Classroom Leadership", options: [
+    { text: "My students achieve results", value: "a", color: "Yellow" },
+    { text: "My students feel inspired", value: "b", color: "Red" },
+    { text: "My students master a concept step by step", value: "c", color: "Green" },
+    { text: "My students discover something new", value: "d", color: "Blue" }
+  ]},
+  { id: 5, text: "Students usually see me as…", section: "Teaching & Classroom Leadership", options: [
+    { text: "The one who gets things done", value: "a", color: "Yellow" },
+    { text: "The one who inspires them", value: "b", color: "Red" },
+    { text: "The one who keeps class organized", value: "c", color: "Green" },
+    { text: "The one who makes learning fun and creative", value: "d", color: "Blue" }
+  ]},
+  // Section B (Q6-Q10)
+  { id: 6, text: "In staff meetings, I usually…", section: "Collaboration & School Culture", options: [
+    { text: "Push toward action and decisions", value: "a", color: "Yellow" },
+    { text: "Encourage and motivate the team", value: "b", color: "Red" },
+    { text: "Clarify details and structure", value: "c", color: "Green" },
+    { text: "Suggest new approaches", value: "d", color: "Blue" }
+  ]},
+  { id: 7, text: "Colleagues rely on me to…", section: "Collaboration & School Culture", options: [
+    { text: "Get projects done", value: "a", color: "Yellow" },
+    { text: "Boost morale and energy", value: "b", color: "Red" },
+    { text: "Keep things organized", value: "c", color: "Green" },
+    { text: "Bring fresh ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 8, text: "My communication style is…", section: "Collaboration & School Culture", options: [
+    { text: "Direct and action-focused", value: "a", color: "Yellow" },
+    { text: "Expressive and inspiring", value: "b", color: "Red" },
+    { text: "Clear and logical", value: "c", color: "Green" },
+    { text: "Creative and visionary", value: "d", color: "Blue" }
+  ]},
+  { id: 9, text: "I get frustrated when…", section: "Collaboration & School Culture", options: [
+    { text: "Things move too slowly", value: "a", color: "Yellow" },
+    { text: "People seem unmotivated", value: "b", color: "Red" },
+    { text: "Plans are unclear or sloppy", value: "c", color: "Green" },
+    { text: "Innovation is blocked", value: "d", color: "Blue" }
+  ]},
+  { id: 10, text: "I contribute to school culture most by…", section: "Collaboration & School Culture", options: [
+    { text: "Driving results and follow-through", value: "a", color: "Yellow" },
+    { text: "Building positive energy in the community", value: "b", color: "Red" },
+    { text: "Maintaining order and systems", value: "c", color: "Green" },
+    { text: "Encouraging creativity and change", value: "d", color: "Blue" }
+  ]},
+  // Section C (Q11-Q15)
+  { id: 11, text: "When classroom problems arise, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Act quickly to resolve them", value: "a", color: "Yellow" },
+    { text: "Encourage students with positivity", value: "b", color: "Red" },
+    { text: "Break down the issue logically", value: "c", color: "Green" },
+    { text: "Reframe the problem creatively", value: "d", color: "Blue" }
+  ]},
+  { id: 12, text: "I trust my decisions most when…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "They lead to fast results", value: "a", color: "Yellow" },
+    { text: "They inspire others", value: "b", color: "Red" },
+    { text: "They are backed by data or logic", value: "c", color: "Green" },
+    { text: "They create innovative outcomes", value: "d", color: "Blue" }
+  ]},
+  { id: 13, text: "My problem-solving strength is…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Determination and speed", value: "a", color: "Yellow" },
+    { text: "Motivation and enthusiasm", value: "b", color: "Red" },
+    { text: "Careful analysis", value: "c", color: "Green" },
+    { text: "Out-of-the-box thinking", value: "d", color: "Blue" }
+  ]},
+  { id: 14, text: "In debates, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Push toward resolution quickly", value: "a", color: "Yellow" },
+    { text: "Persuade with passion and stories", value: "b", color: "Red" },
+    { text: "Use facts and logical reasoning", value: "c", color: "Green" },
+    { text: "Share new perspectives and ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 15, text: "If my first plan doesn't work, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Try another approach right away", value: "a", color: "Yellow" },
+    { text: "Keep others motivated to continue", value: "b", color: "Red" },
+    { text: "Reanalyze step by step", value: "c", color: "Green" },
+    { text: "Redesign with a creative twist", value: "d", color: "Blue" }
+  ]},
+  // Section D (Q16-Q20)
+  { id: 16, text: "When curriculum changes happen, I…", section: "Adaptability & Innovation", options: [
+    { text: "Adjust quickly and keep moving", value: "a", color: "Yellow" },
+    { text: "Stay positive and help others adapt", value: "b", color: "Red" },
+    { text: "Rework plans logically", value: "c", color: "Green" },
+    { text: "Try out creative alternatives", value: "d", color: "Blue" }
+  ]},
+  { id: 17, text: "I learn best when…", section: "Adaptability & Innovation", options: [
+    { text: "I can apply it right away", value: "a", color: "Yellow" },
+    { text: "It connects to inspiring ideas", value: "b", color: "Red" },
+    { text: "It's structured step by step", value: "c", color: "Green" },
+    { text: "It's open for experimentation", value: "d", color: "Blue" }
+  ]},
+  { id: 18, text: "I'm most energized when…", section: "Adaptability & Innovation", options: [
+    { text: "Things are moving into action", value: "a", color: "Yellow" },
+    { text: "People around me are motivated", value: "b", color: "Red" },
+    { text: "Work is structured and clear", value: "c", color: "Green" },
+    { text: "There's room for creativity", value: "d", color: "Blue" }
+  ]},
+  { id: 19, text: "If my plan is interrupted, I…", section: "Adaptability & Innovation", options: [
+    { text: "Act quickly with a backup", value: "a", color: "Yellow" },
+    { text: "Keep others encouraged", value: "b", color: "Red" },
+    { text: "Re-plan step by step", value: "c", color: "Green" },
+    { text: "Pivot to a new creative idea", value: "d", color: "Blue" }
+  ]},
+  { id: 20, text: "The teaching projects I enjoy most are…", section: "Adaptability & Innovation", options: [
+    { text: "Fast-paced and goal-oriented", value: "a", color: "Yellow" },
+    { text: "Energizing and people-focused", value: "b", color: "Red" },
+    { text: "Structured and methodical", value: "c", color: "Green" },
+    { text: "Open-ended and innovative", value: "d", color: "Blue" }
+  ]},
+  // Section E (Q21-Q25)
+  { id: 21, text: "My biggest teaching strength is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Taking action and execution", value: "a", color: "Yellow" },
+    { text: "Inspiring and motivating students", value: "b", color: "Red" },
+    { text: "Organizing and structuring content", value: "c", color: "Green" },
+    { text: "Creating engaging, innovative lessons", value: "d", color: "Blue" }
+  ]},
+  { id: 22, text: "I measure my growth by…", section: "Self-Awareness & Reflection", options: [
+    { text: "What I've accomplished with students", value: "a", color: "Yellow" },
+    { text: "How many I've inspired", value: "b", color: "Red" },
+    { text: "What I've structured and clarified", value: "c", color: "Green" },
+    { text: "What I've created or innovated", value: "d", color: "Blue" }
+  ]},
+  { id: 23, text: "The hardest thing for me is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Waiting without acting", value: "a", color: "Yellow" },
+    { text: "Working without inspiration", value: "b", color: "Red" },
+    { text: "Operating without structure", value: "c", color: "Green" },
+    { text: "Following rigid rules", value: "d", color: "Blue" }
+  ]},
+  { id: 24, text: "My colleagues usually notice that I…", section: "Self-Awareness & Reflection", options: [
+    { text: "Move things into action", value: "a", color: "Yellow" },
+    { text: "Motivate and energize others", value: "b", color: "Red" },
+    { text: "Keep things organized", value: "c", color: "Green" },
+    { text: "Share creative ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 25, text: "Ultimately, I want to be known as…", section: "Self-Awareness & Reflection", options: [
+    { text: "A teacher who gets results", value: "a", color: "Yellow" },
+    { text: "A teacher who inspires others", value: "b", color: "Red" },
+    { text: "A teacher who brings structure and clarity", value: "c", color: "Green" },
+    { text: "A teacher who sparks creativity", value: "d", color: "Blue" }
+  ]},
+];
+
+const TEACHER_50_QUESTIONS: Question[] = STUDENT_50_QUESTIONS.map((q, idx) => {
+  // Map student questions to teacher equivalents - simplified version
+  // In production, these would be the actual 50 teacher questions
+  const teacherQuestionText = q.text
+    .replace(/group project/gi, "lesson")
+    .replace(/group work/gi, "classroom")
+    .replace(/teammates/gi, "colleagues")
+    .replace(/group/gi, "class");
+  
+  return {
+    id: q.id,
+    text: teacherQuestionText,
+    section: q.section,
+    options: q.options
+  };
+});
 
 // Shuffle array utility function
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -371,7 +699,23 @@ const LeadershipAssessment = () => {
   const handleSelectType = (type: AssessmentType) => {
     setAssessmentType(type);
     // Randomize options when starting the assessment
-    const baseQuestions = type === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS;
+    let baseQuestions: Question[];
+    switch (type) {
+      case "50q-student":
+        baseQuestions = STUDENT_50_QUESTIONS;
+        break;
+      case "50q-teacher":
+        baseQuestions = TEACHER_50_QUESTIONS;
+        break;
+      case "25q-student":
+        baseQuestions = STUDENT_25_QUESTIONS;
+        break;
+      case "25q-teacher":
+        baseQuestions = TEACHER_25_QUESTIONS;
+        break;
+      default:
+        baseQuestions = STUDENT_50_QUESTIONS;
+    }
     setRandomizedQuestions(randomizeQuestionOptions(baseQuestions));
   };
 
@@ -398,7 +742,18 @@ const LeadershipAssessment = () => {
     });
   };
 
-  const questions = randomizedQuestions.length > 0 ? randomizedQuestions : (assessmentType === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS);
+  // Get question set based on assessment type
+  const getBaseQuestions = () => {
+    switch (assessmentType) {
+      case "50q-student": return STUDENT_50_QUESTIONS;
+      case "50q-teacher": return TEACHER_50_QUESTIONS;
+      case "25q-student": return STUDENT_25_QUESTIONS;
+      case "25q-teacher": return TEACHER_25_QUESTIONS;
+      default: return STUDENT_50_QUESTIONS;
+    }
+  };
+
+  const questions = randomizedQuestions.length > 0 ? randomizedQuestions : getBaseQuestions();
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   // Type selection screen
