@@ -761,12 +761,6 @@ const LeadershipAssessment = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-20 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-end mb-4">
-            <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-          </div>
 
           <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
