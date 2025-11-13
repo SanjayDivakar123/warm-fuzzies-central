@@ -566,7 +566,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {analysis.decisionMaking && (
             <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: "50px" }}>
               <h4 className="font-bold mb-2">How You Make Decisions</h4>
-              <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
+              <p className="text-sm text-gray-700 line-clamp-2">{analysis.decisionMaking}</p>
             </div>
           )}
 
@@ -574,7 +574,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {analysis.teamHelp && (
             <div className="mb-6 p-6 rounded-lg border page-break-avoid">
               <h4 className="font-bold mb-2">How You Help Your Team</h4>
-              <p className="text-sm text-gray-700">{analysis.teamHelp}</p>
+              <p className="text-sm text-gray-700 line-clamp-2">{analysis.teamHelp}</p>
             </div>
           )}
 
@@ -582,7 +582,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {analysis.problemHandling && (
             <div className="mb-8 p-6 rounded-lg border page-break-avoid">
               <h4 className="font-bold mb-2">How You Handle Problems</h4>
-              <p className="text-sm text-gray-700">{analysis.problemHandling}</p>
+              <p className="text-sm text-gray-700 line-clamp-2">{analysis.problemHandling}</p>
             </div>
           )}
 
