@@ -570,7 +570,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Make Decisions */}
           {analysis.decisionMaking && (
-            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: "50px" }}>
+            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: "20px" }}>
               <h4 className="font-bold mb-2">How You Make Decisions</h4>
               <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
             </div>
