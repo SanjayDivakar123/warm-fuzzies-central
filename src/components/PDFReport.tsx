@@ -405,58 +405,131 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {/* 25Q Student Report Sections */}
       {is25QStudent && analysis && (
         <>
-          <div className="page-break-before"></div>
-
-          {/* Group Work Behavior */}
-          {analysis.groupBehavior && (
-            <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
-              <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>How You Work in Groups</h3>
-              <p className="text-gray-700">{analysis.groupBehavior}</p>
+          {/* Leadership Spectrum */}
+          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
+            <h3 className="font-bold text-2xl mb-4">Your Leadership Color</h3>
+            
+            {/* Primary and Secondary in one row */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <div className="text-center">
+                <h4 className="font-bold text-xl mb-2">Primary Color</h4>
+                <div 
+                  className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center"
+                  style={{ backgroundColor: primaryColor.hex }}
+                >
+                  <span className="text-white font-bold text-lg">{results.colorScores[results.primaryColor]}/100</span>
+                </div>
+                <p className="font-semibold">{primaryColor.name}</p>
+              </div>
+              <div className="text-center">
+                <h4 className="font-bold text-xl mb-2">Secondary Color</h4>
+                <div 
+                  className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center"
+                  style={{ backgroundColor: secondaryColor.hex }}
+                >
+                  <span className="text-white font-bold text-lg">{results.colorScores[results.secondaryColor]}/100</span>
+                </div>
+                <p className="font-semibold">{secondaryColor.name}</p>
+              </div>
             </div>
-          )}
 
-          {/* Quick Tips */}
-          {analysis.quickTips && (
-            <div className="p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
-              <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>Quick Tips</h3>
-              <ul className="space-y-2">
-                {analysis.quickTips.slice(0, 3).map((tip: string, i: number) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="font-bold" style={{ color: primaryColor.hex }}>•</span>
-                    <span>{tip}</span>
+            {/* Leadership Spectrum Gradient Bar */}
+            <h4 className="font-bold text-xl mb-3">Leadership Spectrum</h4>
+            <div className="relative h-8 rounded-full mb-4" style={{ 
+              background: 'linear-gradient(to right, #ef4444 0%, #f59e0b 25%, #22c55e 50%, #eab308 75%, #3b82f6 100%)' 
+            }}>
+              <div 
+                className="absolute w-4 h-4 rounded-full bg-gray-800 border-2 border-white" 
+                style={{ 
+                  top: '50%', 
+                  transform: 'translate(-50%, -50%)',
+                  left: `${results.colorScores[results.primaryColor]}%`
+                }}
+              />
+            </div>
+            
+            {/* Color Description */}
+            {analysis.colorDescription && (
+              <p className="text-gray-700 leading-relaxed">{analysis.colorDescription}</p>
+            )}
+          </div>
+
+          {/* Strength Snapshot */}
+          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
+            <h3 className="font-bold text-2xl mb-4">Strength Snapshot</h3>
+            
+            {/* Your Strengths */}
+            {analysis.strengths && (
+              <div className="mb-6">
+                <h4 className="font-bold text-lg mb-3 text-emerald-600">Your Strengths</h4>
+                <ul className="space-y-2">
+                  {analysis.strengths.map((s: string, i: number) => (
+                    <li key={i} className="flex gap-2 text-sm">
+                      <span className="text-emerald-600">✓</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Growth Areas */}
+            {analysis.growthAreas && (
+              <div>
+                <h4 className="font-bold text-lg mb-3 text-orange-600">Growth Areas</h4>
+                <ul className="space-y-2">
+                  {analysis.growthAreas.map((g: string, i: number) => (
+                    <li key={i} className="flex gap-2 text-sm">
+                      <span className="text-orange-600">→</span>
+                      <span>{g}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Your Group-Work Behavior */}
+          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
+            <h3 className="font-bold text-2xl mb-4">Your Group-Work Behavior</h3>
+            
+            {/* How You Make Decisions */}
+            {analysis.decisionMaking && (
+              <div className="mb-4">
+                <h4 className="font-bold mb-2">How You Make Decisions</h4>
+                <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
+              </div>
+            )}
+
+            {/* How You Help Your Team */}
+            {analysis.teamHelp && (
+              <div className="mb-4">
+                <h4 className="font-bold mb-2">How You Help Your Team</h4>
+                <p className="text-sm text-gray-700">{analysis.teamHelp}</p>
+              </div>
+            )}
+
+            {/* How You Handle Problems */}
+            {analysis.problemHandling && (
+              <div>
+                <h4 className="font-bold mb-2">How You Handle Problems</h4>
+                <p className="text-sm text-gray-700">{analysis.problemHandling}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Mini Growth Plan */}
+          {analysis.miniGrowthPlan && (
+            <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
+              <h3 className="font-bold text-2xl mb-4">Mini Growth Plan</h3>
+              <ul className="space-y-3">
+                {analysis.miniGrowthPlan.map((item: string, i: number) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: primaryColor.hex }} />
+                    <span className="text-gray-700">{item}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          {/* Color Profile - Condensed */}
-          {analysis.colorProfile && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
-              <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>Color Profile</h3>
-              <p className="text-gray-700 text-sm leading-relaxed">{analysis.colorProfile}</p>
-            </div>
-          )}
-
-          {/* Category Breakdown */}
-          {analysis.condensedCategories && (
-            <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
-              <div className="space-y-4">
-                {["Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style"].map((category) => {
-                  const categoryData = analysis.condensedCategories[category];
-                  if (!categoryData) return null;
-                  return (
-                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-lg">{category}</h4>
-                        <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
-                      </div>
-                      <p className="text-gray-700 text-sm">{categoryData.interpretation}</p>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
         </>
