@@ -61,26 +61,22 @@ const LeadershipAssessment = () => {
               Home
             </Button>
           </div>
-          
+
           <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
-              <span className="gradient-text-primary">RCF Leadership</span> Color Assessment
+              <span className="gradient-text-primary">RCF Teacher/Student Leadership</span> Color Assessment
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Select your assessment type to begin
-            </p>
+            <p className="text-xl text-muted-foreground">Select your assessment type to begin</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <Card 
+            <Card
               className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
               onClick={() => handleSelectType("50q-teacher")}
             >
               <CardHeader>
                 <CardTitle>50-Question Teacher Assessment</CardTitle>
-                <CardDescription>
-                  Comprehensive leadership profile for educators (4-6 pages)
-                </CardDescription>
+                <CardDescription>Comprehensive leadership profile for educators (4-6 pages)</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
@@ -89,54 +85,42 @@ const LeadershipAssessment = () => {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
               onClick={() => handleSelectType("50q-student")}
             >
               <CardHeader>
                 <CardTitle>50-Question Student Assessment</CardTitle>
-                <CardDescription>
-                  Comprehensive leadership profile for students (3-5 pages)
-                </CardDescription>
+                <CardDescription>Comprehensive leadership profile for students (3-5 pages)</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Color profile for group work with medium-depth analysis
-                </p>
+                <p className="text-sm text-muted-foreground">Color profile for group work with medium-depth analysis</p>
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
               onClick={() => handleSelectType("25q-teacher")}
             >
               <CardHeader>
                 <CardTitle>25-Question Teacher Assessment</CardTitle>
-                <CardDescription>
-                  Quick leadership snapshot for educators (2-3 pages)
-                </CardDescription>
+                <CardDescription>Quick leadership snapshot for educators (2-3 pages)</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Short-form profile with condensed category breakdown
-                </p>
+                <p className="text-sm text-muted-foreground">Short-form profile with condensed category breakdown</p>
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="cursor-pointer hover:border-primary transition-all hover:shadow-lg"
               onClick={() => handleSelectType("25q-student")}
             >
               <CardHeader>
                 <CardTitle>25-Question Student Assessment</CardTitle>
-                <CardDescription>
-                  Quick leadership snapshot for students (1.5-2 pages)
-                </CardDescription>
+                <CardDescription>Quick leadership snapshot for students (1.5-2 pages)</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Fun and motivating strength snapshot
-                </p>
+                <p className="text-sm text-muted-foreground">Fun and motivating strength snapshot</p>
               </CardContent>
             </Card>
           </div>
@@ -154,24 +138,17 @@ const LeadershipAssessment = () => {
             <h2 className="text-2xl font-bold">
               Question {currentQuestion + 1} of {PLACEHOLDER_QUESTIONS.length}
             </h2>
-            <span className="text-sm text-muted-foreground">
-              {Math.round(progress)}% Complete
-            </span>
+            <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">
-              {PLACEHOLDER_QUESTIONS[currentQuestion].text}
-            </CardTitle>
+            <CardTitle className="text-xl">{PLACEHOLDER_QUESTIONS[currentQuestion].text}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <RadioGroup 
-              value={answers[currentQuestion] || ""} 
-              onValueChange={handleAnswer}
-            >
+            <RadioGroup value={answers[currentQuestion] || ""} onValueChange={handleAnswer}>
               <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
                 <RadioGroupItem value="strongly-disagree" id="strongly-disagree" />
                 <Label htmlFor="strongly-disagree" className="flex-1 cursor-pointer">
@@ -205,27 +182,17 @@ const LeadershipAssessment = () => {
             </RadioGroup>
 
             <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentQuestion === 0}
-              >
+              <Button variant="outline" onClick={handlePrevious} disabled={currentQuestion === 0}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
 
               {currentQuestion === PLACEHOLDER_QUESTIONS.length - 1 ? (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!answers[currentQuestion]}
-                >
+                <Button onClick={handleSubmit} disabled={!answers[currentQuestion]}>
                   Complete Assessment
                 </Button>
               ) : (
-                <Button
-                  onClick={handleNext}
-                  disabled={!answers[currentQuestion]}
-                >
+                <Button onClick={handleNext} disabled={!answers[currentQuestion]}>
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
