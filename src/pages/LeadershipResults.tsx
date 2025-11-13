@@ -10,6 +10,7 @@ import { calculateResults, type AssessmentResults } from "@/lib/assessmentScorin
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { PDFReport } from "@/components/PDFReport";
 
 const COLOR_INFO = {
   Yellow: { bg: "bg-yellow-500", name: "Yellow - The Doer" },
@@ -558,6 +559,7 @@ const LeadershipResults = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const processResults = async () => {
@@ -604,34 +606,35 @@ const LeadershipResults = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!reportRef.current || !results) return;
+    if (!pdfRef.current || !results) return;
     
     setIsGeneratingPDF(true);
     try {
-      const canvas = await html2canvas(reportRef.current, {
+      const canvas = await html2canvas(pdfRef.current, {
         scale: 2,
         logging: false,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 1200,
       });
       
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20;
+      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       let heightLeft = imgHeight;
-      let position = 10;
+      let position = 0;
       
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
       
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
+        position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
       
@@ -716,6 +719,13 @@ const LeadershipResults = () => {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Hidden PDF Report Component for Generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div ref={pdfRef}>
+          <PDFReport results={results} analysis={analysis} reportType={type || ''} />
+        </div>
       </div>
     </div>
   );
