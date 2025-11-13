@@ -288,6 +288,21 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       <div className="mt-8 pt-6 border-t-2 text-center text-gray-500 text-sm">
         <p>RCF Leadership Assessment Report • {new Date().toLocaleDateString()}</p>
       </div>
+
+      {/* Call to Action Footer */}
+      <div 
+        className="mt-6 p-8 rounded-lg text-center"
+        style={{
+          backgroundColor: `${primaryColor.hex}20`
+        }}
+      >
+        <h3 className="text-2xl font-bold mb-4" style={{ color: primaryColor.hex }}>
+          Continue Your Leadership Journey
+        </h3>
+        <p className="text-lg" style={{ color: primaryColor.hex }}>
+          www.rolecolorfinder.com | info@rolecolorfinder.com
+        </p>
+      </div>
     </div>
   );
 };
