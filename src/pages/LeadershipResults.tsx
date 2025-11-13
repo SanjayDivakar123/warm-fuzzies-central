@@ -16,17 +16,35 @@ const COLOR_INFO = {
   Blue: { bg: "bg-blue-500", name: "Blue - The Creator" }
 };
 
-const ColorSpectrum = ({ position }: { position: number }) => (
-  <div className="relative h-8 rounded-full overflow-hidden">
-    <div className="absolute inset-0 flex">
-      <div className="flex-1 bg-red-500" />
-      <div className="flex-1 bg-yellow-500" />
-      <div className="flex-1 bg-green-500" />
-      <div className="flex-1 bg-blue-500" />
+const ColorSpectrum = ({ position, colorScores }: { position: number; colorScores: Record<string, number> }) => {
+  // Create gradient stops based on color scores
+  const red = colorScores.Red || 0;
+  const yellow = colorScores.Yellow || 0;
+  const green = colorScores.Green || 0;
+  const blue = colorScores.Blue || 0;
+  
+  // Normalize scores to create gradient
+  const total = red + yellow + green + blue;
+  const redPct = (red / total) * 100;
+  const yellowPct = ((red + yellow) / total) * 100;
+  const greenPct = ((red + yellow + green) / total) * 100;
+  
+  return (
+    <div className="relative h-8 rounded-full overflow-hidden" style={{
+      background: `linear-gradient(to right, 
+        rgb(239, 68, 68) 0%, 
+        rgb(239, 68, 68) ${redPct}%, 
+        rgb(234, 179, 8) ${redPct}%, 
+        rgb(234, 179, 8) ${yellowPct}%, 
+        rgb(34, 197, 94) ${yellowPct}%, 
+        rgb(34, 197, 94) ${greenPct}%, 
+        rgb(59, 130, 246) ${greenPct}%, 
+        rgb(59, 130, 246) 100%)`
+    }}>
+      <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg" style={{ left: `${position}%` }} />
     </div>
-    <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg" style={{ left: `${position}%` }} />
-  </div>
-);
+  );
+};
 
 const StudentReport50Q = ({ results, analysis, isLoading }: any) => (
   <div className="space-y-8">
@@ -37,10 +55,11 @@ const StudentReport50Q = ({ results, analysis, isLoading }: any) => (
           <div>
             <h3 className="font-semibold mb-2">Primary Color</h3>
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
+              <div className={`w-12 h-12 rounded-full ${COLOR_INFO[results.primaryColor].bg} flex items-center justify-center`}>
+                <span className="text-white font-semibold text-xs drop-shadow-lg">{results.colorScores[results.primaryColor]}</span>
+              </div>
               <div>
                 <p className="text-2xl font-bold">{COLOR_INFO[results.primaryColor].name}</p>
-                <p className="text-sm text-muted-foreground">Score: {results.colorScores[results.primaryColor]}/100</p>
               </div>
             </div>
           </div>
@@ -54,7 +73,7 @@ const StudentReport50Q = ({ results, analysis, isLoading }: any) => (
         </div>
         <div>
           <h3 className="font-semibold mb-3">Leadership Spectrum</h3>
-          <ColorSpectrum position={results.spectrumPosition} />
+          <ColorSpectrum position={results.spectrumPosition} colorScores={results.colorScores} />
         </div>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis && (
           <>
@@ -136,9 +155,8 @@ const StudentReport25Q = ({ results, analysis, isLoading }: any) => (
           <div className="text-center">
             <h3 className="font-semibold mb-4">Primary Color</h3>
             <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className={`w-20 h-20 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
-                <Badge className="absolute -top-2 -right-2 bg-background border-2">{results.colorScores[results.primaryColor]}/100</Badge>
+              <div className={`w-20 h-20 rounded-full ${COLOR_INFO[results.primaryColor].bg} flex items-center justify-center`}>
+                <span className="text-white font-bold text-sm drop-shadow-lg">{results.colorScores[results.primaryColor]}/100</span>
               </div>
               <p className="text-xl font-bold">{COLOR_INFO[results.primaryColor].name}</p>
             </div>
@@ -151,7 +169,7 @@ const StudentReport25Q = ({ results, analysis, isLoading }: any) => (
             </div>
           </div>
         </div>
-        <div><h3 className="font-semibold mb-3">Leadership Spectrum</h3><ColorSpectrum position={results.spectrumPosition} /></div>
+        <div><h3 className="font-semibold mb-3">Leadership Spectrum</h3><ColorSpectrum position={results.spectrumPosition} colorScores={results.colorScores} /></div>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : analysis && (
           <><Badge className="text-lg py-2 px-4">{analysis.leadershipStage}</Badge><p className="text-muted-foreground">{analysis.colorDescription}</p></>
         )}
