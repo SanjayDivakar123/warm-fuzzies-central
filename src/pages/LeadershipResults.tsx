@@ -17,8 +17,14 @@ const COLOR_INFO = {
 };
 
 const ColorSpectrum = ({ position }: { position: number }) => (
-  <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full">
-    <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2" style={{ left: `${position}%` }} />
+  <div className="relative h-8 rounded-full overflow-hidden">
+    <div className="absolute inset-0 flex">
+      <div className="flex-1 bg-red-500" />
+      <div className="flex-1 bg-yellow-500" />
+      <div className="flex-1 bg-green-500" />
+      <div className="flex-1 bg-blue-500" />
+    </div>
+    <div className="absolute w-4 h-4 bg-white border-4 border-foreground rounded-full top-1/2 -translate-y-1/2 shadow-lg" style={{ left: `${position}%` }} />
   </div>
 );
 
@@ -126,19 +132,21 @@ const StudentReport25Q = ({ results, analysis, isLoading }: any) => (
     <Card>
       <CardHeader><CardTitle className="text-3xl">Your Leadership Color</CardTitle></CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center gap-6 justify-center">
+        <div className="grid md:grid-cols-2 gap-8">
           <div className="text-center">
-            <h3 className="font-semibold mb-2">Primary Color</h3>
-            <div className="flex flex-col items-center gap-2">
-              <div className={`w-16 h-16 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
+            <h3 className="font-semibold mb-4">Primary Color</h3>
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <div className={`w-20 h-20 rounded-full ${COLOR_INFO[results.primaryColor].bg}`} />
+                <Badge className="absolute -top-2 -right-2 bg-background border-2">{results.colorScores[results.primaryColor]}/100</Badge>
+              </div>
               <p className="text-xl font-bold">{COLOR_INFO[results.primaryColor].name}</p>
-              <p className="text-sm text-muted-foreground">{results.colorScores[results.primaryColor]}/100</p>
             </div>
           </div>
           <div className="text-center">
-            <h3 className="font-semibold mb-2">Secondary Color</h3>
-            <div className="flex flex-col items-center gap-2">
-              <div className={`w-16 h-16 rounded-full ${COLOR_INFO[results.secondaryColor].bg}`} />
+            <h3 className="font-semibold mb-4">Secondary Color</h3>
+            <div className="flex flex-col items-center gap-3">
+              <div className={`w-20 h-20 rounded-full ${COLOR_INFO[results.secondaryColor].bg}`} />
               <p className="text-xl font-bold">{COLOR_INFO[results.secondaryColor].name}</p>
             </div>
           </div>
