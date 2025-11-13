@@ -305,7 +305,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Communicate - Starts Page 2 with 20px spacing */}
           {analysis.communicationStyle && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginTop: '20px' }}>
+            <div className="mb-4 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginTop: '20px' }}>
               <h4 className="font-semibold mb-2">How You Communicate</h4>
               <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
             </div>
@@ -313,7 +313,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Handle Pressure */}
           {analysis.pressureHandling && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+            <div className="mb-3 p-4 rounded-lg bg-gray-50 page-break-avoid">
               <h4 className="font-semibold mb-2">How You Handle Pressure</h4>
               <p className="text-sm text-gray-700">{analysis.pressureHandling}</p>
             </div>
