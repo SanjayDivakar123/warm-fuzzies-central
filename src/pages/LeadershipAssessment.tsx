@@ -1226,6 +1226,57 @@ const LeadershipAssessment = () => {
     setIsCheckingAccess(false);
   }, [searchParams]);
 
+  // Get question set based on assessment type
+  const getBaseQuestions = () => {
+    switch (assessmentType) {
+      case "50q-student":
+        return STUDENT_50_QUESTIONS;
+      case "50q-teacher":
+        return TEACHER_50_QUESTIONS;
+      case "25q-student":
+        return STUDENT_25_QUESTIONS;
+      case "25q-teacher":
+        return TEACHER_25_QUESTIONS;
+      default:
+        return STUDENT_50_QUESTIONS;
+    }
+  };
+
+  const questions = randomizedQuestions.length > 0 ? randomizedQuestions : getBaseQuestions();
+
+  // Keyboard navigation: 1-4 to select, Enter to submit
+  useEffect(() => {
+    if (!assessmentType || !hasAccess) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const currentOptions = questions[currentQuestion]?.options;
+      if (!currentOptions) return;
+
+      // Number keys 1-4 to select answers
+      if (e.key >= '1' && e.key <= '4') {
+        const index = parseInt(e.key) - 1;
+        if (index < currentOptions.length) {
+          setAnswers({ ...answers, [currentQuestion]: currentOptions[index].value });
+        }
+      }
+
+      // Enter key to go to next question or submit
+      if (e.key === 'Enter' && answers[currentQuestion]) {
+        e.preventDefault();
+        if (currentQuestion === questions.length - 1) {
+          navigate(`/leadership-results/${assessmentType}`, {
+            state: { answers },
+          });
+        } else if (currentQuestion < questions.length - 1) {
+          setCurrentQuestion(currentQuestion + 1);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [assessmentType, hasAccess, currentQuestion, answers, questions, navigate]);
+
   // Show loading state while checking access
   if (isCheckingAccess) {
     return (
@@ -1310,55 +1361,7 @@ const LeadershipAssessment = () => {
     });
   };
 
-  // Get question set based on assessment type
-  const getBaseQuestions = () => {
-    switch (assessmentType) {
-      case "50q-student":
-        return STUDENT_50_QUESTIONS;
-      case "50q-teacher":
-        return TEACHER_50_QUESTIONS;
-      case "25q-student":
-        return STUDENT_25_QUESTIONS;
-      case "25q-teacher":
-        return TEACHER_25_QUESTIONS;
-      default:
-        return STUDENT_50_QUESTIONS;
-    }
-  };
-
-  const questions = randomizedQuestions.length > 0 ? randomizedQuestions : getBaseQuestions();
   const progress = ((currentQuestion + 1) / questions.length) * 100;
-
-  // Keyboard navigation: 1-4 to select, Enter to submit
-  useEffect(() => {
-    if (!assessmentType) return;
-
-    const handleKeyPress = (e: KeyboardEvent) => {
-      const currentOptions = questions[currentQuestion]?.options;
-      if (!currentOptions) return;
-
-      // Number keys 1-4 to select answers
-      if (e.key >= '1' && e.key <= '4') {
-        const index = parseInt(e.key) - 1;
-        if (index < currentOptions.length) {
-          handleAnswer(currentOptions[index].value);
-        }
-      }
-
-      // Enter key to go to next question or submit
-      if (e.key === 'Enter' && answers[currentQuestion]) {
-        e.preventDefault();
-        if (currentQuestion === questions.length - 1) {
-          handleSubmit();
-        } else {
-          handleNext();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [assessmentType, currentQuestion, answers, questions]);
 
   // Type selection screen
   if (!assessmentType) {
