@@ -9,12 +9,338 @@ import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 
 type AssessmentType = "50q-teacher" | "50q-student" | "25q-teacher" | "25q-student";
 
-const PLACEHOLDER_QUESTIONS = [
-  { id: 1, text: "Placeholder question 1 - This will be replaced with actual assessment questions" },
-  { id: 2, text: "Placeholder question 2 - This will be replaced with actual assessment questions" },
-  { id: 3, text: "Placeholder question 3 - This will be replaced with actual assessment questions" },
-  { id: 4, text: "Placeholder question 4 - This will be replaced with actual assessment questions" },
-  { id: 5, text: "Placeholder question 5 - This will be replaced with actual assessment questions" },
+interface QuestionOption {
+  text: string;
+  value: string;
+  color: "Yellow" | "Red" | "Green" | "Blue";
+}
+
+interface Question {
+  id: number;
+  text: string;
+  section?: string;
+  options: QuestionOption[];
+}
+
+const STUDENT_50_QUESTIONS: Question[] = [
+  // Section A: Leadership & Initiative (Q1-Q10)
+  { id: 1, text: "When a group project begins, my first instinct is to…", section: "Leadership & Initiative", options: [
+    { text: "Take action immediately and divide responsibilities", value: "a", color: "Yellow" },
+    { text: "Inspire the group with a motivating idea or vision", value: "b", color: "Red" },
+    { text: "Plan out the steps logically before starting", value: "c", color: "Green" },
+    { text: "Suggest new, creative approaches no one has thought of yet", value: "d", color: "Blue" }
+  ]},
+  { id: 2, text: "I feel most satisfied in group work when…", section: "Leadership & Initiative", options: [
+    { text: "The team executes the plan efficiently", value: "a", color: "Yellow" },
+    { text: "Everyone feels energized and connected", value: "b", color: "Red" },
+    { text: "The process is organized and makes sense", value: "c", color: "Green" },
+    { text: "We create something original and innovative", value: "d", color: "Blue" }
+  ]},
+  { id: 3, text: "When no one steps up to lead…", section: "Leadership & Initiative", options: [
+    { text: "I immediately start assigning tasks and pushing forward", value: "a", color: "Yellow" },
+    { text: "I motivate others with encouragement and vision", value: "b", color: "Red" },
+    { text: "I analyze the situation and build a logical framework", value: "c", color: "Green" },
+    { text: "I propose a creative new way to move ahead", value: "d", color: "Blue" }
+  ]},
+  { id: 4, text: "In stressful situations, I usually…", section: "Leadership & Initiative", options: [
+    { text: "Push into action and take control", value: "a", color: "Yellow" },
+    { text: "Rally people with energy and positivity", value: "b", color: "Red" },
+    { text: "Slow down, think critically, and find a solution", value: "c", color: "Green" },
+    { text: "Reframe the problem in a fresh, innovative way", value: "d", color: "Blue" }
+  ]},
+  { id: 5, text: "My teammates usually describe me as…", section: "Leadership & Initiative", options: [
+    { text: "The one who gets things done", value: "a", color: "Yellow" },
+    { text: "The one who inspires and motivates", value: "b", color: "Red" },
+    { text: "The one who organizes and solves problems", value: "c", color: "Green" },
+    { text: "The one who brings fresh ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 6, text: "When given a new assignment, I prefer to…", section: "Leadership & Initiative", options: [
+    { text: "Jump right in and start", value: "a", color: "Yellow" },
+    { text: "Share my excitement and get others on board", value: "b", color: "Red" },
+    { text: "Break it into logical steps", value: "c", color: "Green" },
+    { text: "Brainstorm new ways of approaching it", value: "d", color: "Blue" }
+  ]},
+  { id: 7, text: "In leadership, I value most…", section: "Leadership & Initiative", options: [
+    { text: "Speed and efficiency", value: "a", color: "Yellow" },
+    { text: "Passion and vision", value: "b", color: "Red" },
+    { text: "Structure and order", value: "c", color: "Green" },
+    { text: "Creativity and innovation", value: "d", color: "Blue" }
+  ]},
+  { id: 8, text: "If a teammate is stuck, I…", section: "Leadership & Initiative", options: [
+    { text: "Take over to keep things moving", value: "a", color: "Yellow" },
+    { text: "Motivate them and remind them of the bigger picture", value: "b", color: "Red" },
+    { text: "Walk them through logical steps", value: "c", color: "Green" },
+    { text: "Suggest new angles to try", value: "d", color: "Blue" }
+  ]},
+  { id: 9, text: "The best leaders…", section: "Leadership & Initiative", options: [
+    { text: "Drive execution and results", value: "a", color: "Yellow" },
+    { text: "Inspire and connect with people", value: "b", color: "Red" },
+    { text: "Think analytically and structure clearly", value: "c", color: "Green" },
+    { text: "Envision and innovate for the future", value: "d", color: "Blue" }
+  ]},
+  { id: 10, text: "My natural instinct is to…", section: "Leadership & Initiative", options: [
+    { text: "Act first and figure things out along the way", value: "a", color: "Yellow" },
+    { text: "Share a vision and bring people together", value: "b", color: "Red" },
+    { text: "Carefully analyze before moving forward", value: "c", color: "Green" },
+    { text: "Question assumptions and explore new ideas", value: "d", color: "Blue" }
+  ]},
+  
+  // Section B: Collaboration & Communication (Q11-Q20)
+  { id: 11, text: "When working in a group, I tend to…", section: "Collaboration & Communication", options: [
+    { text: "Push the team to take action quickly", value: "a", color: "Yellow" },
+    { text: "Energize and encourage everyone", value: "b", color: "Red" },
+    { text: "Keep things organized and structured", value: "c", color: "Green" },
+    { text: "Suggest creative approaches to improve the work", value: "d", color: "Blue" }
+  ]},
+  { id: 12, text: "During group discussions, I…", section: "Collaboration & Communication", options: [
+    { text: "Move things toward decisions", value: "a", color: "Yellow" },
+    { text: "Make sure everyone feels heard", value: "b", color: "Red" },
+    { text: "Focus on clarifying details", value: "c", color: "Green" },
+    { text: "Ask questions that open new possibilities", value: "d", color: "Blue" }
+  ]},
+  { id: 13, text: "If conflict arises, I…", section: "Collaboration & Communication", options: [
+    { text: "Push the group to resolve it fast", value: "a", color: "Yellow" },
+    { text: "Use words to motivate reconciliation", value: "b", color: "Red" },
+    { text: "Analyze both sides logically", value: "c", color: "Green" },
+    { text: "Suggest an alternative idea everyone can rally around", value: "d", color: "Blue" }
+  ]},
+  { id: 14, text: "I contribute best when…", section: "Collaboration & Communication", options: [
+    { text: "I'm driving progress", value: "a", color: "Yellow" },
+    { text: "I'm inspiring people", value: "b", color: "Red" },
+    { text: "I'm problem-solving logically", value: "c", color: "Green" },
+    { text: "I'm creating new ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 15, text: "People count on me to…", section: "Collaboration & Communication", options: [
+    { text: "Get things done under pressure", value: "a", color: "Yellow" },
+    { text: "Lift spirits and bring energy", value: "b", color: "Red" },
+    { text: "Keep things accurate and organized", value: "c", color: "Green" },
+    { text: "Spot opportunities no one else sees", value: "d", color: "Blue" }
+  ]},
+  { id: 16, text: "My style of communication is…", section: "Collaboration & Communication", options: [
+    { text: "Direct and action-focused", value: "a", color: "Yellow" },
+    { text: "Inspiring and expressive", value: "b", color: "Red" },
+    { text: "Clear and detail-oriented", value: "c", color: "Green" },
+    { text: "Conceptual and visionary", value: "d", color: "Blue" }
+  ]},
+  { id: 17, text: "I dislike when teammates…", section: "Collaboration & Communication", options: [
+    { text: "Waste time without acting", value: "a", color: "Yellow" },
+    { text: "Lack enthusiasm", value: "b", color: "Red" },
+    { text: "Skip over details", value: "c", color: "Green" },
+    { text: "Resist new ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 18, text: "I usually motivate others by…", section: "Collaboration & Communication", options: [
+    { text: "Showing results and progress", value: "a", color: "Yellow" },
+    { text: "Using passion and vision", value: "b", color: "Red" },
+    { text: "Explaining logic and structure", value: "c", color: "Green" },
+    { text: "Sharing bold new ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 19, text: "In a group presentation, I'd rather…", section: "Collaboration & Communication", options: [
+    { text: "Present clear actions and results", value: "a", color: "Yellow" },
+    { text: "Tell the story and inspire the audience", value: "b", color: "Red" },
+    { text: "Explain data and logic behind the work", value: "c", color: "Green" },
+    { text: "Share the innovative, creative elements", value: "d", color: "Blue" }
+  ]},
+  { id: 20, text: "My group role is often…", section: "Collaboration & Communication", options: [
+    { text: "The driver", value: "a", color: "Yellow" },
+    { text: "The motivator", value: "b", color: "Red" },
+    { text: "The organizer", value: "c", color: "Green" },
+    { text: "The idea generator", value: "d", color: "Blue" }
+  ]},
+  
+  // Section C: Problem-Solving & Decision-Making (Q21-Q30)
+  { id: 21, text: "Faced with a tough decision, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Choose quickly and take action", value: "a", color: "Yellow" },
+    { text: "Consider how it inspires or affects others", value: "b", color: "Red" },
+    { text: "Analyze carefully and choose logically", value: "c", color: "Green" },
+    { text: "Brainstorm new solutions before deciding", value: "d", color: "Blue" }
+  ]},
+  { id: 22, text: "When given little time to solve a problem…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Act immediately and adapt later", value: "a", color: "Yellow" },
+    { text: "Encourage the team to stay positive", value: "b", color: "Red" },
+    { text: "Break it into smaller, logical pieces", value: "c", color: "Green" },
+    { text: "Try to reframe the challenge creatively", value: "d", color: "Blue" }
+  ]},
+  { id: 23, text: "I trust my decisions most when…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "I see action happening fast", value: "a", color: "Yellow" },
+    { text: "Others feel inspired", value: "b", color: "Red" },
+    { text: "The data and logic back it up", value: "c", color: "Green" },
+    { text: "It feels innovative and future-oriented", value: "d", color: "Blue" }
+  ]},
+  { id: 24, text: "My biggest strength in solving problems is…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Speed and determination", value: "a", color: "Yellow" },
+    { text: "Motivation and energy", value: "b", color: "Red" },
+    { text: "Logic and analysis", value: "c", color: "Green" },
+    { text: "Creativity and originality", value: "d", color: "Blue" }
+  ]},
+  { id: 25, text: "If I make a mistake…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "I move quickly to fix it", value: "a", color: "Yellow" },
+    { text: "I stay positive and reassure others", value: "b", color: "Red" },
+    { text: "I analyze what went wrong carefully", value: "c", color: "Green" },
+    { text: "I try a totally different approach", value: "d", color: "Blue" }
+  ]},
+  { id: 26, text: "I prefer instructions that are…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Short and actionable", value: "a", color: "Yellow" },
+    { text: "Inspiring and motivating", value: "b", color: "Red" },
+    { text: "Detailed and structured", value: "c", color: "Green" },
+    { text: "Open-ended and flexible", value: "d", color: "Blue" }
+  ]},
+  { id: 27, text: "I define success as…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Achieving results quickly", value: "a", color: "Yellow" },
+    { text: "Inspiring and energizing people", value: "b", color: "Red" },
+    { text: "Solving problems effectively", value: "c", color: "Green" },
+    { text: "Creating something innovative", value: "d", color: "Blue" }
+  ]},
+  { id: 28, text: "In a debate, I…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Push for a decision fast", value: "a", color: "Yellow" },
+    { text: "Persuade with passion and stories", value: "b", color: "Red" },
+    { text: "Use facts and logic", value: "c", color: "Green" },
+    { text: "Offer new perspectives and ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 29, text: "My first step in solving problems is…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "Jump into action", value: "a", color: "Yellow" },
+    { text: "Rally others with vision", value: "b", color: "Red" },
+    { text: "Break down details logically", value: "c", color: "Green" },
+    { text: "Explore creative alternatives", value: "d", color: "Blue" }
+  ]},
+  { id: 30, text: "If my solution doesn't work…", section: "Problem-Solving & Decision-Making", options: [
+    { text: "I immediately try something else", value: "a", color: "Yellow" },
+    { text: "I encourage others not to give up", value: "b", color: "Red" },
+    { text: "I reanalyze step by step", value: "c", color: "Green" },
+    { text: "I redesign the idea in a new way", value: "d", color: "Blue" }
+  ]},
+  
+  // Section D: Adaptability & Creativity (Q31-Q40)
+  { id: 31, text: "I handle sudden changes by…", section: "Adaptability & Creativity", options: [
+    { text: "Acting fast to keep things moving", value: "a", color: "Yellow" },
+    { text: "Motivating others to stay upbeat", value: "b", color: "Red" },
+    { text: "Adjusting my plan logically", value: "c", color: "Green" },
+    { text: "Rethinking everything with a fresh idea", value: "d", color: "Blue" }
+  ]},
+  { id: 32, text: "I learn best when…", section: "Adaptability & Creativity", options: [
+    { text: "I can immediately apply it", value: "a", color: "Yellow" },
+    { text: "It connects to something inspiring", value: "b", color: "Red" },
+    { text: "It's explained step by step", value: "c", color: "Green" },
+    { text: "It's open for me to explore creatively", value: "d", color: "Blue" }
+  ]},
+  { id: 33, text: "If I had free time, I'd rather…", section: "Adaptability & Creativity", options: [
+    { text: "Build something useful", value: "a", color: "Yellow" },
+    { text: "Share ideas or stories with others", value: "b", color: "Red" },
+    { text: "Research or analyze something interesting", value: "c", color: "Green" },
+    { text: "Experiment with a new creative project", value: "d", color: "Blue" }
+  ]},
+  { id: 34, text: "I stay motivated when…", section: "Adaptability & Creativity", options: [
+    { text: "I see quick progress", value: "a", color: "Yellow" },
+    { text: "People around me are energized", value: "b", color: "Red" },
+    { text: "The work is logical and structured", value: "c", color: "Green" },
+    { text: "I get to experiment and innovate", value: "d", color: "Blue" }
+  ]},
+  { id: 35, text: "My adaptability comes from…", section: "Adaptability & Creativity", options: [
+    { text: "Taking fast action no matter what", value: "a", color: "Yellow" },
+    { text: "Staying positive and inspiring others", value: "b", color: "Red" },
+    { text: "Carefully adjusting step by step", value: "c", color: "Green" },
+    { text: "Redesigning new approaches creatively", value: "d", color: "Blue" }
+  ]},
+  { id: 36, text: "When trying new things, I…", section: "Adaptability & Creativity", options: [
+    { text: "Jump in and figure it out as I go", value: "a", color: "Yellow" },
+    { text: "Look for inspiration and share enthusiasm", value: "b", color: "Red" },
+    { text: "Research carefully before starting", value: "c", color: "Green" },
+    { text: "Try unconventional ways just to see what happens", value: "d", color: "Blue" }
+  ]},
+  { id: 37, text: "I'm most energized by…", section: "Adaptability & Creativity", options: [
+    { text: "Action and momentum", value: "a", color: "Yellow" },
+    { text: "Vision and excitement", value: "b", color: "Red" },
+    { text: "Order and clarity", value: "c", color: "Green" },
+    { text: "Creativity and imagination", value: "d", color: "Blue" }
+  ]},
+  { id: 38, text: "If my plan is interrupted, I…", section: "Adaptability & Creativity", options: [
+    { text: "Push ahead with a new action immediately", value: "a", color: "Yellow" },
+    { text: "Motivate others to stay flexible", value: "b", color: "Red" },
+    { text: "Re-plan with structure", value: "c", color: "Green" },
+    { text: "Pivot into a creative new path", value: "d", color: "Blue" }
+  ]},
+  { id: 39, text: "I enjoy projects that are…", section: "Adaptability & Creativity", options: [
+    { text: "Fast-paced and goal-driven", value: "a", color: "Yellow" },
+    { text: "Energizing and people-focused", value: "b", color: "Red" },
+    { text: "Structured and logical", value: "c", color: "Green" },
+    { text: "Open-ended and innovative", value: "d", color: "Blue" }
+  ]},
+  { id: 40, text: "I thrive when I can…", section: "Adaptability & Creativity", options: [
+    { text: "Take decisive action", value: "a", color: "Yellow" },
+    { text: "Share vision and passion", value: "b", color: "Red" },
+    { text: "Think critically and logically", value: "c", color: "Green" },
+    { text: "Create and innovate freely", value: "d", color: "Blue" }
+  ]},
+  
+  // Section E: Self-Awareness & Reflection (Q41-Q50)
+  { id: 41, text: "My biggest strength is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Taking action quickly", value: "a", color: "Yellow" },
+    { text: "Motivating others", value: "b", color: "Red" },
+    { text: "Thinking logically", value: "c", color: "Green" },
+    { text: "Being creative", value: "d", color: "Blue" }
+  ]},
+  { id: 42, text: "I get frustrated when…", section: "Self-Awareness & Reflection", options: [
+    { text: "People don't act fast enough", value: "a", color: "Yellow" },
+    { text: "Others lack enthusiasm", value: "b", color: "Red" },
+    { text: "Things are unclear or disorganized", value: "c", color: "Green" },
+    { text: "New ideas are shut down", value: "d", color: "Blue" }
+  ]},
+  { id: 43, text: "I measure my growth by…", section: "Self-Awareness & Reflection", options: [
+    { text: "What I've accomplished", value: "a", color: "Yellow" },
+    { text: "How many people I've inspired", value: "b", color: "Red" },
+    { text: "What I've learned and understood", value: "c", color: "Green" },
+    { text: "What I've created or innovated", value: "d", color: "Blue" }
+  ]},
+  { id: 44, text: "My natural leadership style is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Action-oriented", value: "a", color: "Yellow" },
+    { text: "Visionary and motivational", value: "b", color: "Red" },
+    { text: "Structured and logical", value: "c", color: "Green" },
+    { text: "Creative and future-focused", value: "d", color: "Blue" }
+  ]},
+  { id: 45, text: "I gain energy from…", section: "Self-Awareness & Reflection", options: [
+    { text: "Achieving goals", value: "a", color: "Yellow" },
+    { text: "Sharing vision with others", value: "b", color: "Red" },
+    { text: "Solving puzzles and analyzing", value: "c", color: "Green" },
+    { text: "Imagining new possibilities", value: "d", color: "Blue" }
+  ]},
+  { id: 46, text: "The hardest thing for me is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Waiting without acting", value: "a", color: "Yellow" },
+    { text: "Working without inspiration", value: "b", color: "Red" },
+    { text: "Operating without clear data", value: "c", color: "Green" },
+    { text: "Following rigid rules", value: "d", color: "Blue" }
+  ]},
+  { id: 47, text: "My proudest moments come when…", section: "Self-Awareness & Reflection", options: [
+    { text: "I achieve something significant", value: "a", color: "Yellow" },
+    { text: "I inspire or lead others", value: "b", color: "Red" },
+    { text: "I solve a complex problem", value: "c", color: "Green" },
+    { text: "I create something unique", value: "d", color: "Blue" }
+  ]},
+  { id: 48, text: "People usually notice that I…", section: "Self-Awareness & Reflection", options: [
+    { text: "Move quickly into action", value: "a", color: "Yellow" },
+    { text: "Motivate and energize others", value: "b", color: "Red" },
+    { text: "Think carefully and logically", value: "c", color: "Green" },
+    { text: "Bring creative ideas", value: "d", color: "Blue" }
+  ]},
+  { id: 49, text: "My preferred role in a team is…", section: "Self-Awareness & Reflection", options: [
+    { text: "Driving execution", value: "a", color: "Yellow" },
+    { text: "Inspiring and connecting people", value: "b", color: "Red" },
+    { text: "Organizing and analyzing", value: "c", color: "Green" },
+    { text: "Innovating and ideating", value: "d", color: "Blue" }
+  ]},
+  { id: 50, text: "Ultimately, I want to be known as…", section: "Self-Awareness & Reflection", options: [
+    { text: "A doer who gets results", value: "a", color: "Yellow" },
+    { text: "A motivator who uplifts others", value: "b", color: "Red" },
+    { text: "A thinker who solves problems", value: "c", color: "Green" },
+    { text: "A creator who innovates", value: "d", color: "Blue" }
+  ]},
+];
+
+const PLACEHOLDER_QUESTIONS: Question[] = [
+  { id: 1, text: "Placeholder question 1 - This will be replaced with actual assessment questions", options: [
+    { text: "Strongly Disagree", value: "a", color: "Yellow" },
+    { text: "Disagree", value: "b", color: "Red" },
+    { text: "Neutral", value: "c", color: "Green" },
+    { text: "Agree", value: "d", color: "Blue" }
+  ]},
 ];
 
 const LeadershipAssessment = () => {
@@ -44,11 +370,14 @@ const LeadershipAssessment = () => {
   };
 
   const handleSubmit = () => {
-    // Navigate to results page with assessment type
-    navigate(`/leadership-results/${assessmentType}`);
+    // Navigate to results page with assessment type and answers
+    navigate(`/leadership-results/${assessmentType}`, { 
+      state: { answers } 
+    });
   };
 
-  const progress = ((currentQuestion + 1) / PLACEHOLDER_QUESTIONS.length) * 100;
+  const questions = assessmentType === "50q-student" ? STUDENT_50_QUESTIONS : PLACEHOLDER_QUESTIONS;
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   // Type selection screen
   if (!assessmentType) {
@@ -136,7 +465,7 @@ const LeadershipAssessment = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
-              Question {currentQuestion + 1} of {PLACEHOLDER_QUESTIONS.length}
+              Question {currentQuestion + 1} of {questions.length}
             </h2>
             <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
           </div>
@@ -145,40 +474,18 @@ const LeadershipAssessment = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">{PLACEHOLDER_QUESTIONS[currentQuestion].text}</CardTitle>
+            <CardTitle className="text-xl">{questions[currentQuestion].text}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <RadioGroup value={answers[currentQuestion] || ""} onValueChange={handleAnswer}>
-              <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="strongly-disagree" id="strongly-disagree" />
-                <Label htmlFor="strongly-disagree" className="flex-1 cursor-pointer">
-                  Strongly Disagree
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="disagree" id="disagree" />
-                <Label htmlFor="disagree" className="flex-1 cursor-pointer">
-                  Disagree
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="neutral" id="neutral" />
-                <Label htmlFor="neutral" className="flex-1 cursor-pointer">
-                  Neutral
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="agree" id="agree" />
-                <Label htmlFor="agree" className="flex-1 cursor-pointer">
-                  Agree
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="strongly-agree" id="strongly-agree" />
-                <Label htmlFor="strongly-agree" className="flex-1 cursor-pointer">
-                  Strongly Agree
-                </Label>
-              </div>
+              {questions[currentQuestion].options.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value={option.value} id={`option-${option.value}`} />
+                  <Label htmlFor={`option-${option.value}`} className="flex-1 cursor-pointer">
+                    {option.text}
+                  </Label>
+                </div>
+              ))}
             </RadioGroup>
 
             <div className="flex justify-between pt-4">
@@ -187,7 +494,7 @@ const LeadershipAssessment = () => {
                 Previous
               </Button>
 
-              {currentQuestion === PLACEHOLDER_QUESTIONS.length - 1 ? (
+              {currentQuestion === questions.length - 1 ? (
                 <Button onClick={handleSubmit} disabled={!answers[currentQuestion]}>
                   Complete Assessment
                 </Button>
