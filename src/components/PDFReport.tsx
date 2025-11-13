@@ -6,7 +6,7 @@ const COLOR_INFO = {
   Yellow: { bg: "bg-yellow-500", name: "Yellow - The Doer", hex: "#eab308" },
   Red: { bg: "bg-red-500", name: "Red - The Motivator", hex: "#ef4444" },
   Green: { bg: "bg-green-500", name: "Green - The Thinker", hex: "#22c55e" },
-  Blue: { bg: "bg-blue-500", name: "Blue - The Creator", hex: "#3b82f6" }
+  Blue: { bg: "bg-blue-500", name: "Blue - The Creator", hex: "#3b82f6" },
 };
 
 interface PDFReportProps {
@@ -18,13 +18,13 @@ interface PDFReportProps {
 export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => {
   const primaryColor = COLOR_INFO[results.primaryColor as keyof typeof COLOR_INFO];
   const secondaryColor = COLOR_INFO[results.secondaryColor as keyof typeof COLOR_INFO];
-  
+
   const getTitle = () => {
-    const titles: Record<string, string> = { 
-      "50q-teacher": "50-Question Teacher Assessment", 
-      "50q-student": "50-Question Student Assessment", 
-      "25q-teacher": "25-Question Teacher Assessment", 
-      "25q-student": "25-Question Student Assessment" 
+    const titles: Record<string, string> = {
+      "50q-teacher": "50-Question Teacher Assessment",
+      "50q-student": "50-Question Student Assessment",
+      "25q-teacher": "25-Question Teacher Assessment",
+      "25q-student": "25-Question Student Assessment",
     };
     return titles[reportType] || "Leadership Assessment";
   };
@@ -35,7 +35,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
   const is50QStudent = reportType === "50q-student";
 
   return (
-    <div className="bg-white p-8 max-w-4xl mx-auto" style={{ fontFamily: 'Arial, sans-serif' }}>
+    <div className="bg-white p-8 max-w-4xl mx-auto" style={{ fontFamily: "Arial, sans-serif" }}>
       <style>{`
         @media print {
           .page-break-avoid {
@@ -54,7 +54,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       `}</style>
 
       {/* Header with gradient */}
-      <div 
+      <div
         className="rounded-lg p-8 mb-8 text-center page-break-avoid"
         style={{
           background: `linear-gradient(135deg, ${primaryColor.hex} 0%, ${secondaryColor.hex} 100%)`,
@@ -67,31 +67,40 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {/* Primary and Secondary Colors */}
       <div className="grid grid-cols-2 gap-6 mb-8 page-break-avoid section-spacing">
         <div className="text-center p-6 rounded-lg border-2" style={{ borderColor: primaryColor.hex }}>
-          <div 
+          <div
             className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
             style={{ backgroundColor: primaryColor.hex }}
           >
             <span className="text-white font-bold text-2xl">{results.colorScores[results.primaryColor]}</span>
           </div>
           <h3 className="font-bold text-lg mb-1">Primary Color</h3>
-          <p className="text-xl font-semibold" style={{ color: primaryColor.hex }}>{primaryColor.name}</p>
+          <p className="text-xl font-semibold" style={{ color: primaryColor.hex }}>
+            {primaryColor.name}
+          </p>
         </div>
         <div className="text-center p-6 rounded-lg border-2" style={{ borderColor: secondaryColor.hex }}>
-          <div 
+          <div
             className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
             style={{ backgroundColor: secondaryColor.hex }}
           >
             <span className="text-white font-bold text-2xl">{results.colorScores[results.secondaryColor]}</span>
           </div>
           <h3 className="font-bold text-lg mb-1">Secondary Color</h3>
-          <p className="text-xl font-semibold" style={{ color: secondaryColor.hex }}>{secondaryColor.name}</p>
+          <p className="text-xl font-semibold" style={{ color: secondaryColor.hex }}>
+            {secondaryColor.name}
+          </p>
         </div>
       </div>
 
       {/* Leadership Stage - Hidden for 25Q Student, shown for others */}
       {!is25QStudent && analysis?.leadershipStage && (
-        <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
-          <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>Leadership Stage</h3>
+        <div
+          className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
+          style={{ backgroundColor: `${primaryColor.hex}15` }}
+        >
+          <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor.hex }}>
+            Leadership Stage
+          </h3>
           <p className="text-2xl font-semibold mb-2">{analysis.leadershipStage}</p>
           {analysis.stageDescription && <p className="text-gray-700">{analysis.stageDescription}</p>}
         </div>
@@ -99,8 +108,13 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
       {/* Color Spectrum Description - Only for 25Q Student */}
       {is25QStudent && analysis?.colorDescription && (
-        <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15` }}>
-          <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Spectrum</h3>
+        <div
+          className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
+          style={{ backgroundColor: `${primaryColor.hex}15` }}
+        >
+          <h3 className="font-bold text-xl mb-3" style={{ color: primaryColor.hex }}>
+            Your Leadership Spectrum
+          </h3>
           <p className="text-gray-700 leading-relaxed">{analysis.colorDescription}</p>
         </div>
       )}
@@ -137,7 +151,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Color Profile - Condensed */}
           {analysis?.colorProfile && (
             <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
-              <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>Color Profile</h3>
+              <h3 className="font-bold text-lg mb-2" style={{ color: primaryColor.hex }}>
+                Color Profile
+              </h3>
               <p className="text-gray-700 text-sm leading-relaxed">{analysis.colorProfile}</p>
             </div>
           )}
@@ -148,16 +164,24 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Category Breakdown */}
           {analysis?.condensedCategories && (
             <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+                Category Breakdown
+              </h3>
               <div className="space-y-4">
-                {['Communication', 'Decision-Making', 'Conflict', 'Team Behavior', 'Stress Style'].map((category) => {
+                {["Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style"].map((category) => {
                   const categoryData = analysis.condensedCategories[category];
                   if (!categoryData) return null;
                   return (
-                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
+                    <div
+                      key={category}
+                      className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid"
+                      style={{ borderLeftColor: primaryColor.hex }}
+                    >
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-bold text-lg">{category}</h4>
-                        <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
+                        <span className="font-bold" style={{ color: primaryColor.hex }}>
+                          {categoryData.score}/100
+                        </span>
                       </div>
                       <p className="text-gray-700 text-sm">{categoryData.interpretation}</p>
                     </div>
@@ -169,12 +193,19 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Growth Plan */}
           {analysis?.growthPlan && (
-            <div className="p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
-              <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Growth Plan</h3>
+            <div
+              className="p-6 rounded-lg page-break-avoid section-spacing"
+              style={{ backgroundColor: `${secondaryColor.hex}15` }}
+            >
+              <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>
+                Growth Plan
+              </h3>
               <ul className="space-y-3">
                 {analysis.growthPlan.slice(0, 4).map((item: string, i: number) => (
                   <li key={i} className="flex gap-3 text-sm">
-                    <span className="font-bold" style={{ color: secondaryColor.hex }}>{i + 1}.</span>
+                    <span className="font-bold" style={{ color: secondaryColor.hex }}>
+                      {i + 1}.
+                    </span>
                     <span className="text-gray-700">{item}</span>
                   </li>
                 ))}
@@ -192,7 +223,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Executive Summary */}
           {analysis.executiveSummary && (
             <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Executive Summary</h3>
+              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
+                Executive Summary
+              </h3>
               <p className="text-gray-700 leading-relaxed">{analysis.executiveSummary}</p>
             </div>
           )}
@@ -226,10 +259,16 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Category Insights */}
           {analysis.categoryInsights && (
             <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Analysis</h3>
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+                Category Analysis
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(analysis.categoryInsights).map(([category, data]: [string, any]) => (
-                  <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
+                  <div
+                    key={category}
+                    className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid"
+                    style={{ borderLeftColor: primaryColor.hex }}
+                  >
                     <h4 className="font-bold mb-2">{category}</h4>
                     <p className="text-xs text-gray-700">{data.interpretation}</p>
                   </div>
@@ -240,14 +279,22 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Growth Plan */}
           <div className="page-break-before"></div>
-          <div className="p-6 rounded-lg mb-4 page-break-avoid section-spacing" style={{ backgroundColor: `${secondaryColor.hex}15` }}>
-            <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Growth Plan</h3>
+          <div
+            className="p-6 rounded-lg mb-4 page-break-avoid section-spacing"
+            style={{ backgroundColor: `${secondaryColor.hex}15` }}
+          >
+            <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>
+              Growth Plan
+            </h3>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
                 <h4 className="font-semibold mb-2 text-emerald-700">Start Doing</h4>
                 <ul className="space-y-1">
                   {analysis.startDoing?.map((item: string, i: number) => (
-                    <li key={i} className="text-xs flex gap-1"><span>•</span><span>{item}</span></li>
+                    <li key={i} className="text-xs flex gap-1">
+                      <span>•</span>
+                      <span>{item}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -255,7 +302,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                 <h4 className="font-semibold mb-2 text-red-700">Stop Doing</h4>
                 <ul className="space-y-1">
                   {analysis.stopDoing?.map((item: string, i: number) => (
-                    <li key={i} className="text-xs flex gap-1"><span>•</span><span>{item}</span></li>
+                    <li key={i} className="text-xs flex gap-1">
+                      <span>•</span>
+                      <span>{item}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -263,7 +313,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                 <h4 className="font-semibold mb-2 text-blue-700">Continue Doing</h4>
                 <ul className="space-y-1">
                   {analysis.continueDoing?.map((item: string, i: number) => (
-                    <li key={i} className="text-xs flex gap-1"><span>•</span><span>{item}</span></li>
+                    <li key={i} className="text-xs flex gap-1">
+                      <span>•</span>
+                      <span>{item}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -276,22 +329,24 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
       {is50QStudent && analysis && (
         <>
           {/* PAGE 1 CONTENT */}
-          
+
           {/* Leadership Summary Section */}
           {analysis.groupBehavior && (
             <div className="mb-8 p-6 rounded-lg bg-gray-50 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>How You Show Up in Group Work</h3>
+              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
+                How You Show Up in Group Work
+              </h3>
               <p className="text-gray-700 leading-relaxed mb-3">{analysis.groupBehavior}</p>
-              {analysis.colorDescription && (
-                <p className="text-gray-600 italic">{analysis.colorDescription}</p>
-              )}
+              {analysis.colorDescription && <p className="text-gray-600 italic">{analysis.colorDescription}</p>}
             </div>
           )}
 
           {/* Color Profile - Only Strengths on Page 1 */}
-          <div className="mb-8 page-break-avoid" style={{ marginBottom: '75px' }}>
-            <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Your Color Profile</h3>
-            
+          <div className="mb-8 page-break-avoid" style={{ marginBottom: "75px" }}>
+            <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+              Your Color Profile
+            </h3>
+
             {/* Strengths */}
             {analysis.strengths && (
               <div className="p-6 rounded-lg border-2 border-emerald-500">
@@ -313,7 +368,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Communicate - Starts Page 2 with 20px spacing */}
           {analysis.communicationStyle && (
-            <div className="mb-4 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginTop: '20px' }}>
+            <div className="mb-4 p-4 rounded-lg bg-gray-50 page-break-avoid" style={{ marginTop: "20px" }}>
               <h4 className="font-semibold mb-2">How You Communicate</h4>
               <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
             </div>
@@ -330,7 +385,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Category Breakdown */}
           {analysis.categoryInsights && (
             <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+                Category Breakdown
+              </h3>
               <div className="space-y-4">
                 {Object.entries(analysis.categoryInsights).map(([category, data]: [string, any]) => (
                   <div key={category} className="page-break-avoid">
@@ -341,11 +398,11 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                       </span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full mb-2">
-                      <div 
-                        className="h-2 rounded-full" 
-                        style={{ 
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
                           width: `${results.categoryScores[category]}%`,
-                          backgroundColor: primaryColor.hex 
+                          backgroundColor: primaryColor.hex,
                         }}
                       />
                     </div>
@@ -359,12 +416,19 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Leadership Stage - Still on Page 2 */}
           {analysis.leadershipStage && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: '20px' }}>
-              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Your Leadership Stage</h3>
+            <div
+              className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
+              style={{ backgroundColor: `${primaryColor.hex}15`, marginBottom: "20px" }}
+            >
+              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
+                Your Leadership Stage
+              </h3>
               <div className="inline-block px-4 py-2 rounded-full mb-3" style={{ backgroundColor: primaryColor.hex }}>
                 <span className="text-white font-bold">{analysis.leadershipStage}</span>
               </div>
-              <p className="text-gray-700" style={{ minHeight: '3em', lineHeight: '1.5em' }}>{analysis.stageDescription}</p>
+              <p className="text-gray-700" style={{ minHeight: "3em", lineHeight: "1.5em" }}>
+                {analysis.stageDescription}
+              </p>
             </div>
           )}
 
@@ -373,12 +437,19 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* Growth Plan - Starts Page 3 with 15px spacing */}
           {analysis.growthPlan && (
-            <div className="mb-8 p-6 rounded-lg page-break-avoid section-spacing" style={{ backgroundColor: `${secondaryColor.hex}15`, marginTop: '15px' }}>
-              <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>Your Growth Plan</h3>
+            <div
+              className="mb-8 p-6 rounded-lg page-break-avoid section-spacing"
+              style={{ backgroundColor: `${secondaryColor.hex}15`, marginTop: "15px" }}
+            >
+              <h3 className="font-bold text-2xl mb-4" style={{ color: secondaryColor.hex }}>
+                Your Growth Plan
+              </h3>
               <ul className="space-y-3">
                 {analysis.growthPlan.map((item: string, i: number) => (
                   <li key={i} className="flex gap-3 text-sm">
-                    <span className="font-bold text-xl" style={{ color: secondaryColor.hex }}>•</span>
+                    <span className="font-bold text-xl" style={{ color: secondaryColor.hex }}>
+                      •
+                    </span>
                     <span className="text-gray-700">{item}</span>
                   </li>
                 ))}
@@ -389,7 +460,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Team Collaboration Map */}
           {analysis.teamFitInsight && (
             <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>Team Collaboration Map</h3>
+              <h3 className="font-bold text-2xl mb-3" style={{ color: primaryColor.hex }}>
+                Team Collaboration Map
+              </h3>
               <p className="text-gray-700 mb-4">{analysis.teamFitInsight}</p>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(results.colorScores).map(([color, score]: [string, any]) => {
@@ -416,16 +489,24 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           {/* Color Breakdown - Right after the top Primary/Secondary colors */}
           {analysis.condensedCategories && (
             <div className="mb-8 page-break-avoid section-spacing">
-              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Category Breakdown</h3>
+              <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>
+                Category Breakdown
+              </h3>
               <div className="space-y-4">
                 {["Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style"].map((category) => {
                   const categoryData = analysis.condensedCategories[category];
                   if (!categoryData) return null;
                   return (
-                    <div key={category} className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid" style={{ borderLeftColor: primaryColor.hex }}>
+                    <div
+                      key={category}
+                      className="p-4 rounded-lg bg-gray-50 border-l-4 page-break-avoid"
+                      style={{ borderLeftColor: primaryColor.hex }}
+                    >
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-bold text-lg">{category}</h4>
-                        <span className="font-bold" style={{ color: primaryColor.hex }}>{categoryData.score}/100</span>
+                        <span className="font-bold" style={{ color: primaryColor.hex }}>
+                          {categoryData.score}/100
+                        </span>
                       </div>
                       <p className="text-gray-700 text-sm">{categoryData.interpretation}</p>
                     </div>
@@ -436,9 +517,9 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* Strength Snapshot */}
-          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing" style={{ marginBottom: '85px' }}>
+          <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing" style={{ marginBottom: "70px" }}>
             <h3 className="font-bold text-2xl mb-4">Strength Snapshot</h3>
-            
+
             {/* Your Strengths */}
             {analysis.strengths && (
               <div className="mb-6">
@@ -471,10 +552,10 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           </div>
 
           {/* Gradient Divider Line */}
-          <div 
-            className="h-1 rounded-full my-8" 
-            style={{ 
-              background: `linear-gradient(to right, ${primaryColor.hex}, ${secondaryColor.hex})` 
+          <div
+            className="h-1 rounded-full my-8"
+            style={{
+              background: `linear-gradient(to right, ${primaryColor.hex}, ${secondaryColor.hex})`,
             }}
           />
 
@@ -483,7 +564,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
 
           {/* How You Make Decisions */}
           {analysis.decisionMaking && (
-            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: '50px' }}>
+            <div className="mb-6 p-6 rounded-lg border page-break-avoid" style={{ marginBottom: "50px" }}>
               <h4 className="font-bold mb-2">How You Make Decisions</h4>
               <p className="text-sm text-gray-700">{analysis.decisionMaking}</p>
             </div>
@@ -510,12 +591,17 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             <div className="mb-8 p-6 rounded-lg border page-break-avoid section-spacing">
               <h3 className="font-bold text-2xl mb-4">Mini Growth Plan</h3>
               <ul className="space-y-3">
-                {(analysis.miniGrowthPlan || analysis.quickTips || analysis.growthPlan || []).map((item: string, i: number) => (
-                  <li key={i} className="flex gap-3 text-sm">
-                    <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: primaryColor.hex }} />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
+                {(analysis.miniGrowthPlan || analysis.quickTips || analysis.growthPlan || []).map(
+                  (item: string, i: number) => (
+                    <li key={i} className="flex gap-3 text-sm">
+                      <span
+                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                        style={{ backgroundColor: primaryColor.hex }}
+                      />
+                      <span className="text-gray-700">{item}</span>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           )}
