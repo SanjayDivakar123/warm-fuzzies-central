@@ -280,13 +280,13 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
             </div>
           )}
 
-          {/* Color Profile - Last thing on Page 1 */}
+          {/* Color Profile - Only Strengths on Page 1 */}
           <div className="mb-8 page-break-avoid">
             <h3 className="font-bold text-2xl mb-4" style={{ color: primaryColor.hex }}>Your Color Profile</h3>
             
             {/* Strengths */}
             {analysis.strengths && (
-              <div className="mb-4 p-6 rounded-lg border-2 border-emerald-500">
+              <div className="p-6 rounded-lg border-2 border-emerald-500">
                 <h4 className="font-bold text-lg mb-3 text-emerald-700">Strengths</h4>
                 <ul className="space-y-2">
                   {analysis.strengths.map((s: string, i: number) => (
@@ -298,20 +298,20 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
                 </ul>
               </div>
             )}
-
-            {/* How You Communicate - Keep on Page 1 */}
-            {analysis.communicationStyle && (
-              <div className="p-4 rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-2">How You Communicate</h4>
-                <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
-              </div>
-            )}
           </div>
 
           {/* PAGE 2 STARTS HERE */}
           <div className="page-break-before"></div>
 
-          {/* How You Handle Pressure - Starts Page 2 */}
+          {/* How You Communicate - Starts Page 2 */}
+          {analysis.communicationStyle && (
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
+              <h4 className="font-semibold mb-2">How You Communicate</h4>
+              <p className="text-sm text-gray-700">{analysis.communicationStyle}</p>
+            </div>
+          )}
+
+          {/* How You Handle Pressure */}
           {analysis.pressureHandling && (
             <div className="mb-6 p-4 rounded-lg bg-gray-50 page-break-avoid">
               <h4 className="font-semibold mb-2">How You Handle Pressure</h4>
@@ -361,7 +361,7 @@ export const PDFReport = ({ results, analysis, reportType }: PDFReportProps) => 
           )}
 
           {/* PAGE 3 STARTS HERE */}
-          <div className="page-break-before"></div>
+          <div className="page-break-before" style={{ marginTop: '10px' }}></div>
 
           {/* Growth Plan - Starts Page 3 */}
           {analysis.growthPlan && (
