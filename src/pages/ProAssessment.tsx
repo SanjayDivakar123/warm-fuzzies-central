@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -584,6 +584,32 @@ const ProAssessment = () => {
     setSelectedAnswer(color);
   };
 
+  // Shuffle options for current question
+  const shuffledOptions = useMemo(() => {
+    return shuffleArray(proQuestions[currentQuestion].options);
+  }, [currentQuestion]);
+
+  // Add keyboard event listener
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Number keys 1-4 for selecting answers
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const index = parseInt(e.key) - 1;
+        if (index < shuffledOptions.length) {
+          handleAnswer(shuffledOptions[index].color);
+        }
+      }
+      
+      // Enter key to proceed to next question
+      if (e.key === 'Enter' && selectedAnswer) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedAnswer, shuffledOptions]);
+
   const handleNext = () => {
     if (selectedAnswer) {
       const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
@@ -632,11 +658,6 @@ const ProAssessment = () => {
 
   const progress = ((currentQuestion + 1) / proQuestions.length) * 100;
   const currentQuestionData = proQuestions[currentQuestion];
-  
-  // Shuffle options for current question
-  const shuffledOptions = useMemo(() => {
-    return shuffleArray(currentQuestionData.options);
-  }, [currentQuestion]);
 
   return (
     <ProtectedRoute requiresPayment={true} assessmentType="pro">
@@ -721,7 +742,12 @@ const ProAssessment = () => {
                         htmlFor={`option-${index}`} 
                         className="text-sm leading-relaxed cursor-pointer text-foreground font-medium"
                       >
-                        {option.text}
+                        <span className="inline-flex items-center gap-2">
+                          <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">
+                            {index + 1}
+                          </kbd>
+                          {option.text}
+                        </span>
                       </Label>
                     </div>
                   ))}
@@ -743,7 +769,7 @@ const ProAssessment = () => {
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">
-                  Your answers are not saved if you don't finish the quiz
+                  Press 1-4 to select • Press Enter to continue
                 </p>
               </div>
 
