@@ -43,7 +43,6 @@ import BlogEditor from "@/pages/admin/BlogEditor";
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
-    <Navbar />
     {children}
     <Footer />
   </>
