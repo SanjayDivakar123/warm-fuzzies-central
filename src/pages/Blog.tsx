@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Clock, User } from "lucide-react";
 import { format } from "date-fns";
+import { Navbar } from "@/components/navigation/Navbar";
 
 interface BlogPost {
   id: string;
@@ -58,6 +59,7 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       <div className="container mx-auto py-16 px-4">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4">Blog</h1>

@@ -7,6 +7,7 @@ import { ArrowLeft, Clock, User } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Navbar } from "@/components/navigation/Navbar";
 
 interface BlogPost {
   id: string;
@@ -68,6 +69,7 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       <div className="container mx-auto py-8 px-4 max-w-4xl">
         <Button
           variant="ghost"
