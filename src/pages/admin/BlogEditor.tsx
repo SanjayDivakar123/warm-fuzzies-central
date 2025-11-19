@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Upload, Eye } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function BlogEditor() {
   const { id } = useParams();
@@ -24,7 +27,11 @@ export default function BlogEditor() {
     status: "draft",
     meta_description: "",
     tags: "",
+    author_name: "",
+    read_time: 5,
   });
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     checkAccess();
@@ -78,6 +85,8 @@ export default function BlogEditor() {
           status: data.status,
           meta_description: data.meta_description || "",
           tags: data.tags?.join(", ") || "",
+          author_name: data.author_name || "",
+          read_time: data.read_time || 5,
         });
       }
     } catch (error) {
@@ -105,6 +114,57 @@ export default function BlogEditor() {
     });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImageFile(file);
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("blog-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("blog-images")
+        .getPublicUrl(filePath);
+
+      setFormData({
+        ...formData,
+        featured_image: publicUrl,
+      });
+
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.title || !formData.content) {
       toast({
@@ -130,6 +190,8 @@ export default function BlogEditor() {
         meta_description: formData.meta_description,
         tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
         author_id: user.id,
+        author_name: formData.author_name || null,
+        read_time: formData.read_time || 5,
         published_at: formData.status === "published" ? new Date().toISOString() : null,
       };
 
@@ -206,6 +268,30 @@ export default function BlogEditor() {
               />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="author_name">Author Name</Label>
+                <Input
+                  id="author_name"
+                  value={formData.author_name}
+                  onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="read_time">Read Time (minutes)</Label>
+                <Input
+                  id="read_time"
+                  type="number"
+                  min="1"
+                  value={formData.read_time}
+                  onChange={(e) => setFormData({ ...formData, read_time: parseInt(e.target.value) || 5 })}
+                  placeholder="5"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="excerpt">Excerpt</Label>
               <Textarea
@@ -218,24 +304,67 @@ export default function BlogEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Write your blog post content here..."
-                rows={15}
-              />
+              <Label htmlFor="content">Content * (Markdown supported)</Label>
+              <Tabs defaultValue="write" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="write">Write</TabsTrigger>
+                  <TabsTrigger value="preview">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Preview
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="write">
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    placeholder="Write your blog post content using Markdown syntax...&#10;&#10;# Heading 1&#10;## Heading 2&#10;&#10;**Bold text**&#10;*Italic text*&#10;&#10;- List item 1&#10;- List item 2&#10;&#10;[Link text](https://example.com)"
+                    rows={15}
+                    className="font-mono"
+                  />
+                </TabsContent>
+                <TabsContent value="preview">
+                  <div className="min-h-[300px] p-4 border rounded-md prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {formData.content || "*No content yet*"}
+                    </ReactMarkdown>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="featured_image">Featured Image URL</Label>
-              <Input
-                id="featured_image"
-                value={formData.featured_image}
-                onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
+              <Label htmlFor="featured_image">Featured Image (Blog Art)</Label>
+              <div className="flex gap-4 items-start">
+                <div className="flex-1 space-y-2">
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload an image or enter a URL below
+                  </p>
+                  <Input
+                    id="featured_image"
+                    value={formData.featured_image}
+                    onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                {formData.featured_image && (
+                  <div className="w-32 h-32 border rounded-lg overflow-hidden">
+                    <img
+                      src={formData.featured_image}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

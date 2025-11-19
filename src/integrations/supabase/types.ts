@@ -118,6 +118,7 @@ export type Database = {
       blog_posts: {
         Row: {
           author_id: string
+          author_name: string | null
           content: string
           created_at: string
           excerpt: string | null
@@ -126,6 +127,7 @@ export type Database = {
           meta_description: string | null
           meta_keywords: string[] | null
           published_at: string | null
+          read_time: number | null
           slug: string
           status: string
           tags: string[] | null
@@ -134,6 +136,7 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          author_name?: string | null
           content: string
           created_at?: string
           excerpt?: string | null
@@ -142,6 +145,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string[] | null
           published_at?: string | null
+          read_time?: number | null
           slug: string
           status?: string
           tags?: string[] | null
@@ -150,6 +154,7 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          author_name?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
@@ -158,6 +163,7 @@ export type Database = {
           meta_description?: string | null
           meta_keywords?: string[] | null
           published_at?: string | null
+          read_time?: number | null
           slug?: string
           status?: string
           tags?: string[] | null

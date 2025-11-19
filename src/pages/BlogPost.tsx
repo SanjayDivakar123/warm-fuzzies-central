@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock, User } from "lucide-react";
 import { format } from "date-fns";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface BlogPost {
   id: string;
@@ -14,6 +16,8 @@ interface BlogPost {
   published_at: string | null;
   tags: string[] | null;
   meta_description: string | null;
+  author_name: string | null;
+  read_time: number | null;
 }
 
 export default function BlogPost() {
@@ -84,7 +88,7 @@ export default function BlogPost() {
         )}
 
         <article className="prose prose-lg dark:prose-invert max-w-none">
-          <div className="mb-6">
+          <div className="mb-8">
             <div className="flex flex-wrap gap-2 mb-4">
               {post.tags?.map((tag) => (
                 <Badge key={tag} variant="secondary">
@@ -93,15 +97,48 @@ export default function BlogPost() {
               ))}
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{post.title}</h1>
-            {post.published_at && (
-              <p className="text-muted-foreground">
-                Published on {format(new Date(post.published_at), "MMMM dd, yyyy")}
-              </p>
-            )}
+            <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
+              {post.author_name && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{post.author_name}</span>
+                </div>
+              )}
+              {post.published_at && (
+                <div className="flex items-center gap-2">
+                  <span>Published {format(new Date(post.published_at), "MMM dd, yyyy")}</span>
+                </div>
+              )}
+              {post.read_time && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>{post.read_time} min read</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="whitespace-pre-wrap leading-relaxed">
-            {post.content}
+          <div className="leading-relaxed">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />,
+                h2: ({ node, ...props }) => <h2 className="text-2xl font-bold mt-6 mb-3" {...props} />,
+                h3: ({ node, ...props }) => <h3 className="text-xl font-bold mt-4 mb-2" {...props} />,
+                p: ({ node, ...props }) => <p className="mb-4" {...props} />,
+                ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-2" {...props} />,
+                ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />,
+                blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary pl-4 italic my-4" {...props} />,
+                code: ({ node, inline, ...props }: any) => 
+                  inline ? (
+                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm" {...props} />
+                  ) : (
+                    <code className="block bg-muted p-4 rounded-lg overflow-x-auto my-4" {...props} />
+                  ),
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
           </div>
         </article>
       </div>

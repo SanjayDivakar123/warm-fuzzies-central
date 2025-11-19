@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Clock, User } from "lucide-react";
 import { format } from "date-fns";
 
 interface BlogPost {
@@ -13,6 +14,8 @@ interface BlogPost {
   featured_image: string | null;
   published_at: string | null;
   tags: string[] | null;
+  author_name: string | null;
+  read_time: number | null;
 }
 
 export default function Blog() {
@@ -28,7 +31,7 @@ export default function Blog() {
     try {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("id, title, slug, excerpt, featured_image, published_at, tags")
+        .select("id, title, slug, excerpt, featured_image, published_at, tags, author_name, read_time")
         .eq("status", "published")
         .order("published_at", { ascending: false });
 
@@ -93,8 +96,24 @@ export default function Blog() {
                     ))}
                   </div>
                   <CardTitle className="line-clamp-2">{post.title}</CardTitle>
-                  <CardDescription>
-                    {post.published_at && format(new Date(post.published_at), "MMM dd, yyyy")}
+                  <CardDescription className="space-y-1">
+                    <div className="flex items-center gap-4 text-xs">
+                      {post.author_name && (
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span>{post.author_name}</span>
+                        </div>
+                      )}
+                      {post.read_time && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{post.read_time} min read</span>
+                        </div>
+                      )}
+                    </div>
+                    {post.published_at && (
+                      <div>{format(new Date(post.published_at), "MMM dd, yyyy")}</div>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
