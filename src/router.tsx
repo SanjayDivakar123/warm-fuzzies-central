@@ -32,6 +32,12 @@ import { VoiceResults } from "@/pages/VoiceResults";
 import SharedResult from "@/pages/SharedResult";
 import LeadershipAssessment from "@/pages/LeadershipAssessment";
 import LeadershipResults from "@/pages/LeadershipResults";
+import Blog from "@/pages/Blog";
+import BlogPost from "@/pages/BlogPost";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import UserManagement from "@/pages/admin/UserManagement";
+import BlogManagement from "@/pages/admin/BlogManagement";
+import BlogEditor from "@/pages/admin/BlogEditor";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -157,6 +163,34 @@ export const router = createBrowserRouter([
   {
     path: "/leadership-results/:type",
     element: <Layout><LeadershipResults /></Layout>,
+  },
+  {
+    path: "/blog",
+    element: <Layout><Blog /></Layout>,
+  },
+  {
+    path: "/blog/:slug",
+    element: <Layout><BlogPost /></Layout>,
+  },
+  {
+    path: "/admin",
+    element: <Layout><AdminDashboard /></Layout>,
+  },
+  {
+    path: "/admin/users",
+    element: <Layout><UserManagement /></Layout>,
+  },
+  {
+    path: "/admin/blogs",
+    element: <Layout><BlogManagement /></Layout>,
+  },
+  {
+    path: "/admin/blog/new",
+    element: <Layout><BlogEditor /></Layout>,
+  },
+  {
+    path: "/admin/blog/edit/:id",
+    element: <Layout><BlogEditor /></Layout>,
   },
   {
     path: "*",

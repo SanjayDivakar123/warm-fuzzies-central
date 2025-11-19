@@ -63,6 +63,15 @@ export function Navbar() {
                 </MenubarTrigger>
               </MenubarMenu>
 
+              <MenubarMenu>
+                <MenubarTrigger asChild>
+                  <Link to="/blog" className={`cursor-pointer smooth-hover rounded-lg px-4 py-2 ${isActive('/blog') ? 'bg-primary/10 text-primary font-semibold border border-primary/20' : 'hover:bg-accent/50'}`}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Blog
+                  </Link>
+                </MenubarTrigger>
+              </MenubarMenu>
+
             </Menubar>
           </div>
 
@@ -117,6 +126,10 @@ export function Navbar() {
               <Link to="/team" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
                 <UserCircle className="w-4 h-4 mr-2 inline" />
                 Our Team
+              </Link>
+              <Link to="/blog" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/blog') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <Users className="w-4 h-4 mr-2 inline" />
+                Blog
               </Link>
               
               <div className="px-3 py-2">
