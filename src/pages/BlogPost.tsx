@@ -13,6 +13,7 @@ interface BlogPost {
   title: string;
   content: string;
   featured_image: string | null;
+  featured_image_alt: string | null;
   published_at: string | null;
   tags: string[] | null;
   meta_description: string | null;
@@ -81,7 +82,7 @@ export default function BlogPost() {
           <div className="aspect-video w-full overflow-hidden rounded-lg mb-8">
             <img
               src={post.featured_image}
-              alt={post.title}
+              alt={post.featured_image_alt || post.title}
               className="w-full h-full object-cover"
             />
           </div>

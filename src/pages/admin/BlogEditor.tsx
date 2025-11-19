@@ -24,6 +24,7 @@ export default function BlogEditor() {
     excerpt: "",
     content: "",
     featured_image: "",
+    featured_image_alt: "",
     status: "draft",
     meta_description: "",
     tags: "",
@@ -32,6 +33,7 @@ export default function BlogEditor() {
   });
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     checkAccess();
@@ -82,6 +84,7 @@ export default function BlogEditor() {
           excerpt: data.excerpt || "",
           content: data.content,
           featured_image: data.featured_image || "",
+          featured_image_alt: data.featured_image_alt || "",
           status: data.status,
           meta_description: data.meta_description || "",
           tags: data.tags?.join(", ") || "",
@@ -165,6 +168,120 @@ export default function BlogEditor() {
     }
   };
 
+  const uploadImageToStorage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("blog-images")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("blog-images")
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const handleMarkdownImageDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith("image/"));
+
+    if (imageFiles.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please drop image files only",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      for (const file of imageFiles) {
+        const imageUrl = await uploadImageToStorage(file);
+        
+        // Prompt for alt text
+        const altText = prompt(`Enter alt text for ${file.name}:`, file.name.split('.')[0]) || "";
+        
+        // Insert markdown image syntax at end of content
+        const markdownImage = `\n![${altText}](${imageUrl})\n`;
+        
+        setFormData({
+          ...formData,
+          content: formData.content + markdownImage,
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: `${imageFiles.length} image(s) uploaded and inserted`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload images",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleMarkdownImagePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith("image/"));
+
+    if (imageItems.length === 0) return;
+
+    e.preventDefault();
+    setUploading(true);
+
+    try {
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const imageUrl = await uploadImageToStorage(file);
+        
+        // Prompt for alt text
+        const altText = prompt("Enter alt text for the pasted image:", "Pasted image") || "";
+        
+        // Insert markdown image syntax at cursor position
+        const textarea = e.currentTarget;
+        const cursorPos = textarea.selectionStart;
+        const textBefore = formData.content.substring(0, cursorPos);
+        const textAfter = formData.content.substring(cursorPos);
+        const markdownImage = `\n![${altText}](${imageUrl})\n`;
+        
+        setFormData({
+          ...formData,
+          content: textBefore + markdownImage + textAfter,
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "Image(s) uploaded and inserted",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload images",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.title || !formData.content) {
       toast({
@@ -186,6 +303,7 @@ export default function BlogEditor() {
         excerpt: formData.excerpt,
         content: formData.content,
         featured_image: formData.featured_image || null,
+        featured_image_alt: formData.featured_image_alt || null,
         status: formData.status,
         meta_description: formData.meta_description,
         tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
@@ -305,6 +423,9 @@ export default function BlogEditor() {
 
             <div className="space-y-2">
               <Label htmlFor="content">Content * (Markdown supported)</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                💡 Tip: Drag & drop or paste images directly into the editor!
+              </p>
               <Tabs defaultValue="write" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="write">Write</TabsTrigger>
@@ -314,14 +435,31 @@ export default function BlogEditor() {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="write">
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="Write your blog post content using Markdown syntax...&#10;&#10;# Heading 1&#10;## Heading 2&#10;&#10;**Bold text**&#10;*Italic text*&#10;&#10;- List item 1&#10;- List item 2&#10;&#10;[Link text](https://example.com)"
-                    rows={15}
-                    className="font-mono"
-                  />
+                  <div
+                    className={`relative ${isDragging ? 'ring-2 ring-primary' : ''}`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleMarkdownImageDrop}
+                  >
+                    {isDragging && (
+                      <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-md flex items-center justify-center z-10 pointer-events-none">
+                        <p className="text-primary font-semibold">Drop images here</p>
+                      </div>
+                    )}
+                    <Textarea
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      onPaste={handleMarkdownImagePaste}
+                      placeholder="Write your blog post content using Markdown syntax...&#10;&#10;# Heading 1&#10;## Heading 2&#10;&#10;**Bold text**&#10;*Italic text*&#10;&#10;- List item 1&#10;- List item 2&#10;&#10;[Link text](https://example.com)&#10;&#10;You can also drag & drop or paste images!"
+                      rows={15}
+                      className="font-mono"
+                      disabled={uploading}
+                    />
+                  </div>
                 </TabsContent>
                 <TabsContent value="preview">
                   <div className="min-h-[300px] p-4 border rounded-md prose prose-sm max-w-none dark:prose-invert">
@@ -364,12 +502,28 @@ export default function BlogEditor() {
                       placeholder="https://example.com/image.jpg"
                     />
                   </div>
+
+                  {/* Alt Text */}
+                  <div className="space-y-2">
+                    <Label htmlFor="featured_image_alt" className="text-sm font-normal">
+                      Alt Text for Cover Image *
+                    </Label>
+                    <Input
+                      id="featured_image_alt"
+                      value={formData.featured_image_alt}
+                      onChange={(e) => setFormData({ ...formData, featured_image_alt: e.target.value })}
+                      placeholder="Describe the cover image for accessibility"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Alt text helps with accessibility and SEO
+                    </p>
+                  </div>
                 </div>
                 {formData.featured_image && (
                   <div className="w-32 h-32 border rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={formData.featured_image}
-                      alt="Preview"
+                      alt={formData.featured_image_alt || "Preview"}
                       className="w-full h-full object-cover"
                     />
                   </div>
