@@ -333,30 +333,40 @@ export default function BlogEditor() {
               </Tabs>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="featured_image">Featured Image (Blog Art)</Label>
+            <div className="space-y-4">
+              <Label>Featured Image (Blog Art)</Label>
               <div className="flex gap-4 items-start">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploading}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Upload an image or enter a URL below
-                  </p>
-                  <Input
-                    id="featured_image"
-                    value={formData.featured_image}
-                    onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                <div className="flex-1 space-y-4">
+                  {/* Upload Option */}
+                  <div className="space-y-2">
+                    <Label htmlFor="image-upload" className="text-sm font-normal text-muted-foreground">
+                      Upload Image
+                    </Label>
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                      className="cursor-pointer"
+                    />
+                  </div>
+
+                  {/* URL Option */}
+                  <div className="space-y-2">
+                    <Label htmlFor="featured_image" className="text-sm font-normal text-muted-foreground">
+                      Or paste image URL (optional)
+                    </Label>
+                    <Input
+                      id="featured_image"
+                      value={formData.featured_image}
+                      onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </div>
                 {formData.featured_image && (
-                  <div className="w-32 h-32 border rounded-lg overflow-hidden">
+                  <div className="w-32 h-32 border rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={formData.featured_image}
                       alt="Preview"
