@@ -27,6 +27,7 @@ import KaponoCiotti from "@/pages/team/KaponoCiotti";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/navigation/Navbar";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
 import SharedResult from "@/pages/SharedResult";
@@ -42,6 +43,7 @@ import BlogEditor from "@/pages/admin/BlogEditor";
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
+    <Navbar />
     {children}
     <Footer />
   </>
