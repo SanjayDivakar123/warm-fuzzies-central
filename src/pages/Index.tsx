@@ -8,14 +8,25 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { BurningReveal } from "@/components/effects/BurningReveal";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const [showBurningReveal, setShowBurningReveal] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the burning reveal before
+    const hasSeenReveal = sessionStorage.getItem('hasSeenBurningReveal');
+    
+    if (!hasSeenReveal) {
+      setShowBurningReveal(true);
+      sessionStorage.setItem('hasSeenBurningReveal', 'true');
+    }
+  }, []);
+
   useEffect(() => {
     if (searchParams.get('accverified') === 'true') {
       toast({
@@ -27,11 +38,16 @@ const Index = () => {
       }, 2000);
     }
   }, [searchParams, navigate]);
-  return <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      {/* Hero Section - Values Bridge Style */}
-      <section className="relative section-padding overflow-hidden" aria-label="Hero section">
+  return (
+    <>
+      {showBurningReveal && (
+        <BurningReveal onComplete={() => setShowBurningReveal(false)} />
+      )}
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        
+        {/* Hero Section - Values Bridge Style */}
+        <section className="relative section-padding overflow-hidden" aria-label="Hero section">
         <div className="absolute inset-0 bg-background"></div>
         
         <div className="relative container-wide">
@@ -416,6 +432,8 @@ styles.<br />
           </div>
         </div>
       </section>
-    </div>;
+    </div>
+    </>
+  );
 };
 export default Index;

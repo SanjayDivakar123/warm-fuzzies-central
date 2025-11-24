@@ -1,0 +1,60 @@
+.burning-reveal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.burning-hero-section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+.burning-hero-content {
+  text-align: center;
+  color: white;
+  padding: 0 20px;
+}
+
+.burning-hero-title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 900;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+  background: linear-gradient(135deg, #ff6b35, #f7931e, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.burning-hero-subtitle {
+  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  font-weight: 300;
+  opacity: 0.9;
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+canvas#fire-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10000;
+}
