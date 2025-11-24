@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Check, Star, Users, Building, UserCheck, Palette } from "lucide-react"
+import { Star, UserCheck, Palette } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
-import { PaymentButton } from "@/components/payment/PaymentButton"
+import { LuminousPricingCard } from "@/components/pricing/LuminousPricingCard"
+import "@/components/pricing/luminous-card.css"
 
 export default function Pricing() {
   const individualPlans = [
@@ -90,66 +89,26 @@ export default function Pricing() {
         {/* Individual Plans */}
         <div className="mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
             {individualPlans.map((plan) => (
-              <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary shadow-lg sm:scale-105' : ''}`}>
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                    Most Popular
-                  </Badge>
-                )}
-                <CardHeader className="text-center">
-                  <plan.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription className="text-sm">{plan.target}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    {plan.priceNote && <span className="text-muted-foreground ml-2">{plan.priceNote}</span>}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  {plan.name === "Free Assessment" ? (
-                    <Button className="w-full" variant={plan.popular ? "default" : "outline"} asChild>
-                      <Link to="/free-assessment">
-                        {plan.cta}
-                      </Link>
-                    </Button>
-                  ) : plan.name === "Premium Assessment" ? (
-                    <PaymentButton 
-                      productType="premium" 
-                      className="w-full" 
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      {plan.cta}
-                    </PaymentButton>
-                  ) : plan.name === "Pro Deep Dive" ? (
-                    <PaymentButton 
-                      productType="pro" 
-                      className="w-full" 
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      {plan.cta}
-                    </PaymentButton>
-                  ) : (
-                    <Button className="w-full" variant={plan.popular ? "default" : "outline"} asChild>
-                      <Link to="/pricing">
-                        {plan.cta}
-                      </Link>
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
+              <LuminousPricingCard
+                key={plan.name}
+                name={plan.name}
+                price={plan.price}
+                priceNote={plan.priceNote}
+                target={plan.target}
+                description={plan.description}
+                features={plan.features}
+                cta={plan.cta}
+                popular={plan.popular}
+                icon={plan.icon}
+                ctaAction={
+                  plan.name === "Free Assessment" ? "free" :
+                  plan.name === "Premium Assessment" ? "premium" :
+                  plan.name === "Pro Deep Dive" ? "pro" :
+                  undefined
+                }
+              />
             ))}
           </div>
         </div>
@@ -157,21 +116,19 @@ export default function Pricing() {
         {/* Testimonial Section */}
         <div className="mb-12 sm:mb-16">
           <div className="max-w-3xl mx-auto">
-            <Card className="bg-muted/50 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex gap-1 mb-4 justify-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-lg text-center mb-4 italic">
-                  "RoleColorFinder helped me discover my ideal career path"
-                </p>
-                <p className="text-center text-muted-foreground font-medium">
-                  — Amit Suthar
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-muted/50 border border-primary/20 rounded-lg p-6">
+              <div className="flex gap-1 mb-4 justify-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 fill-primary text-primary" />
+                ))}
+              </div>
+              <p className="text-lg text-center mb-4 italic">
+                "RoleColorFinder helped me discover my ideal career path"
+              </p>
+              <p className="text-center text-muted-foreground font-medium">
+                — Amit Suthar
+              </p>
+            </div>
           </div>
         </div>
 
