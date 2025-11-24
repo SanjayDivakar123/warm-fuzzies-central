@@ -8,7 +8,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { StickyTextHero } from "@/components/hero/StickyTextHero";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 const Index = () => {
@@ -30,9 +29,6 @@ const Index = () => {
   }, [searchParams, navigate]);
   return <div className="min-h-screen bg-background">
       <Navbar />
-      
-      {/* Sticky Text Hero */}
-      <StickyTextHero />
       
       {/* Hero Section - Values Bridge Style */}
       <section className="relative section-padding overflow-hidden" aria-label="Hero section">
