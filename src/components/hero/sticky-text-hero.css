@@ -1,0 +1,178 @@
+/* Sticky Text Hero Styles */
+
+.sticky-text-header {
+  --font-level: 4;
+  --font-size-min: 24;
+  position: sticky;
+  top: calc((var(--count) - 1) * -1lh);
+  line-height: 1.2;
+  display: flex;
+  align-items: start;
+  width: 100%;
+  margin-bottom: var(--space, 50vh);
+  z-index: 10;
+}
+
+.sticky-text-header li {
+  --dimmed: color-mix(in oklch, hsl(var(--foreground)), transparent 80%);
+  background: linear-gradient(
+    180deg,
+    var(--dimmed) 0 calc(var(--start, 50vh) - 0.5lh),
+    hsl(var(--primary)) calc(var(--start, 50vh) - 0.55lh) calc(var(--start, 50vh) + 0.55lh),
+    var(--dimmed) calc(var(--start, 50vh) + 0.5lh)
+  );
+  background-attachment: fixed;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.sticky-content {
+  display: flex;
+  width: 100%;
+  align-items: start;
+  justify-content: center;
+  padding-top: calc(var(--start, 50vh) - 0.5lh);
+}
+
+.sticky-text-header h1 {
+  position: sticky;
+  top: calc(var(--start, 50vh) - 0.5lh);
+  font-size: clamp(2rem, 6vw, 5rem);
+  margin: 0;
+  display: inline-block;
+  height: fit-content;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.sticky-text-header ul {
+  font-weight: 600;
+  padding-inline: 0;
+  margin: 0;
+  list-style-type: none;
+  font-size: clamp(2rem, 6vw, 5rem);
+}
+
+.sticky-main {
+  display: flex;
+  place-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  z-index: 2;
+  position: relative;
+  color: hsl(var(--background));
+}
+
+.sticky-main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: hsl(var(--foreground));
+  border-radius: 1rem 1rem 0 0;
+  transform-origin: 50% 100%;
+  scale: 0.9;
+}
+
+.sticky-main.animate {
+  view-timeline-name: --section;
+}
+
+.sticky-main.animate::before {
+  animation: grow both ease-in-out;
+  animation-timeline: --section;
+  animation-range: entry 50%;
+}
+
+.sticky-main section {
+  font-size: clamp(1.25rem, 4vw, 2.5rem);
+  height: 100%;
+  width: 100%;
+  display: flex;
+  place-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.sticky-main.animate section p {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  animation: reveal both ease-in-out;
+  animation-timeline: --section;
+  animation-range: entry 50%;
+}
+
+.sticky-main section a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  text-underline-offset: 0.1lh;
+  transition: all 0.3s ease;
+}
+
+.sticky-main section a:is(:focus-visible, :hover) {
+  text-decoration: underline;
+  color: hsl(var(--primary) / 0.8);
+}
+
+.sticky-main section p {
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.fluid-text {
+  font-size: clamp(1.25rem, 4vw, 2.5rem);
+  line-height: 1.4;
+}
+
+.spacer {
+  height: 50vh;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Animations */
+@keyframes reveal {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes grow {
+  100% {
+    scale: 1;
+    border-radius: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sticky-text-header h1,
+  .sticky-text-header ul {
+    font-size: clamp(1.5rem, 8vw, 3rem);
+  }
+
+  .sticky-main section p {
+    white-space: normal;
+    max-width: 90%;
+  }
+}
