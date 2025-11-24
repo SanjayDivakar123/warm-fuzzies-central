@@ -385,33 +385,34 @@
   transform: translateX(0.2rem);
 }
 
-/* Active state */
+/* Active state - Dark Mode */
 .luminous-card.active {
+  background: radial-gradient(circle at 50% 0%, hsl(var(--background)), hsl(220 15% 8%));
   box-shadow: 
     inset 0 1.01rem 0.1rem -1rem hsl(var(--primary) / 0.6),
-    inset 0 -4rem 3rem -3rem hsl(var(--background) / 0.6),
+    inset 0 -4rem 3rem -3rem hsl(220 15% 5% / 0.9),
     0 -1.02rem 0.2rem -1rem hsl(var(--primary) / 0.6),
-    0 1rem 0.2rem -1rem hsl(var(--background)),
-    0 0 0 1px hsl(var(--primary) / 0.2),
-    0 4px 4px 0 hsl(var(--background) / 0.3),
+    0 1rem 0.2rem -1rem hsl(220 15% 5%),
+    0 0 0 1px hsl(var(--primary) / 0.3),
+    0 4px 16px 0 hsl(var(--primary) / 0.2),
     0 0 0 1px hsl(var(--border));
 }
 
 .luminous-card.active .slit {
   background: hsl(var(--primary));
-  box-shadow: 0 0 4px 0 hsl(var(--primary));
+  box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.8);
 }
 
 .luminous-card.active .lumen {
-  opacity: 0.5;
-}
-
-.luminous-card.active .darken {
   opacity: 0.8;
 }
 
+.luminous-card.active .darken {
+  opacity: 1;
+}
+
 .luminous-card.active .darken .sl {
-  opacity: 0.2;
+  opacity: 0.4;
 }
 
 .luminous-card.active .darken .ll {
@@ -427,23 +428,37 @@
 }
 
 .luminous-card.active .icon-container {
-  filter: drop-shadow(0 -1.2rem 2px hsl(var(--background) / 0.2));
+  filter: drop-shadow(0 -1.2rem 4px hsl(var(--primary) / 0.4));
 }
 
 .luminous-card.active .icon-svg {
-  filter: brightness(1.4) drop-shadow(0 0 8px hsl(var(--primary) / 0.6));
+  filter: brightness(1.6) drop-shadow(0 0 12px hsl(var(--primary) / 0.8));
+  color: hsl(var(--primary));
+}
+
+.luminous-card.active .card-title,
+.luminous-card.active .price-section,
+.luminous-card.active .feature-item span {
+  color: hsl(var(--foreground));
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+.luminous-card.active .card-target,
+.luminous-card.active .card-description {
+  color: hsl(var(--muted-foreground));
 }
 
 .luminous-card.active .light-toggle::before {
-  background: hsl(var(--primary) / 0.8);
-  box-shadow: 0 0 0.3rem 0.2rem hsl(var(--primary) / 0.4);
+  background: hsl(var(--primary) / 0.9);
+  box-shadow: 0 0 0.6rem 0.3rem hsl(var(--primary) / 0.6);
 }
 
 .luminous-card.active .toggle-handle {
   transform: translateX(1.58rem);
+  background: hsl(var(--primary-foreground));
   box-shadow: 
     inset 0 1px 12px 0 hsl(var(--primary)),
-    inset 0 -1px 1px 0 hsl(var(--primary) / 0.6),
-    0 0 2px 1px hsl(var(--primary) / 0.3),
-    1px 3px 6px 1px hsl(var(--background) / 0.3);
+    inset 0 -1px 1px 0 hsl(var(--primary) / 0.8),
+    0 0 4px 2px hsl(var(--primary) / 0.5),
+    1px 3px 8px 1px hsl(var(--primary) / 0.4);
 }
