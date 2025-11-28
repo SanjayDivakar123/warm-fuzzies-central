@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Home, Loader2, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Home, Loader2, Download, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateResults, type AssessmentResults } from "@/lib/assessmentScoring";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { PDFReport } from "@/components/PDFReport";
@@ -554,12 +558,73 @@ const LeadershipResults = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [analysis, setAnalysis] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [resultName, setResultName] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+
+  const handleSaveResult = async () => {
+    if (!results || !resultName.trim()) {
+      toast({
+        title: "Save Failed",
+        description: "Please enter a name for your assessment",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your assessment results",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('assessment_results')
+        .insert({
+          user_id: user.id,
+          assessment_type: type || 'leadership',
+          results: {
+            name: resultName.trim(),
+            primaryColor: results.primaryColor,
+            secondaryColor: results.secondaryColor,
+            colorScores: results.colorScores,
+            categoryScores: results.categoryScores,
+            spectrumPosition: results.spectrumPosition,
+            analysis: analysis
+          } as any
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Assessment Saved!",
+        description: `"${resultName}" has been saved to your account.`
+      });
+      setIsDialogOpen(false);
+      setResultName("");
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const processResults = async () => {
@@ -689,35 +754,71 @@ const LeadershipResults = () => {
         }}>
           <CardHeader>
             <CardTitle className="text-2xl text-center" style={{ color: primaryColorRGB[results.primaryColor] }}>
-              Download Your Report
+              Save & Download Your Report
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <p className="text-center text-muted-foreground">
-              Save your personalized leadership assessment report as a PDF to share or keep for your records.
+              Save your personalized leadership assessment report to your account or download as PDF.
             </p>
-            <Button 
-              onClick={handleDownloadPDF} 
-              disabled={isGeneratingPDF || isLoading}
-              size="lg"
-              className="gap-2"
-              style={{ 
-                backgroundColor: primaryColorRGB[results.primaryColor],
-                color: 'white'
-              }}
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5" />
-                  Download PDF Report
-                </>
+            <div className="flex flex-wrap gap-4 justify-center">
+              {user && (
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="lg" className="gap-2">
+                      <Save className="h-5 w-5" />
+                      Save to Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Save Your Assessment</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="result-name">Assessment Name</Label>
+                        <Input
+                          id="result-name"
+                          placeholder="Enter a name for this assessment..."
+                          value={resultName}
+                          onChange={(e) => setResultName(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSaveResult} disabled={isSaving || !resultName.trim()}>
+                          {isSaving ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               )}
-            </Button>
+              <Button 
+                onClick={handleDownloadPDF} 
+                disabled={isGeneratingPDF || isLoading}
+                size="lg"
+                className="gap-2"
+                style={{ 
+                  backgroundColor: primaryColorRGB[results.primaryColor],
+                  color: 'white'
+                }}
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5" />
+                    Download PDF Report
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
