@@ -38,7 +38,7 @@ const PaymentSuccess = () => {
       // Also store in Supabase for persistence
       const { data, error } = await supabase
         .from('assessment_results')
-        .upsert({
+        .insert({
           user_id: user?.id,
           assessment_type: assessmentType,
           results: { 
@@ -46,8 +46,6 @@ const PaymentSuccess = () => {
             purchased_at: new Date().toISOString(),
             assessment_started: false
           }
-        }, {
-          onConflict: 'user_id,assessment_type'
         });
 
       if (error) {
