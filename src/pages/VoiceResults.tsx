@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/navigation/Navbar";
-import { Download, Phone, Loader2 } from "lucide-react";
+import { Download, Phone, Loader2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF } from "@/lib/pdfExport";
 
@@ -49,11 +53,74 @@ export const VoiceResults = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<VoiceAssessmentResult | null>(null);
+  const [resultName, setResultName] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const sessionId = searchParams.get("session");
   const phoneNumber = searchParams.get("phone");
+
+  const handleSaveResult = async () => {
+    if (!results || !resultName.trim()) {
+      toast({
+        title: "Save Failed",
+        description: "Please enter a name for your assessment",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your assessment results",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('assessment_results')
+        .insert({
+          user_id: user.id,
+          assessment_type: 'voice',
+          results: {
+            name: resultName.trim(),
+            dominantColor: results.dominant_color,
+            scores: {
+              yellow: results.score_yellow,
+              red: results.score_red,
+              green: results.score_green,
+              blue: results.score_blue
+            },
+            phoneNumber: results.phone_number
+          } as any
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Assessment Saved!",
+        description: `"${resultName}" has been saved to your account.`
+      });
+      setIsDialogOpen(false);
+      setResultName("");
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -227,6 +294,40 @@ export const VoiceResults = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {user && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" variant="outline">
+                    <Save className="mr-2 h-5 w-5" />
+                    Save to Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Save Your Assessment</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="result-name">Assessment Name</Label>
+                      <Input
+                        id="result-name"
+                        placeholder="Enter a name for this assessment..."
+                        value={resultName}
+                        onChange={(e) => setResultName(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveResult} disabled={isSaving || !resultName.trim()}>
+                        {isSaving ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             <Button size="lg" onClick={handleDownloadPDF}>
               <Download className="mr-2 h-5 w-5" />
               Download PDF Report

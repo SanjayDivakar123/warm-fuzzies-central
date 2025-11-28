@@ -3,8 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RotateCcw, Share2, Home, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RotateCcw, Share2, Home, Download, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Navbar } from "@/components/navigation/Navbar";
@@ -386,8 +391,12 @@ const getSingleColorRoles = (color: string, leadershipFit: string) => {
 
 const Results = () => {
   const [results, setResults] = useState<QuizResults | null>(null);
+  const [resultName, setResultName] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const savedResults = localStorage.getItem('quizResults');
@@ -397,6 +406,61 @@ const Results = () => {
       navigate('/');
     }
   }, [navigate]);
+
+  const handleSaveResult = async () => {
+    if (!results || !resultName.trim()) {
+      toast({
+        title: "Save Failed",
+        description: "Please enter a name for your assessment",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your assessment results",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('assessment_results')
+        .insert({
+          user_id: user.id,
+          assessment_type: 'quiz',
+          results: {
+            name: resultName.trim(),
+            dominantColor: results.dominantColor,
+            secondaryColor: results.secondaryColor,
+            scores: results.scores,
+            totalQuestions: results.totalQuestions
+          } as any
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Assessment Saved!",
+        description: `"${resultName}" has been saved to your account.`
+      });
+      setIsDialogOpen(false);
+      setResultName("");
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleShare = () => {
     const shareData = {
@@ -658,7 +722,45 @@ const Results = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
+            {user && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 max-w-xs border-primary/20 hover:bg-primary/10 transition-all duration-300"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save to Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Save Your Assessment</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="result-name">Assessment Name</Label>
+                      <Input
+                        id="result-name"
+                        placeholder="Enter a name for this assessment..."
+                        value={resultName}
+                        onChange={(e) => setResultName(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveResult} disabled={isSaving || !resultName.trim()}>
+                        {isSaving ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            
             <Button
               onClick={handleExportPDF}
               className="flex-1 max-w-xs bg-gradient-to-r from-primary to-primary-glow hover:shadow-glow transition-all duration-300"
