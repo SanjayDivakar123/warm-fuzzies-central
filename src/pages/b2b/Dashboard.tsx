@@ -1,17 +1,54 @@
 import { useEffect, useState } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
 import UsersTab from '@/components/b2b/UsersTab';
 import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 
 export default function Dashboard() {
-  const { company, companyUser, loading, isAdmin } = useCompany();
+  const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Dev utility: Link test company to current user if not linked
+  useEffect(() => {
+    const linkTestCompany = async () => {
+      if (!loading && !company && user) {
+        try {
+          // Update the test company admin user_id to current user
+          const { error } = await supabase
+            .from('company_users')
+            .update({ 
+              user_id: user.id, 
+              joined_at: new Date().toISOString(), 
+              status: 'active' 
+            })
+            .eq('company_id', '00000000-0000-0000-0000-000000000001')
+            .eq('role', 'admin')
+            .is('user_id', null);
+
+          if (!error) {
+            toast({
+              title: 'Linked to test company',
+              description: 'You can now access the test company dashboard',
+            });
+            await refreshCompany();
+          }
+        } catch (error) {
+          console.error('Error linking test company:', error);
+        }
+      }
+    };
+
+    linkTestCompany();
+  }, [loading, company, user, refreshCompany, toast]);
 
   if (loading) {
     return (
