@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,38 +17,45 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Dev utility: Link test company to current user if not linked
+  const handleClaimAccess = async () => {
+    if (!user) {
+      window.location.href = '/auth';
+      return;
+    }
+
+    const { error } = await supabase
+      .from('company_users')
+      .update({
+        user_id: user.id,
+        joined_at: new Date().toISOString(),
+        status: 'active',
+      })
+      .eq('role', 'admin')
+      .is('user_id', null);
+
+    if (error) {
+      console.error('Error linking company access:', error);
+      toast({
+        title: 'Unable to link company access',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Company access linked',
+      description: 'You can now access the company dashboard.',
+    });
+    await refreshCompany();
+  };
+
+  // Automatically try to claim any unclaimed admin record for this user
   useEffect(() => {
-    const linkTestCompany = async () => {
-      if (!loading && !company && user) {
-        try {
-          // Update the test company admin user_id to current user
-          const { error } = await supabase
-            .from('company_users')
-            .update({ 
-              user_id: user.id, 
-              joined_at: new Date().toISOString(), 
-              status: 'active' 
-            })
-            .eq('company_id', '00000000-0000-0000-0000-000000000001')
-            .eq('role', 'admin')
-            .is('user_id', null);
-
-          if (!error) {
-            toast({
-              title: 'Linked to test company',
-              description: 'You can now access the test company dashboard',
-            });
-            await refreshCompany();
-          }
-        } catch (error) {
-          console.error('Error linking test company:', error);
-        }
-      }
-    };
-
-    linkTestCompany();
-  }, [loading, company, user, refreshCompany, toast]);
+    if (!loading && !company && user) {
+      void handleClaimAccess();
+    }
+  }, [loading, company, user]);
 
   if (loading) {
     return (
@@ -68,9 +75,12 @@ export default function Dashboard() {
               You don't have access to any company portal yet.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-3">
             <Button onClick={() => window.location.href = '/b2b'}>
               Create Company
+            </Button>
+            <Button variant="outline" onClick={handleClaimAccess}>
+              Use Test Company / Link Access
             </Button>
           </CardContent>
         </Card>
