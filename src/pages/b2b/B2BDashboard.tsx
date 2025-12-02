@@ -23,7 +23,9 @@ export default function B2BDashboard() {
       return;
     }
 
-    const { error } = await supabase
+    console.log('Attempting to claim company access for user:', user.id);
+
+    const { data, error } = await supabase
       .from('company_users')
       .update({
         user_id: user.id,
@@ -31,7 +33,10 @@ export default function B2BDashboard() {
         status: 'active',
       })
       .eq('role', 'admin')
-      .is('user_id', null);
+      .is('user_id', null)
+      .select();
+
+    console.log('Claim access result:', { data, error });
 
     if (error) {
       console.error('Error linking company access:', error);
@@ -43,16 +48,32 @@ export default function B2BDashboard() {
       return;
     }
 
-    toast({
-      title: 'Company access linked',
-      description: 'You can now access the company dashboard.',
-    });
-    await refreshCompany();
+    if (data && data.length > 0) {
+      toast({
+        title: 'Company access linked',
+        description: 'Refreshing to load your dashboard...',
+      });
+      
+      // Force refresh the company data
+      await refreshCompany();
+      
+      // Force page reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      toast({
+        title: 'No unclaimed company found',
+        description: 'Please create a new company or contact support.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Automatically try to claim any unclaimed admin record for this user
   useEffect(() => {
     if (!loading && !company && user) {
+      console.log('No company found, attempting auto-claim...');
       void handleClaimAccess();
     }
   }, [loading, company, user]);
