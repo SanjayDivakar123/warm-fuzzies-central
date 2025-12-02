@@ -39,7 +39,6 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
 import BlogManagement from "@/pages/admin/BlogManagement";
 import BlogEditor from "@/pages/admin/BlogEditor";
-import B2BInternal from "@/pages/B2BInternal";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/Dashboard";
 
@@ -195,10 +194,6 @@ export const router = createBrowserRouter([
   {
     path: "/admin/blog/edit/:id",
     element: <Layout><BlogEditor /></Layout>,
-  },
-  {
-    path: "/b2b-internal",
-    element: <Layout><B2BInternal /></Layout>,
   },
   {
     path: "/b2b",
