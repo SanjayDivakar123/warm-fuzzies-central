@@ -50,7 +50,7 @@ const ProfessionalResults = () => {
     if (storedResults) {
       setResults(JSON.parse(storedResults));
     } else {
-      navigate('/b2b/dashboard');
+      navigate('/b2b/company-portal');
     }
   }, [navigate]);
 
@@ -158,9 +158,9 @@ const ProfessionalResults = () => {
               <Button 
                 size="lg" 
                 variant="outline"
-                onClick={() => navigate('/b2b/dashboard')}
+                onClick={() => navigate('/b2b/company-portal')}
               >
-                Back to Dashboard
+                Back to Company Portal
               </Button>
             </div>
           </div>

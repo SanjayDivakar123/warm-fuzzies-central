@@ -51,8 +51,8 @@ export default function B2B() {
         description: `Your company subdomain is: ${subdomain}.rolecolorfinder.com`,
       });
 
-      // Navigate to dashboard
-      navigate('/b2b/dashboard');
+      // Navigate to company portal
+      navigate('/b2b/company-portal');
     } catch (error: any) {
       toast({
         title: 'Error creating company',
