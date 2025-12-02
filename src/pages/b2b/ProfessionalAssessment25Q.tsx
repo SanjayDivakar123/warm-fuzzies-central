@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -372,6 +372,21 @@ const ProfessionalAssessment25Q = () => {
   const shuffledOptions = useMemo(() => {
     return shuffleArray(currentQuestionData.options);
   }, [currentQuestion]);
+
+  // Keyboard shortcuts for answer selection
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const keyMap: { [key: string]: number } = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      const index = keyMap[e.key];
+      
+      if (index !== undefined && shuffledOptions[index]) {
+        handleAnswer(shuffledOptions[index].color);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentQuestion, shuffledOptions]);
 
   return (
     <div className="min-h-screen bg-background">
