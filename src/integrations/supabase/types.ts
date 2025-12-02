@@ -608,6 +608,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_company_admin_for_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_valid_subdomain: { Args: { subdomain: string }; Returns: boolean }
     }
     Enums: {
