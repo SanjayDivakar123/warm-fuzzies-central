@@ -40,7 +40,7 @@ import UserManagement from "@/pages/admin/UserManagement";
 import BlogManagement from "@/pages/admin/BlogManagement";
 import BlogEditor from "@/pages/admin/BlogEditor";
 import B2B from "@/pages/B2B";
-import B2BDashboard from "@/pages/b2b/Dashboard";
+import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
 import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
 import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
