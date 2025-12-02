@@ -40,6 +40,8 @@ import UserManagement from "@/pages/admin/UserManagement";
 import BlogManagement from "@/pages/admin/BlogManagement";
 import BlogEditor from "@/pages/admin/BlogEditor";
 import B2BInternal from "@/pages/B2BInternal";
+import B2B from "@/pages/B2B";
+import B2BDashboard from "@/pages/b2b/Dashboard";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -197,6 +199,14 @@ export const router = createBrowserRouter([
   {
     path: "/b2b-internal",
     element: <Layout><B2BInternal /></Layout>,
+  },
+  {
+    path: "/b2b",
+    element: <Layout><B2B /></Layout>,
+  },
+  {
+    path: "/b2b/dashboard",
+    element: <Layout><B2BDashboard /></Layout>,
   },
   {
     path: "*",
