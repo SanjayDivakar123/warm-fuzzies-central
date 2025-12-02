@@ -175,6 +175,123 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          admin_email: string
+          assessment_type: Database["public"]["Enums"]["company_assessment_type"]
+          created_at: string | null
+          custom_domain: string | null
+          custom_domain_enabled: boolean | null
+          google_sso_enabled: boolean | null
+          google_workspace_domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          seats_purchased: number
+          secondary_color: string | null
+          subdomain: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_email: string
+          assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
+          created_at?: string | null
+          custom_domain?: string | null
+          custom_domain_enabled?: boolean | null
+          google_sso_enabled?: boolean | null
+          google_workspace_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          seats_purchased?: number
+          secondary_color?: string | null
+          subdomain: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_email?: string
+          assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
+          created_at?: string | null
+          custom_domain?: string | null
+          custom_domain_enabled?: boolean | null
+          google_sso_enabled?: boolean | null
+          google_workspace_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          seats_purchased?: number
+          secondary_color?: string | null
+          subdomain?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      company_users: {
+        Row: {
+          assessment_completed_at: string | null
+          assessment_result_id: string | null
+          company_id: string
+          created_at: string | null
+          email: string
+          id: string
+          invite_code: string | null
+          invited_at: string | null
+          joined_at: string | null
+          role: Database["public"]["Enums"]["company_user_role"]
+          status: Database["public"]["Enums"]["company_user_status"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_completed_at?: string | null
+          assessment_result_id?: string | null
+          company_id: string
+          created_at?: string | null
+          email: string
+          id?: string
+          invite_code?: string | null
+          invited_at?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["company_user_role"]
+          status?: Database["public"]["Enums"]["company_user_status"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_completed_at?: string | null
+          assessment_result_id?: string | null
+          company_id?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          invite_code?: string | null
+          invited_at?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["company_user_role"]
+          status?: Database["public"]["Enums"]["company_user_status"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_assessment_result_id_fkey"
+            columns: ["assessment_result_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_signups: {
         Row: {
           created_at: string
@@ -481,6 +598,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invite_code: { Args: never; Returns: string }
       generate_shareable_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -490,9 +608,13 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_valid_subdomain: { Args: { subdomain: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "blogger" | "user"
+      company_assessment_type: "25q" | "50q"
+      company_user_role: "admin" | "employee"
+      company_user_status: "invited" | "active" | "revoked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -621,6 +743,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "blogger", "user"],
+      company_assessment_type: ["25q", "50q"],
+      company_user_role: ["admin", "employee"],
+      company_user_status: ["invited", "active", "revoked"],
     },
   },
 } as const
