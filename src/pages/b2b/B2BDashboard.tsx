@@ -23,60 +23,47 @@ export default function B2BDashboard() {
       return;
     }
 
-    console.log('Attempting to claim company access for user:', user.id);
+    try {
+      const { error } = await supabase
+        .from('company_users')
+        .update({
+          user_id: user.id,
+          joined_at: new Date().toISOString(),
+          status: 'active',
+        })
+        .eq('role', 'admin')
+        .is('user_id', null);
 
-    const { data, error } = await supabase
-      .from('company_users')
-      .update({
-        user_id: user.id,
-        joined_at: new Date().toISOString(),
-        status: 'active',
-      })
-      .eq('role', 'admin')
-      .is('user_id', null)
-      .select();
+      if (error) {
+        console.error('Error linking company access:', error);
+        toast({
+          title: 'Unable to link company access',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
 
-    console.log('Claim access result:', { data, error });
+      await refreshCompany();
 
-    if (error) {
-      console.error('Error linking company access:', error);
-      toast({
-        title: 'Unable to link company access',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (data && data.length > 0) {
       toast({
         title: 'Company access linked',
-        description: 'Refreshing to load your dashboard...',
+        description: 'Your B2B dashboard is now ready.',
       });
-      
-      // Force refresh the company data
-      await refreshCompany();
-      
-      // Force page reload to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } else {
+    } catch (err: any) {
+      console.error('Unexpected error linking company access:', err);
       toast({
-        title: 'No unclaimed company found',
-        description: 'Please create a new company or contact support.',
+        title: 'Unexpected error',
+        description: err.message ?? 'Please try again or contact support.',
         variant: 'destructive',
       });
     }
   };
 
-  // Automatically try to claim any unclaimed admin record for this user
+  // Simple mount effect so useEffect remains used without auto-claim logic
   useEffect(() => {
-    if (!loading && !company && user) {
-      console.log('No company found, attempting auto-claim...');
-      void handleClaimAccess();
-    }
-  }, [loading, company, user]);
+    // B2B dashboard loaded
+  }, []);
 
   if (loading) {
     return (
