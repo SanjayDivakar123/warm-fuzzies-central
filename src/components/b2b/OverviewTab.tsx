@@ -89,7 +89,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         <CardContent className="space-y-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Assessment Type:</span>
-            <span className="font-medium">{company.assessment_type === '25q' ? '25 Questions' : '50 Questions'}</span>
+            <span className="font-medium">{company.assessment_type === '25q' ? '25 Questions (Professional)' : '50 Questions (Professional)'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subdomain:</span>
