@@ -15,8 +15,8 @@ export function Navbar() {
   const { company } = useCompany();
   const isActive = (path: string) => location.pathname === path;
   
-  // Route to B2B dashboard if user has company access, otherwise regular dashboard
-  const dashboardPath = company ? '/b2b/dashboard' : '/dashboard';
+  // Route to B2B company portal if user has company access, otherwise regular dashboard
+  const dashboardPath = company ? '/b2b/company-portal' : '/dashboard';
   return <div className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90 shadow-soft">
       <div className="container-wide">
         <div className="flex h-20 items-center justify-between py-2">
