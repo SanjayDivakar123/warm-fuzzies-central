@@ -41,6 +41,9 @@ import BlogManagement from "@/pages/admin/BlogManagement";
 import BlogEditor from "@/pages/admin/BlogEditor";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/Dashboard";
+import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
+import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
+import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -202,6 +205,18 @@ export const router = createBrowserRouter([
   {
     path: "/b2b/dashboard",
     element: <Layout><B2BDashboard /></Layout>,
+  },
+  {
+    path: "/b2b/assessment-25q",
+    element: <Layout><ProfessionalAssessment25Q /></Layout>,
+  },
+  {
+    path: "/b2b/assessment-50q",
+    element: <Layout><ProfessionalAssessment50Q /></Layout>,
+  },
+  {
+    path: "/b2b/results",
+    element: <Layout><ProfessionalResults /></Layout>,
   },
   {
     path: "*",

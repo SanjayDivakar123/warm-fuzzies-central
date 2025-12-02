@@ -130,7 +130,7 @@ export default function B2B() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="25q">25 Questions (Student)</SelectItem>
+                    <SelectItem value="25q">25 Questions (Professional)</SelectItem>
                     <SelectItem value="50q">50 Questions (Professional)</SelectItem>
                   </SelectContent>
                 </Select>

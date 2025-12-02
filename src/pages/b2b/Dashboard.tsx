@@ -42,17 +42,22 @@ export default function Dashboard() {
   }
 
   if (!isAdmin) {
+    // Employee view - redirect to appropriate assessment
+    const assessmentPath = company.assessment_type === '25q' 
+      ? '/b2b/assessment-25q' 
+      : '/b2b/assessment-50q';
+    
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle>Employee Portal</CardTitle>
+            <CardTitle>Welcome to {company.name}</CardTitle>
             <CardDescription>
-              Welcome to {company.name}
+              Complete your professional assessment
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = '/quiz'}>
+            <Button onClick={() => window.location.href = assessmentPath}>
               Take Assessment
             </Button>
           </CardContent>
