@@ -4,6 +4,7 @@ import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, Me
 import { Button } from "@/components/ui/button";
 import { Palette, Home, CreditCard, Menu, X, User, LogOut, Users, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 export function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -11,7 +12,11 @@ export function Navbar() {
     user,
     signOut
   } = useAuth();
+  const { company } = useCompany();
   const isActive = (path: string) => location.pathname === path;
+  
+  // Route to B2B dashboard if user has company access, otherwise regular dashboard
+  const dashboardPath = company ? '/b2b/dashboard' : '/dashboard';
   return <div className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90 shadow-soft">
       <div className="container-wide">
         <div className="flex h-20 items-center justify-between py-2">
@@ -79,7 +84,7 @@ export function Navbar() {
           <div className="hidden lg:flex items-center space-x-3">
             {user ? <>
                 <Button variant="glass" size="sm" asChild>
-                  <Link to="/dashboard">
+                  <Link to={dashboardPath}>
                     <User className="w-4 h-4 mr-2" />
                     Dashboard
                   </Link>
@@ -136,7 +141,7 @@ export function Navbar() {
                 <div className="space-y-2">
                   {user ? <>
                       <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                        <Link to="/dashboard">
+                        <Link to={dashboardPath}>
                           <User className="w-4 h-4 mr-2" />
                           Dashboard
                         </Link>
