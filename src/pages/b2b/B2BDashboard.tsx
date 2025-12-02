@@ -12,7 +12,7 @@ import UsersTab from '@/components/b2b/UsersTab';
 import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 
-export default function Dashboard() {
+export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user } = useAuth();
   const { toast } = useToast();
