@@ -44,7 +44,6 @@ import B2BDashboard from "@/pages/b2b/Dashboard";
 import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
 import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
 import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -205,11 +204,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/b2b/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Layout><B2BDashboard /></Layout>
-      </ProtectedRoute>
-    ),
+    element: <Layout><B2BDashboard /></Layout>,
   },
   {
     path: "/b2b/assessment-25q",
