@@ -195,8 +195,8 @@ export const router = createBrowserRouter([
     element: <Layout><BlogEditor /></Layout>,
   },
   {
-    path: "/admin/blog/edit/:id",
-    element: <Layout><BlogEditor /></Layout>,
+    path: "/b2b",
+    element: <Layout><B2B /></Layout>,
   },
   {
     path: "/b2b/company-portal",

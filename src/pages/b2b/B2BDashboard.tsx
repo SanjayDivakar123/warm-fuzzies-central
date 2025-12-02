@@ -24,21 +24,18 @@ export default function B2BDashboard() {
     }
 
     try {
-      const { error } = await supabase
-        .from('company_users')
-        .update({
+      const { data, error } = await supabase.functions.invoke('link-test-company', {
+        body: {
           user_id: user.id,
-          joined_at: new Date().toISOString(),
-          status: 'active',
-        })
-        .eq('role', 'admin')
-        .is('user_id', null);
+        },
+      });
 
-      if (error) {
-        console.error('Error linking company access:', error);
+      if (error || (data && (data as any).error)) {
+        const message = (error as any)?.message ?? (data as any)?.error ?? 'Unknown error';
+        console.error('Error linking company access via edge function:', message);
         toast({
           title: 'Unable to link company access',
-          description: error.message,
+          description: message,
           variant: 'destructive',
         });
         return;
