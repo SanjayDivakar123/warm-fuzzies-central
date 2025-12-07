@@ -177,6 +177,9 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
 
   const handleSetEmployee = (emp: CompanyEmployee | null) => {
     setEmployee(emp);
+    // Clear previous assessment results when employee changes
+    setAssessmentResults(null);
+    
     if (emp && company) {
       localStorage.setItem(`employee_session_${company.subdomain}`, emp.id);
     } else if (company) {
