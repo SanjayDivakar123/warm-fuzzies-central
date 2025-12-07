@@ -479,6 +479,83 @@ export type Database = {
           },
         ]
       }
+      task_assignments: {
+        Row: {
+          ai_score: number | null
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string
+          created_at: string
+          id: string
+          outcome_notes: string | null
+          outcome_status: string | null
+          primary_assignee_id: string | null
+          reasoning: Json
+          secondary_assignee_id: string | null
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_score?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          outcome_notes?: string | null
+          outcome_status?: string | null
+          primary_assignee_id?: string | null
+          reasoning?: Json
+          secondary_assignee_id?: string | null
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_score?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          outcome_notes?: string | null
+          outcome_status?: string | null
+          primary_assignee_id?: string | null
+          reasoning?: Json
+          secondary_assignee_id?: string | null
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_primary_assignee_id_fkey"
+            columns: ["primary_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_secondary_assignee_id_fkey"
+            columns: ["secondary_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "work_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           advice_to_others: string
@@ -596,6 +673,65 @@ export type Database = {
         }
         Relationships: []
       }
+      work_tasks: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          department: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          importance: Database["public"]["Enums"]["task_priority"]
+          quadrant: Database["public"]["Enums"]["covey_quadrant"]
+          required_skills: string[] | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          urgency: Database["public"]["Enums"]["task_priority"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          department?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          importance?: Database["public"]["Enums"]["task_priority"]
+          quadrant?: Database["public"]["Enums"]["covey_quadrant"]
+          required_skills?: string[] | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["task_priority"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          department?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          importance?: Database["public"]["Enums"]["task_priority"]
+          quadrant?: Database["public"]["Enums"]["covey_quadrant"]
+          required_skills?: string[] | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["task_priority"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -622,6 +758,14 @@ export type Database = {
       company_assessment_type: "25q" | "50q"
       company_user_role: "admin" | "employee"
       company_user_status: "invited" | "active" | "revoked"
+      covey_quadrant: "q1" | "q2" | "q3" | "q4"
+      task_priority: "high" | "medium" | "low"
+      task_status:
+        | "pending"
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -753,6 +897,15 @@ export const Constants = {
       company_assessment_type: ["25q", "50q"],
       company_user_role: ["admin", "employee"],
       company_user_status: ["invited", "active", "revoked"],
+      covey_quadrant: ["q1", "q2", "q3", "q4"],
+      task_priority: ["high", "medium", "low"],
+      task_status: [
+        "pending",
+        "assigned",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
     },
   },
 } as const
