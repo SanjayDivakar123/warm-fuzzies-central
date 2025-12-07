@@ -10,9 +10,10 @@ import { Loader2, Upload } from 'lucide-react';
 
 interface SettingsTabProps {
   company: any;
+  onSettingsSaved?: () => void;
 }
 
-export default function SettingsTab({ company }: SettingsTabProps) {
+export default function SettingsTab({ company, onSettingsSaved }: SettingsTabProps) {
   const [logoUrl, setLogoUrl] = useState(company.logo_url || '');
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
@@ -47,6 +48,11 @@ export default function SettingsTab({ company }: SettingsTabProps) {
         title: 'Settings saved',
         description: 'Your company settings have been updated.',
       });
+
+      // Refresh company data in parent
+      if (onSettingsSaved) {
+        onSettingsSaved();
+      }
     } catch (error: any) {
       toast({
         title: 'Error saving settings',
