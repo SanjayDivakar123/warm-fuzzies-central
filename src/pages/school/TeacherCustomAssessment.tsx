@@ -13,8 +13,6 @@ import { ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 export default function TeacherCustomAssessment() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"info" | "quiz" | "complete">("info");
-  const [teacherName, setTeacherName] = useState("");
-  const [email, setEmail] = useState("");
   const [schoolCode, setSchoolCode] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -28,15 +26,6 @@ export default function TeacherCustomAssessment() {
   const currentSectionIndex = sections.indexOf(currentSection);
 
   const handleStartQuiz = () => {
-    if (!teacherName.trim() || !email.trim()) {
-      toast({
-        title: "Required Fields",
-        description: "Please fill in your name and email.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (schoolCode.length !== 4) {
       toast({
         title: "Invalid School Code",
@@ -90,8 +79,8 @@ export default function TeacherCustomAssessment() {
   const handleSubmit = () => {
     const newResult: TeacherResult = {
       id: crypto.randomUUID(),
-      teacherName,
-      email,
+      teacherName: schoolName,
+      email: "",
       schoolName,
       submittedAt: new Date().toISOString(),
       answers,
@@ -171,27 +160,6 @@ export default function TeacherCustomAssessment() {
               <p className="text-xs text-slate-500 mt-1">
                 Contact your school administrator to get the school code.
               </p>
-            </div>
-            <div>
-              <Label htmlFor="name" className="text-slate-200">Your Name</Label>
-              <Input
-                id="name"
-                value={teacherName}
-                onChange={(e) => setTeacherName(e.target.value)}
-                placeholder="Enter your full name"
-                className="bg-slate-700/50 border-slate-600 text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email" className="text-slate-200">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="bg-slate-700/50 border-slate-600 text-white"
-              />
             </div>
             <Button 
               onClick={handleStartQuiz}
