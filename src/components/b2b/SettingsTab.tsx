@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2 } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
+import BillingModal from './BillingModal';
 
 interface SettingsTabProps {
   company: any;
@@ -28,6 +29,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
+  const [billingOpen, setBillingOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSave = async () => {
@@ -273,17 +275,29 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
 
       <Card>
         <CardHeader>
-          <CardTitle>Billing</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Billing
+          </CardTitle>
           <CardDescription>Manage your subscription and seats</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Current Seats:</span>
-              <span className="font-medium">{company.seats_purchased}</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+              <span className="text-muted-foreground">Current Seats</span>
+              <span className="font-semibold text-lg">{company.seats_purchased}</span>
             </div>
-            <Button variant="outline" className="w-full">
-              Manage Billing
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+              <span className="text-muted-foreground">Price per Seat</span>
+              <span className="font-medium">$20 (one-time)</span>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full gap-2"
+              onClick={() => setBillingOpen(true)}
+            >
+              <CreditCard className="h-4 w-4" />
+              Manage Billing & Add Seats
             </Button>
           </div>
         </CardContent>
@@ -299,6 +313,16 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         assessmentType={previewType}
+      />
+
+      {/* Billing Modal */}
+      <BillingModal
+        open={billingOpen}
+        onClose={() => setBillingOpen(false)}
+        company={company}
+        onSeatsUpdated={() => {
+          if (onSettingsSaved) onSettingsSaved();
+        }}
       />
     </div>
   );

@@ -54,9 +54,20 @@ async function sendInviteEmail(
               
               <p><strong>${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.</p>
               
-              <div style="background: white; border: 2px dashed #9b87f5; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
-                <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Your Invite Code</p>
-                <p style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #9b87f5;">${inviteCode}</p>
+              <div style="background: white; border: 2px solid #9b87f5; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <p style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-align: center;"><strong>To log in, you'll need:</strong></p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                  <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Email</p>
+                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #333;">${email}</p>
+                  </div>
+                  
+                  <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Invite Code</p>
+                    <p style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #9b87f5;">${inviteCode}</p>
+                  </div>
+                </div>
               </div>
               
               <p style="text-align: center;">
