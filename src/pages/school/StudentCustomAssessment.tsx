@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getSchools, saveSchools } from "@/lib/teacherAssessmentQuestions";
+import { getSchools } from "@/lib/teacherAssessmentQuestions";
 import { studentAssessmentQuestions, studentSections } from "@/lib/studentAssessmentQuestions";
 import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -119,7 +119,7 @@ const StudentCustomAssessment = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a school..." />
                 </SelectTrigger>
-                <SelectContent className="bg-background border">
+                <SelectContent>
                   {schools.map((school) => (
                     <SelectItem key={school} value={school}>
                       {school}
@@ -133,41 +133,6 @@ const StudentCustomAssessment = () => {
                 </p>
               )}
             </div>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                const randomAnswers: Answer[] = studentAssessmentQuestions.map((q) => {
-                  const options = ["A", "B", "C", "D"];
-                  const randomOption = options[Math.floor(Math.random() * options.length)];
-                  return {
-                    questionId: q.id,
-                    section: q.section,
-                    question: q.question,
-                    selectedOption: randomOption,
-                    answerText: q.options[randomOption as keyof typeof q.options],
-                  };
-                });
-
-                const submission = {
-                  id: Date.now().toString(),
-                  type: "student",
-                  school: selectedSchool || "Test School",
-                  submittedAt: new Date().toISOString(),
-                  answers: randomAnswers,
-                };
-
-                const existingSubmissions = JSON.parse(localStorage.getItem("school_assessment_submissions") || "[]");
-                existingSubmissions.push(submission);
-                localStorage.setItem("school_assessment_submissions", JSON.stringify(existingSubmissions));
-
-                setCompleted(true);
-              }}
-              className="w-full"
-              disabled={!selectedSchool}
-            >
-              Fill Randomly (Test)
-            </Button>
 
             <div className="space-y-2">
               <h3 className="font-semibold">Sections:</h3>
