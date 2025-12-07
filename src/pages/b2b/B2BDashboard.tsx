@@ -168,7 +168,7 @@ export default function B2BDashboard() {
           </TabsContent>
 
           <TabsContent value="assessments">
-            <AssessmentsTab company={company} />
+            <AssessmentsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
 
           <TabsContent value="settings">
