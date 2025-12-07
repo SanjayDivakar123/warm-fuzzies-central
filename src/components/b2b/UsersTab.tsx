@@ -346,7 +346,33 @@ export default function UsersTab({ company }: UsersTabProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Team Members</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Team Members</CardTitle>
+              <div className="flex items-center gap-2">
+                <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
+                  {window.location.origin}/company/{company.subdomain}/login
+                </code>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        const url = `${window.location.origin}/company/${company.subdomain}/login`;
+                        await navigator.clipboard.writeText(url);
+                        toast({
+                          title: 'Link copied!',
+                          description: 'Employee login URL copied to clipboard',
+                        });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy employee login URL</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
