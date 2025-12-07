@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate a random invite code
+function generateInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,7 +73,10 @@ serve(async (req) => {
 
     console.log('Company created:', company.id);
 
-    // Create admin user linked to the authenticated user
+    // Generate invite code for admin (so they can also take the assessment)
+    const inviteCode = generateInviteCode();
+
+    // Create admin user linked to the authenticated user with invite code
     const { data: adminUser, error: adminUserError } = await supabase
       .from('company_users')
       .insert({
@@ -73,6 +86,8 @@ serve(async (req) => {
         role: 'admin',
         status: user_id ? 'active' : 'invited', // Active if user is logged in
         joined_at: user_id ? new Date().toISOString() : null,
+        invite_code: inviteCode, // Admin also gets invite code to take assessment
+        invited_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -82,7 +97,7 @@ serve(async (req) => {
       throw adminUserError;
     }
 
-    console.log('Admin user created:', adminUser.id);
+    console.log('Admin user created:', adminUser.id, 'with invite code:', inviteCode);
 
     return new Response(
       JSON.stringify({ company, adminUser }),
