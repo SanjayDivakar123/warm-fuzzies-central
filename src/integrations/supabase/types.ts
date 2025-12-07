@@ -240,8 +240,10 @@ export type Database = {
           invite_code: string | null
           invite_count: number
           invited_at: string | null
+          job_role: string | null
           joined_at: string | null
           role: Database["public"]["Enums"]["company_user_role"]
+          skills: string[] | null
           status: Database["public"]["Enums"]["company_user_status"]
           updated_at: string | null
           user_id: string | null
@@ -256,8 +258,10 @@ export type Database = {
           invite_code?: string | null
           invite_count?: number
           invited_at?: string | null
+          job_role?: string | null
           joined_at?: string | null
           role?: Database["public"]["Enums"]["company_user_role"]
+          skills?: string[] | null
           status?: Database["public"]["Enums"]["company_user_status"]
           updated_at?: string | null
           user_id?: string | null
@@ -272,8 +276,10 @@ export type Database = {
           invite_code?: string | null
           invite_count?: number
           invited_at?: string | null
+          job_role?: string | null
           joined_at?: string | null
           role?: Database["public"]["Enums"]["company_user_role"]
+          skills?: string[] | null
           status?: Database["public"]["Enums"]["company_user_status"]
           updated_at?: string | null
           user_id?: string | null
