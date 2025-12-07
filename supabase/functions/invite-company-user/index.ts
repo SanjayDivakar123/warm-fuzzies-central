@@ -123,17 +123,10 @@ serve(async (req) => {
     // Check if user already exists
     const { data: existingUser } = await supabase
       .from('company_users')
-      .select('id')
+      .select('id, status')
       .eq('company_id', company_id)
       .eq('email', email)
       .maybeSingle();
-
-    if (existingUser) {
-      return new Response(
-        JSON.stringify({ error: 'User already invited' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Get company details including name and subdomain
     const { data: company } = await supabase
@@ -146,6 +139,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Company not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If user exists and is not revoked, return error
+    if (existingUser && existingUser.status !== 'revoked') {
+      return new Response(
+        JSON.stringify({ error: 'User already invited' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -167,25 +168,51 @@ serve(async (req) => {
     const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
     const inviteCode = inviteCodeData;
 
-    // Create user invite
-    const { data: user, error: userError } = await supabase
-      .from('company_users')
-      .insert({
-        company_id,
-        email,
-        role: 'employee',
-        status: 'invited',
-        invite_code: inviteCode,
-      })
-      .select()
-      .single();
+    let user;
+    
+    // If user was revoked, update their record instead of creating new
+    if (existingUser && existingUser.status === 'revoked') {
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('company_users')
+        .update({
+          status: 'invited',
+          invite_code: inviteCode,
+          invited_at: new Date().toISOString(),
+          joined_at: null,
+          assessment_completed_at: null,
+          assessment_result_id: null,
+        })
+        .eq('id', existingUser.id)
+        .select()
+        .single();
 
-    if (userError) {
-      console.error('Error creating user invite:', userError);
-      throw userError;
+      if (updateError) {
+        console.error('Error re-inviting user:', updateError);
+        throw updateError;
+      }
+      user = updatedUser;
+      console.log('User re-invited:', user.id);
+    } else {
+      // Create new user invite
+      const { data: newUser, error: userError } = await supabase
+        .from('company_users')
+        .insert({
+          company_id,
+          email,
+          role: 'employee',
+          status: 'invited',
+          invite_code: inviteCode,
+        })
+        .select()
+        .single();
+
+      if (userError) {
+        console.error('Error creating user invite:', userError);
+        throw userError;
+      }
+      user = newUser;
+      console.log('User invited:', user.id);
     }
-
-    console.log('User invited:', user.id);
 
     // Send invitation email
     const emailSent = await sendInviteEmail(
