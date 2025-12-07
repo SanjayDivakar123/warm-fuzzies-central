@@ -6,9 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { TEACHER_QUESTIONS, TeacherResult, RESULTS_STORAGE_KEY, getSchools } from "@/lib/teacherAssessmentQuestions";
+import { TEACHER_QUESTIONS, TeacherResult, RESULTS_STORAGE_KEY, getSchoolByCode } from "@/lib/teacherAssessmentQuestions";
 import { ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 
 export default function TeacherCustomAssessment() {
@@ -16,14 +15,10 @@ export default function TeacherCustomAssessment() {
   const [step, setStep] = useState<"info" | "quiz" | "complete">("info");
   const [teacherName, setTeacherName] = useState("");
   const [email, setEmail] = useState("");
+  const [schoolCode, setSchoolCode] = useState("");
   const [schoolName, setSchoolName] = useState("");
-  const [schools, setSchools] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-
-  useEffect(() => {
-    setSchools(getSchools());
-  }, []);
 
   const question = TEACHER_QUESTIONS[currentQuestion];
   const progress = ((currentQuestion + 1) / TEACHER_QUESTIONS.length) * 100;
@@ -33,14 +28,35 @@ export default function TeacherCustomAssessment() {
   const currentSectionIndex = sections.indexOf(currentSection);
 
   const handleStartQuiz = () => {
-    if (!teacherName.trim() || !email.trim() || !schoolName) {
+    if (!teacherName.trim() || !email.trim()) {
       toast({
         title: "Required Fields",
-        description: "Please fill in all fields including school selection.",
+        description: "Please fill in your name and email.",
         variant: "destructive",
       });
       return;
     }
+
+    if (schoolCode.length !== 4) {
+      toast({
+        title: "Invalid School Code",
+        description: "Please enter a valid 4-digit school code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const school = getSchoolByCode(schoolCode);
+    if (!school) {
+      toast({
+        title: "School Not Found",
+        description: "No school found with this code. Please check with your administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSchoolName(school.name);
     setStep("quiz");
   };
 
@@ -143,25 +159,18 @@ export default function TeacherCustomAssessment() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="school" className="text-slate-200">School Name</Label>
-              <Select value={schoolName} onValueChange={setSchoolName}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                  <SelectValue placeholder="Select your school" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  {schools.length === 0 ? (
-                    <SelectItem value="_none" disabled className="text-slate-400">
-                      No schools available - contact admin
-                    </SelectItem>
-                  ) : (
-                    schools.map((school) => (
-                      <SelectItem key={school} value={school} className="text-white hover:bg-slate-700">
-                        {school}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="schoolCode" className="text-slate-200">School Code</Label>
+              <Input
+                id="schoolCode"
+                value={schoolCode}
+                onChange={(e) => setSchoolCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="Enter 4-digit school code"
+                maxLength={4}
+                className="bg-slate-700/50 border-slate-600 text-white text-center text-xl tracking-widest"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Contact your school administrator to get the school code.
+              </p>
             </div>
             <div>
               <Label htmlFor="name" className="text-slate-200">Your Name</Label>
@@ -187,15 +196,9 @@ export default function TeacherCustomAssessment() {
             <Button 
               onClick={handleStartQuiz}
               className="w-full bg-primary hover:bg-primary/90 mt-4"
-              disabled={schools.length === 0}
             >
               Start Assessment
             </Button>
-            {schools.length === 0 && (
-              <p className="text-amber-400 text-sm text-center">
-                No schools configured. Please contact your administrator.
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
