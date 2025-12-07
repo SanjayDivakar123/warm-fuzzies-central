@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { TEACHER_QUESTIONS, getSchools, saveSchools, generateSchoolCode, School } from "@/lib/teacherAssessmentQuestions";
 import { studentAssessmentQuestions } from "@/lib/studentAssessmentQuestions";
-import { Lock, Eye, Trash2, FileDown, Plus, X, GraduationCap, Users, Copy } from "lucide-react";
+import { Lock, Eye, Trash2, FileDown, Plus, X, GraduationCap, Users, Copy, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 
 const ADMIN_CODE = "8132";
@@ -39,6 +39,8 @@ export default function AdminResults() {
   const [schools, setSchools] = useState<School[]>([]);
   const [newSchoolName, setNewSchoolName] = useState("");
   const [activeTab, setActiveTab] = useState<"teacher" | "student">("teacher");
+  const [schoolSortBy, setSchoolSortBy] = useState<"name" | "code">("name");
+  const [schoolSortAsc, setSchoolSortAsc] = useState(true);
 
   useEffect(() => {
     if (authenticated) {
@@ -199,11 +201,57 @@ export default function AdminResults() {
                 <p className="text-sm text-slate-400">
                   A unique 4-digit code will be generated automatically for each school.
                 </p>
+                
+                {schools.length > 0 && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (schoolSortBy === "name") {
+                          setSchoolSortAsc(!schoolSortAsc);
+                        } else {
+                          setSchoolSortBy("name");
+                          setSchoolSortAsc(true);
+                        }
+                      }}
+                      className={`border-slate-600 ${schoolSortBy === "name" ? "bg-slate-700 text-white" : "text-slate-300"}`}
+                    >
+                      <ArrowUpDown className="w-3 h-3 mr-1" />
+                      Name {schoolSortBy === "name" && (schoolSortAsc ? "↑" : "↓")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (schoolSortBy === "code") {
+                          setSchoolSortAsc(!schoolSortAsc);
+                        } else {
+                          setSchoolSortBy("code");
+                          setSchoolSortAsc(true);
+                        }
+                      }}
+                      className={`border-slate-600 ${schoolSortBy === "code" ? "bg-slate-700 text-white" : "text-slate-300"}`}
+                    >
+                      <ArrowUpDown className="w-3 h-3 mr-1" />
+                      Code {schoolSortBy === "code" && (schoolSortAsc ? "↑" : "↓")}
+                    </Button>
+                  </div>
+                )}
+
                 {schools.length === 0 ? (
                   <p className="text-slate-500 text-center py-8">No schools added yet.</p>
                 ) : (
                   <div className="space-y-2">
-                    {schools.map((s) => (
+                    {[...schools]
+                      .sort((a, b) => {
+                        const aVal = schoolSortBy === "name" ? a.name.toLowerCase() : a.code;
+                        const bVal = schoolSortBy === "name" ? b.name.toLowerCase() : b.code;
+                        if (aVal < bVal) return schoolSortAsc ? -1 : 1;
+                        if (aVal > bVal) return schoolSortAsc ? 1 : -1;
+                        return 0;
+                      })
+                      .map((s) => (
                       <div key={s.code} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
                         <div className="flex items-center gap-4">
                           <span className="text-white font-medium">{s.name}</span>
