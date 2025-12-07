@@ -17,9 +17,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { name, subdomain, admin_email, seats_purchased, assessment_type } = await req.json();
+    const { name, subdomain, admin_email, seats_purchased, assessment_type, user_id } = await req.json();
 
-    console.log('Creating company:', { name, subdomain, admin_email });
+    console.log('Creating company:', { name, subdomain, admin_email, user_id });
+
+    // Validate minimum seats (per spec: min 2)
+    if (seats_purchased < 2) {
+      return new Response(
+        JSON.stringify({ error: 'Minimum 2 seats required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check if subdomain is already taken
     const { data: existingCompany } = await supabase
@@ -55,19 +63,16 @@ serve(async (req) => {
 
     console.log('Company created:', company.id);
 
-    // Generate invite code
-    const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
-    const inviteCode = inviteCodeData;
-
-    // Create admin user
+    // Create admin user linked to the authenticated user
     const { data: adminUser, error: adminUserError } = await supabase
       .from('company_users')
       .insert({
         company_id: company.id,
         email: admin_email,
+        user_id: user_id || null, // Link to current user if provided
         role: 'admin',
-        status: 'invited',
-        invite_code: inviteCode,
+        status: user_id ? 'active' : 'invited', // Active if user is logged in
+        joined_at: user_id ? new Date().toISOString() : null,
       })
       .select()
       .single();
@@ -78,8 +83,6 @@ serve(async (req) => {
     }
 
     console.log('Admin user created:', adminUser.id);
-
-    // TODO: Send invitation email to admin
 
     return new Response(
       JSON.stringify({ company, adminUser }),
