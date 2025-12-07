@@ -52,6 +52,7 @@ import AdminResults from "@/pages/school/AdminResults";
 import CompanyPortalLayout from "@/pages/company/CompanyPortalLayout";
 import CompanyLanding from "@/pages/company/CompanyLanding";
 import CompanyLogin from "@/pages/company/CompanyLogin";
+import CompanyAdminLogin from "@/pages/company/CompanyAdminLogin";
 import CompanyAssessment from "@/pages/company/CompanyAssessment";
 import CompanyResults from "@/pages/company/CompanyResults";
 import CompanyHome from "@/pages/company/CompanyHome";
@@ -244,6 +245,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <CompanyLanding /> },
       { path: "login", element: <CompanyLogin /> },
+      { path: "admin", element: <CompanyAdminLogin /> },
       { path: "home", element: <CompanyHome /> },
       { path: "assessment", element: <CompanyAssessment /> },
       { path: "results", element: <CompanyResults /> },

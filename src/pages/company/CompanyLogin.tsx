@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompanyPortal } from '@/contexts/CompanyPortalContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,20 +46,24 @@ export default function CompanyLogin() {
 
   const primaryColor = company.primary_color || '#9b87f5';
 
-  const handleInviteCodeLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteCode.trim()) return;
+    if (!inviteCode.trim() || !email.trim()) return;
 
     setIsSubmitting(true);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('verify-employee-invite', {
-        body: { inviteCode: inviteCode.toUpperCase(), companyId: company.id }
+        body: { 
+          inviteCode: inviteCode.toUpperCase(), 
+          email: email.toLowerCase().trim(),
+          companyId: company.id 
+        }
       });
 
       if (fnError || !data.success) {
         toast({
-          title: "Invalid Invite Code",
-          description: data?.message || "The invite code is invalid or has expired.",
+          title: "Login Failed",
+          description: data?.message || "Invalid email or invite code combination.",
           variant: "destructive"
         });
         return;
@@ -93,64 +96,7 @@ export default function CompanyLogin() {
     }
   };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      // Check if email exists in company_users
-      const { data: employeeData, error: lookupError } = await supabase
-        .from('company_users')
-        .select('*')
-        .eq('company_id', company.id)
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
-
-      if (lookupError || !employeeData) {
-        toast({
-          title: "Email Not Found",
-          description: "This email is not registered with this company. Please check with your administrator.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (employeeData.status === 'revoked') {
-        toast({
-          title: "Access Revoked",
-          description: "Your access to this assessment has been revoked. Please contact your administrator.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // For simplicity, allow login by email for now (passwordless)
-      // In production, you'd send a magic link
-      setEmployee(employeeData);
-      localStorage.setItem(`employee_${company.subdomain}`, JSON.stringify(employeeData));
-      
-      toast({
-        title: "Welcome!",
-        description: "You're now logged in. Let's start your assessment.",
-      });
-
-      if (employeeData.assessment_completed_at) {
-        navigate(`/company/${company.subdomain}/home`);
-      } else {
-        navigate(`/company/${company.subdomain}/assessment`);
-      }
-    } catch (err) {
-      console.error('Email login error:', err);
-      toast({
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const isFormValid = inviteCode.length === 8 && email.includes('@');
 
   return (
     <div 
@@ -194,89 +140,62 @@ export default function CompanyLogin() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Employee Login</CardTitle>
               <CardDescription>
-                Access your leadership assessment
+                Enter your work email and invite code to access your assessment
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="invite" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="invite" className="flex items-center gap-2">
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Work Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use the email address registered by your administrator
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invite-code" className="flex items-center gap-2">
                     <KeyRound className="h-4 w-4" />
                     Invite Code
-                  </TabsTrigger>
-                  <TabsTrigger value="email" className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </TabsTrigger>
-                </TabsList>
+                  </Label>
+                  <Input
+                    id="invite-code"
+                    placeholder="Enter your 8-character code"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    maxLength={8}
+                    className="text-center text-lg tracking-widest font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Check your email for the invite code from your administrator
+                  </p>
+                </div>
 
-                <TabsContent value="invite">
-                  <form onSubmit={handleInviteCodeLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-code">Invite Code</Label>
-                      <Input
-                        id="invite-code"
-                        placeholder="Enter your 8-character code"
-                        value={inviteCode}
-                        onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                        maxLength={8}
-                        className="text-center text-lg tracking-widest font-mono"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Check your email for the invite code from your administrator
-                      </p>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      style={{ backgroundColor: primaryColor }}
-                      disabled={isSubmitting || inviteCode.length < 8}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        'Continue with Invite Code'
-                      )}
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="email">
-                  <form onSubmit={handleEmailLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Work Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@company.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Use the email address registered by your administrator
-                      </p>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      style={{ backgroundColor: primaryColor }}
-                      disabled={isSubmitting || !email.includes('@')}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        'Continue with Email'
-                      )}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  style={{ backgroundColor: primaryColor }}
+                  disabled={isSubmitting || !isFormValid}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Login'
+                  )}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </div>

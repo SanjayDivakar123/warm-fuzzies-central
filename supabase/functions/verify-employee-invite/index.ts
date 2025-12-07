@@ -12,13 +12,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { inviteCode, companyId } = await req.json()
+    const { inviteCode, companyId, email } = await req.json()
 
-    console.log('Verifying invite code:', inviteCode, 'for company:', companyId)
+    console.log('Verifying invite code:', inviteCode, 'email:', email, 'for company:', companyId)
 
-    if (!inviteCode || !companyId) {
+    if (!inviteCode || !companyId || !email) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Invite code and company ID are required' }),
+        JSON.stringify({ success: false, message: 'Invite code, email, and company ID are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -28,26 +28,27 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Look up the employee by invite code and company
+    // Look up the employee by invite code, email, and company
     const { data: employee, error: lookupError } = await supabase
       .from('company_users')
       .select('*')
       .eq('invite_code', inviteCode.toUpperCase())
+      .eq('email', email.toLowerCase().trim())
       .eq('company_id', companyId)
       .maybeSingle()
 
     if (lookupError) {
       console.error('Error looking up employee:', lookupError)
       return new Response(
-        JSON.stringify({ success: false, message: 'Error verifying invite code' }),
+        JSON.stringify({ success: false, message: 'Error verifying credentials' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (!employee) {
-      console.log('No employee found with invite code:', inviteCode)
+      console.log('No employee found with invite code:', inviteCode, 'and email:', email)
       return new Response(
-        JSON.stringify({ success: false, message: 'Invalid invite code' }),
+        JSON.stringify({ success: false, message: 'Invalid email or invite code combination' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -77,12 +78,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Invite code verified successfully for:', employee.email)
+    console.log('Credentials verified successfully for:', employee.email)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Invite code verified',
+        message: 'Credentials verified',
         employee: {
           id: employee.id,
           email: employee.email,
