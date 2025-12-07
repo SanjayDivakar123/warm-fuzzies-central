@@ -8,9 +8,18 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { GHS_QUESTIONS, calculateGHSResults, GHSResult } from "@/lib/ghsQuestions";
-import { ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, Shuffle } from "lucide-react";
 
 const STORAGE_KEY = "ghs_teacher_results";
+
+const generateRandomAnswers = (): Record<number, string> => {
+  const options = ["A", "B", "C", "D"];
+  const answers: Record<number, string> = {};
+  GHS_QUESTIONS.forEach((q) => {
+    answers[q.id] = options[Math.floor(Math.random() * 4)];
+  });
+  return answers;
+};
 
 export default function TeacherCustomAssessment() {
   const navigate = useNavigate();
@@ -168,6 +177,21 @@ export default function TeacherCustomAssessment() {
               className="w-full bg-primary hover:bg-primary/90 mt-4"
             >
               Start Assessment
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                if (!teacherName.trim()) setTeacherName("Test Teacher");
+                if (!email.trim()) setEmail("test@example.com");
+                setAnswers(generateRandomAnswers());
+                setCurrentQuestion(GHS_QUESTIONS.length - 1);
+                setStep("quiz");
+                toast({ title: "Test Mode", description: "All questions filled with random answers. Click Submit to finish." });
+              }}
+              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 mt-2"
+            >
+              <Shuffle className="w-4 h-4 mr-2" />
+              Test: Fill Random Answers
             </Button>
           </CardContent>
         </Card>
