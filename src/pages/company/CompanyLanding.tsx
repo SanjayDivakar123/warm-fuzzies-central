@@ -123,6 +123,22 @@ export default function CompanyLanding() {
                 </div>
               </div>
 
+              {/* Important Warning */}
+              <div 
+                className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-amber-600 text-lg">⚠️</span>
+                  <div>
+                    <p className="font-semibold text-amber-800 mb-1">Important: One-Time Assessment</p>
+                    <p className="text-sm text-amber-700">
+                      Please take your time. You can only complete this assessment <strong>once</strong> per invite code. 
+                      Your answers cannot be changed after submission.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-4">
                 <Button 
                   size="lg" 

@@ -54,6 +54,7 @@ import CompanyLanding from "@/pages/company/CompanyLanding";
 import CompanyLogin from "@/pages/company/CompanyLogin";
 import CompanyAssessment from "@/pages/company/CompanyAssessment";
 import CompanyResults from "@/pages/company/CompanyResults";
+import CompanyHome from "@/pages/company/CompanyHome";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -243,6 +244,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <CompanyLanding /> },
       { path: "login", element: <CompanyLogin /> },
+      { path: "home", element: <CompanyHome /> },
       { path: "assessment", element: <CompanyAssessment /> },
       { path: "results", element: <CompanyResults /> },
     ],
