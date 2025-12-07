@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Mail, Trash2, Loader2 } from 'lucide-react';
@@ -12,11 +13,14 @@ interface UsersTabProps {
   company: any;
 }
 
+const MAX_INVITES = 3;
+
 export default function UsersTab({ company }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,6 +78,37 @@ export default function UsersTab({ company }: UsersTabProps) {
     }
   };
 
+  const handleResendInvite = async (userId: string) => {
+    setResendingId(userId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('resend-invite', {
+        body: { user_id: userId },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: 'Invite resent!',
+        description: `${data.remaining} resends remaining`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error resending invite',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const handleRevokeAccess = async (userId: string) => {
     try {
       const { error } = await supabase
@@ -107,82 +142,118 @@ export default function UsersTab({ company }: UsersTabProps) {
     return <Badge variant={variants[status]}>{status}</Badge>;
   };
 
+  const getInviteCount = (user: any) => {
+    return user.invite_count || 1;
+  };
+
+  const canResend = (user: any) => {
+    return user.status === 'invited' && getInviteCount(user) < MAX_INVITES;
+  };
+
+  const getResendTooltip = (user: any) => {
+    const count = getInviteCount(user);
+    const remaining = MAX_INVITES - count;
+    
+    if (remaining <= 0) {
+      return 'Maximum invites sent (3/3)';
+    }
+    return `Resend invite (${remaining} remaining)`;
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite New User</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleInviteUser} className="flex gap-4">
-            <Input
-              type="email"
-              placeholder="user@company.com"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-              required
-            />
-            <Button type="submit" disabled={inviting}>
-              {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-              Invite
-            </Button>
-          </form>
-          <p className="text-sm text-muted-foreground mt-2">
-            Seats available: {company.seats_purchased - users.filter((u: any) => u.status !== 'revoked').length}
-          </p>
-        </CardContent>
-      </Card>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invite New User</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleInviteUser} className="flex gap-4">
+              <Input
+                type="email"
+                placeholder="user@company.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                required
+              />
+              <Button type="submit" disabled={inviting}>
+                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                Invite
+              </Button>
+            </form>
+            <p className="text-sm text-muted-foreground mt-2">
+              Seats available: {company.seats_purchased - users.filter((u: any) => u.status !== 'revoked').length}
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Invited</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {user.status === 'invited' && (
-                        <Button variant="outline" size="sm">
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {user.role !== 'admin' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRevokeAccess(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Invited</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.role}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {user.status === 'invited' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResendInvite(user.id)}
+                                disabled={!canResend(user) || resendingId === user.id}
+                              >
+                                {resendingId === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{getResendTooltip(user)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {user.role !== 'admin' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRevokeAccess(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </TooltipProvider>
   );
 }

@@ -238,6 +238,7 @@ export type Database = {
           email: string
           id: string
           invite_code: string | null
+          invite_count: number
           invited_at: string | null
           joined_at: string | null
           role: Database["public"]["Enums"]["company_user_role"]
@@ -253,6 +254,7 @@ export type Database = {
           email: string
           id?: string
           invite_code?: string | null
+          invite_count?: number
           invited_at?: string | null
           joined_at?: string | null
           role?: Database["public"]["Enums"]["company_user_role"]
@@ -268,6 +270,7 @@ export type Database = {
           email?: string
           id?: string
           invite_code?: string | null
+          invite_count?: number
           invited_at?: string | null
           joined_at?: string | null
           role?: Database["public"]["Enums"]["company_user_role"]
