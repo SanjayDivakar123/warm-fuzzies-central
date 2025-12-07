@@ -252,18 +252,10 @@ export default function AdminResults() {
                   <div className="space-y-3">
                     {GHS_QUESTIONS.map((q) => {
                       const answer = selectedResult.answers[q.id];
-                      const color = answer ? GHS_COLOR_MAP[answer as keyof typeof GHS_COLOR_MAP] : null;
                       return (
                         <div key={q.id} className="p-3 bg-slate-700/30 rounded-lg">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <span className="text-xs text-slate-500">Q{q.id} · {q.section}</span>
-                            {color && (
-                              <Badge className={`${getColorBg(color)} text-white text-xs`}>
-                                {color}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-slate-200 text-sm mb-2">{q.question}</p>
+                          <span className="text-xs text-slate-500">Q{q.id} · {q.section}</span>
+                          <p className="text-slate-200 text-sm mb-2 mt-1">{q.question}</p>
                           {answer ? (
                             <p className="text-white text-sm font-medium">
                               {answer}. {q.options[answer as keyof typeof q.options]}
