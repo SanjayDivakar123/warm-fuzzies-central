@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3 } from 'lucide-react';
+import AssessmentPreviewModal from './AssessmentPreviewModal';
 
 interface AssessmentsTabProps {
   company: any;
@@ -47,6 +48,7 @@ export default function AssessmentsTab({ company }: AssessmentsTabProps) {
     pending: 0,
     colorDistribution: { yellow: 0, red: 0, green: 0, blue: 0 }
   });
+  const [previewType, setPreviewType] = useState<'25q' | '50q' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -192,19 +194,52 @@ export default function AssessmentsTab({ company }: AssessmentsTabProps) {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <Label>Assessment Type</Label>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant={assessmentType === '25q' ? 'default' : 'outline'}
+            <div className="space-y-3">
+              <div 
+                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  assessmentType === '25q' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'
+                }`}
                 onClick={() => setAssessmentType('25q')}
               >
-                25 Questions (Quick)
-              </Button>
-              <Button
-                variant={assessmentType === '50q' ? 'default' : 'outline'}
+                <div>
+                  <p className="font-medium">25 Question Assessment</p>
+                  <p className="text-sm text-muted-foreground">Quick assessment (~10 minutes)</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewType('25q');
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+              </div>
+
+              <div 
+                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  assessmentType === '50q' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'
+                }`}
                 onClick={() => setAssessmentType('50q')}
               >
-                50 Questions (Comprehensive)
-              </Button>
+                <div>
+                  <p className="font-medium">50 Question Assessment</p>
+                  <p className="text-sm text-muted-foreground">Comprehensive assessment (~20 minutes)</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewType('50q');
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -214,6 +249,12 @@ export default function AssessmentsTab({ company }: AssessmentsTabProps) {
           </Button>
         </CardContent>
       </Card>
+
+      <AssessmentPreviewModal 
+        open={previewType !== null} 
+        onClose={() => setPreviewType(null)} 
+        assessmentType={previewType || '25q'} 
+      />
 
       {/* Team Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
