@@ -179,36 +179,21 @@ export default function CompanyAssessment() {
         // Save results to localStorage
         localStorage.setItem(`companyAssessmentResults_${company.subdomain}`, JSON.stringify(results));
         
-        // Save to database and update company_users record
+        // Save to database via edge function (bypasses RLS)
         if (employee) {
           try {
-            // First, insert into assessment_results table
-            const { data: assessmentResult, error: insertError } = await supabase
-              .from('assessment_results')
-              .insert({
-                user_id: employee.user_id || employee.id, // Use user_id if available
-                assessment_type: `professional_${company.assessment_type}`,
-                results: results as any
-              })
-              .select('id')
-              .single();
+            const { data, error: fnError } = await supabase.functions.invoke('save-company-assessment', {
+              body: {
+                employeeId: employee.id,
+                companyId: company.id,
+                results: results
+              }
+            });
 
-            if (insertError) {
-              console.error('Error saving assessment results:', insertError);
-            }
-
-            // Then update company_users with the assessment result reference
-            const { error: updateError } = await supabase
-              .from('company_users')
-              .update({
-                assessment_completed_at: new Date().toISOString(),
-                assessment_result_id: assessmentResult?.id || null,
-                status: 'active'
-              })
-              .eq('id', employee.id);
-
-            if (updateError) {
-              console.error('Error updating employee record:', updateError);
+            if (fnError || !data?.success) {
+              console.error('Error saving assessment:', fnError || data?.message);
+            } else {
+              console.log('Assessment saved successfully:', data.assessmentResultId);
             }
           } catch (err) {
             console.error('Error saving assessment:', err);

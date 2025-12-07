@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Users, CheckCircle, Clock, ExternalLink } from 'lucide-react';
 
 interface OverviewTabProps {
   company: any;
@@ -64,6 +65,8 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     },
   ];
 
+  const companyPortalUrl = `/company/${company.subdomain}`;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -83,8 +86,17 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Company Information</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.open(companyPortalUrl, '_blank')}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            View Company Page
+          </Button>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between">

@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.resend-invite]
 verify_jwt = true
+
+[functions.save-company-assessment]
+verify_jwt = false
