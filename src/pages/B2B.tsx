@@ -16,16 +16,40 @@ export default function B2B() {
   const [seats, setSeats] = useState('2'); // Min 2 per spec
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>('25q');
   const [loading, setLoading] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Pre-fill admin email from logged-in user
+  // Check if user already has company access
   useEffect(() => {
-    if (user?.email && !adminEmail) {
-      setAdminEmail(user.email);
-    }
-  }, [user]);
+    const checkExistingAccess = async () => {
+      if (!user) {
+        setCheckingAccess(false);
+        return;
+      }
+
+      const { data: companyUser } = await supabase
+        .from('company_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (companyUser) {
+        // User already has company access, redirect to dashboard
+        navigate('/b2b/company-portal');
+        return;
+      }
+
+      // Pre-fill admin email
+      if (user.email && !adminEmail) {
+        setAdminEmail(user.email);
+      }
+      setCheckingAccess(false);
+    };
+
+    checkExistingAccess();
+  }, [user, navigate]);
 
   const generateSubdomain = (name: string) => {
     return name
@@ -101,6 +125,14 @@ export default function B2B() {
       setLoading(false);
     }
   };
+
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
