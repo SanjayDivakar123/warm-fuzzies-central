@@ -108,7 +108,7 @@ export default function CompanyHome() {
       <div 
         className="min-h-screen"
         style={{
-          background: `linear-gradient(180deg, hsl(var(--background)) 0%, ${secondaryColor}08 50%, hsl(var(--background)) 100%)`
+          background: `linear-gradient(160deg, ${primaryColor}0a 0%, ${primaryColor}05 60%, ${secondaryColor}03 100%)`
         }}
       >
         <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
@@ -180,7 +180,7 @@ export default function CompanyHome() {
     <div 
       className="min-h-screen"
       style={{
-        background: `linear-gradient(180deg, hsl(var(--background)) 0%, ${secondaryColor}05 30%, ${primaryColor}03 70%, hsl(var(--background)) 100%)`
+        background: `linear-gradient(160deg, ${primaryColor}0a 0%, ${primaryColor}05 60%, ${secondaryColor}03 100%)`
       }}
     >
       {/* Header */}
