@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Mail, Trash2, Loader2, Copy, Check } from 'lucide-react';
 
 interface UsersTabProps {
   company: any;
@@ -21,6 +21,7 @@ export default function UsersTab({ company }: UsersTabProps) {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -160,6 +161,16 @@ export default function UsersTab({ company }: UsersTabProps) {
     return `Resend invite (${remaining} remaining)`;
   };
 
+  const handleCopyCode = async (userId: string, code: string) => {
+    await navigator.clipboard.writeText(code);
+    setCopiedId(userId);
+    toast({
+      title: 'Copied!',
+      description: 'Invite code copied to clipboard',
+    });
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -198,10 +209,11 @@ export default function UsersTab({ company }: UsersTabProps) {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
+              <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Invite Code</TableHead>
                   <TableHead>Invited</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -210,8 +222,36 @@ export default function UsersTab({ company }: UsersTabProps) {
                 {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
+                    <TableCell className="capitalize">{user.role}</TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell>
+                      {user.invite_code ? (
+                        <div className="flex items-center gap-2">
+                          <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
+                            {user.invite_code}
+                          </code>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleCopyCode(user.id, user.invite_code)}
+                              >
+                                {copiedId === user.id ? (
+                                  <Check className="h-3.5 w-3.5 text-green-500" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Copy invite code</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
