@@ -217,24 +217,40 @@ export default function CompanyHome() {
       {/* Hero Section with Large Color Circle */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Large Color Circle */}
-          <div 
-            className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto mb-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden"
-            style={{ 
-              backgroundColor: leaderData.color,
-              boxShadow: `0 25px 50px -12px ${leaderData.color}60`
-            }}
-          >
-            {/* Subtle inner glow */}
+          {/* Floating Orb Container */}
+          <div className="relative mb-8">
+            {/* Shadow element that animates separately */}
             <div 
-              className="absolute inset-4 rounded-full opacity-30"
-              style={{ 
-                background: `radial-gradient(circle, white 0%, transparent 70%)`
-              }}
+              className="absolute left-1/2 -translate-x-1/2 bottom-0 w-40 sm:w-52 h-6 rounded-full blur-xl animate-float-shadow"
+              style={{ backgroundColor: leaderData.color }}
             />
-            <div className="relative z-10 text-white text-center px-4">
-              <p className="text-sm sm:text-base font-medium opacity-90 mb-1">You are</p>
-              <h2 className="text-xl sm:text-2xl font-bold leading-tight">{leaderData.subtitle}</h2>
+            
+            {/* Large Color Circle with Float Animation */}
+            <div 
+              className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl relative overflow-hidden animate-float"
+              style={{ 
+                backgroundColor: leaderData.color,
+                boxShadow: `0 25px 50px -12px ${leaderData.color}60`
+              }}
+            >
+              {/* Subtle inner glow */}
+              <div 
+                className="absolute inset-4 rounded-full opacity-30"
+                style={{ 
+                  background: `radial-gradient(circle, white 0%, transparent 70%)`
+                }}
+              />
+              {/* Shimmer effect */}
+              <div 
+                className="absolute inset-0 rounded-full opacity-20"
+                style={{ 
+                  background: `linear-gradient(135deg, transparent 30%, white 50%, transparent 70%)`
+                }}
+              />
+              <div className="relative z-10 text-white text-center px-4">
+                <p className="text-sm sm:text-base font-medium opacity-90 mb-1">You are</p>
+                <h2 className="text-xl sm:text-2xl font-bold leading-tight">{leaderData.subtitle}</h2>
+              </div>
             </div>
           </div>
 
