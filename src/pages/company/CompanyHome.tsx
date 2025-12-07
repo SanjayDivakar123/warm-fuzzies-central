@@ -86,33 +86,38 @@ export default function CompanyHome() {
   const navigate = useNavigate();
   const [results, setResults] = useState<Results | null>(null);
 
-  // Load employee and results from localStorage
+  // Load employee and results from localStorage (per employee)
   useEffect(() => {
     if (company) {
       // Load employee if not in context
-      if (!employee) {
+      let currentEmployee = employee;
+      if (!currentEmployee) {
         const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
         if (savedEmployee) {
-          setEmployee(JSON.parse(savedEmployee));
+          currentEmployee = JSON.parse(savedEmployee);
+          setEmployee(currentEmployee);
         } else {
           navigate(`/company/${company.subdomain}/login`);
           return;
         }
       }
 
-      // Load results
-      const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}`);
-      if (storedResults) {
-        setResults(JSON.parse(storedResults));
+      // Load results using employee-specific key
+      if (currentEmployee) {
+        const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}_${currentEmployee.id}`);
+        if (storedResults) {
+          setResults(JSON.parse(storedResults));
+        }
       }
     }
   }, [company, employee, setEmployee, navigate]);
 
   const handleLogout = () => {
-    if (company) {
+    if (company && employee) {
       localStorage.removeItem(`employee_${company.subdomain}`);
-      localStorage.removeItem(`companyAssessmentResults_${company.subdomain}`);
-      localStorage.removeItem(`assessment_progress_${company.subdomain}`);
+      localStorage.removeItem(`companyAssessmentResults_${company.subdomain}_${employee.id}`);
+      localStorage.removeItem(`assessment_progress_${company.subdomain}_${employee.id}`);
+      localStorage.removeItem(`current_employee_id_${company.subdomain}`);
       setEmployee(null);
       navigate(`/company/${company.subdomain}`);
     }
