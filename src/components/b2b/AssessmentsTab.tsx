@@ -12,6 +12,7 @@ import AssessmentPreviewModal from './AssessmentPreviewModal';
 
 interface AssessmentsTabProps {
   company: any;
+  onSettingsSaved?: () => void;
 }
 
 interface CompletedAssessment {
@@ -37,7 +38,7 @@ const colorLabels: Record<string, { label: string; bg: string; text: string }> =
   blue: { label: 'Innovator', bg: 'bg-blue-100', text: 'text-blue-800' },
 };
 
-export default function AssessmentsTab({ company }: AssessmentsTabProps) {
+export default function AssessmentsTab({ company, onSettingsSaved }: AssessmentsTabProps) {
   const [assessmentType, setAssessmentType] = useState(company.assessment_type);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -133,6 +134,11 @@ export default function AssessmentsTab({ company }: AssessmentsTabProps) {
         title: 'Assessment type updated',
         description: 'Your changes have been saved.',
       });
+
+      // Refresh company data in parent to sync with other tabs
+      if (onSettingsSaved) {
+        onSettingsSaved();
+      }
     } catch (error: any) {
       toast({
         title: 'Error updating assessment type',
