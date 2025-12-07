@@ -12,6 +12,7 @@ const colorDescriptions = {
     subtitle: "The Executor",
     description: "You are driven, decisive, and results-focused. You excel at executing plans and getting things done quickly.",
     workDescription: "As an Action-Oriented Leader, your approach to work is characterized by a relentless drive toward results. You naturally take charge of situations, cutting through complexity to focus on what truly matters. In meetings, you're often the one pushing for decisions and next steps rather than endless discussion. Your colleagues rely on you to turn ideas into action, and you thrive when given challenging goals with clear metrics for success. Your pragmatic mindset helps teams avoid getting stuck in analysis paralysis, making you invaluable during crunch times and high-stakes projects.",
+    strengths: ["Quick decision-making", "Goal-oriented mindset", "Efficient execution", "Takes initiative", "Thrives under pressure", "Results-driven"],
     situations: [
       { title: "Crisis Management", description: "When deadlines are tight or problems arise, you step up to take decisive action and rally the team." },
       { title: "Project Kickoffs", description: "You quickly establish clear goals, timelines, and accountability to get momentum going fast." },
@@ -19,10 +20,10 @@ const colorDescriptions = {
       { title: "Performance Reviews", description: "You focus on measurable outcomes and give direct, actionable feedback to help others improve." }
     ],
     weaknesses: [
-      { title: "Impatience with Process", description: "You may skip important steps or overlook details when rushing toward results." },
-      { title: "Overwhelming Others", description: "Your fast pace can leave teammates feeling pressured or unable to keep up." },
-      { title: "Dismissing Input", description: "In your drive for efficiency, you might not fully consider others' perspectives or ideas." },
-      { title: "Burnout Risk", description: "Your constant push for achievement can lead to exhaustion for yourself and your team." }
+      { title: "Impatience with Process", description: "You may skip important steps or overlook details when rushing toward results.", solution: "Build in brief checkpoint reviews before major decisions to catch what you might miss." },
+      { title: "Overwhelming Others", description: "Your fast pace can leave teammates feeling pressured or unable to keep up.", solution: "Regularly check in with your team about workload and adjust timelines when needed." },
+      { title: "Dismissing Input", description: "In your drive for efficiency, you might not fully consider others' perspectives or ideas.", solution: "Practice active listening by summarizing others' points before responding." },
+      { title: "Burnout Risk", description: "Your constant push for achievement can lead to exhaustion for yourself and your team.", solution: "Schedule regular breaks and celebrate small wins to maintain sustainable energy." }
     ],
     color: "#EAB308"
   },
@@ -31,6 +32,7 @@ const colorDescriptions = {
     subtitle: "The Motivator",
     description: "You are passionate, enthusiastic, and people-focused. You excel at motivating teams and creating energy.",
     workDescription: "As an Inspirational Leader, you bring energy and enthusiasm to everything you do. Your natural charisma draws people in, making you the heart of any team. You excel at painting compelling visions that get others excited about possibilities. In the workplace, you're often the one lifting spirits during tough times and celebrating wins with genuine joy. Your ability to connect emotionally with colleagues creates strong bonds and loyalty. You understand that people perform best when they feel valued and inspired, and you naturally create environments where creativity and passion can flourish.",
+    strengths: ["Strong communication", "Motivates others", "Builds connections", "Creates compelling vision", "Emotional intelligence", "Team morale builder"],
     situations: [
       { title: "Team Building", description: "You create inclusive, energetic environments where everyone feels valued and motivated to contribute." },
       { title: "Change Management", description: "You help others see the positive possibilities in change and get excited about new directions." },
@@ -38,10 +40,10 @@ const colorDescriptions = {
       { title: "Conflict Resolution", description: "You use empathy and positivity to find common ground and restore team harmony." }
     ],
     weaknesses: [
-      { title: "Avoiding Difficult Conversations", description: "Your desire to maintain positivity may cause you to delay addressing problems." },
-      { title: "Over-Promising", description: "Your enthusiasm can lead to commitments that are difficult to deliver on." },
-      { title: "Lack of Follow-Through", description: "Excitement about new ideas may distract you from completing current projects." },
-      { title: "Sensitivity to Criticism", description: "Negative feedback can affect you more deeply, impacting your confidence." }
+      { title: "Avoiding Difficult Conversations", description: "Your desire to maintain positivity may cause you to delay addressing problems.", solution: "Frame tough feedback as caring about someone's growth, not criticism." },
+      { title: "Over-Promising", description: "Your enthusiasm can lead to commitments that are difficult to deliver on.", solution: "Take 24 hours before committing to significant requests to assess feasibility." },
+      { title: "Lack of Follow-Through", description: "Excitement about new ideas may distract you from completing current projects.", solution: "Use a simple tracking system to visualize progress on active commitments." },
+      { title: "Sensitivity to Criticism", description: "Negative feedback can affect you more deeply, impacting your confidence.", solution: "Reframe criticism as data for improvement, not personal rejection." }
     ],
     color: "#EF4444"
   },
@@ -50,6 +52,7 @@ const colorDescriptions = {
     subtitle: "The Organizer",
     description: "You are logical, organized, and detail-oriented. You excel at creating structure and solving complex problems.",
     workDescription: "As an Analytical Leader, you bring order and precision to everything you touch. Your methodical approach ensures nothing falls through the cracks, and your colleagues trust you to catch errors others might miss. You excel at breaking down complex problems into manageable components and creating systems that improve efficiency. In the workplace, you're the one who documents processes, maintains quality standards, and ensures consistency. Your data-driven mindset means decisions are based on facts rather than assumptions, providing a solid foundation for long-term success and continuous improvement.",
+    strengths: ["Systematic thinking", "Process optimization", "Data-driven decisions", "Quality focused", "Attention to detail", "Risk management"],
     situations: [
       { title: "Strategic Planning", description: "You develop comprehensive plans with clear milestones, risk assessments, and contingencies." },
       { title: "Quality Assurance", description: "You establish standards and checkpoints that ensure consistent, high-quality deliverables." },
@@ -57,10 +60,10 @@ const colorDescriptions = {
       { title: "Data Analysis", description: "You transform raw data into actionable insights that drive informed decision-making." }
     ],
     weaknesses: [
-      { title: "Analysis Paralysis", description: "Your need for complete information may delay decisions when speed is needed." },
-      { title: "Resistance to Change", description: "You may struggle when established systems need to be disrupted for innovation." },
-      { title: "Perfectionism", description: "High standards can lead to spending too much time on details that don't matter." },
-      { title: "Difficulty with Ambiguity", description: "Undefined situations or lack of clear guidelines can cause stress and hesitation." }
+      { title: "Analysis Paralysis", description: "Your need for complete information may delay decisions when speed is needed.", solution: "Set decision deadlines and commit to acting with 80% of the information." },
+      { title: "Resistance to Change", description: "You may struggle when established systems need to be disrupted for innovation.", solution: "Pilot new approaches in small, low-risk experiments before full commitment." },
+      { title: "Perfectionism", description: "High standards can lead to spending too much time on details that don't matter.", solution: "Define 'good enough' criteria upfront and stick to them." },
+      { title: "Difficulty with Ambiguity", description: "Undefined situations or lack of clear guidelines can cause stress and hesitation.", solution: "Create your own temporary frameworks when none exist, and iterate as you learn." }
     ],
     color: "#22C55E"
   },
@@ -69,6 +72,7 @@ const colorDescriptions = {
     subtitle: "The Creator",
     description: "You are creative, visionary, and future-focused. You excel at generating new ideas and reimagining possibilities.",
     workDescription: "As an Innovative Leader, you see possibilities where others see limitations. Your creative mind constantly generates new ideas and approaches, making you invaluable for solving complex challenges in unconventional ways. You're naturally curious, always exploring new concepts and technologies that could benefit your team. In the workplace, you're the one asking 'what if?' and challenging assumptions that others take for granted. Your ability to think outside the box and connect disparate ideas creates breakthrough solutions that drive organizational growth and competitive advantage.",
+    strengths: ["Creative problem-solving", "Strategic thinking", "Innovation driven", "Adaptable mindset", "Visionary perspective", "Connects diverse ideas"],
     situations: [
       { title: "Brainstorming Sessions", description: "You generate diverse ideas and help others think beyond conventional solutions." },
       { title: "Product Development", description: "You envision innovative features and experiences that differentiate offerings in the market." },
@@ -76,10 +80,10 @@ const colorDescriptions = {
       { title: "Future Planning", description: "You anticipate trends and help organizations prepare for emerging opportunities." }
     ],
     weaknesses: [
-      { title: "Difficulty with Routine", description: "Repetitive tasks or maintaining established processes can feel draining and boring." },
-      { title: "Starting Without Finishing", description: "Excitement for new ideas may cause you to abandon projects before completion." },
-      { title: "Overlooking Practicalities", description: "Creative solutions may not always account for budget, timeline, or resource constraints." },
-      { title: "Frustration with Constraints", description: "Rules and limitations can feel stifling, leading to friction with more structured colleagues." }
+      { title: "Difficulty with Routine", description: "Repetitive tasks or maintaining established processes can feel draining and boring.", solution: "Automate or delegate routine tasks, and find creative angles within necessary work." },
+      { title: "Starting Without Finishing", description: "Excitement for new ideas may cause you to abandon projects before completion.", solution: "Partner with detail-oriented colleagues who can help maintain momentum to completion." },
+      { title: "Overlooking Practicalities", description: "Creative solutions may not always account for budget, timeline, or resource constraints.", solution: "Include a 'feasibility check' step in your creative process before presenting ideas." },
+      { title: "Frustration with Constraints", description: "Rules and limitations can feel stifling, leading to friction with more structured colleagues.", solution: "Reframe constraints as creative challenges that spark more innovative solutions." }
     ],
     color: "#3B82F6"
   },
@@ -205,6 +209,38 @@ export default function CompanyResults() {
             </CardContent>
           </Card>
 
+          {/* Key Strengths */}
+          <Card className="rounded-2xl shadow-lg border mb-6">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: dominantColorInfo.color }}
+                >
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-xl">Your Key Strengths</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                {dominantColorInfo.strengths.map((strength, index) => (
+                  <div 
+                    key={index}
+                    className="px-4 py-2 rounded-full text-sm font-medium"
+                    style={{ 
+                      backgroundColor: `${dominantColorInfo.color}15`,
+                      color: dominantColorInfo.color,
+                      border: `1px solid ${dominantColorInfo.color}30`
+                    }}
+                  >
+                    ✓ {strength}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* How You Approach Situations */}
           <Card className="rounded-2xl shadow-lg border mb-6">
             <CardHeader>
@@ -321,9 +357,15 @@ export default function CompanyResults() {
                     <h4 className="font-semibold mb-2 text-amber-800 dark:text-amber-200">
                       {weakness.title}
                     </h4>
-                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
                       {weakness.description}
                     </p>
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                      <span className="text-green-600 dark:text-green-400 text-sm">💡</span>
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        <span className="font-medium">Solution:</span> {weakness.solution}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
