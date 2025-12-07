@@ -172,7 +172,7 @@ export default function B2BDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <SettingsTab company={company} />
+            <SettingsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
         </Tabs>
       </div>
