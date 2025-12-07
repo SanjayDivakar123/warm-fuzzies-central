@@ -1,0 +1,279 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useCompanyPortal } from '@/contexts/CompanyPortalContext';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Building2, Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
+
+export default function CompanyAdminLogin() {
+  const { company, loading: companyLoading, error } = useCompanyPortal();
+  const { user, loading: authLoading, signIn } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
+
+  // Check if user is already logged in and is admin for this company
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      if (!user || !company) return;
+      
+      setCheckingAdmin(true);
+      try {
+        const { data: adminUser, error: adminError } = await supabase
+          .from('company_users')
+          .select('*')
+          .eq('company_id', company.id)
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (adminUser && !adminError) {
+          // User is already logged in and is an admin
+          navigate('/b2b/company-portal');
+        }
+      } catch (err) {
+        console.error('Error checking admin access:', err);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+
+    if (!authLoading && !companyLoading) {
+      checkAdminAccess();
+    }
+  }, [user, company, authLoading, companyLoading, navigate]);
+
+  if (companyLoading || authLoading || checkingAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !company) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-8 pb-8 text-center">
+            <h1 className="text-2xl font-bold mb-2">Company Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The company portal you're looking for doesn't exist.
+            </p>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Go to Homepage
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const primaryColor = company.primary_color || '#9b87f5';
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      // First, sign in with Supabase Auth
+      const { error: signInError } = await signIn(email, password);
+      
+      if (signInError) {
+        toast({
+          title: "Login Failed",
+          description: signInError.message || "Invalid email or password.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Get the newly logged in user
+      const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+      
+      if (!loggedInUser) {
+        toast({
+          title: "Login Failed",
+          description: "Could not verify your login. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if user is an admin for this company
+      const { data: adminUser, error: adminError } = await supabase
+        .from('company_users')
+        .select('*')
+        .eq('company_id', company.id)
+        .eq('user_id', loggedInUser.id)
+        .eq('role', 'admin')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (adminError || !adminUser) {
+        // Sign out the user since they're not an admin for this company
+        await supabase.auth.signOut();
+        toast({
+          title: "Access Denied",
+          description: "You are not authorized as an admin for this company.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Welcome, Admin!",
+        description: "Redirecting to your dashboard...",
+      });
+
+      navigate('/b2b/company-portal');
+    } catch (err) {
+      console.error('Admin login error:', err);
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isFormValid = email.includes('@') && password.length >= 6;
+
+  return (
+    <div 
+      className="min-h-screen"
+      style={{
+        background: `linear-gradient(135deg, ${primaryColor}10 0%, ${primaryColor}05 100%)`
+      }}
+    >
+      {/* Header */}
+      <header className="py-6 px-4" style={{ borderBottom: `2px solid ${primaryColor}20` }}>
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(`/company/${company.subdomain}`)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          {company.logo_url ? (
+            <img 
+              src={company.logo_url} 
+              alt={`${company.name} logo`}
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <div 
+              className="h-10 w-10 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Building2 className="h-5 w-5 text-white" />
+            </div>
+          )}
+          <span className="font-semibold">{company.name}</span>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="py-16 px-4">
+        <div className="max-w-md mx-auto">
+          <Card className="shadow-xl border-2" style={{ borderColor: `${primaryColor}30` }}>
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div 
+                  className="h-14 w-14 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${primaryColor}15` }}
+                >
+                  <Shield className="h-7 w-7" style={{ color: primaryColor }} />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Admin Login</CardTitle>
+              <CardDescription>
+                Sign in to access the {company.name} admin dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAdminLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Admin Email
+                  </Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="admin@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password" className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Password
+                  </Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  style={{ backgroundColor: primaryColor }}
+                  disabled={isSubmitting || !isFormValid}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In as Admin'
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t text-center">
+                <p className="text-sm text-muted-foreground">
+                  Not an admin?{' '}
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto"
+                    onClick={() => navigate(`/company/${company.subdomain}/login`)}
+                  >
+                    Go to Employee Login
+                  </Button>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      <footer className="py-8 px-4 text-center text-muted-foreground text-sm">
+        <p>Powered by RoleColorFinder</p>
+      </footer>
+    </div>
+  );
+}
