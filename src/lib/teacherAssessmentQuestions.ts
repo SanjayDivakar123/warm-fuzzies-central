@@ -194,11 +194,30 @@ export interface TeacherResult {
 export const SCHOOLS_STORAGE_KEY = "teacher_assessment_schools";
 export const RESULTS_STORAGE_KEY = "teacher_assessment_results";
 
-export function getSchools(): string[] {
+export interface School {
+  name: string;
+  code: string;
+}
+
+export function getSchools(): School[] {
   const stored = localStorage.getItem(SCHOOLS_STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
 }
 
-export function saveSchools(schools: string[]) {
+export function saveSchools(schools: School[]): void {
   localStorage.setItem(SCHOOLS_STORAGE_KEY, JSON.stringify(schools));
+}
+
+export function getSchoolByCode(code: string): School | undefined {
+  const schools = getSchools();
+  return schools.find(s => s.code === code);
+}
+
+export function generateSchoolCode(): string {
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  const existing = getSchools();
+  if (existing.some(s => s.code === code)) {
+    return generateSchoolCode();
+  }
+  return code;
 }

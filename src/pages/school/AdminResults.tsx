@@ -6,9 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { TEACHER_QUESTIONS, getSchools, saveSchools } from "@/lib/teacherAssessmentQuestions";
+import { TEACHER_QUESTIONS, getSchools, saveSchools, generateSchoolCode, School } from "@/lib/teacherAssessmentQuestions";
 import { studentAssessmentQuestions } from "@/lib/studentAssessmentQuestions";
-import { Lock, Eye, Trash2, FileDown, Plus, X, GraduationCap, Users } from "lucide-react";
+import { Lock, Eye, Trash2, FileDown, Plus, X, GraduationCap, Users, Copy } from "lucide-react";
 import { format } from "date-fns";
 
 const ADMIN_CODE = "8132";
@@ -36,8 +36,8 @@ export default function AdminResults() {
   const [code, setCode] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
-  const [schools, setSchools] = useState<string[]>([]);
-  const [newSchool, setNewSchool] = useState("");
+  const [schools, setSchools] = useState<School[]>([]);
+  const [newSchoolName, setNewSchoolName] = useState("");
   const [activeTab, setActiveTab] = useState<"teacher" | "student">("teacher");
 
   useEffect(() => {
@@ -85,18 +85,37 @@ export default function AdminResults() {
   };
 
   const handleAddSchool = () => {
-    const trimmed = newSchool.trim();
-    if (!trimmed || schools.includes(trimmed)) return;
-    const updated = [...schools, trimmed];
+    const trimmed = newSchoolName.trim();
+    if (!trimmed) {
+      toast({ title: "Please enter a school name", variant: "destructive" });
+      return;
+    }
+    if (schools.some(s => s.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast({ title: "School already exists", variant: "destructive" });
+      return;
+    }
+    
+    const newSchool: School = {
+      name: trimmed,
+      code: generateSchoolCode(),
+    };
+    
+    const updated = [...schools, newSchool];
     saveSchools(updated);
     setSchools(updated);
-    setNewSchool("");
+    setNewSchoolName("");
+    toast({ title: "School added", description: `Code: ${newSchool.code}` });
   };
 
-  const handleRemoveSchool = (school: string) => {
-    const updated = schools.filter((s) => s !== school);
+  const handleRemoveSchool = (code: string) => {
+    const updated = schools.filter((s) => s.code !== code);
     saveSchools(updated);
     setSchools(updated);
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Code copied to clipboard" });
   };
 
   const getAnswersArray = (submission: Submission): Answer[] => {
@@ -174,15 +193,39 @@ export default function AdminResults() {
               <CardHeader><CardTitle className="text-white">Schools</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
-                  <Input value={newSchool} onChange={(e) => setNewSchool(e.target.value)} placeholder="School name" className="bg-slate-700/50 border-slate-600 text-white" onKeyDown={(e) => e.key === "Enter" && handleAddSchool()} />
+                  <Input value={newSchoolName} onChange={(e) => setNewSchoolName(e.target.value)} placeholder="School name" className="bg-slate-700/50 border-slate-600 text-white" onKeyDown={(e) => e.key === "Enter" && handleAddSchool()} />
                   <Button onClick={handleAddSchool}><Plus className="w-4 h-4 mr-1" />Add</Button>
                 </div>
-                {schools.map((s) => (
-                  <div key={s} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                    <span className="text-white">{s}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleRemoveSchool(s)} className="text-slate-400 hover:text-red-400"><X className="w-4 h-4" /></Button>
+                <p className="text-sm text-slate-400">
+                  A unique 4-digit code will be generated automatically for each school.
+                </p>
+                {schools.length === 0 ? (
+                  <p className="text-slate-500 text-center py-8">No schools added yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {schools.map((s) => (
+                      <div key={s.code} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <span className="text-white font-medium">{s.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary font-mono text-lg tracking-widest">{s.code}</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleCopyCode(s.code)}
+                              className="text-slate-400 hover:text-white h-8 w-8 p-0"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveSchool(s.code)} className="text-slate-400 hover:text-red-400">
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </TabsContent>
