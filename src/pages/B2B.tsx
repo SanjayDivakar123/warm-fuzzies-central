@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,16 +7,25 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function B2B() {
   const [companyName, setCompanyName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [seats, setSeats] = useState('5');
+  const [seats, setSeats] = useState('2'); // Min 2 per spec
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>('25q');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Pre-fill admin email from logged-in user
+  useEffect(() => {
+    if (user?.email && !adminEmail) {
+      setAdminEmail(user.email);
+    }
+  }, [user]);
 
   const generateSubdomain = (name: string) => {
     return name
@@ -28,23 +37,52 @@ export default function B2B() {
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Require authentication
+    if (!user) {
+      toast({
+        title: 'Please sign in first',
+        description: 'You need to be logged in to create a company.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    // Validate minimum seats
+    const seatCount = parseInt(seats);
+    if (seatCount < 2) {
+      toast({
+        title: 'Minimum 2 seats required',
+        description: 'Please enter at least 2 seats.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const subdomain = generateSubdomain(companyName);
 
-      // Call edge function to create company
+      // Call edge function to create company with user_id
       const { data, error } = await supabase.functions.invoke('create-company', {
         body: {
           name: companyName,
           subdomain,
           admin_email: adminEmail,
-          seats_purchased: parseInt(seats),
+          seats_purchased: seatCount,
           assessment_type: assessmentType,
+          user_id: user.id, // Link to current user
         },
       });
 
       if (error) throw error;
+      
+      // Check for error in response body
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'Company created!',
@@ -56,7 +94,7 @@ export default function B2B() {
     } catch (error: any) {
       toast({
         title: 'Error creating company',
-        description: error.message,
+        description: error.message || 'Failed to create company. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -116,11 +154,14 @@ export default function B2B() {
                 <Input
                   id="seats"
                   type="number"
-                  min="1"
+                  min="2"
                   value={seats}
                   onChange={(e) => setSeats(e.target.value)}
                   required
                 />
+                <p className="text-sm text-muted-foreground">
+                  Minimum 2 seats • $20 per employee (one-time)
+                </p>
               </div>
 
               <div className="space-y-2">
