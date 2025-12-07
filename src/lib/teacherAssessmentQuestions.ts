@@ -1,4 +1,4 @@
-export interface GHSQuestion {
+export interface TeacherQuestion {
   id: number;
   section: string;
   question: string;
@@ -10,15 +10,7 @@ export interface GHSQuestion {
   };
 }
 
-// Color mapping: A = Yellow (Creativity), B = Green (Relationships), C = Blue (Structure), D = Red (Efficiency)
-export const GHS_COLOR_MAP = {
-  A: "Yellow",
-  B: "Green", 
-  C: "Blue",
-  D: "Red"
-} as const;
-
-export const GHS_QUESTIONS: GHSQuestion[] = [
+export const TEACHER_QUESTIONS: TeacherQuestion[] = [
   // SECTION 1 — School Values & Teaching Philosophy
   { id: 1, section: "School Values & Teaching Philosophy", question: "Which trait best reflects your school's teaching philosophy?", options: { A: "Creativity", B: "Relationships", C: "Planning", D: "Productivity" } },
   { id: 2, section: "School Values & Teaching Philosophy", question: "What makes a lesson \"excellent\" at your school?", options: { A: "Innovation", B: "Engagement", C: "Structure", D: "Efficiency" } },
@@ -190,49 +182,23 @@ export const GHS_QUESTIONS: GHSQuestion[] = [
   { id: 150, section: "Report Look & Feel", question: "The final teacher report should feel like:", options: { A: "A creative blueprint", B: "A relational mirror", C: "A planning guide", D: "An action roadmap" } },
 ];
 
-export interface GHSResult {
+export interface TeacherResult {
   id: string;
   teacherName: string;
   email: string;
+  schoolName: string;
   submittedAt: string;
   answers: Record<number, string>;
-  colorScores: {
-    Yellow: number;
-    Green: number;
-    Blue: number;
-    Red: number;
-  };
-  primaryColor: string;
-  secondaryColor: string;
 }
 
-export function calculateGHSResults(answers: Record<number, string>): {
-  colorScores: { Yellow: number; Green: number; Blue: number; Red: number };
-  primaryColor: string;
-  secondaryColor: string;
-} {
-  const colorCounts = { Yellow: 0, Green: 0, Blue: 0, Red: 0 };
-  
-  Object.values(answers).forEach((answer) => {
-    const color = GHS_COLOR_MAP[answer as keyof typeof GHS_COLOR_MAP];
-    if (color) {
-      colorCounts[color]++;
-    }
-  });
+export const SCHOOLS_STORAGE_KEY = "teacher_assessment_schools";
+export const RESULTS_STORAGE_KEY = "teacher_assessment_results";
 
-  const total = Object.keys(answers).length;
-  const colorScores = {
-    Yellow: Math.round((colorCounts.Yellow / total) * 100),
-    Green: Math.round((colorCounts.Green / total) * 100),
-    Blue: Math.round((colorCounts.Blue / total) * 100),
-    Red: Math.round((colorCounts.Red / total) * 100),
-  };
+export function getSchools(): string[] {
+  const stored = localStorage.getItem(SCHOOLS_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+}
 
-  const sorted = Object.entries(colorScores).sort(([, a], [, b]) => b - a);
-  
-  return {
-    colorScores,
-    primaryColor: sorted[0][0],
-    secondaryColor: sorted[1][0],
-  };
+export function saveSchools(schools: string[]) {
+  localStorage.setItem(SCHOOLS_STORAGE_KEY, JSON.stringify(schools));
 }

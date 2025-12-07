@@ -6,42 +6,37 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { GHS_QUESTIONS, calculateGHSResults, GHSResult } from "@/lib/ghsQuestions";
-import { ChevronLeft, ChevronRight, CheckCircle, Shuffle } from "lucide-react";
-
-const STORAGE_KEY = "ghs_teacher_results";
-
-const generateRandomAnswers = (): Record<number, string> => {
-  const options = ["A", "B", "C", "D"];
-  const answers: Record<number, string> = {};
-  GHS_QUESTIONS.forEach((q) => {
-    answers[q.id] = options[Math.floor(Math.random() * 4)];
-  });
-  return answers;
-};
+import { TEACHER_QUESTIONS, TeacherResult, RESULTS_STORAGE_KEY, getSchools } from "@/lib/teacherAssessmentQuestions";
+import { ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 
 export default function TeacherCustomAssessment() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"info" | "quiz" | "complete">("info");
   const [teacherName, setTeacherName] = useState("");
   const [email, setEmail] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [schools, setSchools] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  const question = GHS_QUESTIONS[currentQuestion];
-  const progress = ((currentQuestion + 1) / GHS_QUESTIONS.length) * 100;
+  useEffect(() => {
+    setSchools(getSchools());
+  }, []);
+
+  const question = TEACHER_QUESTIONS[currentQuestion];
+  const progress = ((currentQuestion + 1) / TEACHER_QUESTIONS.length) * 100;
   const currentSection = question?.section;
 
-  // Get unique sections for navigation
-  const sections = [...new Set(GHS_QUESTIONS.map(q => q.section))];
+  const sections = [...new Set(TEACHER_QUESTIONS.map(q => q.section))];
   const currentSectionIndex = sections.indexOf(currentSection);
 
   const handleStartQuiz = () => {
-    if (!teacherName.trim() || !email.trim()) {
+    if (!teacherName.trim() || !email.trim() || !schoolName) {
       toast({
         title: "Required Fields",
-        description: "Please enter your name and email to continue.",
+        description: "Please fill in all fields including school selection.",
         variant: "destructive",
       });
       return;
@@ -63,7 +58,7 @@ export default function TeacherCustomAssessment() {
       return;
     }
 
-    if (currentQuestion < GHS_QUESTIONS.length - 1) {
+    if (currentQuestion < TEACHER_QUESTIONS.length - 1) {
       setCurrentQuestion((prev) => prev + 1);
     } else {
       handleSubmit();
@@ -77,21 +72,18 @@ export default function TeacherCustomAssessment() {
   };
 
   const handleSubmit = () => {
-    const results = calculateGHSResults(answers);
-    
-    const newResult: GHSResult = {
+    const newResult: TeacherResult = {
       id: crypto.randomUUID(),
       teacherName,
       email,
+      schoolName,
       submittedAt: new Date().toISOString(),
       answers,
-      ...results,
     };
 
-    // Get existing results from localStorage
-    const existingResults = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const existingResults = JSON.parse(localStorage.getItem(RESULTS_STORAGE_KEY) || "[]");
     existingResults.push(newResult);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(existingResults));
+    localStorage.setItem(RESULTS_STORAGE_KEY, JSON.stringify(existingResults));
 
     setStep("complete");
     toast({
@@ -100,7 +92,6 @@ export default function TeacherCustomAssessment() {
     });
   };
 
-  // Keyboard shortcuts
   useEffect(() => {
     if (step !== "quiz") return;
 
@@ -144,13 +135,34 @@ export default function TeacherCustomAssessment() {
         <Card className="max-w-lg w-full bg-slate-800/50 border-slate-700">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-white">
-              RoleColorFinder — Custom Teacher Assessment Builder
+              Custom Teacher Assessment Builder
             </CardTitle>
             <p className="text-slate-400 mt-2">
               150 questions across 10 sections to build your customized teacher report.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="school" className="text-slate-200">School Name</Label>
+              <Select value={schoolName} onValueChange={setSchoolName}>
+                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                  <SelectValue placeholder="Select your school" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  {schools.length === 0 ? (
+                    <SelectItem value="_none" disabled className="text-slate-400">
+                      No schools available - contact admin
+                    </SelectItem>
+                  ) : (
+                    schools.map((school) => (
+                      <SelectItem key={school} value={school} className="text-white hover:bg-slate-700">
+                        {school}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor="name" className="text-slate-200">Your Name</Label>
               <Input
@@ -175,24 +187,15 @@ export default function TeacherCustomAssessment() {
             <Button 
               onClick={handleStartQuiz}
               className="w-full bg-primary hover:bg-primary/90 mt-4"
+              disabled={schools.length === 0}
             >
               Start Assessment
             </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                if (!teacherName.trim()) setTeacherName("Test Teacher");
-                if (!email.trim()) setEmail("test@example.com");
-                setAnswers(generateRandomAnswers());
-                setCurrentQuestion(GHS_QUESTIONS.length - 1);
-                setStep("quiz");
-                toast({ title: "Test Mode", description: "All questions filled with random answers. Click Submit to finish." });
-              }}
-              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 mt-2"
-            >
-              <Shuffle className="w-4 h-4 mr-2" />
-              Test: Fill Random Answers
-            </Button>
+            {schools.length === 0 && (
+              <p className="text-amber-400 text-sm text-center">
+                No schools configured. Please contact your administrator.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -202,16 +205,14 @@ export default function TeacherCustomAssessment() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="max-w-3xl mx-auto">
-        {/* Progress Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
             <span>Section {currentSectionIndex + 1} of {sections.length}: {currentSection}</span>
-            <span>Question {currentQuestion + 1} of {GHS_QUESTIONS.length}</span>
+            <span>Question {currentQuestion + 1} of {TEACHER_QUESTIONS.length}</span>
           </div>
           <Progress value={progress} className="h-2 bg-slate-700" />
         </div>
 
-        {/* Question Card */}
         <Card className="bg-slate-800/50 border-slate-700 mb-6">
           <CardHeader>
             <CardTitle className="text-xl text-white">
@@ -251,7 +252,6 @@ export default function TeacherCustomAssessment() {
           </CardContent>
         </Card>
 
-        {/* Navigation */}
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
@@ -266,7 +266,7 @@ export default function TeacherCustomAssessment() {
             onClick={handleNext}
             className="bg-primary hover:bg-primary/90"
           >
-            {currentQuestion === GHS_QUESTIONS.length - 1 ? "Submit" : "Next"}
+            {currentQuestion === TEACHER_QUESTIONS.length - 1 ? "Submit" : "Next"}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
