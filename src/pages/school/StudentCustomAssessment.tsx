@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getSchools } from "@/lib/teacherAssessmentQuestions";
 import { studentAssessmentQuestions, studentSections } from "@/lib/studentAssessmentQuestions";
 import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -26,10 +27,7 @@ const StudentCustomAssessment = () => {
   const [schools, setSchools] = useState<string[]>([]);
 
   useEffect(() => {
-    const savedSchools = localStorage.getItem("assessment_schools");
-    if (savedSchools) {
-      setSchools(JSON.parse(savedSchools));
-    }
+    setSchools(getSchools());
   }, []);
 
   const question = studentAssessmentQuestions[currentQuestion];
