@@ -5,15 +5,50 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Trash2, Loader2, Copy, Check } from 'lucide-react';
+import { Plus, Mail, Trash2, Loader2, Copy, Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 interface UsersTabProps {
   company: any;
 }
 
 const MAX_INVITES = 3;
+
+const JOB_ROLES = [
+  'Engineer',
+  'Designer',
+  'PM',
+  'Sales',
+  'Support',
+  'Analyst',
+  'Marketing',
+  'Founder',
+  'Intern',
+  'Operations',
+  'QA',
+  'Writer',
+  'Researcher',
+];
+
+const PREDEFINED_SKILLS = [
+  'UI Design',
+  'Data Analysis',
+  'Coding',
+  'Writing',
+  'Research',
+  'QA',
+  'Operations',
+  'Client Communication',
+  'Branding',
+  'Marketing',
+  'Project Management',
+  'Sales',
+  'Strategy',
+  'Content Creation',
+  'Technical Support',
+];
 
 export default function UsersTab({ company }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
@@ -22,6 +57,9 @@ export default function UsersTab({ company }: UsersTabProps) {
   const [inviting, setInviting] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [newSkillInput, setNewSkillInput] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,6 +172,105 @@ export default function UsersTab({ company }: UsersTabProps) {
     }
   };
 
+  const handleUpdateJobRole = async (userId: string, jobRole: string) => {
+    setSavingUserId(userId);
+    try {
+      const { error } = await supabase
+        .from('company_users')
+        .update({ job_role: jobRole })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === userId ? { ...u, job_role: jobRole } : u));
+      
+      toast({
+        title: 'Job role updated',
+        description: `Job role set to ${jobRole}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error updating job role',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
+  const handleAddSkill = async (userId: string, skill: string) => {
+    const user = users.find(u => u.id === userId);
+    const currentSkills = user?.skills || [];
+    
+    if (currentSkills.includes(skill)) {
+      toast({
+        title: 'Skill already exists',
+        description: `${skill} is already in the skill list`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newSkills = [...currentSkills, skill];
+    
+    setSavingUserId(userId);
+    try {
+      const { error } = await supabase
+        .from('company_users')
+        .update({ skills: newSkills })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === userId ? { ...u, skills: newSkills } : u));
+      setNewSkillInput('');
+      
+      toast({
+        title: 'Skill added',
+        description: `Added ${skill}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error adding skill',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
+  const handleRemoveSkill = async (userId: string, skillToRemove: string) => {
+    const user = users.find(u => u.id === userId);
+    const newSkills = (user?.skills || []).filter((s: string) => s !== skillToRemove);
+    
+    setSavingUserId(userId);
+    try {
+      const { error } = await supabase
+        .from('company_users')
+        .update({ skills: newSkills })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === userId ? { ...u, skills: newSkills } : u));
+      
+      toast({
+        title: 'Skill removed',
+        description: `Removed ${skillToRemove}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error removing skill',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       invited: 'secondary',
@@ -169,6 +306,11 @@ export default function UsersTab({ company }: UsersTabProps) {
       description: 'Invite code copied to clipboard',
     });
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const toggleExpanded = (userId: string) => {
+    setExpandedUserId(expandedUserId === userId ? null : userId);
+    setNewSkillInput('');
   };
 
   if (loading) {
@@ -212,6 +354,8 @@ export default function UsersTab({ company }: UsersTabProps) {
               <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Job Role</TableHead>
+                  <TableHead>Skills</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Invite Code</TableHead>
                   <TableHead>Invited</TableHead>
@@ -220,74 +364,215 @@ export default function UsersTab({ company }: UsersTabProps) {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell className="capitalize">{user.role}</TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>
-                      {user.invite_code ? (
-                        <div className="flex items-center gap-2">
-                          <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                            {user.invite_code}
-                          </code>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0"
-                                onClick={() => handleCopyCode(user.id, user.invite_code)}
-                              >
-                                {copiedId === user.id ? (
-                                  <Check className="h-3.5 w-3.5 text-green-500" />
-                                ) : (
-                                  <Copy className="h-3.5 w-3.5" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Copy invite code</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {user.status === 'invited' && (
+                  <>
+                    <TableRow key={user.id}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell className="capitalize">{user.role}</TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {user.job_role || <span className="text-muted-foreground">Not set</span>}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {user.skills?.length || 0} skills
+                        </span>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>
+                        {user.invite_code ? (
+                          <div className="flex items-center gap-2">
+                            <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
+                              {user.invite_code}
+                            </code>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => handleCopyCode(user.id, user.invite_code)}
+                                >
+                                  {copiedId === user.id ? (
+                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Copy invite code</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleResendInvite(user.id)}
-                                disabled={!canResend(user) || resendingId === user.id}
+                                onClick={() => toggleExpanded(user.id)}
                               >
-                                {resendingId === user.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                {expandedUserId === user.id ? (
+                                  <ChevronUp className="h-4 w-4" />
                                 ) : (
-                                  <Mail className="h-4 w-4" />
+                                  <ChevronDown className="h-4 w-4" />
                                 )}
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{getResendTooltip(user)}</p>
-                            </TooltipContent>
+                            <TooltipContent>Edit job role & skills</TooltipContent>
                           </Tooltip>
-                        )}
-                        {user.role !== 'admin' && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRevokeAccess(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          {user.status === 'invited' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleResendInvite(user.id)}
+                                  disabled={!canResend(user) || resendingId === user.id}
+                                >
+                                  {resendingId === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{getResendTooltip(user)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {user.role !== 'admin' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRevokeAccess(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expandedUserId === user.id && (
+                      <TableRow key={`${user.id}-expanded`}>
+                        <TableCell colSpan={8}>
+                          <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-6">
+                              {/* Job Role Section */}
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Job Role</label>
+                                <Select
+                                  value={user.job_role || ''}
+                                  onValueChange={(value) => handleUpdateJobRole(user.id, value)}
+                                  disabled={savingUserId === user.id}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a job role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {JOB_ROLES.map((role) => (
+                                      <SelectItem key={role} value={role}>
+                                        {role}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Skills Section */}
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Skills</label>
+                                <div className="flex gap-2">
+                                  <Select
+                                    value=""
+                                    onValueChange={(value) => handleAddSkill(user.id, value)}
+                                    disabled={savingUserId === user.id}
+                                  >
+                                    <SelectTrigger className="flex-1">
+                                      <SelectValue placeholder="Add a skill" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {PREDEFINED_SKILLS.filter(
+                                        (skill) => !(user.skills || []).includes(skill)
+                                      ).map((skill) => (
+                                        <SelectItem key={skill} value={skill}>
+                                          {skill}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Input
+                                    placeholder="Or add custom skill..."
+                                    value={newSkillInput}
+                                    onChange={(e) => setNewSkillInput(e.target.value)}
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && newSkillInput.trim()) {
+                                        e.preventDefault();
+                                        handleAddSkill(user.id, newSkillInput.trim());
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (newSkillInput.trim()) {
+                                        handleAddSkill(user.id, newSkillInput.trim());
+                                      }
+                                    }}
+                                    disabled={!newSkillInput.trim() || savingUserId === user.id}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Current Skills Display */}
+                            {user.skills?.length > 0 && (
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-muted-foreground">Current Skills</label>
+                                <div className="flex flex-wrap gap-2">
+                                  {user.skills.map((skill: string) => (
+                                    <Badge
+                                      key={skill}
+                                      variant="secondary"
+                                      className="flex items-center gap-1 pr-1"
+                                    >
+                                      {skill}
+                                      <button
+                                        onClick={() => handleRemoveSkill(user.id, skill)}
+                                        className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                        disabled={savingUserId === user.id}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {savingUserId === user.id && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Saving...
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))}
               </TableBody>
             </Table>
