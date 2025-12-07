@@ -20,6 +20,7 @@ interface CompletedAssessment {
   email: string;
   assessment_completed_at: string;
   assessment_result_id: string;
+  shareable_code?: string;
   results?: {
     scores: {
       yellow: number;
@@ -76,7 +77,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       for (const user of completedUsers) {
         const { data: result } = await supabase
           .from('assessment_results')
-          .select('results')
+          .select('results, shareable_code')
           .eq('id', user.assessment_result_id)
           .single();
         
@@ -85,6 +86,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
           email: user.email,
           assessment_completed_at: user.assessment_completed_at,
           assessment_result_id: user.assessment_result_id,
+          shareable_code: result?.shareable_code,
           results: result?.results as any,
         });
       }
@@ -439,7 +441,8 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
                             </div>
                             <Button 
                               className="w-full" 
-                              onClick={() => window.open(`/result/${assessment.assessment_result_id}`, '_blank')}
+                              onClick={() => window.open(`/result/${assessment.shareable_code}`, '_blank')}
+                              disabled={!assessment.shareable_code}
                             >
                               View Full Report
                             </Button>
