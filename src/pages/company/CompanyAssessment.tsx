@@ -22,26 +22,37 @@ export default function CompanyAssessment() {
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load saved progress and employee from localStorage
+  // Get storage key with employee ID for per-employee state
+  const getStorageKey = (prefix: string) => {
+    const employeeId = employee?.id || localStorage.getItem(`current_employee_id_${company?.subdomain}`);
+    return `${prefix}_${company?.subdomain}_${employeeId}`;
+  };
+
+  // Load employee if not in context
   useEffect(() => {
-    if (company) {
-      const savedProgress = localStorage.getItem(`assessment_progress_${company.subdomain}`);
+    if (company && !employee) {
+      const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
+      if (savedEmployee) {
+        const parsed = JSON.parse(savedEmployee);
+        setEmployee(parsed);
+        localStorage.setItem(`current_employee_id_${company.subdomain}`, parsed.id);
+      }
+    }
+  }, [company, employee, setEmployee]);
+
+  // Load saved progress from localStorage (per employee)
+  useEffect(() => {
+    if (company && employee) {
+      localStorage.setItem(`current_employee_id_${company.subdomain}`, employee.id);
+      const savedProgress = localStorage.getItem(getStorageKey('assessment_progress'));
       if (savedProgress) {
         const { currentQuestion: savedQ, answers: savedA } = JSON.parse(savedProgress);
         setCurrentQuestion(savedQ);
         setAnswers(savedA);
         setSelectedAnswer(savedA[savedQ] || "");
       }
-
-      // Load employee if not in context
-      if (!employee) {
-        const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
-        if (savedEmployee) {
-          setEmployee(JSON.parse(savedEmployee));
-        }
-      }
     }
-  }, [company, employee, setEmployee]);
+  }, [company, employee]);
 
   // Redirect if no employee or if already completed
   useEffect(() => {
@@ -53,11 +64,13 @@ export default function CompanyAssessment() {
           return;
         }
       }
+      }
       
-      // Check if assessment already completed (one-time only)
-      const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}`);
-      if (storedResults) {
-        navigate(`/company/${company.subdomain}/home`);
+      // Check if assessment already completed (per employee)
+      if (employee) {
+        const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}_${employee.id}`);
+        if (storedResults) {
+          navigate(`/company/${company.subdomain}/home`);
       }
     }
   }, [loading, company, employee, navigate]);
@@ -78,7 +91,7 @@ export default function CompanyAssessment() {
   };
 
   const saveProgress = (newAnswers: { [key: number]: string }, newQuestion: number) => {
-    localStorage.setItem(`assessment_progress_${company.subdomain}`, JSON.stringify({
+    localStorage.setItem(getStorageKey('assessment_progress'), JSON.stringify({
       currentQuestion: newQuestion,
       answers: newAnswers
     }));
@@ -118,8 +131,8 @@ export default function CompanyAssessment() {
           completedAt: new Date().toISOString()
         };
 
-        // Save results to localStorage
-        localStorage.setItem(`companyAssessmentResults_${company.subdomain}`, JSON.stringify(results));
+        // Save results to localStorage (per employee)
+        localStorage.setItem(`companyAssessmentResults_${company.subdomain}_${employee?.id}`, JSON.stringify(results));
         
         // Save to database via edge function (bypasses RLS)
         if (employee) {
@@ -142,8 +155,8 @@ export default function CompanyAssessment() {
           }
         }
 
-        // Clear progress
-        localStorage.removeItem(`assessment_progress_${company.subdomain}`);
+        // Clear progress (per employee)
+        localStorage.removeItem(getStorageKey('assessment_progress'));
         
         toast({
           title: "Assessment Complete!",
