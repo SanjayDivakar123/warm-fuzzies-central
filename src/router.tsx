@@ -45,6 +45,7 @@ import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
 import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
 import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
 import TeacherCustomAssessment from "@/pages/school/TeacherCustomAssessment";
+import StudentCustomAssessment from "@/pages/school/StudentCustomAssessment";
 import AdminResults from "@/pages/school/AdminResults";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
@@ -219,6 +220,10 @@ export const router = createBrowserRouter([
   {
     path: "/school/teachercustom",
     element: <TeacherCustomAssessment />,
+  },
+  {
+    path: "/school/studentcustom",
+    element: <StudentCustomAssessment />,
   },
   {
     path: "/school/adminresults",
