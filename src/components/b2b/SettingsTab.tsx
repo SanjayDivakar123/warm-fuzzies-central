@@ -273,13 +273,11 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
+      {/* Seat Management */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Billing
-          </CardTitle>
-          <CardDescription>Manage your subscription and seats</CardDescription>
+          <CardTitle>Seat Management</CardTitle>
+          <CardDescription>View and manage employee seats</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -291,15 +289,28 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <span className="text-muted-foreground">Price per Seat</span>
               <span className="font-medium">$20 (one-time)</span>
             </div>
-            <Button 
-              variant="outline" 
-              className="w-full gap-2"
-              onClick={() => setBillingOpen(true)}
-            >
-              <CreditCard className="h-4 w-4" />
-              Manage Billing & Add Seats
-            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Billing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Billing
+          </CardTitle>
+          <CardDescription>Manage your billing and add seats</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            variant="outline" 
+            className="w-full gap-2"
+            onClick={() => setBillingOpen(true)}
+          >
+            <CreditCard className="h-4 w-4" />
+            Manage Billing
+          </Button>
         </CardContent>
       </Card>
 
