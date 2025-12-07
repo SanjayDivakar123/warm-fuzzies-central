@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.get-employee-data]
 verify_jwt = false
+
+[functions.analyze-task-assignment]
+verify_jwt = true
