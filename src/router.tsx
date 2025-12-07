@@ -48,6 +48,13 @@ import TeacherCustomAssessment from "@/pages/school/TeacherCustomAssessment";
 import StudentCustomAssessment from "@/pages/school/StudentCustomAssessment";
 import AdminResults from "@/pages/school/AdminResults";
 
+// Company portal pages
+import CompanyPortalLayout from "@/pages/company/CompanyPortalLayout";
+import CompanyLanding from "@/pages/company/CompanyLanding";
+import CompanyLogin from "@/pages/company/CompanyLogin";
+import CompanyAssessment from "@/pages/company/CompanyAssessment";
+import CompanyResults from "@/pages/company/CompanyResults";
+
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
@@ -228,6 +235,17 @@ export const router = createBrowserRouter([
   {
     path: "/school/adminresults",
     element: <AdminResults />,
+  },
+  // Company Portal Routes (path-based subdomain alternative)
+  {
+    path: "/company/:subdomain",
+    element: <CompanyPortalLayout />,
+    children: [
+      { index: true, element: <CompanyLanding /> },
+      { path: "login", element: <CompanyLogin /> },
+      { path: "assessment", element: <CompanyAssessment /> },
+      { path: "results", element: <CompanyResults /> },
+    ],
   },
   {
     path: "*",
