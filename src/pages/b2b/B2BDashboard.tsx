@@ -62,9 +62,9 @@ export default function B2BDashboard() {
     }
   };
 
-  // Simple mount effect so useEffect remains used without auto-claim logic
+  // Re-fetch company data on mount to ensure we have the latest data
   useEffect(() => {
-    // B2B dashboard loaded
+    refreshCompany();
   }, []);
 
   if (loading) {
