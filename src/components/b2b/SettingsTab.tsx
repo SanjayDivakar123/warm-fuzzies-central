@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 
@@ -27,10 +27,109 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>(company.assessment_type);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
   const [billingOpen, setBillingOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload an image file (PNG, JPG, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${company.id}/logo-${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(fileName);
+
+      const newLogoUrl = urlData.publicUrl;
+      setLogoUrl(newLogoUrl);
+
+      // Auto-save the logo URL
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({ logo_url: newLogoUrl })
+        .eq('id', company.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Logo uploaded',
+        description: 'Your company logo has been updated',
+      });
+
+      if (onSettingsSaved) {
+        onSettingsSaved();
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload logo',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    setLogoUrl('');
+    
+    const { error } = await supabase
+      .from('companies')
+      .update({ logo_url: '' })
+      .eq('id', company.id);
+
+    if (!error && onSettingsSaved) {
+      onSettingsSaved();
+      toast({
+        title: 'Logo removed',
+        description: 'Your company logo has been removed',
+      });
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -81,18 +180,59 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="logoUrl">Logo URL</Label>
+            <Label>Company Logo</Label>
+            
+            {/* Logo Preview */}
+            {logoUrl && (
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30">
+                <img 
+                  src={logoUrl} 
+                  alt="Company logo" 
+                  className="h-16 w-auto max-w-[200px] object-contain"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleRemoveLogo}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+            )}
+
+            {/* Upload Button */}
             <div className="flex gap-2">
               <Input
-                id="logoUrl"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder="Enter logo URL or upload..."
+                className="flex-1"
               />
-              <Button variant="outline" size="icon">
-                <Upload className="h-4 w-4" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Upload a PNG or JPG image (max 2MB). Recommended size: 200x50px
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
