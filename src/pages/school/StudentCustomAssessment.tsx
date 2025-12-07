@@ -137,16 +137,36 @@ const StudentCustomAssessment = () => {
             <Button 
               variant="outline" 
               onClick={() => {
-                const testSchools = getSchools();
-                if (!testSchools.includes("Test School")) {
-                  saveSchools([...testSchools, "Test School"]);
-                  setSchools([...testSchools, "Test School"]);
-                }
-                setSelectedSchool("Test School");
+                const randomAnswers: Answer[] = studentAssessmentQuestions.map((q) => {
+                  const options = ["A", "B", "C", "D"];
+                  const randomOption = options[Math.floor(Math.random() * options.length)];
+                  return {
+                    questionId: q.id,
+                    section: q.section,
+                    question: q.question,
+                    selectedOption: randomOption,
+                    answerText: q.options[randomOption as keyof typeof q.options],
+                  };
+                });
+
+                const submission = {
+                  id: Date.now().toString(),
+                  type: "student",
+                  school: selectedSchool || "Test School",
+                  submittedAt: new Date().toISOString(),
+                  answers: randomAnswers,
+                };
+
+                const existingSubmissions = JSON.parse(localStorage.getItem("school_assessment_submissions") || "[]");
+                existingSubmissions.push(submission);
+                localStorage.setItem("school_assessment_submissions", JSON.stringify(existingSubmissions));
+
+                setCompleted(true);
               }}
               className="w-full"
+              disabled={!selectedSchool}
             >
-              Use Test School
+              Fill Randomly (Test)
             </Button>
 
             <div className="space-y-2">
