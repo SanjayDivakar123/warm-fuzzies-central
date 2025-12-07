@@ -77,7 +77,7 @@ export default function CompanyLogin() {
 
       // Check if assessment already completed
       if (data.employee.assessment_completed_at) {
-        navigate(`/company/${company.subdomain}/results`);
+        navigate(`/company/${company.subdomain}/home`);
       } else {
         navigate(`/company/${company.subdomain}/assessment`);
       }
@@ -136,7 +136,7 @@ export default function CompanyLogin() {
       });
 
       if (employeeData.assessment_completed_at) {
-        navigate(`/company/${company.subdomain}/results`);
+        navigate(`/company/${company.subdomain}/home`);
       } else {
         navigate(`/company/${company.subdomain}/assessment`);
       }

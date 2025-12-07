@@ -11,7 +11,9 @@ import {
   Eye,
   Loader2,
   User,
-  CheckCircle
+  Sparkles,
+  Calendar,
+  Lightbulb
 } from "lucide-react";
 
 interface Results {
@@ -25,32 +27,57 @@ interface Results {
   totalQuestions: number;
   assessmentType: string;
   companyName?: string;
+  completedAt?: string;
 }
 
-const colorDescriptions = {
+const colorData = {
   yellow: {
     title: "Action-Oriented Leader",
-    description: "You are driven, decisive, and results-focused. You excel at executing plans and getting things done quickly.",
-    strengths: ["Quick decision-making", "Goal-oriented", "Efficient execution", "Takes initiative"],
-    color: "#EAB308"
+    subtitle: "The Executor",
+    color: "#EAB308",
+    funFacts: [
+      "You make decisions 40% faster than average, trusting your gut instincts",
+      "Action-oriented leaders are often the first to volunteer for challenging projects",
+      "You thrive in fast-paced environments where quick thinking is valued",
+      "Your energy is contagious - teams led by Executors report higher productivity",
+      "Famous Executors include Elon Musk and Sheryl Sandberg"
+    ]
   },
   red: {
     title: "Inspirational Leader",
-    description: "You are passionate, enthusiastic, and people-focused. You excel at motivating teams and creating energy.",
-    strengths: ["Strong communication", "Motivates others", "Builds connections", "Creates vision"],
-    color: "#EF4444"
+    subtitle: "The Motivator",
+    color: "#EF4444",
+    funFacts: [
+      "You naturally boost team morale by up to 35% just by being present",
+      "Motivators are excellent storytellers who connect ideas to emotions",
+      "Your enthusiasm helps others see possibilities they might have missed",
+      "Teams led by Motivators report higher job satisfaction and engagement",
+      "Famous Motivators include Oprah Winfrey and Tony Robbins"
+    ]
   },
   green: {
     title: "Analytical Leader",
-    description: "You are logical, organized, and detail-oriented. You excel at creating structure and solving complex problems.",
-    strengths: ["Systematic thinking", "Process optimization", "Data-driven", "Quality focused"],
-    color: "#22C55E"
+    subtitle: "The Organizer",
+    color: "#22C55E",
+    funFacts: [
+      "You catch 60% more errors than average due to your attention to detail",
+      "Organizers excel at creating systems that scale and improve over time",
+      "Your structured approach reduces project risks significantly",
+      "Teams appreciate your ability to bring clarity to complex situations",
+      "Famous Organizers include Tim Cook and Mary Barra"
+    ]
   },
   blue: {
     title: "Innovative Leader",
-    description: "You are creative, visionary, and future-focused. You excel at generating new ideas and reimagining possibilities.",
-    strengths: ["Creative problem-solving", "Strategic thinking", "Innovation driven", "Adaptable"],
-    color: "#3B82F6"
+    subtitle: "The Creator",
+    color: "#3B82F6",
+    funFacts: [
+      "You generate 3x more creative solutions than the average team member",
+      "Creators often see connections others miss, leading to breakthrough ideas",
+      "Your curiosity drives continuous improvement and innovation",
+      "Teams led by Creators are more adaptable to change",
+      "Famous Creators include Steve Jobs and Sara Blakely"
+    ]
   },
 };
 
@@ -68,7 +95,6 @@ export default function CompanyHome() {
         if (savedEmployee) {
           setEmployee(JSON.parse(savedEmployee));
         } else {
-          // No employee logged in, redirect to login
           navigate(`/company/${company.subdomain}/login`);
           return;
         }
@@ -106,7 +132,6 @@ export default function CompanyHome() {
   if (!results) {
     return (
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -151,15 +176,14 @@ export default function CompanyHome() {
     );
   }
 
-  const dominantColorInfo = colorDescriptions[results.dominantColor as keyof typeof colorDescriptions];
-  const sortedScores = Object.entries(results.scores)
-    .sort(([, a], [, b]) => b - a)
-    .map(([color, score]) => ({ 
-      color, 
-      score, 
-      percentage: (score / results.totalQuestions) * 100,
-      colorHex: colorDescriptions[color as keyof typeof colorDescriptions].color
-    }));
+  const leaderData = colorData[results.dominantColor as keyof typeof colorData];
+  const completedDate = results.completedAt 
+    ? new Date(results.completedAt).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    : 'Recently';
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,132 +214,155 @@ export default function CompanyHome() {
         </div>
       </header>
 
-      <div className="py-12 px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Welcome Section */}
-          <div className="text-center mb-10">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${primaryColor}20` }}
-            >
-              <CheckCircle className="h-8 w-8" style={{ color: primaryColor }} />
-            </div>
-            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
-              Assessment Complete
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-              Your Leadership Profile
-            </h1>
-            <p className="text-muted-foreground">
-              Based on {results.totalQuestions} questions
-            </p>
-          </div>
-
-          {/* Dominant Color Summary Card */}
-          <Card 
-            className="rounded-2xl shadow-xl border-2 mb-8" 
-            style={{ borderColor: `${dominantColorInfo.color}40` }}
+      {/* Hero Section with Large Color Circle */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Large Color Circle */}
+          <div 
+            className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto mb-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden"
+            style={{ 
+              backgroundColor: leaderData.color,
+              boxShadow: `0 25px 50px -12px ${leaderData.color}60`
+            }}
           >
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <Badge 
-                  style={{ backgroundColor: dominantColorInfo.color }} 
-                  className="text-white text-sm px-4 py-1"
-                >
-                  Your Dominant Color
-                </Badge>
-                <div 
-                  className="w-14 h-14 rounded-xl shadow-lg"
-                  style={{ backgroundColor: dominantColorInfo.color }}
-                />
-              </div>
-              <CardTitle className="text-2xl mt-4">{dominantColorInfo.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6">
-                {dominantColorInfo.description}
-              </p>
-              
-              {/* Key Strengths */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Your Key Strengths:</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {dominantColorInfo.strengths.map((strength, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center gap-2 p-3 rounded-lg"
-                      style={{ backgroundColor: `${dominantColorInfo.color}10` }}
-                    >
-                      <span style={{ color: dominantColorInfo.color }}>✓</span>
-                      <span className="text-sm">{strength}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Color Breakdown */}
-          <Card className="rounded-2xl shadow-lg border mb-8">
-            <CardHeader>
-              <CardTitle className="text-xl">Your Complete Color Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {sortedScores.map(({ color, score, percentage, colorHex }) => (
-                  <div key={color}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-6 h-6 rounded-md"
-                          style={{ backgroundColor: colorHex }}
-                        />
-                        <span className="font-medium capitalize">{color}</span>
-                      </div>
-                      <span className="text-muted-foreground text-sm">
-                        {score} / {results.totalQuestions} ({Math.round(percentage)}%)
-                      </span>
-                    </div>
-                    <div className="h-2 bg-muted/40 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${percentage}%`, backgroundColor: colorHex }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Confirmation */}
-          <div className="bg-accent/50 rounded-xl p-4 mb-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              ✓ Your results have been saved and shared with your company administrator.
-            </p>
+            {/* Subtle inner glow */}
+            <div 
+              className="absolute inset-4 rounded-full opacity-30"
+              style={{ 
+                background: `radial-gradient(circle, white 0%, transparent 70%)`
+              }}
+            />
+            <div className="relative z-10 text-white text-center px-4">
+              <p className="text-sm sm:text-base font-medium opacity-90 mb-1">You are</p>
+              <h2 className="text-xl sm:text-2xl font-bold leading-tight">{leaderData.subtitle}</h2>
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+            {leaderData.title}
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            Discover what makes you a unique leader
+          </p>
+
+          {/* Quick Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button 
-              size="lg" 
+              size="lg"
               onClick={() => navigate(`/company/${company.subdomain}/results`)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="gap-2"
             >
               <Eye className="w-5 h-5" />
               View Full Report
             </Button>
             <Button 
-              size="lg" 
+              size="lg"
               onClick={() => window.print()}
-              className="flex items-center gap-2"
-              style={{ backgroundColor: primaryColor }}
+              className="gap-2"
+              style={{ backgroundColor: leaderData.color }}
             >
               <Download className="w-5 h-5" />
               Download Report
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Assessment History */}
+      <section className="py-12 px-4 bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <Calendar className="w-6 h-6 text-muted-foreground" />
+            <h2 className="text-2xl font-bold">Assessment History</h2>
+          </div>
+
+          <Card className="shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: leaderData.color }}
+                  >
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Leadership Assessment</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {results.totalQuestions} questions • Completed {completedDate}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge 
+                    className="text-white"
+                    style={{ backgroundColor: leaderData.color }}
+                  >
+                    {leaderData.subtitle}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Score breakdown */}
+              <div className="mt-6 pt-6 border-t grid grid-cols-4 gap-4">
+                {Object.entries(results.scores).map(([color, score]) => {
+                  const data = colorData[color as keyof typeof colorData];
+                  const percentage = Math.round((score / results.totalQuestions) * 100);
+                  return (
+                    <div key={color} className="text-center">
+                      <div 
+                        className="w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center text-white font-bold"
+                        style={{ backgroundColor: data.color }}
+                      >
+                        {percentage}%
+                      </div>
+                      <p className="text-xs text-muted-foreground capitalize">{color}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Fun Facts Section */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <Lightbulb className="w-6 h-6" style={{ color: leaderData.color }} />
+            <h2 className="text-2xl font-bold">Fun Facts About {leaderData.subtitle}s</h2>
+          </div>
+
+          <div className="grid gap-4">
+            {leaderData.funFacts.map((fact, index) => (
+              <Card 
+                key={index} 
+                className="shadow-sm hover:shadow-md transition-shadow border-l-4"
+                style={{ borderLeftColor: leaderData.color }}
+              >
+                <CardContent className="p-5 flex items-start gap-4">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
+                    style={{ backgroundColor: leaderData.color }}
+                  >
+                    {index + 1}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{fact}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Confirmation */}
+      <div className="max-w-4xl mx-auto px-4 pb-8">
+        <div className="bg-accent/50 rounded-xl p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            ✓ Your results have been saved and shared with your company administrator.
+          </p>
         </div>
       </div>
 
