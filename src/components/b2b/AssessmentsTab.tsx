@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3 } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
+import EmployeeResultsModal from './EmployeeResultsModal';
 
 interface AssessmentsTabProps {
   company: any;
@@ -51,6 +51,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
     colorDistribution: { yellow: 0, red: 0, green: 0, blue: 0 }
   });
   const [previewType, setPreviewType] = useState<'25q' | '50q' | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<CompletedAssessment | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -400,55 +401,14 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
                       )}
                     </TableCell>
                     <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Assessment Results</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Employee</p>
-                              <p className="font-medium">{assessment.email}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Dominant Color</p>
-                              <div className="mt-1">
-                                {assessment.results?.dominantColor && getColorBadge(assessment.results.dominantColor)}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-2">Score Breakdown</p>
-                              <div className="space-y-2">
-                                {assessment.results?.scores && Object.entries(assessment.results.scores).map(([color, score]) => {
-                                  const maxScore = Math.max(...Object.values(assessment.results!.scores));
-                                  return (
-                                    <ScoreBar key={color} color={color} score={score as number} max={maxScore} />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Completed</p>
-                              <p className="font-medium">
-                                {new Date(assessment.assessment_completed_at).toLocaleString()}
-                              </p>
-                            </div>
-                            <Button 
-                              className="w-full" 
-                              onClick={() => window.open(`/result/${assessment.shareable_code}`, '_blank')}
-                              disabled={!assessment.shareable_code}
-                            >
-                              View Full Report
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedEmployee(assessment)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Full Report
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -457,6 +417,15 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
           )}
         </CardContent>
       </Card>
+
+      {/* Employee Results Modal */}
+      <EmployeeResultsModal
+        open={selectedEmployee !== null}
+        onClose={() => setSelectedEmployee(null)}
+        email={selectedEmployee?.email || ''}
+        results={selectedEmployee?.results || null}
+        completedAt={selectedEmployee?.assessment_completed_at || ''}
+      />
     </div>
   );
 }
