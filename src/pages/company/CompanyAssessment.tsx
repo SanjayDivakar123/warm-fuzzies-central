@@ -141,7 +141,7 @@ export default function CompanyAssessment() {
             description: "Your results are ready to view."
           });
           
-          navigate(`/company/${company.subdomain}/home`);
+          navigate(`/company/${company.subdomain}/results`);
         } catch (err) {
           console.error('Error saving assessment:', err);
           toast({
