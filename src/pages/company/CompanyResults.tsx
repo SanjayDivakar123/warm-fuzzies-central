@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
 import { Download, Building2, CheckCircle, Loader2, AlertTriangle, Target, Lightbulb, Users } from "lucide-react";
+import { exportCompanyResultsPDF } from "@/lib/companyPdfExport";
+import { useToast } from "@/hooks/use-toast";
 
 const colorDescriptions = {
   yellow: {
@@ -88,6 +90,82 @@ const colorDescriptions = {
     color: "#3B82F6"
   },
 };
+
+// Download Actions Component
+function DownloadActions({ 
+  company, 
+  dominantColor, 
+  scores, 
+  totalQuestions, 
+  colorInfo, 
+  primaryColor,
+  onNavigateHome 
+}: { 
+  company: any;
+  dominantColor: string;
+  scores: { yellow: number; red: number; green: number; blue: number };
+  totalQuestions: number;
+  colorInfo: any;
+  primaryColor: string;
+  onNavigateHome: () => void;
+}) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    try {
+      await exportCompanyResultsPDF({
+        companyName: company.name,
+        dominantColor,
+        scores,
+        totalQuestions,
+        colorInfo,
+        primaryColor
+      });
+      toast({
+        title: "PDF Downloaded",
+        description: "Your leadership report has been saved."
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <Button 
+        size="lg" 
+        onClick={handleDownloadPDF}
+        disabled={isDownloading}
+        className="flex items-center gap-2"
+        style={{ backgroundColor: colorInfo.color }}
+      >
+        {isDownloading ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <Download className="w-5 h-5" />
+        )}
+        {isDownloading ? 'Generating...' : 'Download Report'}
+      </Button>
+      <Button 
+        size="lg" 
+        variant="outline"
+        className="bg-background"
+        onClick={onNavigateHome}
+      >
+        Go to Dashboard
+      </Button>
+    </div>
+  );
+}
 
 export default function CompanyResults() {
   const { company, employee, assessmentResults, loading, fetchAssessmentResults } = useCompanyPortal();
@@ -380,25 +458,15 @@ export default function CompanyResults() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              onClick={() => window.print()}
-              className="flex items-center gap-2"
-              style={{ backgroundColor: dominantColorInfo.color }}
-            >
-              <Download className="w-5 h-5" />
-              Download Report
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="bg-background"
-              onClick={() => navigate(`/company/${company.subdomain}/home`)}
-            >
-              Go to Dashboard
-            </Button>
-          </div>
+          <DownloadActions 
+            company={company}
+            dominantColor={assessmentResults.dominantColor}
+            scores={assessmentResults.scores}
+            totalQuestions={assessmentResults.totalQuestions}
+            colorInfo={dominantColorInfo}
+            primaryColor={primaryColor}
+            onNavigateHome={() => navigate(`/company/${company.subdomain}/home`)}
+          />
         </div>
       </div>
 
