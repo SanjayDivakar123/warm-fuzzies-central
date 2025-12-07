@@ -69,13 +69,14 @@ export default function CompanyLogin() {
         return;
       }
 
-      // Store employee data and navigate to assessment
+      // Store employee in context (context handles localStorage session)
       setEmployee(data.employee);
-      localStorage.setItem(`employee_${company.subdomain}`, JSON.stringify(data.employee));
       
       toast({
         title: "Welcome!",
-        description: "You're now logged in. Let's start your assessment.",
+        description: data.employee.assessment_completed_at 
+          ? "Welcome back! Viewing your results."
+          : "You're now logged in. Let's start your assessment.",
       });
 
       // Check if assessment already completed

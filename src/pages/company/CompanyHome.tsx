@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
@@ -15,20 +15,6 @@ import {
   Calendar,
   Lightbulb
 } from "lucide-react";
-
-interface Results {
-  dominantColor: string;
-  scores: {
-    yellow: number;
-    red: number;
-    green: number;
-    blue: number;
-  };
-  totalQuestions: number;
-  assessmentType: string;
-  companyName?: string;
-  completedAt?: string;
-}
 
 const colorData = {
   yellow: {
@@ -82,42 +68,25 @@ const colorData = {
 };
 
 export default function CompanyHome() {
-  const { company, employee, loading, setEmployee } = useCompanyPortal();
+  const { company, employee, assessmentResults, loading, setEmployee, fetchAssessmentResults } = useCompanyPortal();
   const navigate = useNavigate();
-  const [results, setResults] = useState<Results | null>(null);
 
-  // Load employee and results from localStorage (per employee)
+  // Fetch results when employee changes
   useEffect(() => {
-    if (company) {
-      // Load employee if not in context
-      let currentEmployee = employee;
-      if (!currentEmployee) {
-        const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
-        if (savedEmployee) {
-          currentEmployee = JSON.parse(savedEmployee);
-          setEmployee(currentEmployee);
-        } else {
-          navigate(`/company/${company.subdomain}/login`);
-          return;
-        }
-      }
-
-      // Load results using employee-specific key
-      if (currentEmployee) {
-        const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}_${currentEmployee.id}`);
-        if (storedResults) {
-          setResults(JSON.parse(storedResults));
-        }
-      }
+    if (employee?.assessment_result_id && !assessmentResults) {
+      fetchAssessmentResults();
     }
-  }, [company, employee, setEmployee, navigate]);
+  }, [employee, assessmentResults, fetchAssessmentResults]);
+
+  // Redirect if no employee
+  useEffect(() => {
+    if (!loading && company && !employee) {
+      navigate(`/company/${company.subdomain}/login`);
+    }
+  }, [loading, company, employee, navigate]);
 
   const handleLogout = () => {
-    if (company && employee) {
-      localStorage.removeItem(`employee_${company.subdomain}`);
-      localStorage.removeItem(`companyAssessmentResults_${company.subdomain}_${employee.id}`);
-      localStorage.removeItem(`assessment_progress_${company.subdomain}_${employee.id}`);
-      localStorage.removeItem(`current_employee_id_${company.subdomain}`);
+    if (company) {
       setEmployee(null);
       navigate(`/company/${company.subdomain}`);
     }
@@ -134,7 +103,7 @@ export default function CompanyHome() {
   const primaryColor = company.primary_color || '#9b87f5';
 
   // If no results, prompt to take assessment
-  if (!results) {
+  if (!assessmentResults) {
     return (
       <div className="min-h-screen bg-background">
         <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
@@ -181,14 +150,20 @@ export default function CompanyHome() {
     );
   }
 
-  const leaderData = colorData[results.dominantColor as keyof typeof colorData];
-  const completedDate = results.completedAt 
-    ? new Date(results.completedAt).toLocaleDateString('en-US', { 
+  const leaderData = colorData[assessmentResults.dominantColor as keyof typeof colorData];
+  const completedDate = assessmentResults.completedAt 
+    ? new Date(assessmentResults.completedAt).toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       })
-    : 'Recently';
+    : employee?.assessment_completed_at 
+      ? new Date(employee.assessment_completed_at).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      : 'Recently';
 
   return (
     <div className="min-h-screen bg-background">
@@ -311,7 +286,7 @@ export default function CompanyHome() {
                   <div>
                     <h3 className="font-semibold">Leadership Assessment</h3>
                     <p className="text-sm text-muted-foreground">
-                      {results.totalQuestions} questions • Completed {completedDate}
+                      {assessmentResults.totalQuestions} questions • Completed {completedDate}
                     </p>
                   </div>
                 </div>
@@ -327,9 +302,9 @@ export default function CompanyHome() {
 
               {/* Score breakdown */}
               <div className="mt-6 pt-6 border-t grid grid-cols-4 gap-4">
-                {Object.entries(results.scores).map(([color, score]) => {
+                {Object.entries(assessmentResults.scores).map(([color, score]) => {
                   const data = colorData[color as keyof typeof colorData];
-                  const percentage = Math.round((score / results.totalQuestions) * 100);
+                  const percentage = Math.round((score / assessmentResults.totalQuestions) * 100);
                   return (
                     <div key={color} className="text-center">
                       <div 

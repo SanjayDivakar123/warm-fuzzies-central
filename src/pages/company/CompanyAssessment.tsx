@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { professionalQuestions25Q, professionalQuestions50Q } from "@/lib/professionalAssessmentQuestions";
 
 export default function CompanyAssessment() {
-  const { company, employee, loading, setEmployee } = useCompanyPortal();
+  const { company, employee, loading, refreshEmployee } = useCompanyPortal();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -22,29 +22,10 @@ export default function CompanyAssessment() {
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get storage key with employee ID for per-employee state
-  const getStorageKey = (prefix: string) => {
-    const employeeId = employee?.id || localStorage.getItem(`current_employee_id_${company?.subdomain}`);
-    return `${prefix}_${company?.subdomain}_${employeeId}`;
-  };
-
-  // Load employee if not in context
-  useEffect(() => {
-    if (company && !employee) {
-      const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
-      if (savedEmployee) {
-        const parsed = JSON.parse(savedEmployee);
-        setEmployee(parsed);
-        localStorage.setItem(`current_employee_id_${company.subdomain}`, parsed.id);
-      }
-    }
-  }, [company, employee, setEmployee]);
-
-  // Load saved progress from localStorage (per employee)
+  // Load saved progress from localStorage (draft only - per employee)
   useEffect(() => {
     if (company && employee) {
-      localStorage.setItem(`current_employee_id_${company.subdomain}`, employee.id);
-      const savedProgress = localStorage.getItem(getStorageKey('assessment_progress'));
+      const savedProgress = localStorage.getItem(`assessment_draft_${company.subdomain}_${employee.id}`);
       if (savedProgress) {
         const { currentQuestion: savedQ, answers: savedA } = JSON.parse(savedProgress);
         setCurrentQuestion(savedQ);
@@ -58,24 +39,18 @@ export default function CompanyAssessment() {
   useEffect(() => {
     if (!loading && company) {
       if (!employee) {
-        const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
-        if (!savedEmployee) {
-          navigate(`/company/${company.subdomain}/login`);
-          return;
-        }
-      }
+        navigate(`/company/${company.subdomain}/login`);
+        return;
       }
       
-      // Check if assessment already completed (per employee)
-      if (employee) {
-        const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}_${employee.id}`);
-        if (storedResults) {
-          navigate(`/company/${company.subdomain}/home`);
+      // Check if assessment already completed (from database)
+      if (employee.assessment_completed_at) {
+        navigate(`/company/${company.subdomain}/home`);
       }
     }
   }, [loading, company, employee, navigate]);
 
-  if (loading || !company) {
+  if (loading || !company || !employee) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -91,7 +66,8 @@ export default function CompanyAssessment() {
   };
 
   const saveProgress = (newAnswers: { [key: number]: string }, newQuestion: number) => {
-    localStorage.setItem(getStorageKey('assessment_progress'), JSON.stringify({
+    // Save draft progress to localStorage (per employee)
+    localStorage.setItem(`assessment_draft_${company.subdomain}_${employee.id}`, JSON.stringify({
       currentQuestion: newQuestion,
       answers: newAnswers
     }));
@@ -131,40 +107,51 @@ export default function CompanyAssessment() {
           completedAt: new Date().toISOString()
         };
 
-        // Save results to localStorage (per employee)
-        localStorage.setItem(`companyAssessmentResults_${company.subdomain}_${employee?.id}`, JSON.stringify(results));
-        
-        // Save to database via edge function (bypasses RLS)
-        if (employee) {
-          try {
-            const { data, error: fnError } = await supabase.functions.invoke('save-company-assessment', {
-              body: {
-                employeeId: employee.id,
-                companyId: company.id,
-                results: results
-              }
-            });
-
-            if (fnError || !data?.success) {
-              console.error('Error saving assessment:', fnError || data?.message);
-            } else {
-              console.log('Assessment saved successfully:', data.assessmentResultId);
+        // Save to database via edge function
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke('save-company-assessment', {
+            body: {
+              employeeId: employee.id,
+              companyId: company.id,
+              results: results
             }
-          } catch (err) {
-            console.error('Error saving assessment:', err);
-          }
-        }
+          });
 
-        // Clear progress (per employee)
-        localStorage.removeItem(getStorageKey('assessment_progress'));
-        
-        toast({
-          title: "Assessment Complete!",
-          description: "Your results are ready to view."
-        });
-        
-        navigate(`/company/${company.subdomain}/home`);
-        setIsSubmitting(false);
+          if (fnError || !data?.success) {
+            console.error('Error saving assessment:', fnError || data?.message);
+            toast({
+              title: "Error",
+              description: "Failed to save your assessment. Please try again.",
+              variant: "destructive"
+            });
+            setIsSubmitting(false);
+            return;
+          }
+
+          console.log('Assessment saved successfully:', data.assessmentResultId);
+
+          // Clear draft progress
+          localStorage.removeItem(`assessment_draft_${company.subdomain}_${employee.id}`);
+          
+          // Refresh employee data to get updated assessment status
+          await refreshEmployee();
+          
+          toast({
+            title: "Assessment Complete!",
+            description: "Your results are ready to view."
+          });
+          
+          navigate(`/company/${company.subdomain}/home`);
+        } catch (err) {
+          console.error('Error saving assessment:', err);
+          toast({
+            title: "Error",
+            description: "An unexpected error occurred. Please try again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     }
   };

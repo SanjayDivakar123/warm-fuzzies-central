@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.save-company-assessment]
 verify_jwt = false
+
+[functions.get-employee-data]
+verify_jwt = false
