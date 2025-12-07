@@ -30,6 +30,15 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     fetchStats();
   }, [company.id]);
 
+  const generateInviteCode = (): string => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   const fetchStats = async () => {
     const { data: users } = await supabase
       .from('company_users')
@@ -48,6 +57,20 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       // Find the current admin user to show their invite code
       if (user) {
         const currentAdmin = users.find(u => u.user_id === user.id && u.role === 'admin');
+        
+        // If admin exists but has no invite code, generate one
+        if (currentAdmin && !currentAdmin.invite_code) {
+          const newCode = generateInviteCode();
+          const { error } = await supabase
+            .from('company_users')
+            .update({ invite_code: newCode })
+            .eq('id', currentAdmin.id);
+          
+          if (!error) {
+            currentAdmin.invite_code = newCode;
+          }
+        }
+        
         setAdminUser(currentAdmin);
       }
     }
