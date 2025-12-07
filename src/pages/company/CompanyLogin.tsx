@@ -103,7 +103,7 @@ export default function CompanyLogin() {
     <div 
       className="min-h-screen"
       style={{
-        background: `linear-gradient(160deg, ${primaryColor}0a 0%, ${primaryColor}05 60%, ${secondaryColor}03 100%)`
+        backgroundColor: `${primaryColor}15`
       }}
     >
       {/* Header */}
