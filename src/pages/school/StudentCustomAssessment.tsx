@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getSchools } from "@/lib/teacherAssessmentQuestions";
+import { getSchools, saveSchools } from "@/lib/teacherAssessmentQuestions";
 import { studentAssessmentQuestions, studentSections } from "@/lib/studentAssessmentQuestions";
 import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -119,7 +119,7 @@ const StudentCustomAssessment = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a school..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border">
                   {schools.map((school) => (
                     <SelectItem key={school} value={school}>
                       {school}
@@ -133,6 +133,21 @@ const StudentCustomAssessment = () => {
                 </p>
               )}
             </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                const testSchools = getSchools();
+                if (!testSchools.includes("Test School")) {
+                  saveSchools([...testSchools, "Test School"]);
+                  setSchools([...testSchools, "Test School"]);
+                }
+                setSelectedSchool("Test School");
+              }}
+              className="w-full"
+            >
+              Use Test School
+            </Button>
 
             <div className="space-y-2">
               <h3 className="font-semibold">Sections:</h3>
