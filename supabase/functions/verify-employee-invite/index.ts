@@ -89,6 +89,7 @@ Deno.serve(async (req) => {
           role: employee.role,
           status: 'active',
           invite_code: employee.invite_code,
+          user_id: employee.user_id,
           assessment_completed_at: employee.assessment_completed_at,
           assessment_result_id: employee.assessment_result_id
         }

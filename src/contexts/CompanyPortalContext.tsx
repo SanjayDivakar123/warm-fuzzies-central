@@ -20,6 +20,7 @@ interface CompanyEmployee {
   role: 'admin' | 'employee';
   status: 'invited' | 'active' | 'revoked';
   invite_code: string | null;
+  user_id: string | null;
   assessment_completed_at: string | null;
   assessment_result_id: string | null;
 }

@@ -172,24 +172,46 @@ export default function CompanyAssessment() {
           totalQuestions: questions.length,
           assessmentType: `professional_${company.assessment_type}`,
           companyId: company.id,
-          companyName: company.name
+          companyName: company.name,
+          completedAt: new Date().toISOString()
         };
 
         // Save results to localStorage
         localStorage.setItem(`companyAssessmentResults_${company.subdomain}`, JSON.stringify(results));
         
-        // Update company_users record if we have employee info
+        // Save to database and update company_users record
         if (employee) {
           try {
-            await supabase
+            // First, insert into assessment_results table
+            const { data: assessmentResult, error: insertError } = await supabase
+              .from('assessment_results')
+              .insert({
+                user_id: employee.user_id || employee.id, // Use user_id if available
+                assessment_type: `professional_${company.assessment_type}`,
+                results: results as any
+              })
+              .select('id')
+              .single();
+
+            if (insertError) {
+              console.error('Error saving assessment results:', insertError);
+            }
+
+            // Then update company_users with the assessment result reference
+            const { error: updateError } = await supabase
               .from('company_users')
               .update({
                 assessment_completed_at: new Date().toISOString(),
+                assessment_result_id: assessmentResult?.id || null,
                 status: 'active'
               })
               .eq('id', employee.id);
+
+            if (updateError) {
+              console.error('Error updating employee record:', updateError);
+            }
           } catch (err) {
-            console.error('Error updating employee record:', err);
+            console.error('Error saving assessment:', err);
           }
         }
 
