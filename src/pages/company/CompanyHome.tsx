@@ -12,8 +12,7 @@ import {
   Loader2,
   User,
   Sparkles,
-  Calendar,
-  Lightbulb
+  Calendar
 } from "lucide-react";
 
 const colorData = {
@@ -107,20 +106,11 @@ export default function CompanyHome() {
   if (!assessmentResults) {
     return (
       <div 
-        className="min-h-screen relative overflow-hidden"
+        className="min-h-screen"
         style={{
           background: `linear-gradient(180deg, hsl(var(--background)) 0%, ${secondaryColor}08 50%, hsl(var(--background)) 100%)`
         }}
       >
-        {/* Decorative accents */}
-        <div 
-          className="absolute top-32 right-20 w-40 h-40 rounded-full blur-3xl opacity-15 pointer-events-none"
-          style={{ background: secondaryColor }}
-        />
-        <div 
-          className="absolute bottom-40 left-10 w-56 h-56 rounded-full blur-3xl opacity-10 pointer-events-none"
-          style={{ background: primaryColor }}
-        />
         <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -188,23 +178,13 @@ export default function CompanyHome() {
 
   return (
     <div 
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen"
       style={{
         background: `linear-gradient(180deg, hsl(var(--background)) 0%, ${secondaryColor}05 30%, ${primaryColor}03 70%, hsl(var(--background)) 100%)`
       }}
     >
-      {/* Decorative background accents */}
-      <div 
-        className="absolute top-40 right-0 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none"
-        style={{ background: secondaryColor }}
-      />
-      <div 
-        className="absolute bottom-60 left-0 w-80 h-80 rounded-full blur-3xl opacity-8 pointer-events-none"
-        style={{ background: primaryColor }}
-      />
-
       {/* Header */}
-      <header className="py-4 px-4 border-b relative z-10" style={{ borderColor: `${primaryColor}20` }}>
+      <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             {company.logo_url ? (
@@ -234,7 +214,7 @@ export default function CompanyHome() {
       </header>
 
       {/* Hero Section with Large Color Circle */}
-      <section className="py-16 px-4 relative z-10">
+      <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Floating Orb Container */}
           <div className="relative mb-8">
@@ -305,7 +285,7 @@ export default function CompanyHome() {
       </section>
 
       {/* Assessment History */}
-      <section className="py-12 px-4 relative z-10" style={{ background: `linear-gradient(180deg, transparent, ${secondaryColor}08, transparent)` }}>
+      <section className="py-12 px-4" style={{ background: `linear-gradient(180deg, transparent, ${secondaryColor}08, transparent)` }}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <Calendar className="w-6 h-6 text-muted-foreground" />
@@ -363,12 +343,9 @@ export default function CompanyHome() {
       </section>
 
       {/* Fun Facts Section */}
-      <section className="py-12 px-4 relative z-10">
+      <section className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-6">
-            <Lightbulb className="w-6 h-6" style={{ color: leaderData.color }} />
-            <h2 className="text-2xl font-bold">Fun Facts About {leaderData.subtitle}s</h2>
-          </div>
+          <h2 className="text-2xl font-bold mb-6">Fun Facts About {leaderData.subtitle}s</h2>
 
           <div className="grid gap-4">
             {leaderData.funFacts.map((fact, index) => (
@@ -393,7 +370,7 @@ export default function CompanyHome() {
       </section>
 
       {/* Confirmation */}
-      <div className="max-w-4xl mx-auto px-4 pb-8 relative z-10">
+      <div className="max-w-4xl mx-auto px-4 pb-8">
         <div 
           className="rounded-xl p-4 text-center border"
           style={{ 
@@ -407,7 +384,7 @@ export default function CompanyHome() {
         </div>
       </div>
 
-      <footer className="py-8 px-4 text-center text-sm relative z-10">
+      <footer className="py-8 px-4 text-center text-sm">
         <p className="text-muted-foreground">
           Powered by <span style={{ color: secondaryColor }}>RoleColorFinder</span>
         </p>

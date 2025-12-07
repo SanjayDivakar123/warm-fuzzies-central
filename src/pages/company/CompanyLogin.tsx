@@ -101,26 +101,13 @@ export default function CompanyLogin() {
 
   return (
     <div 
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen"
       style={{
         background: `linear-gradient(135deg, ${primaryColor}10 0%, ${secondaryColor}08 50%, ${primaryColor}05 100%)`
       }}
     >
-      {/* Decorative accent circles */}
-      <div 
-        className="absolute top-20 right-10 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
-        style={{ background: secondaryColor }}
-      />
-      <div 
-        className="absolute bottom-20 left-10 w-48 h-48 rounded-full blur-3xl opacity-15 pointer-events-none"
-        style={{ background: primaryColor }}
-      />
-      <div 
-        className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full blur-2xl opacity-10 pointer-events-none"
-        style={{ background: secondaryColor }}
-      />
       {/* Header */}
-      <header className="py-6 px-4 relative z-10" style={{ borderBottom: `2px solid ${primaryColor}20` }}>
+      <header className="py-6 px-4" style={{ borderBottom: `2px solid ${primaryColor}20` }}>
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -148,7 +135,7 @@ export default function CompanyLogin() {
       </header>
 
       {/* Main content */}
-      <main className="py-16 px-4 relative z-10">
+      <main className="py-16 px-4">
         <div className="max-w-md mx-auto">
           <Card 
             className="shadow-xl border-2 relative overflow-hidden" 
@@ -223,7 +210,7 @@ export default function CompanyLogin() {
         </div>
       </main>
 
-      <footer className="py-8 px-4 text-center text-sm relative z-10">
+      <footer className="py-8 px-4 text-center text-sm">
         <p className="text-muted-foreground">
           Powered by <span style={{ color: secondaryColor }}>RoleColorFinder</span>
         </p>
