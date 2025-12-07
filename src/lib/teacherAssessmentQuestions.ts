@@ -1,3 +1,5 @@
+// School assessment questions and utilities
+
 export interface TeacherQuestion {
   id: number;
   section: string;
