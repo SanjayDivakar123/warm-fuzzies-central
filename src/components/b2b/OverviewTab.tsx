@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, CheckCircle, Clock, ExternalLink, Globe, Sparkles } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Users, CheckCircle, Clock, ExternalLink, Globe, Sparkles, KeyRound, ClipboardCheck } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface OverviewTabProps {
   company: any;
 }
 
 export default function OverviewTab({ company }: OverviewTabProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -16,6 +21,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     pendingInvites: 0,
     seatsUsed: 0,
   });
+  const [adminUser, setAdminUser] = useState<any>(null);
 
   const primaryColor = company.primary_color || '#9b87f5';
   const secondaryColor = company.secondary_color || '#7E69AB';
@@ -37,6 +43,22 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         completedAssessments: users.filter(u => u.assessment_completed_at).length,
         pendingInvites: users.filter(u => u.status === 'invited').length,
         seatsUsed: users.filter(u => u.status !== 'revoked').length,
+      });
+
+      // Find the current admin user to show their invite code
+      if (user) {
+        const currentAdmin = users.find(u => u.user_id === user.id && u.role === 'admin');
+        setAdminUser(currentAdmin);
+      }
+    }
+  };
+
+  const copyInviteCode = () => {
+    if (adminUser?.invite_code) {
+      navigator.clipboard.writeText(adminUser.invite_code);
+      toast({
+        title: "Copied!",
+        description: "Your invite code has been copied to clipboard.",
       });
     }
   };
@@ -116,6 +138,70 @@ export default function OverviewTab({ company }: OverviewTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Admin Assessment Card */}
+      {adminUser && (
+        <Card className="border-2" style={{ borderColor: `${primaryColor}30` }}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5" style={{ color: primaryColor }} />
+                  Your Assessment
+                </CardTitle>
+                <CardDescription>
+                  As an admin, you can also take the assessment
+                </CardDescription>
+              </div>
+              {adminUser.assessment_completed_at ? (
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-amber-500/30 text-amber-600">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Pending
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {adminUser.assessment_completed_at ? (
+              <p className="text-sm text-muted-foreground">
+                You completed your assessment on {new Date(adminUser.assessment_completed_at).toLocaleDateString()}.
+              </p>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Use your invite code to log in through the employee portal and take the assessment.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4 text-muted-foreground" />
+                      <code className="bg-muted px-3 py-1.5 rounded-lg font-mono text-lg font-semibold tracking-wider">
+                        {adminUser.invite_code || 'N/A'}
+                      </code>
+                    </div>
+                    {adminUser.invite_code && (
+                      <Button variant="outline" size="sm" onClick={copyInviteCode}>
+                        Copy
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => window.open(`/company/${company.subdomain}/login`, '_blank')}
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Take Assessment
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
