@@ -101,12 +101,21 @@ export default function CompanyAssessment() {
     }
   }, [company, employee, setEmployee]);
 
-  // Redirect if no employee
+  // Redirect if no employee or if already completed
   useEffect(() => {
-    if (!loading && company && !employee) {
-      const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
-      if (!savedEmployee) {
-        navigate(`/company/${company.subdomain}/login`);
+    if (!loading && company) {
+      if (!employee) {
+        const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
+        if (!savedEmployee) {
+          navigate(`/company/${company.subdomain}/login`);
+          return;
+        }
+      }
+      
+      // Check if assessment already completed (one-time only)
+      const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}`);
+      if (storedResults) {
+        navigate(`/company/${company.subdomain}/home`);
       }
     }
   }, [loading, company, employee, navigate]);
@@ -192,7 +201,7 @@ export default function CompanyAssessment() {
           description: "Your results are ready to view."
         });
         
-        navigate(`/company/${company.subdomain}/results`);
+        navigate(`/company/${company.subdomain}/home`);
         setIsSubmitting(false);
       }
     }

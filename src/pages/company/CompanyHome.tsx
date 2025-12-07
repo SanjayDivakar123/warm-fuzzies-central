@@ -4,7 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
-import { Share2, Download, Building2, CheckCircle, Loader2 } from "lucide-react";
+import { 
+  Building2, 
+  LogOut, 
+  Download, 
+  Eye,
+  Loader2,
+  User,
+  CheckCircle
+} from "lucide-react";
 
 interface Results {
   dominantColor: string;
@@ -46,19 +54,43 @@ const colorDescriptions = {
   },
 };
 
-export default function CompanyResults() {
-  const { company, loading } = useCompanyPortal();
+export default function CompanyHome() {
+  const { company, employee, loading, setEmployee } = useCompanyPortal();
   const navigate = useNavigate();
   const [results, setResults] = useState<Results | null>(null);
 
+  // Load employee and results from localStorage
   useEffect(() => {
     if (company) {
+      // Load employee if not in context
+      if (!employee) {
+        const savedEmployee = localStorage.getItem(`employee_${company.subdomain}`);
+        if (savedEmployee) {
+          setEmployee(JSON.parse(savedEmployee));
+        } else {
+          // No employee logged in, redirect to login
+          navigate(`/company/${company.subdomain}/login`);
+          return;
+        }
+      }
+
+      // Load results
       const storedResults = localStorage.getItem(`companyAssessmentResults_${company.subdomain}`);
       if (storedResults) {
         setResults(JSON.parse(storedResults));
       }
     }
-  }, [company]);
+  }, [company, employee, setEmployee, navigate]);
+
+  const handleLogout = () => {
+    if (company) {
+      localStorage.removeItem(`employee_${company.subdomain}`);
+      localStorage.removeItem(`companyAssessmentResults_${company.subdomain}`);
+      localStorage.removeItem(`assessment_progress_${company.subdomain}`);
+      setEmployee(null);
+      navigate(`/company/${company.subdomain}`);
+    }
+  };
 
   if (loading || !company) {
     return (
@@ -68,25 +100,57 @@ export default function CompanyResults() {
     );
   }
 
+  const primaryColor = company.primary_color || '#9b87f5';
+
+  // If no results, prompt to take assessment
   if (!results) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="max-w-md w-full mx-4">
-          <CardContent className="pt-8 pb-8 text-center">
-            <h1 className="text-2xl font-bold mb-2">No Results Found</h1>
-            <p className="text-muted-foreground mb-6">
-              Please complete the assessment first.
-            </p>
-            <Button onClick={() => navigate(`/company/${company.subdomain}/assessment`)}>
-              Take Assessment
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {company.logo_url ? (
+                <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
+              ) : (
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                  <Building2 className="h-4 w-4 text-white" />
+                </div>
+              )}
+              <span className="font-semibold">{company.name}</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
+
+        <div className="py-16 px-4">
+          <div className="max-w-xl mx-auto text-center">
+            <div 
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
+              style={{ backgroundColor: `${primaryColor}20` }}
+            >
+              <User className="h-10 w-10" style={{ color: primaryColor }} />
+            </div>
+            <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
+            <p className="text-muted-foreground mb-8">
+              You haven't completed your leadership assessment yet. Take the assessment to discover your leadership style.
+            </p>
+            <Button 
+              size="lg"
+              onClick={() => navigate(`/company/${company.subdomain}/assessment`)}
+              style={{ backgroundColor: primaryColor }}
+            >
+              Start Assessment
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const primaryColor = company.primary_color || '#9b87f5';
   const dominantColorInfo = colorDescriptions[results.dominantColor as keyof typeof colorDescriptions];
   const sortedScores = Object.entries(results.scores)
     .sort(([, a], [, b]) => b - a)
@@ -101,21 +165,34 @@ export default function CompanyResults() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          {company.logo_url ? (
-            <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
-          ) : (
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-              <Building2 className="h-4 w-4 text-white" />
-            </div>
-          )}
-          <span className="font-semibold">{company.name}</span>
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
+            ) : (
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+            )}
+            <span className="font-semibold">{company.name}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {employee && (
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {employee.email}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
       <div className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Success Message */}
+          {/* Welcome Section */}
           <div className="text-center mb-10">
             <div 
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -134,11 +211,17 @@ export default function CompanyResults() {
             </p>
           </div>
 
-          {/* Dominant Color Card */}
-          <Card className="rounded-2xl shadow-xl border-2 mb-6" style={{ borderColor: `${dominantColorInfo.color}40` }}>
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <Badge style={{ backgroundColor: dominantColorInfo.color }} className="text-white text-sm px-4 py-1">
+          {/* Dominant Color Summary Card */}
+          <Card 
+            className="rounded-2xl shadow-xl border-2 mb-8" 
+            style={{ borderColor: `${dominantColorInfo.color}40` }}
+          >
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <Badge 
+                  style={{ backgroundColor: dominantColorInfo.color }} 
+                  className="text-white text-sm px-4 py-1"
+                >
                   Your Dominant Color
                 </Badge>
                 <div 
@@ -146,14 +229,15 @@ export default function CompanyResults() {
                   style={{ backgroundColor: dominantColorInfo.color }}
                 />
               </div>
-              <CardTitle className="text-2xl mb-2">{dominantColorInfo.title}</CardTitle>
+              <CardTitle className="text-2xl mt-4">{dominantColorInfo.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-6">
                 {dominantColorInfo.description}
               </p>
               
-              <div>
+              {/* Key Strengths */}
+              <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Your Key Strengths:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {dominantColorInfo.strengths.map((strength, index) => (
@@ -215,19 +299,21 @@ export default function CompanyResults() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
+              onClick={() => navigate(`/company/${company.subdomain}/results`)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Eye className="w-5 h-5" />
+              View Full Report
+            </Button>
+            <Button 
+              size="lg" 
               onClick={() => window.print()}
               className="flex items-center gap-2"
               style={{ backgroundColor: primaryColor }}
             >
               <Download className="w-5 h-5" />
               Download Report
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => navigate(`/company/${company.subdomain}/home`)}
-            >
-              Back to Home
             </Button>
           </div>
         </div>
