@@ -123,55 +123,106 @@ export default function B2BDashboard() {
     );
   }
 
+  const primaryColor = company.primary_color || '#9b87f5';
+  const secondaryColor = company.secondary_color || '#7E69AB';
+
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div 
+      className="min-h-screen py-8 px-4"
+      style={{
+        background: `linear-gradient(135deg, ${primaryColor}08 0%, ${secondaryColor}05 50%, hsl(var(--background)) 100%)`
+      }}
+    >
       <div className="max-w-7xl mx-auto">
+        {/* Header with company branding */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">{company.name}</h1>
-            <p className="text-muted-foreground">
-              {company.subdomain}.rolecolorfinder.com
-            </p>
+          <div className="flex items-center gap-4">
+            {company.logo_url ? (
+              <img 
+                src={company.logo_url} 
+                alt={`${company.name} logo`}
+                className="h-14 w-auto object-contain"
+              />
+            ) : (
+              <div 
+                className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg"
+                style={{ 
+                  background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` 
+                }}
+              >
+                <Building2 className="h-7 w-7 text-white" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold">{company.name}</h1>
+              <p className="text-muted-foreground text-sm">
+                Admin Dashboard
+              </p>
+            </div>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleLogout} 
+            className="flex items-center gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-colors"
+          >
             <LogOut className="h-4 w-4" />
             Log Out
           </Button>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsList 
+            className="grid w-full grid-cols-4 p-1.5 h-auto rounded-xl"
+            style={{ 
+              backgroundColor: `${primaryColor}10`,
+            }}
+          >
+            <TabsTrigger 
+              value="overview" 
+              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              style={{ 
+                '--tw-shadow-color': `${primaryColor}30`,
+              } as React.CSSProperties}
+            >
               <Building2 className="h-4 w-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="users" 
+              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+            >
               <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="assessments" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="assessments" 
+              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+            >
               <ClipboardList className="h-4 w-4" />
               Assessments
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+            >
               <SettingsIcon className="h-4 w-4" />
               Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="animate-fade-in">
             <OverviewTab company={company} />
           </TabsContent>
 
-          <TabsContent value="users">
+          <TabsContent value="users" className="animate-fade-in">
             <UsersTab company={company} />
           </TabsContent>
 
-          <TabsContent value="assessments">
+          <TabsContent value="assessments" className="animate-fade-in">
             <AssessmentsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="animate-fade-in">
             <SettingsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
         </Tabs>
