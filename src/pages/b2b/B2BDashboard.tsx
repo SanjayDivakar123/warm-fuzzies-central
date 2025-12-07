@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -14,8 +14,13 @@ import SettingsTab from '@/components/b2b/SettingsTab';
 
 export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = '/b2b';
+  };
 
   const handleClaimAccess = async () => {
     if (!user) {
@@ -121,11 +126,17 @@ export default function B2BDashboard() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{company.name}</h1>
-          <p className="text-muted-foreground">
-            {company.subdomain}.rolecolorfinder.com
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">{company.name}</h1>
+            <p className="text-muted-foreground">
+              {company.subdomain}.rolecolorfinder.com
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Log Out
+          </Button>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
