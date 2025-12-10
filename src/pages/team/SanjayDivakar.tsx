@@ -32,7 +32,7 @@ const SanjayDivakar = () => {
           <div className="grid md:grid-cols-[300px_1fr] gap-12 mb-12">
             {/* Square Profile Image */}
             <div className="mx-auto md:mx-0">
-              <img src="https://sol.rolecolorfinder.com/wp-content/uploads/2025/10/Sanjay-roleColor-1.jpg" alt="Sanjay Divakar" className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl" />
+              <img src="/images/sanjay-divakar.jpg" alt="Sanjay Divakar" className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl" />
             </div>
 
             {/* Header Info */}
