@@ -53,7 +53,7 @@ const Team = () => {
       name: "Sanjay Divakar",
       title: "Founder & CEO",
       location: "Greenwich, Connecticut, USA",
-      image: "https://sol.rolecolorfinder.com/wp-content/uploads/2025/10/Sanjay-roleColor-1.jpg",
+      image: "/images/sanjay-divakar.jpg",
       summary: "Visionary entrepreneur redefining leadership development through color-based psychology and adaptive learning. Bridging psychology, technology, and human behavior to make leadership development accessible and evidence-based.",
       link: "/team/sanjay-divakar"
     },
