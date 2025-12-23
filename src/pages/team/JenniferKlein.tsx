@@ -38,7 +38,7 @@ const JenniferKlein = () => {
             {/* Square Profile Image */}
             <div className="mx-auto md:mx-0">
               <img 
-                src="https://cdn.prod.website-files.com/5f5a6c90bd57df3beeddb6a9/68fb52920062fde6e213e25f_JDK%20TtT%20low%20res.jpg"
+                src="/images/jennifer-klein.png"
                 alt="Jennifer D. Klein"
                 className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl"
               />

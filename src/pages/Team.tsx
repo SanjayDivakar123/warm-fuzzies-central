@@ -80,7 +80,7 @@ const Team = () => {
       name: "Jennifer D. Klein",
       title: "Chief Experience Officer (CXO)",
       location: "Denver, Colorado, USA",
-      image: "https://cdn.prod.website-files.com/5f5a6c90bd57df3beeddb6a9/68fb52920062fde6e213e25f_JDK%20TtT%20low%20res.jpg",
+      image: "/images/jennifer-klein.png",
       summary: "Educational transformation leader with 19+ years in the classroom. Author of The Global Education Guidebook and The Landscape Model of Learning. Specializes in culturally responsive practices and experiential learning.",
       link: "/team/jennifer-klein"
     },
