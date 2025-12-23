@@ -48,7 +48,7 @@ const Team = () => {
     document.head.appendChild(scriptEl);
   }, []);
 
-  const teamMembers = [
+  const executionTeam = [
     {
       name: "Sanjay Divakar",
       title: "Founder & CEO",
@@ -57,6 +57,17 @@ const Team = () => {
       summary: "Visionary entrepreneur redefining leadership development through color-based psychology and adaptive learning. Bridging psychology, technology, and human behavior to make leadership development accessible and evidence-based.",
       link: "/team/sanjay-divakar"
     },
+    {
+      name: "Tristan Beley",
+      title: "Chief Technology Officer (CTO)",
+      location: "Toronto, Ontario, Canada",
+      image: "/images/tristan-beley.png",
+      summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
+      link: "/team/tristan-beley"
+    }
+  ];
+
+  const advisoryTeam = [
     {
       name: "Jennifer D. Klein",
       title: "Chief Experience Officer (CXO)",
@@ -74,6 +85,40 @@ const Team = () => {
       link: "/team/kapono-ciotti"
     }
   ];
+
+  const TeamMemberCard = ({ member }: { member: typeof executionTeam[0] }) => (
+    <Card className="overflow-hidden border-border/50 hover-lift group">
+      <CardContent className="p-0">
+        {/* Square Profile Image */}
+        <div className="relative aspect-square overflow-hidden">
+          <img 
+            src={member.image} 
+            alt={member.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-2">{member.name}</h2>
+          <p className="text-lg text-primary font-semibold mb-2">{member.title}</p>
+          <p className="text-sm text-muted-foreground mb-4">{member.location}</p>
+          
+          <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-4">
+            {member.summary}
+          </p>
+
+          <Button variant="outline" size="sm" className="group/btn w-full" asChild>
+            <Link to={member.link}>
+              View Full Profile
+              <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,42 +139,39 @@ const Team = () => {
           </p>
         </div>
 
-        {/* Team Members Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {teamMembers.map((member, index) => (
-            <Card key={index} className="overflow-hidden border-border/50 hover-lift group">
-              <CardContent className="p-0">
-                {/* Square Profile Image */}
-                <div className="relative aspect-square overflow-hidden">
-                  <img 
-                    src={member.image} 
-                    alt={member.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                </div>
+        {/* Execution Team Section */}
+        <section className="mb-20">
+          <div className="text-center mb-10">
+            <Badge variant="default" className="mb-4 text-sm px-4 py-2">
+              Execution Team
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Building the Future of Leadership
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {executionTeam.map((member, index) => (
+              <TeamMemberCard key={index} member={member} />
+            ))}
+          </div>
+        </section>
 
-                {/* Content */}
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold mb-2">{member.name}</h2>
-                  <p className="text-lg text-primary font-semibold mb-2">{member.title}</p>
-                  <p className="text-sm text-muted-foreground mb-4">{member.location}</p>
-                  
-                  <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-4">
-                    {member.summary}
-                  </p>
-
-                  <Button variant="outline" size="sm" className="group/btn w-full" asChild>
-                    <Link to={member.link}>
-                      View Full Profile
-                      <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Advisory Team Section */}
+        <section>
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-2">
+              Advisory Board
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Guiding Vision & Strategy
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {advisoryTeam.map((member, index) => (
+              <TeamMemberCard key={index} member={member} />
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );

@@ -24,6 +24,7 @@ import Team from "@/pages/Team";
 import SanjayDivakar from "@/pages/team/SanjayDivakar";
 import JenniferKlein from "@/pages/team/JenniferKlein";
 import KaponoCiotti from "@/pages/team/KaponoCiotti";
+import TristanBeley from "@/pages/team/TristanBeley";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Footer } from "@/components/Footer";
@@ -158,6 +159,10 @@ export const router = createBrowserRouter([
   {
     path: "/team/kapono-ciotti",
     element: <Layout><KaponoCiotti /></Layout>,
+  },
+  {
+    path: "/team/tristan-beley",
+    element: <Layout><TristanBeley /></Layout>,
   },
   {
     path: "/sitemap",
