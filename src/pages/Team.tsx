@@ -88,7 +88,7 @@ const Team = () => {
       name: "Dr. Kapono Ciotti",
       title: "Chief Experience Officer (CXO)",
       location: "Kāne'ohe, Hawai'i, USA",
-      image: "https://cdn.prod.website-files.com/5f5a6c90bd57df3beeddb6a9/5f6b654a9b8304566b800bd3_Kapono-Ciotti-Photo.jpg",
+      image: "/images/kapono-ciotti.png",
       summary: "Globally recognized educational leader and CEO of Pacific American Foundation. Co-author of The Landscape Model of Learning. Integrates Native Hawaiian wisdom with global innovation in education and leadership development.",
       link: "/team/kapono-ciotti"
     }
