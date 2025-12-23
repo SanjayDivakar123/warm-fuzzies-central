@@ -61,7 +61,7 @@ const Team = () => {
       name: "Tristan Beley",
       title: "Chief Technology Officer (CTO)",
       location: "Toronto, Ontario, Canada",
-      image: "/images/tristan-beley.png",
+      image: "/images/tristan-beley.png?v=2",
       summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
       link: "/team/tristan-beley"
     },
