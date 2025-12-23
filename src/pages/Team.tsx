@@ -64,6 +64,14 @@ const Team = () => {
       image: "/images/tristan-beley.png",
       summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
       link: "/team/tristan-beley"
+    },
+    {
+      name: "Amit Suthar",
+      title: "AI Engineer",
+      location: "Vadodara, Gujarat, India",
+      image: "/images/amit-suthar.png",
+      summary: "AI Engineer leading RoleColorAI development, designing models for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems.",
+      link: "/team/amit-suthar"
     }
   ];
 
