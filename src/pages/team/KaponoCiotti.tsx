@@ -38,7 +38,7 @@ const KaponoCiotti = () => {
             {/* Square Profile Image */}
             <div className="mx-auto md:mx-0">
               <img 
-                src="https://cdn.prod.website-files.com/5f5a6c90bd57df3beeddb6a9/5f6b654a9b8304566b800bd3_Kapono-Ciotti-Photo.jpg"
+                src="/images/kapono-ciotti.png"
                 alt="Dr. Kapono Ciotti"
                 className="w-64 h-64 md:w-full md:h-auto aspect-square object-cover rounded-2xl shadow-xl"
               />
