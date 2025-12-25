@@ -150,11 +150,29 @@ const ProfessionalResults = () => {
               <Button 
                 size="lg" 
                 variant="default"
+                onClick={() => {
+                  exportProfessional50QPDF({
+                    dominantColor: results.dominantColor,
+                    scores: results.scores,
+                    totalQuestions: results.totalQuestions,
+                    participantName: localStorage.getItem('participantName') || undefined,
+                    organization: localStorage.getItem('organizationName') || undefined,
+                    assessmentDate: new Date().toLocaleDateString()
+                  });
+                }}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-5 h-5" />
+                Download Full Report (PDF)
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
                 onClick={() => window.print()}
                 className="flex items-center gap-2"
               >
                 <Share2 className="w-5 h-5" />
-                Download Report
+                Quick Print
               </Button>
               <Button 
                 size="lg" 
