@@ -12,6 +12,7 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF } from "@/lib/pdfExport";
+import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
 
 interface ProResults {
   dominantColor: string;
@@ -205,7 +206,32 @@ const ProResults = () => {
   };
 
   useEffect(() => {
-    const savedResults = localStorage.getItem('proAssessmentResults');
+    // Check both localStorage keys for assessment results
+    let savedResults = localStorage.getItem('proAssessmentResults');
+    
+    // Also check B2B assessment results key
+    if (!savedResults) {
+      const b2bResults = localStorage.getItem('professionalAssessmentResults');
+      if (b2bResults) {
+        const parsed = JSON.parse(b2bResults);
+        // Convert B2B format to Pro format
+        const sortedScores = Object.entries(parsed.scores)
+          .sort(([, a], [, b]) => (b as number) - (a as number)) as [string, number][];
+        
+        const convertedResults: ProResults = {
+          dominantColor: parsed.dominantColor || sortedScores[0][0],
+          secondaryColor: sortedScores[1]?.[0] || 'blue',
+          tertiaryColor: sortedScores[2]?.[0] || 'green',
+          scores: parsed.scores,
+          totalQuestions: parsed.totalQuestions || 50,
+          isPro: true,
+          colorDistribution: sortedScores
+        };
+        setResults(convertedResults);
+        return;
+      }
+    }
+    
     if (savedResults) {
       setResults(JSON.parse(savedResults));
       
@@ -243,30 +269,21 @@ const ProResults = () => {
     if (!results) return;
     
     const primaryColor = colorData[results.dominantColor as keyof typeof colorData];
-    const secondaryColor = colorData[results.secondaryColor as keyof typeof colorData];
     
     try {
-      await exportToPDF({
-        type: 'pro',
-        color: results.dominantColor,
-        score: calculateLeadershipScore(results),
-        results: {
-          dominantColor: results.dominantColor,
-          secondaryColor: results.secondaryColor,
-          tertiaryColor: results.tertiaryColor,
-          scores: results.scores,
-          colorDistribution: results.colorDistribution,
-          score: calculateLeadershipScore(results)
-        },
-        strengths: primaryColor.strengths,
-        developmentAreas: primaryColor.developmentAreas,
-        description: primaryColor.description,
-        date: new Date().toISOString()
-      }, `Pro-Leadership-Analysis-${primaryColor.name.replace(' ', '-')}.pdf`);
+      // Use the comprehensive 50Q PDF export
+      await exportProfessional50QPDF({
+        dominantColor: results.dominantColor,
+        scores: results.scores,
+        totalQuestions: results.totalQuestions,
+        participantName: localStorage.getItem('participantName') || user?.user_metadata?.full_name || undefined,
+        organization: localStorage.getItem('organizationName') || undefined,
+        assessmentDate: new Date().toLocaleDateString()
+      });
       
       toast({
         title: "PDF Downloaded!",
-        description: "Your comprehensive leadership report has been saved.",
+        description: "Your comprehensive 25-30 page leadership report has been saved.",
       });
     } catch (error) {
       console.error('Error exporting PDF:', error);
