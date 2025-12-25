@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navigation/Navbar";
-import { Share2 } from "lucide-react";
+import { Share2, FileText } from "lucide-react";
+import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
 
 interface Results {
   dominantColor: string;
