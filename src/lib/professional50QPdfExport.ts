@@ -1369,19 +1369,25 @@ The Role Color Finder Team`;
   
   y += 10;
   
-  // Do List
+  // Calculate proper column widths to prevent overlap
+  const doColStart = 20;
+  const dontColStart = pageWidth / 2 + 5;
+  const colWidth2 = (pageWidth - 50) / 2;
+  const textColWidth = colWidth2 - 15; // Narrower text width to prevent overlap
+  
+  // Do List Header
   pdf.setFillColor(220, 252, 231);
-  pdf.rect(20, y, (pageWidth - 50) / 2, 8, 'F');
+  pdf.rect(doColStart, y, colWidth2, 8, 'F');
   pdf.setTextColor(22, 163, 74);
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('DO', 25, y + 6);
+  pdf.text('DO', doColStart + 5, y + 6);
   
-  // Don't List
+  // Don't List Header
   pdf.setFillColor(254, 226, 226);
-  pdf.rect(pageWidth / 2 + 5, y, (pageWidth - 50) / 2, 8, 'F');
+  pdf.rect(dontColStart, y, colWidth2, 8, 'F');
   pdf.setTextColor(220, 38, 38);
-  pdf.text("DON'T", pageWidth / 2 + 10, y + 6);
+  pdf.text("DON'T", dontColStart + 5, y + 6);
   
   y += 15;
   leftY = y;
@@ -1391,18 +1397,20 @@ The Role Color Finder Team`;
   pdf.setFontSize(9);
   pdf.setFont('helvetica', 'normal');
   
+  // DO items - left column
   profile.doList.forEach((item) => {
-    const itemLines = wrapText(`✓ ${item}`, (pageWidth - 60) / 2);
+    const itemLines = wrapText(`• ${item}`, textColWidth);
     itemLines.forEach((line, i) => {
-      pdf.text(line, 25, leftY + (i * 4));
+      pdf.text(line, doColStart + 5, leftY + (i * 4));
     });
     leftY += itemLines.length * 4 + 2;
   });
   
+  // DON'T items - right column  
   profile.dontList.forEach((item) => {
-    const itemLines = wrapText(`✗ ${item}`, (pageWidth - 60) / 2);
+    const itemLines = wrapText(`• ${item}`, textColWidth);
     itemLines.forEach((line, i) => {
-      pdf.text(line, pageWidth / 2 + 10, rightY + (i * 4));
+      pdf.text(line, dontColStart + 5, rightY + (i * 4));
     });
     rightY += itemLines.length * 4 + 2;
   });
