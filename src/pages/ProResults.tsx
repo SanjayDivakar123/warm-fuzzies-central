@@ -206,47 +206,40 @@ const ProResults = () => {
   };
 
   useEffect(() => {
-    // Check both localStorage keys for assessment results
-    let savedResults = localStorage.getItem('proAssessmentResults');
-    
-    // Also check B2B assessment results key
+    const savedResults = localStorage.getItem("proAssessmentResults");
+
+    // If the user actually completed the B2B Professional assessment (25Q/50Q),
+    // the correct results page is /b2b/results.
     if (!savedResults) {
-      const b2bResults = localStorage.getItem('professionalAssessmentResults');
-      if (b2bResults) {
-        const parsed = JSON.parse(b2bResults);
-        // Convert B2B format to Pro format
-        const sortedScores = Object.entries(parsed.scores)
-          .sort(([, a], [, b]) => (b as number) - (a as number)) as [string, number][];
-        
-        const convertedResults: ProResults = {
-          dominantColor: parsed.dominantColor || sortedScores[0][0],
-          secondaryColor: sortedScores[1]?.[0] || 'blue',
-          tertiaryColor: sortedScores[2]?.[0] || 'green',
-          scores: parsed.scores,
-          totalQuestions: parsed.totalQuestions || 50,
-          isPro: true,
-          colorDistribution: sortedScores
-        };
-        setResults(convertedResults);
-        return;
+      const b2bResultsRaw = localStorage.getItem("professionalAssessmentResults");
+      if (b2bResultsRaw) {
+        try {
+          const parsed = JSON.parse(b2bResultsRaw);
+          if (parsed?.assessmentType?.startsWith("professional_")) {
+            navigate("/b2b/results");
+            return;
+          }
+        } catch {
+          // ignore parse errors and fall back to default behavior
+        }
       }
     }
-    
+
     if (savedResults) {
       setResults(JSON.parse(savedResults));
-      
+
       // Fetch or generate shareable code if user is logged in
       if (user) {
         const fetchOrCreateShareableCode = async () => {
           const { data, error } = await supabase
-            .from('assessment_results')
-            .select('shareable_code')
-            .eq('user_id', user.id)
-            .eq('assessment_type', 'pro')
+            .from("assessment_results")
+            .select("shareable_code")
+            .eq("user_id", user.id)
+            .eq("assessment_type", "pro")
             .maybeSingle();
 
           if (error) {
-            console.error('Error fetching shareable code:', error);
+            console.error("Error fetching shareable code:", error);
             return;
           }
 
@@ -254,14 +247,14 @@ const ProResults = () => {
             setShareableCode(data.shareable_code);
           } else {
             // No saved assessment yet, code will be generated on save
-            console.log('No saved assessment found - will generate code on save');
+            console.log("No saved assessment found - will generate code on save");
           }
         };
 
         fetchOrCreateShareableCode();
       }
     } else {
-      navigate('/');
+      navigate("/");
     }
   }, [navigate, user]);
 
