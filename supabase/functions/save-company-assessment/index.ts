@@ -5,6 +5,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Input validation helpers
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return typeof str === 'string' && uuidRegex.test(str)
+}
+
+function isValidResults(results: unknown): boolean {
+  if (!results || typeof results !== 'object') return false
+  // Basic validation - ensure it's an object and not too large
+  const jsonStr = JSON.stringify(results)
+  return jsonStr.length <= 50000 // Max 50KB for results JSON
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -12,16 +25,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { employeeId, companyId, results } = await req.json()
+    const body = await req.json()
+    const { employeeId, companyId, results } = body
 
-    console.log('Saving assessment for employee:', employeeId, 'company:', companyId)
-
+    // Input validation
     if (!employeeId || !companyId || !results) {
       return new Response(
         JSON.stringify({ success: false, message: 'Employee ID, company ID, and results are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Validate UUID formats
+    if (!isValidUUID(employeeId)) {
+      console.log('Invalid employee ID format')
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid employee ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!isValidUUID(companyId)) {
+      console.log('Invalid company ID format')
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid company ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!isValidResults(results)) {
+      console.log('Invalid results format or size')
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid results format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Saving assessment for employee:', employeeId, 'company:', companyId)
 
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -46,7 +86,7 @@ Deno.serve(async (req) => {
 
     // Check if already completed
     if (employee.assessment_completed_at) {
-      console.log('Assessment already completed for:', employee.email)
+      console.log('Assessment already completed for employee')
       return new Response(
         JSON.stringify({ success: false, message: 'Assessment already completed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

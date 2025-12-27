@@ -6,6 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helpers
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return typeof email === 'string' && email.length <= 255 && emailRegex.test(email)
+}
+
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return typeof str === 'string' && uuidRegex.test(str)
+}
+
 async function sendInviteEmail(
   email: string, 
   inviteCode: string, 
@@ -122,24 +133,92 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const { company_id, email } = await req.json();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    // Verify user's JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
+    const { company_id, email } = body;
+
+    // Input validation
+    if (!company_id || !email) {
+      return new Response(
+        JSON.stringify({ error: 'Company ID and email are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isValidUUID(company_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid company ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Inviting user:', { company_id, email });
+
+    // Create service role client for data operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify user is a company admin
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('company_users')
+      .select('role')
+      .eq('company_id', company_id)
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (adminError || !adminCheck) {
+      console.log('User is not a company admin for this company');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: You must be a company admin' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check if user already exists
     const { data: existingUser } = await supabase
       .from('company_users')
       .select('id, status')
       .eq('company_id', company_id)
-      .eq('email', email)
+      .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 
-    // Get company details including name and subdomain
+    // Get company details
     const { data: company } = await supabase
       .from('companies')
       .select('seats_purchased, name, subdomain')
@@ -179,9 +258,9 @@ serve(async (req) => {
     const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
     const inviteCode = inviteCodeData;
 
-    let user;
+    let invitedUser;
     
-    // If user was revoked, update their record instead of creating new
+    // If user was revoked, update their record
     if (existingUser && existingUser.status === 'revoked') {
       const { data: updatedUser, error: updateError } = await supabase
         .from('company_users')
@@ -201,15 +280,15 @@ serve(async (req) => {
         console.error('Error re-inviting user:', updateError);
         throw updateError;
       }
-      user = updatedUser;
-      console.log('User re-invited:', user.id);
+      invitedUser = updatedUser;
+      console.log('User re-invited:', invitedUser.id);
     } else {
       // Create new user invite
       const { data: newUser, error: userError } = await supabase
         .from('company_users')
         .insert({
           company_id,
-          email,
+          email: email.toLowerCase().trim(),
           role: 'employee',
           status: 'invited',
           invite_code: inviteCode,
@@ -221,27 +300,27 @@ serve(async (req) => {
         console.error('Error creating user invite:', userError);
         throw userError;
       }
-      user = newUser;
-      console.log('User invited:', user.id);
+      invitedUser = newUser;
+      console.log('User invited:', invitedUser.id);
     }
 
     // Send invitation email
     const emailSent = await sendInviteEmail(
-      email, 
+      email.toLowerCase().trim(), 
       inviteCode, 
       company.name,
       company.subdomain
     );
 
     return new Response(
-      JSON.stringify({ user, emailSent }),
+      JSON.stringify({ user: invitedUser, emailSent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

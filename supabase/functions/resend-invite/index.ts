@@ -8,6 +8,12 @@ const corsHeaders = {
 
 const MAX_INVITES = 3;
 
+// Input validation helpers
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return typeof str === 'string' && uuidRegex.test(str)
+}
+
 async function sendInviteEmail(
   email: string, 
   inviteCode: string, 
@@ -113,23 +119,59 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const { user_id } = await req.json();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    // Verify user's JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
+    const { user_id } = body;
+
+    // Input validation
+    if (!user_id || !isValidUUID(user_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid user ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Resending invite for user:', user_id);
 
+    // Create service role client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     // Get user details
-    const { data: user, error: userError } = await supabase
+    const { data: targetUser, error: userError } = await supabase
       .from('company_users')
       .select('*, companies(name, subdomain)')
       .eq('id', user_id)
       .single();
 
-    if (userError || !user) {
+    if (userError || !targetUser) {
       console.error('User not found:', userError);
       return new Response(
         JSON.stringify({ error: 'User not found' }),
@@ -137,14 +179,32 @@ serve(async (req) => {
       );
     }
 
-    if (user.status !== 'invited') {
+    // Verify caller is an admin for this company
+    const { data: adminCheck } = await supabase
+      .from('company_users')
+      .select('role')
+      .eq('company_id', targetUser.company_id)
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!adminCheck) {
+      console.log('User is not a company admin');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: You must be a company admin' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (targetUser.status !== 'invited') {
       return new Response(
         JSON.stringify({ error: 'User is not in invited status' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const currentCount = user.invite_count || 1;
+    const currentCount = targetUser.invite_count || 1;
     
     if (currentCount >= MAX_INVITES) {
       return new Response(
@@ -157,7 +217,7 @@ serve(async (req) => {
     const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
     const inviteCode = inviteCodeData;
 
-    // Update user with new invite code and increment count
+    // Update user with new invite code
     const { error: updateError } = await supabase
       .from('company_users')
       .update({
@@ -173,11 +233,12 @@ serve(async (req) => {
     }
 
     // Send email
+    const company = targetUser.companies as { name: string; subdomain: string } | null;
     const emailSent = await sendInviteEmail(
-      user.email,
+      targetUser.email,
       inviteCode,
-      user.companies?.name || 'Your Company',
-      user.companies?.subdomain || ''
+      company?.name || 'Your Company',
+      company?.subdomain || ''
     );
 
     console.log('Invite resent, email sent:', emailSent, 'new count:', currentCount + 1);
@@ -195,7 +256,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

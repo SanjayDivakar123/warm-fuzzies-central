@@ -16,7 +16,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-company]
-verify_jwt = false
+verify_jwt = true
 
 [functions.invite-company-user]
 verify_jwt = true
@@ -31,7 +31,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.get-employee-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-task-assignment]
 verify_jwt = true

@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helpers
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return typeof email === 'string' && email.length <= 255 && emailRegex.test(email)
+}
+
+function isValidSubdomain(subdomain: string): boolean {
+  // Lowercase alphanumeric + hyphens, 3-63 chars, no reserved words
+  const subdomainRegex = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/
+  const reserved = ['www', 'api', 'admin', 'app', 'dashboard', 'mail', 'ftp', 'localhost', 'supabase']
+  return typeof subdomain === 'string' && 
+    subdomainRegex.test(subdomain) && 
+    !reserved.includes(subdomain)
+}
+
+function sanitizeString(str: string, maxLength: number): string {
+  if (typeof str !== 'string') return ''
+  return str.trim().slice(0, maxLength)
+}
+
+function isValidAssessmentType(type: string): boolean {
+  return ['25q', '50q'].includes(type)
+}
+
 // Generate a random invite code
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -22,22 +46,81 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const { name, subdomain, admin_email, seats_purchased, assessment_type, user_id } = await req.json();
-
-    console.log('Creating company:', { name, subdomain, admin_email, user_id });
-
-    // Validate minimum seats (per spec: min 2)
-    if (seats_purchased < 2) {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
       return new Response(
-        JSON.stringify({ error: 'Minimum 2 seats required' }),
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    // Verify user's JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
+    let { name, subdomain, admin_email, seats_purchased, assessment_type } = body;
+
+    // Input validation
+    name = sanitizeString(name || '', 100);
+    subdomain = (subdomain || '').toLowerCase().trim();
+    admin_email = (admin_email || '').toLowerCase().trim();
+
+    if (!name || name.length < 2) {
+      return new Response(
+        JSON.stringify({ error: 'Company name must be at least 2 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    if (!isValidSubdomain(subdomain)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid subdomain format. Use 3-63 lowercase letters, numbers, and hyphens.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isValidEmail(admin_email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid admin email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate seats
+    if (typeof seats_purchased !== 'number' || seats_purchased < 2 || seats_purchased > 10000) {
+      return new Response(
+        JSON.stringify({ error: 'Seats must be between 2 and 10,000' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate assessment type
+    if (!isValidAssessmentType(assessment_type)) {
+      assessment_type = '25q'; // Default
+    }
+
+    console.log('Creating company:', { name, subdomain, admin_email, user_id: user.id });
+
+    // Create service role client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if subdomain is already taken
     const { data: existingCompany } = await supabase
@@ -73,20 +156,20 @@ serve(async (req) => {
 
     console.log('Company created:', company.id);
 
-    // Generate invite code for admin (so they can also take the assessment)
+    // Generate invite code for admin
     const inviteCode = generateInviteCode();
 
-    // Create admin user linked to the authenticated user with invite code
+    // Create admin user linked to the authenticated user
     const { data: adminUser, error: adminUserError } = await supabase
       .from('company_users')
       .insert({
         company_id: company.id,
         email: admin_email,
-        user_id: user_id || null, // Link to current user if provided
+        user_id: user.id,
         role: 'admin',
-        status: user_id ? 'active' : 'invited', // Active if user is logged in
-        joined_at: user_id ? new Date().toISOString() : null,
-        invite_code: inviteCode, // Admin also gets invite code to take assessment
+        status: 'active',
+        joined_at: new Date().toISOString(),
+        invite_code: inviteCode,
         invited_at: new Date().toISOString(),
       })
       .select()
@@ -107,7 +190,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
