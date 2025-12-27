@@ -144,18 +144,8 @@ const Team = () => {
               Building the Future of Leadership
             </h2>
           </div>
-          {/* Sanjay - Top row, centered */}
-          <div className="max-w-md mx-auto mb-8">
-            <TeamMemberCard member={executionTeam[0]} />
-          </div>
-          {/* Tristan - Second row, centered */}
-          <div className="max-w-md mx-auto mb-8">
-            <TeamMemberCard member={executionTeam[1]} />
-          </div>
-          {/* Sam and Amit - Side by side */}
           <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <TeamMemberCard member={executionTeam[2]} />
-            <TeamMemberCard member={executionTeam[3]} />
+            {executionTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
           </div>
         </section>
 
