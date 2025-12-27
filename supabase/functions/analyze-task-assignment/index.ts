@@ -6,6 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helpers
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return typeof str === 'string' && uuidRegex.test(str)
+}
+
+function sanitizeString(str: string, maxLength: number): string {
+  if (typeof str !== 'string') return ''
+  return str.trim().slice(0, maxLength)
+}
+
+function isValidQuadrant(q: string): boolean {
+  return ['q1', 'q2', 'q3', 'q4'].includes(q)
+}
+
+function isValidPriority(p: string): boolean {
+  return ['high', 'medium', 'low'].includes(p)
+}
+
 // RoleColor definitions
 const roleColorDefinitions = {
   yellow: { traits: ['action', 'execution', 'speed', 'results-driven', 'decisive'], taskTypes: ['urgent', 'deadline-driven', 'operational'] },
@@ -24,10 +43,10 @@ const quadrantDescriptions = {
 
 // Map quadrants to preferred RoleColors
 const quadrantToColors = {
-  q1: ['yellow', 'red'], // Action and communication for crisis
-  q2: ['blue', 'green'], // Strategy and analysis for planning
-  q3: ['yellow', 'green'], // Execution and systems for delegation
-  q4: ['green'] // Systems to identify what to eliminate
+  q1: ['yellow', 'red'],
+  q2: ['blue', 'green'],
+  q3: ['yellow', 'green'],
+  q4: ['green']
 };
 
 // Map job roles to task keywords for matching
@@ -53,15 +72,109 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId, companyId, title, description, quadrant, importance, urgency, skills, department } = await req.json();
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create client with user's JWT to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
+    let { taskId, companyId, title, description, quadrant, importance, urgency, skills, department } = body;
+
+    // Input validation
+    if (!companyId) {
+      return new Response(
+        JSON.stringify({ error: 'Company ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isValidUUID(companyId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid company ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (taskId && !isValidUUID(taskId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid task ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize string inputs
+    title = sanitizeString(title || '', 200);
+    description = sanitizeString(description || '', 2000);
+    department = sanitizeString(department || '', 100);
+
+    // Validate enums
+    if (quadrant && !isValidQuadrant(quadrant)) {
+      quadrant = 'q4'; // Default fallback
+    }
+
+    if (importance && !isValidPriority(importance)) {
+      importance = 'medium';
+    }
+
+    if (urgency && !isValidPriority(urgency)) {
+      urgency = 'medium';
+    }
+
+    // Validate skills array
+    if (skills && Array.isArray(skills)) {
+      skills = skills.slice(0, 20).map((s: unknown) => sanitizeString(String(s), 50));
+    } else {
+      skills = [];
+    }
+
+    // Create service role client for data operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify user is a company admin
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('company_users')
+      .select('role')
+      .eq('company_id', companyId)
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (adminError || !adminCheck) {
+      console.log('User is not a company admin for this company');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: You must be a company admin' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Analyzing task assignment:', { taskId, companyId, title, quadrant });
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch all employees with completed assessments, including job_role and skills
+    // Fetch all employees with completed assessments
     const { data: employees, error: empError } = await supabase
       .from('company_users')
       .select('id, email, role, status, assessment_result_id, job_role, skills')
@@ -81,7 +194,7 @@ serve(async (req) => {
         primaryAssignee: null,
         secondaryAssignee: null,
         reasoning: {
-          quadrantExplanation: quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions],
+          quadrantExplanation: quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions] || '',
           roleColorJustification: 'No employees with completed assessments found',
           skillMatchNotes: 'Unable to match skills without employee profiles',
           workloadConsiderations: 'No workload data available',
@@ -114,12 +227,6 @@ serve(async (req) => {
     }
 
     // Calculate real workload from assigned tasks
-    const { data: assignedTasks } = await supabase
-      .from('work_tasks')
-      .select('id')
-      .eq('company_id', companyId)
-      .in('status', ['pending', 'assigned', 'in_progress']);
-
     const { data: taskAssignments } = await supabase
       .from('task_assignments')
       .select('primary_assignee_id, secondary_assignee_id')
@@ -136,25 +243,25 @@ serve(async (req) => {
       }
     });
 
-    const maxTasks = Math.max(...Object.values(taskCountByEmployee), 5); // At least 5 for normalization
+    const maxTasks = Math.max(...Object.values(taskCountByEmployee), 5);
 
     // Determine best RoleColor for the task based on quadrant
     const preferredColors = quadrantToColors[quadrant as keyof typeof quadrantToColors] || ['yellow'];
     const recommendedColor = preferredColors[0];
 
     // Prepare task text for matching
-    const taskText = `${title} ${description} ${(skills || []).join(' ')} ${department || ''}`.toLowerCase();
-    const taskSkillsArray = (skills || []).map((s: string) => s.toLowerCase());
+    const taskText = `${title} ${description} ${skills.join(' ')} ${department}`.toLowerCase();
+    const taskSkillsArray = skills.map((s: string) => s.toLowerCase());
 
     // Score each employee
     const scoredEmployees = employeesWithResults.map(emp => {
-      const results = emp.assessmentResults as any;
-      const dominantColor = results?.dominantColor?.toLowerCase() || 'unknown';
+      const results = emp.assessmentResults as Record<string, unknown>;
+      const dominantColor = (results?.dominantColor as string)?.toLowerCase() || 'unknown';
       const colorScores = {
-        yellow: results?.colorScores?.yellow || results?.scores?.yellow || 0,
-        red: results?.colorScores?.red || results?.scores?.red || 0,
-        green: results?.colorScores?.green || results?.scores?.green || 0,
-        blue: results?.colorScores?.blue || results?.scores?.blue || 0
+        yellow: (results?.colorScores as Record<string, number>)?.yellow || (results?.scores as Record<string, number>)?.yellow || 0,
+        red: (results?.colorScores as Record<string, number>)?.red || (results?.scores as Record<string, number>)?.red || 0,
+        green: (results?.colorScores as Record<string, number>)?.green || (results?.scores as Record<string, number>)?.green || 0,
+        blue: (results?.colorScores as Record<string, number>)?.blue || (results?.scores as Record<string, number>)?.blue || 0
       };
 
       // Calculate RoleColor match score (0-1)
@@ -162,7 +269,6 @@ serve(async (req) => {
       if (preferredColors.includes(dominantColor)) {
         roleColorScore = 1;
       } else {
-        // Partial credit for secondary color alignment
         const totalScore = Object.values(colorScores).reduce((a, b) => a + b, 0);
         if (totalScore > 0) {
           roleColorScore = preferredColors.reduce((sum, color) => {
@@ -171,7 +277,7 @@ serve(async (req) => {
         }
       }
 
-      // Job role fit - match job role to task keywords
+      // Job role fit
       let jobRoleFit = 0.5;
       const employeeJobRole = emp.job_role || '';
       const jobKeywords = jobRoleKeywords[employeeJobRole] || [];
@@ -182,7 +288,6 @@ serve(async (req) => {
           jobRoleFit = Math.min(1, 0.5 + matchingKeywords.length * 0.15);
         }
         
-        // Boost for quadrant alignment
         if (quadrant === 'q2' && emp.role === 'admin') {
           jobRoleFit = Math.min(1, jobRoleFit + 0.15);
         } else if (quadrant === 'q3' && emp.role === 'employee') {
@@ -190,8 +295,8 @@ serve(async (req) => {
         }
       }
 
-      // Skill match - compare employee skills to task skills
-      let skillMatch = 0.4; // Base score
+      // Skill match
+      let skillMatch = 0.4;
       const employeeSkills = (emp.skills || []).map((s: string) => s.toLowerCase());
       
       if (employeeSkills.length > 0 && taskSkillsArray.length > 0) {
@@ -202,14 +307,12 @@ serve(async (req) => {
         );
         skillMatch = Math.min(1, 0.4 + (matchingSkills.length / taskSkillsArray.length) * 0.6);
       } else if (employeeSkills.length > 0) {
-        // Match skills to task description
         const skillsInDescription = employeeSkills.filter((skill: string) => 
           taskText.includes(skill)
         );
         skillMatch = Math.min(1, 0.4 + skillsInDescription.length * 0.15);
       }
 
-      // Also check RoleColor traits against task
       const colorTraits = roleColorDefinitions[dominantColor as keyof typeof roleColorDefinitions];
       if (colorTraits) {
         const matchingTraits = colorTraits.traits.filter(trait => taskText.includes(trait.toLowerCase()));
@@ -217,14 +320,14 @@ serve(async (req) => {
         skillMatch = Math.min(1, skillMatch + (matchingTraits.length + matchingTypes.length) * 0.05);
       }
 
-      // Real workload margin based on assigned tasks
+      // Real workload margin
       const employeeTaskCount = taskCountByEmployee[emp.id] || 0;
       const workloadMargin = Math.max(0.2, 1 - (employeeTaskCount / maxTasks));
 
-      // Past success (still simulated - would need historical outcome data)
+      // Past success (simulated)
       const pastSuccess = 0.6;
 
-      // Behavioral suitability based on color match
+      // Behavioral suitability
       const behavioralSuitability = roleColorScore;
 
       // Calculate weighted score
@@ -259,9 +362,9 @@ serve(async (req) => {
     const primaryAssignee = scoredEmployees[0] || null;
     const secondaryAssignee = scoredEmployees[1] || null;
 
-    // Generate reasoning with real data
+    // Generate reasoning
     const reasoning = {
-      quadrantExplanation: `This task falls into ${quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions]}. ${
+      quadrantExplanation: `This task falls into ${quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions] || 'unknown quadrant'}. ${
         quadrant === 'q1' ? 'It requires someone who can execute quickly under pressure.' :
         quadrant === 'q2' ? 'This allows for thoughtful planning and strategic approach.' :
         quadrant === 'q3' ? 'This can be delegated to free up time for more important work.' :

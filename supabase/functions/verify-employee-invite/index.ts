@@ -5,6 +5,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Input validation helpers
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return typeof email === 'string' && email.length <= 255 && emailRegex.test(email)
+}
+
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return typeof str === 'string' && uuidRegex.test(str)
+}
+
+function isValidInviteCode(code: string): boolean {
+  // Invite codes are 8 uppercase alphanumeric characters
+  const codeRegex = /^[A-Z0-9]{8}$/
+  return typeof code === 'string' && codeRegex.test(code.toUpperCase())
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -12,16 +29,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { inviteCode, companyId, email } = await req.json()
+    const body = await req.json()
+    const { inviteCode, companyId, email } = body
 
-    console.log('Verifying invite code:', inviteCode, 'email:', email, 'for company:', companyId)
-
+    // Input validation
     if (!inviteCode || !companyId || !email) {
       return new Response(
         JSON.stringify({ success: false, message: 'Invite code, email, and company ID are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Validate input formats
+    if (!isValidInviteCode(inviteCode)) {
+      console.log('Invalid invite code format:', inviteCode)
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid invite code format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!isValidUUID(companyId)) {
+      console.log('Invalid company ID format:', companyId)
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid company ID format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!isValidEmail(email)) {
+      console.log('Invalid email format:', email)
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Verifying invite code for company:', companyId)
 
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -46,7 +90,7 @@ Deno.serve(async (req) => {
     }
 
     if (!employee) {
-      console.log('No employee found with invite code:', inviteCode, 'and email:', email)
+      console.log('No employee found with provided credentials')
       return new Response(
         JSON.stringify({ success: false, message: 'Invalid email or invite code combination' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -54,7 +98,7 @@ Deno.serve(async (req) => {
     }
 
     if (employee.status === 'revoked') {
-      console.log('Employee access revoked:', employee.email)
+      console.log('Employee access revoked')
       return new Response(
         JSON.stringify({ success: false, message: 'Your access has been revoked. Please contact your administrator.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -74,11 +118,11 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Error updating employee status:', updateError)
       } else {
-        console.log('Employee status updated to active:', employee.email)
+        console.log('Employee status updated to active')
       }
     }
 
-    console.log('Credentials verified successfully for:', employee.email)
+    console.log('Credentials verified successfully')
 
     return new Response(
       JSON.stringify({
