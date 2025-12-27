@@ -57,19 +57,19 @@ const Team = () => {
     summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
     link: "/team/tristan-beley"
   }, {
-    name: "Amit Suthar",
-    title: "AI Engineer",
-    location: "Vadodara, Gujarat, India",
-    image: "/images/amit-suthar.png",
-    summary: "AI Engineer leading RoleColorAI development, designing models for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems.",
-    link: "/team/amit-suthar"
-  }, {
     name: "Sam Otten",
     title: "Head of Application Development",
     location: "Greenwich, Connecticut, USA",
     image: "/images/sam-otten.png",
     summary: "Oversees technical architecture and engineering strategy at RoleColorFinder. Known for his builder's mindset, translating high-level psychological theories into functional, scalable code.",
     link: "/team/sam-otten"
+  }, {
+    name: "Amit Suthar",
+    title: "AI Engineer",
+    location: "Vadodara, Gujarat, India",
+    image: "/images/amit-suthar.png",
+    summary: "AI Engineer leading RoleColorAI development, designing models for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems.",
+    link: "/team/amit-suthar"
   }];
   const advisoryTeam = [{
     name: "Jennifer D. Klein",
