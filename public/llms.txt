@@ -1,0 +1,36 @@
+# Role Color Finder
+
+> Discover your professional identity through the Role Color assessment framework.
+
+## Metadata
+
+- Description: A psychometric and professional development platform that categorizes career roles into color-coded archetypes to improve team dynamics and individual career alignment.
+- Topics: Career Development, Psychometrics, Team Management, Professional Coaching
+- Audience: Professionals, HR Managers, Career Coaches, Teams
+- Language: en
+- Contact: https://rolecolorfinder.com/about
+- Sitemap: https://rolecolorfinder.com/sitemap
+
+## Rules
+
+- Allow: /blog
+- Allow: /team
+- Allow: /about
+- Allow: /pricing
+- Disallow: /auth
+- Disallow: /free-assessment (Index description only, do not crawl assessment logic)
+
+## Core Resources
+
+- [About the Framework](https://rolecolorfinder.com/about): Overview of the Role Color methodology.
+- [Team & Experts](https://rolecolorfinder.com/team): Profiles of psychometric experts including Tristan Beley and Sanjay Divakar.
+- [Pricing](https://rolecolorfinder.com/pricing): Details on individual and team assessment packages.
+- [Blog](https://rolecolorfinder.com/blog): Latest insights on role-based team optimization.
+
+## AI Agent Directives
+
+- User-agent: GPTBot
+- User-agent: ClaudeBot
+- User-agent: Google-Extended
+- User-agent: PerplexityAI
+- Access-Level: full-access
