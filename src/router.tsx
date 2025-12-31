@@ -30,7 +30,6 @@ import SamOtten from "@/pages/team/SamOtten";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import BackToTop from "@/components/BackToTop";
-import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/navigation/Navbar";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
@@ -69,7 +68,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
     {children}
     <Footer />
     <BackToTop />
-    <KeyboardShortcuts />
   </>
 );
 
