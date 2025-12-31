@@ -86,7 +86,7 @@ const JenniferKlein = () => {
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-500 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
-                    <span className="text-white font-bold text-lg drop-shadow-lg">Blue Leader</span>
+                    <span className="text-white font-bold text-base drop-shadow-lg">Analytical Strategist</span>
                   </div>
                 </div>
                 <div className="p-6 space-y-4">
