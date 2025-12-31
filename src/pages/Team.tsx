@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 const Team = () => {
   useEffect(() => {
     const title = "Our Team - Role Color Finder | Meet the Leadership Experts";
@@ -44,8 +44,20 @@ const Team = () => {
   }, []);
 
   const [activeFilter, setActiveFilter] = useState<RoleColor | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   type RoleColor = "red" | "yellow" | "green" | "blue";
+
+  const handleFilterClick = (color: RoleColor) => {
+    const newFilter = activeFilter === color ? null : color;
+    setActiveFilter(newFilter);
+    
+    if (newFilter && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  };
   const executionTeam = [{
     name: "Sanjay Divakar",
     title: "Founder & CEO",
@@ -116,7 +128,7 @@ const Team = () => {
     const colorConfig = roleColorConfig[member.roleColor];
     
     return (
-      <Card className="overflow-hidden border-border/50 hover-lift group">
+      <Card className="overflow-hidden border-border/50 hover-lift group animate-fade-in">
         <CardContent className="p-0">
           {/* Square Profile Image with Role Color Border */}
           <div className="relative aspect-square overflow-hidden">
@@ -173,7 +185,7 @@ const Team = () => {
           {/* Role Color Legend */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             <button 
-              onClick={() => setActiveFilter(activeFilter === "red" ? null : "red")}
+              onClick={() => handleFilterClick("red")}
               className={`flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/20 hover:border-red-500/50 cursor-pointer ${activeFilter === "red" ? "ring-2 ring-red-500 scale-105" : ""}`}
             >
               <div className="w-8 h-8 rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
@@ -183,7 +195,7 @@ const Team = () => {
               </div>
             </button>
             <button 
-              onClick={() => setActiveFilter(activeFilter === "yellow" ? null : "yellow")}
+              onClick={() => handleFilterClick("yellow")}
               className={`flex items-start gap-3 p-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-yellow-400/20 hover:border-yellow-400/50 cursor-pointer ${activeFilter === "yellow" ? "ring-2 ring-yellow-400 scale-105" : ""}`}
             >
               <div className="w-8 h-8 rounded-full bg-yellow-400 flex-shrink-0 mt-0.5" />
@@ -193,7 +205,7 @@ const Team = () => {
               </div>
             </button>
             <button 
-              onClick={() => setActiveFilter(activeFilter === "green" ? null : "green")}
+              onClick={() => handleFilterClick("green")}
               className={`flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20 hover:border-green-500/50 cursor-pointer ${activeFilter === "green" ? "ring-2 ring-green-500 scale-105" : ""}`}
             >
               <div className="w-8 h-8 rounded-full bg-green-500 flex-shrink-0 mt-0.5" />
@@ -203,7 +215,7 @@ const Team = () => {
               </div>
             </button>
             <button 
-              onClick={() => setActiveFilter(activeFilter === "blue" ? null : "blue")}
+              onClick={() => handleFilterClick("blue")}
               className={`flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 hover:border-blue-500/50 cursor-pointer ${activeFilter === "blue" ? "ring-2 ring-blue-500 scale-105" : ""}`}
             >
               <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
@@ -221,21 +233,26 @@ const Team = () => {
         </div>
 
         {/* Filtered Results or Team Sections */}
-        {activeFilter ? (
-          <section>
-            <div className="text-center mb-10">
-              <Badge variant="default" className="mb-4 text-sm px-4 py-2">
-                {roleColorConfig[activeFilter].label}s
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold">
-                Filtered Team Members
-              </h2>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {filteredMembers?.map((member, index) => <TeamMemberCard key={index} member={member} />)}
-            </div>
-          </section>
-        ) : (
+        <div ref={resultsRef} className="scroll-mt-8">
+          {activeFilter ? (
+            <section key={activeFilter} className="animate-fade-in">
+              <div className="text-center mb-10">
+                <Badge variant="default" className="mb-4 text-sm px-4 py-2">
+                  {roleColorConfig[activeFilter].label}s
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  Filtered Team Members
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {filteredMembers?.map((member, index) => (
+                  <div key={member.name} style={{ animationDelay: `${index * 100}ms` }} className="animate-fade-in">
+                    <TeamMemberCard member={member} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
           <>
             {/* Execution Team Section */}
             <section className="mb-20">
@@ -268,6 +285,7 @@ const Team = () => {
             </section>
           </>
         )}
+        </div>
       </main>
     </div>;
 };
