@@ -62,7 +62,7 @@ const Team = () => {
     name: "Sam Otten",
     title: "Head of Application Development",
     location: "Greenwich, Connecticut, USA",
-    image: "/images/sam-otten.png",
+    image: "/images/sam-otten-new.png",
     summary: "Oversees technical architecture and engineering strategy at RoleColorFinder. Known for his builder's mindset, translating high-level psychological theories into functional, scalable code.",
     link: "/team/sam-otten",
     roleColor: "yellow" as const
