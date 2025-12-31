@@ -48,28 +48,32 @@ const Team = () => {
     location: "Greenwich, Connecticut, USA",
     image: "/images/sanjay-divakar.png",
     summary: "Visionary entrepreneur redefining leadership development through color-based psychology and adaptive learning. Bridging psychology, technology, and human behavior to make leadership development accessible and evidence-based.",
-    link: "/team/sanjay-divakar"
+    link: "/team/sanjay-divakar",
+    roleColor: "red" as const
   }, {
     name: "Tristan Beley",
     title: "Chief Technology Officer (CTO)",
     location: "Toronto, Ontario, Canada",
     image: "/images/tristan-beley.png?v=2",
     summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
-    link: "/team/tristan-beley"
+    link: "/team/tristan-beley",
+    roleColor: "yellow" as const
   }, {
     name: "Sam Otten",
     title: "Head of Application Development",
     location: "Greenwich, Connecticut, USA",
     image: "/images/sam-otten.png",
     summary: "Oversees technical architecture and engineering strategy at RoleColorFinder. Known for his builder's mindset, translating high-level psychological theories into functional, scalable code.",
-    link: "/team/sam-otten"
+    link: "/team/sam-otten",
+    roleColor: "yellow" as const
   }, {
     name: "Amit Suthar",
     title: "Head of AI Systems",
     location: "Vadodara, Gujarat, India",
     image: "/images/amit-suthar.png",
     summary: "Head of AI Systems leading RoleColorAI development, overseeing model design for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems at scale.",
-    link: "/team/amit-suthar"
+    link: "/team/amit-suthar",
+    roleColor: "yellow" as const
   }];
   const advisoryTeam = [{
     name: "Jennifer D. Klein",
@@ -77,24 +81,39 @@ const Team = () => {
     location: "Denver, Colorado, USA",
     image: "/images/jennifer-klein.png?v=2",
     summary: "Educational transformation leader with 19+ years in the classroom. Author of The Global Education Guidebook and The Landscape Model of Learning. Specializes in culturally responsive practices and experiential learning.",
-    link: "/team/jennifer-klein"
+    link: "/team/jennifer-klein",
+    roleColor: "blue" as const
   }, {
     name: "Dr. Kapono Ciotti",
     title: "Chief Experience Officer (CXO)",
     location: "Kāne'ohe, Hawai'i, USA",
     image: "/images/kapono-ciotti.png",
     summary: "Globally recognized educational leader and CEO of Pacific American Foundation. Co-author of The Landscape Model of Learning. Integrates Native Hawaiian wisdom with global innovation in education and leadership development.",
-    link: "/team/kapono-ciotti"
+    link: "/team/kapono-ciotti",
+    roleColor: "green" as const
   }];
+  const roleColorStyles = {
+    red: "bg-red-500",
+    yellow: "bg-yellow-400",
+    green: "bg-green-500",
+    blue: "bg-blue-500"
+  };
+
+  type RoleColor = "red" | "yellow" | "green" | "blue";
+
   const TeamMemberCard = ({
     member
   }: {
-    member: typeof executionTeam[0];
+    member: { name: string; title: string; location: string; image: string; summary: string; link: string; roleColor: RoleColor };
   }) => <Card className="overflow-hidden border-border/50 hover-lift group">
       <CardContent className="p-0">
         {/* Square Profile Image */}
         <div className="relative aspect-square overflow-hidden">
           <img src={member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+          {/* Role Color Badge */}
+          <div className="absolute top-4 right-4">
+            <div className={`w-6 h-6 rounded-full ${roleColorStyles[member.roleColor]} ring-2 ring-white shadow-lg`} title={`${member.roleColor.charAt(0).toUpperCase() + member.roleColor.slice(1)} Role Color`} />
+          </div>
         </div>
 
         {/* Content */}
