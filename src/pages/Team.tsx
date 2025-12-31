@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 const Team = () => {
   useEffect(() => {
     const title = "Our Team - Role Color Finder | Meet the Leadership Experts";
@@ -42,6 +42,10 @@ const Team = () => {
     scriptEl.textContent = JSON.stringify(jsonLd);
     document.head.appendChild(scriptEl);
   }, []);
+
+  const [activeFilter, setActiveFilter] = useState<RoleColor | null>(null);
+
+  type RoleColor = "red" | "yellow" | "green" | "blue";
   const executionTeam = [{
     name: "Sanjay Divakar",
     title: "Founder & CEO",
@@ -99,7 +103,10 @@ const Team = () => {
     blue: { bg: "bg-blue-500", text: "text-white", label: "Analytical Strategist", border: "border-blue-500" }
   };
 
-  type RoleColor = "red" | "yellow" | "green" | "blue";
+  const allMembers = [...executionTeam, ...advisoryTeam];
+  const filteredMembers = activeFilter 
+    ? allMembers.filter(m => m.roleColor === activeFilter)
+    : null;
 
   const TeamMemberCard = ({
     member
@@ -165,65 +172,102 @@ const Team = () => {
 
           {/* Role Color Legend */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+            <button 
+              onClick={() => setActiveFilter(activeFilter === "red" ? null : "red")}
+              className={`flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/20 hover:border-red-500/50 cursor-pointer ${activeFilter === "red" ? "ring-2 ring-red-500 scale-105" : ""}`}
+            >
               <div className="w-8 h-8 rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
-              <div className="text-left">
+              <div>
                 <p className="font-bold text-red-600 dark:text-red-400">Creative Motivator</p>
                 <p className="text-sm text-muted-foreground">Energizes teams with vision and passion, driving innovation through bold ideas</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30">
+            </button>
+            <button 
+              onClick={() => setActiveFilter(activeFilter === "yellow" ? null : "yellow")}
+              className={`flex items-start gap-3 p-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-yellow-400/20 hover:border-yellow-400/50 cursor-pointer ${activeFilter === "yellow" ? "ring-2 ring-yellow-400 scale-105" : ""}`}
+            >
               <div className="w-8 h-8 rounded-full bg-yellow-400 flex-shrink-0 mt-0.5" />
-              <div className="text-left">
+              <div>
                 <p className="font-bold text-yellow-600 dark:text-yellow-400">Fast Executor</p>
                 <p className="text-sm text-muted-foreground">Turns ideas into action quickly, focused on results and efficient delivery</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+            </button>
+            <button 
+              onClick={() => setActiveFilter(activeFilter === "green" ? null : "green")}
+              className={`flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20 hover:border-green-500/50 cursor-pointer ${activeFilter === "green" ? "ring-2 ring-green-500 scale-105" : ""}`}
+            >
               <div className="w-8 h-8 rounded-full bg-green-500 flex-shrink-0 mt-0.5" />
-              <div className="text-left">
+              <div>
                 <p className="font-bold text-green-600 dark:text-green-400">Supportive Collaborator</p>
                 <p className="text-sm text-muted-foreground">Builds harmony and trust, ensuring everyone feels valued and heard</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            </button>
+            <button 
+              onClick={() => setActiveFilter(activeFilter === "blue" ? null : "blue")}
+              className={`flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 hover:border-blue-500/50 cursor-pointer ${activeFilter === "blue" ? "ring-2 ring-blue-500 scale-105" : ""}`}
+            >
               <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
-              <div className="text-left">
+              <div>
                 <p className="font-bold text-blue-600 dark:text-blue-400">Analytical Strategist</p>
                 <p className="text-sm text-muted-foreground">Brings structure and insight, solving problems with logic and precision</p>
               </div>
-            </div>
+            </button>
           </div>
+          {activeFilter && (
+            <p className="text-sm text-muted-foreground mt-4">
+              Showing {filteredMembers?.length} team member{filteredMembers?.length !== 1 ? "s" : ""} • <button onClick={() => setActiveFilter(null)} className="text-primary hover:underline">Clear filter</button>
+            </p>
+          )}
         </div>
 
-        {/* Execution Team Section */}
-        <section className="mb-20">
-          <div className="text-center mb-10">
-            <Badge variant="default" className="mb-4 text-sm px-4 py-2">
-              Execution Team
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Building the Future of Leadership
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {executionTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
-          </div>
-        </section>
+        {/* Filtered Results or Team Sections */}
+        {activeFilter ? (
+          <section>
+            <div className="text-center mb-10">
+              <Badge variant="default" className="mb-4 text-sm px-4 py-2">
+                {roleColorConfig[activeFilter].label}s
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Filtered Team Members
+              </h2>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {filteredMembers?.map((member, index) => <TeamMemberCard key={index} member={member} />)}
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Execution Team Section */}
+            <section className="mb-20">
+              <div className="text-center mb-10">
+                <Badge variant="default" className="mb-4 text-sm px-4 py-2">
+                  Execution Team
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  Building the Future of Leadership
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {executionTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
+              </div>
+            </section>
 
-        {/* Advisory Team Section */}
-        <section>
-          <div className="text-center mb-10">
-            <Badge variant="secondary" className="mb-4 text-sm px-4 py-2">Advisory Team
-          </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Guiding Vision & Strategy
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {advisoryTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
-          </div>
-        </section>
+            {/* Advisory Team Section */}
+            <section>
+              <div className="text-center mb-10">
+                <Badge variant="secondary" className="mb-4 text-sm px-4 py-2">
+                  Advisory Team
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  Guiding Vision & Strategy
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {advisoryTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
+              </div>
+            </section>
+          </>
+        )}
       </main>
     </div>;
 };
