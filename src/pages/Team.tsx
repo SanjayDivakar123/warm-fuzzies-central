@@ -92,11 +92,11 @@ const Team = () => {
     link: "/team/kapono-ciotti",
     roleColor: "green" as const
   }];
-  const roleColorStyles = {
-    red: "bg-red-500",
-    yellow: "bg-yellow-400",
-    green: "bg-green-500",
-    blue: "bg-blue-500"
+  const roleColorConfig = {
+    red: { bg: "bg-red-500", text: "text-white", label: "Red", border: "border-red-500" },
+    yellow: { bg: "bg-yellow-400", text: "text-yellow-900", label: "Yellow", border: "border-yellow-400" },
+    green: { bg: "bg-green-500", text: "text-white", label: "Green", border: "border-green-500" },
+    blue: { bg: "bg-blue-500", text: "text-white", label: "Blue", border: "border-blue-500" }
   };
 
   type RoleColor = "red" | "yellow" | "green" | "blue";
@@ -105,36 +105,47 @@ const Team = () => {
     member
   }: {
     member: { name: string; title: string; location: string; image: string; summary: string; link: string; roleColor: RoleColor };
-  }) => <Card className="overflow-hidden border-border/50 hover-lift group">
-      <CardContent className="p-0">
-        {/* Square Profile Image */}
-        <div className="relative aspect-square overflow-hidden">
-          <img src={member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-          {/* Role Color Badge */}
-          <div className="absolute top-4 right-4">
-            <div className={`w-6 h-6 rounded-full ${roleColorStyles[member.roleColor]} ring-2 ring-white shadow-lg`} title={`${member.roleColor.charAt(0).toUpperCase() + member.roleColor.slice(1)} Role Color`} />
+  }) => {
+    const colorConfig = roleColorConfig[member.roleColor];
+    
+    return (
+      <Card className="overflow-hidden border-border/50 hover-lift group">
+        <CardContent className="p-0">
+          {/* Square Profile Image with Role Color Border */}
+          <div className="relative aspect-square overflow-hidden">
+            <img src={member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+            {/* Gradient overlay at bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+            {/* Role Color Badge - prominent at bottom of image */}
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full ${colorConfig.bg} ring-4 ring-white/90 shadow-xl flex-shrink-0`} />
+              <span className={`text-white font-bold text-lg drop-shadow-lg`}>
+                {colorConfig.label} Leader
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-2">{member.name}</h2>
-          <p className="text-lg text-primary font-semibold mb-2">{member.title}</p>
-          <p className="text-sm text-muted-foreground mb-4">{member.location}</p>
-          
-          <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-4">
-            {member.summary}
-          </p>
+          {/* Content */}
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-2">{member.name}</h2>
+            <p className="text-lg text-primary font-semibold mb-2">{member.title}</p>
+            <p className="text-sm text-muted-foreground mb-4">{member.location}</p>
+            
+            <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-4">
+              {member.summary}
+            </p>
 
-          <Button variant="outline" size="sm" className="group/btn w-full" asChild>
-            <Link to={member.link}>
-              View Full Profile
-              <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>;
+            <Button variant="outline" size="sm" className="group/btn w-full" asChild>
+              <Link to={member.link}>
+                View Full Profile
+                <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
   return <div className="min-h-screen bg-background">
       <Navbar />
       
