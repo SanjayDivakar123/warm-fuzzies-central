@@ -10,6 +10,7 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
+import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -281,8 +282,161 @@ styles.<br />
       </section>
 
 
+      {/* RoleColorFinder vs RoleColorAI Section */}
+      <section className="section-padding bg-background" aria-label="RoleColorFinder and RoleColorAI">
+        <div className="container-wide">
+          {/* Section Header */}
+          <div className="text-center mb-16 animate-fade-in">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
+              <Sparkles className="w-5 h-5 mr-2" />
+              The Complete System
+            </Badge>
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-8 leading-tight text-balance">
+              From Knowing How People Are Built →
+              <br />
+              <span className="gradient-text-primary">Knowing If They Can Execute</span>
+            </h3>
+          </div>
+
+          {/* Narrative */}
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <p className="text-xl md:text-2xl text-foreground leading-relaxed mb-6">
+              RoleColorFinder reveals how people are built — how they think, lead, decide, and respond under pressure.
+            </p>
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
+              But understanding structure is only half the equation.
+            </p>
+            <p className="text-xl md:text-2xl text-foreground leading-relaxed mb-8">
+              <strong className="gradient-text-primary">RoleColorAI</strong> extends RoleColorFinder into execution intelligence — showing whether someone can perform in a specific role, on a specific team, at a specific moment in time.
+            </p>
+            <p className="text-2xl font-semibold text-foreground">
+              Together, they form a complete decision system.
+            </p>
+          </div>
+
+          {/* Two Column Comparison */}
+          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
+            {/* Left: RoleColorFinder */}
+            <div className="glass-card-strong rounded-3xl p-8 md:p-10 border border-primary/20 shadow-elegant hover-lift">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-gradient-brand flex items-center justify-center">
+                  <Palette className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-2xl font-bold text-foreground">RoleColorFinder</h4>
+              </div>
+              
+              <p className="text-lg font-semibold text-primary mb-6">How people are built</p>
+              
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Decision style",
+                  "Leadership behavior",
+                  "Pressure response",
+                  "Natural team role tendencies"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-lg text-foreground">
+                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="border-t border-border pt-6">
+                <p className="text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">This is the foundation.</strong><br />
+                  It explains why people behave the way they do at work.
+                </p>
+              </div>
+            </div>
+
+            {/* Right: RoleColorAI */}
+            <div className="glass-card-strong rounded-3xl p-8 md:p-10 border-2 border-primary/40 bg-gradient-to-br from-primary/5 to-blue/5 shadow-elegant hover-lift">
+              <div className="flex items-center gap-4 mb-6">
+                <img src={roleColorAILogo} alt="RoleColorAI Logo" className="h-12 w-auto" />
+              </div>
+              
+              <p className="text-lg font-semibold text-primary mb-6">How well they can execute</p>
+              
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Skill depth and readiness",
+                  "Evidence of execution",
+                  "Job and team fit",
+                  "Outcome prediction"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-lg text-foreground">
+                    <Brain className="w-5 h-5 text-blue flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="border-t border-border pt-6">
+                <p className="text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">This is the execution layer.</strong><br />
+                  It explains whether someone can succeed here — and for how long.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Emphasis Statement */}
+          <div className="text-center mb-16">
+            <div className="inline-block glass-card-strong rounded-2xl px-8 py-6 border border-primary/30">
+              <p className="text-xl md:text-2xl font-semibold text-foreground">
+                RoleColorFinder explains <span className="text-primary">structure</span>.
+                <br />
+                RoleColorAI explains <span className="gradient-text-primary">outcomes</span>.
+              </p>
+            </div>
+          </div>
+
+          {/* Use Cases */}
+          <div className="max-w-4xl mx-auto mb-16">
+            <h4 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
+              What this unlocks for RCF users:
+            </h4>
+            
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                "Hiring decisions with real context",
+                "Team design that holds under pressure",
+                "Career paths that reduce burnout",
+                "Fewer mis-hires and faster stabilization"
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 glass-card rounded-xl p-4 border border-border hover:border-primary/30 transition-colors">
+                  <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span className="text-lg text-foreground">{item}</span>
+                </div>
+              ))}
+            </div>
+            
+            <p className="text-center text-lg text-muted-foreground mt-8">
+              RoleColorAI doesn't replace RoleColorFinder.<br />
+              <strong className="text-foreground">It activates it.</strong>
+            </p>
+          </div>
+
+          {/* CTA Block */}
+          <div className="max-w-3xl mx-auto text-center glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20">
+            <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              Want to go deeper than self-awareness?
+            </h4>
+            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+              RoleColorAI is currently in limited early access for individuals and organizations who want to move from understanding roles to making better decisions with them.
+            </p>
+            <Button variant="default" size="lg" className="text-lg px-8 py-6 font-semibold rounded-full group" asChild>
+              <a href="https://rolecolorai.com" target="_blank" rel="noopener noreferrer">
+                Request early access to RoleColorAI
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
-      <section className="section-padding bg-background" aria-label="Testimonials">
+      <section className="section-padding bg-gradient-soft" aria-label="Testimonials">
         <div className="container-wide">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
