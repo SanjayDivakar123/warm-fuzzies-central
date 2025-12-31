@@ -130,7 +130,7 @@ const Team = () => {
             <span className="gradient-text-primary block mt-2">RoleColorFinder</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Our team combines decades of experience in education, psychology, and organizational development to revolutionize leadership assessment.
+            RoleColorFinder is built by a multidisciplinary team spanning education, psychology, engineering, and organizational design — combining lived experience, technical execution, and systems-level thinking to redefine leadership assessment.
           </p>
         </div>
 
