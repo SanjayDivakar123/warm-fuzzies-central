@@ -319,9 +319,7 @@ styles.<br />
             {/* Left: RoleColorFinder */}
             <div className="glass-card-strong rounded-3xl p-8 md:p-10 border border-primary/20 shadow-elegant hover-lift">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gradient-brand flex items-center justify-center">
-                  <Palette className="w-6 h-6 text-white" />
-                </div>
+                <img src="/rcf-logo.png" alt="RoleColorFinder" className="w-12 h-12 object-contain" />
                 <h4 className="text-2xl font-bold text-foreground">RoleColorFinder</h4>
               </div>
               
