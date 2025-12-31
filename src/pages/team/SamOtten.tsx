@@ -80,7 +80,7 @@ const SamOtten = () => {
                 <CardContent className="p-0">
                   <div className="aspect-square overflow-hidden relative">
                     <img
-                      src="/images/sam-otten.png"
+                      src="/images/sam-otten-new.png"
                       alt="Sam Otten"
                       className="w-full h-full object-cover"
                     />
