@@ -83,8 +83,10 @@ const SanjayDivakar = () => {
                     alt="Sanjay Divakar"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-4 right-4">
-                    <div className="w-8 h-8 rounded-full bg-red-500 ring-2 ring-white shadow-lg" title="Red Role Color" />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-500 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
+                    <span className="text-white font-bold text-lg drop-shadow-lg">Red Leader</span>
                   </div>
                 </div>
                 <div className="p-6 space-y-4">
