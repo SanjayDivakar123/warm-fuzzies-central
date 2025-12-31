@@ -159,9 +159,41 @@ const Team = () => {
             Meet the Leaders Behind
             <span className="gradient-text-primary block mt-2">RoleColorFinder</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">
             RoleColorFinder is built by a multidisciplinary team spanning education, psychology, engineering, and organizational design — combining lived experience, technical execution, and systems-level thinking to redefine leadership assessment.
           </p>
+
+          {/* Role Color Legend */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+              <div className="w-8 h-8 rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="font-bold text-red-600 dark:text-red-400">Creative Motivator</p>
+                <p className="text-sm text-muted-foreground">Energizes teams with vision and passion, driving innovation through bold ideas</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30">
+              <div className="w-8 h-8 rounded-full bg-yellow-400 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="font-bold text-yellow-600 dark:text-yellow-400">Fast Executor</p>
+                <p className="text-sm text-muted-foreground">Turns ideas into action quickly, focused on results and efficient delivery</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="font-bold text-green-600 dark:text-green-400">Supportive Collaborator</p>
+                <p className="text-sm text-muted-foreground">Builds harmony and trust, ensuring everyone feels valued and heard</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="font-bold text-blue-600 dark:text-blue-400">Analytical Strategist</p>
+                <p className="text-sm text-muted-foreground">Brings structure and insight, solving problems with logic and precision</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Execution Team Section */}
