@@ -40,13 +40,10 @@ const Index = () => {
             
             {/* Main Headline - Centered, Large Serif */}
             <div className="text-center space-y-8 mb-16">
-              <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium text-foreground leading-tight text-balance">we discover
-
-leadership
-styles.<br />
+              <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
+                we discover leadership styles.
                 <span className="block">that makes you shine.</span>
-                <br />
-                <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-muted-foreground">Then, learn how to adapt.</span>
+                <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">Then, learn how to adapt.</span>
               </h1>
             </div>
 
@@ -143,20 +140,20 @@ styles.<br />
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto mb-24">
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
-              <div className="space-y-12 animate-fade-in delay-200">
-                <div className="glass-card-strong rounded-3xl p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
-                  <h4 className="text-4xl font-bold text-foreground mb-8">Contextual Leadership</h4>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
+          <div className="max-w-7xl mx-auto mb-12 sm:mb-16 md:mb-24">
+            <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 lg:gap-20 items-center">
+              <div className="space-y-6 sm:space-y-8 md:space-y-12 animate-fade-in delay-200">
+                <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
+                  <h4 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 sm:mb-6 md:mb-8">Contextual Leadership</h4>
+                  <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
                     We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                   </p>
                 </div>
                 
-                <div className="glass-card-strong rounded-3xl p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
-                  <p className="text-xl text-foreground leading-relaxed">
+                <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
+                  <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed">
                     Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
-                    <strong className="gradient-text-primary text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
+                    <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
                   </p>
                 </div>
               </div>
@@ -183,8 +180,8 @@ styles.<br />
               </Badge>
             </div>
             
-            <div className="glass-card-strong rounded-3xl p-16 border border-primary/20 shadow-elegant mb-20 hover-lift">
-              <p className="text-2xl text-foreground mb-16 leading-relaxed text-center text-balance font-medium">
+            <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 lg:p-16 border border-primary/20 shadow-elegant mb-12 sm:mb-16 md:mb-20 hover-lift">
+              <p className="text-lg sm:text-xl md:text-2xl text-foreground mb-8 sm:mb-12 md:mb-16 leading-relaxed text-center text-balance font-medium">
                 Every user takes a 25-question diagnostic designed around real group psychology, especially Tuckman's Five Stages of Team Development:
               </p>
               
@@ -223,10 +220,10 @@ styles.<br />
                   </div>)}
               </div>
 
-              <p className="text-xl text-foreground text-center leading-relaxed text-balance font-medium">
-                At each of these stages, teams need different kinds of leadership.<br />
-                Sometimes they need decisive action. Sometimes they need creative vision. Sometimes they need systematic planning.<br />
-                <strong className="gradient-text-primary text-2xl block mt-6">Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
+              <p className="text-base sm:text-lg md:text-xl text-foreground text-center leading-relaxed text-balance font-medium">
+                At each of these stages, teams need different kinds of leadership.
+                <span className="hidden sm:inline"><br /></span> Sometimes they need decisive action. Sometimes they need creative vision. Sometimes they need systematic planning.
+                <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4 sm:mt-6">Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
               </p>
             </div>
           </div>
@@ -272,9 +269,9 @@ styles.<br />
             </div>
 
             <div className="text-center">
-              <Button variant="default" size="xl" className="text-xl px-16 py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
+              <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
                 Discover Your RoleColor™ Profile
-                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </div>
