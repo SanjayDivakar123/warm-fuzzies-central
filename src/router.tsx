@@ -29,6 +29,7 @@ import AmitSuthar from "@/pages/team/AmitSuthar";
 import SamOtten from "@/pages/team/SamOtten";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
+import BackToTop from "@/components/BackToTop";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/navigation/Navbar";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
@@ -66,6 +67,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
     <ScrollToTop />
     {children}
     <Footer />
+    <BackToTop />
   </>
 );
 
