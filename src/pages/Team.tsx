@@ -93,10 +93,10 @@ const Team = () => {
     roleColor: "green" as const
   }];
   const roleColorConfig = {
-    red: { bg: "bg-red-500", text: "text-white", label: "Red", border: "border-red-500" },
-    yellow: { bg: "bg-yellow-400", text: "text-yellow-900", label: "Yellow", border: "border-yellow-400" },
-    green: { bg: "bg-green-500", text: "text-white", label: "Green", border: "border-green-500" },
-    blue: { bg: "bg-blue-500", text: "text-white", label: "Blue", border: "border-blue-500" }
+    red: { bg: "bg-red-500", text: "text-white", label: "Creative Motivator", border: "border-red-500" },
+    yellow: { bg: "bg-yellow-400", text: "text-yellow-900", label: "Fast Executor", border: "border-yellow-400" },
+    green: { bg: "bg-green-500", text: "text-white", label: "Supportive Collaborator", border: "border-green-500" },
+    blue: { bg: "bg-blue-500", text: "text-white", label: "Analytical Strategist", border: "border-blue-500" }
   };
 
   type RoleColor = "red" | "yellow" | "green" | "blue";
@@ -119,8 +119,8 @@ const Team = () => {
             {/* Role Color Badge - prominent at bottom of image */}
             <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full ${colorConfig.bg} ring-4 ring-white/90 shadow-xl flex-shrink-0`} />
-              <span className={`text-white font-bold text-lg drop-shadow-lg`}>
-                {colorConfig.label} Leader
+              <span className={`text-white font-bold text-base drop-shadow-lg`}>
+                {colorConfig.label}
               </span>
             </div>
           </div>
