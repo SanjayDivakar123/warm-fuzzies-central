@@ -77,12 +77,15 @@ const SanjayDivakar = () => {
           <div className="lg:col-span-1">
             <Card className="overflow-hidden border-border/50 sticky top-8">
               <CardContent className="p-0">
-                <div className="aspect-square overflow-hidden">
+                <div className="aspect-square overflow-hidden relative">
                   <img 
                     src="/images/sanjay-divakar.png" 
                     alt="Sanjay Divakar"
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute top-4 right-4">
+                    <div className="w-8 h-8 rounded-full bg-red-500 ring-2 ring-white shadow-lg" title="Red Role Color" />
+                  </div>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>

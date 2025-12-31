@@ -78,12 +78,15 @@ const SamOtten = () => {
             <div className="sticky top-8">
               <Card className="overflow-hidden border-border/50">
                 <CardContent className="p-0">
-                  <div className="aspect-square overflow-hidden">
+                  <div className="aspect-square overflow-hidden relative">
                     <img
                       src="/images/sam-otten.png"
                       alt="Sam Otten"
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute top-4 right-4">
+                      <div className="w-8 h-8 rounded-full bg-yellow-400 ring-2 ring-white shadow-lg" title="Yellow Role Color" />
+                    </div>
                   </div>
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-2">Sam Otten</h1>
