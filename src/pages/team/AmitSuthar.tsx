@@ -8,8 +8,8 @@ import { useEffect } from "react";
 
 const AmitSuthar = () => {
   useEffect(() => {
-    const title = "Amit Suthar - AI Engineer | Role Color Finder";
-    const description = "Amit Suthar is an AI Engineer at RoleColorFinder, leading AI engineering efforts behind RoleColorAI with expertise in machine learning and full-stack development.";
+    const title = "Amit Suthar - Head of AI Systems | Role Color Finder";
+    const description = "Amit Suthar is the Head of AI Systems at RoleColorFinder, leading RoleColorAI development with expertise in machine learning, AI architecture, and full-stack development.";
 
     document.title = title;
 
@@ -35,7 +35,7 @@ const AmitSuthar = () => {
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Amit Suthar",
-      "jobTitle": "AI Engineer",
+      "jobTitle": "Head of AI Systems",
       "worksFor": {
         "@type": "Organization",
         "name": "RoleColorFinder"
@@ -88,7 +88,7 @@ const AmitSuthar = () => {
                 <div className="p-6 space-y-4">
                   <div>
                     <h1 className="text-2xl font-bold">Amit Suthar</h1>
-                    <p className="text-lg text-primary font-semibold">AI Engineer</p>
+                    <p className="text-lg text-primary font-semibold">Head of AI Systems</p>
                   </div>
                   
                   <div className="space-y-3 text-sm">
@@ -111,9 +111,9 @@ const AmitSuthar = () => {
                   <div className="pt-4 border-t border-border/50">
                     <p className="text-xs text-muted-foreground mb-2">Expertise</p>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary">AI/ML</Badge>
+                      <Badge variant="secondary">AI Architecture</Badge>
                       <Badge variant="secondary">RoleColorAI</Badge>
-                      <Badge variant="secondary">Full-Stack</Badge>
+                      <Badge variant="secondary">Team Leadership</Badge>
                     </div>
                   </div>
                 </div>
@@ -124,16 +124,16 @@ const AmitSuthar = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <section>
-              <Badge variant="default" className="mb-4">AI Engineer</Badge>
+              <Badge variant="default" className="mb-4">Head of AI Systems</Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Building Human-Centered AI Systems
+                Building Human-Centered AI Systems at Scale
               </h2>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Amit Suthar is an AI Engineer at RoleColorFinder and one of the earliest contributors to RoleColorAI. He joined the company as an intern and quickly became a core part of the team by demonstrating rare ownership, technical curiosity, and a genuine passion for building human-centered AI systems.
+                  Amit Suthar is the Head of AI Systems at RoleColorFinder and one of the earliest contributors to RoleColorAI. He joined the company as an intern and quickly rose to lead the AI division by demonstrating rare ownership, technical curiosity, and a genuine passion for building human-centered AI systems.
                 </p>
                 <p>
-                  At RoleColorFinder, Amit leads the AI engineering efforts behind RoleColorAI, designing and training models that power resume reconstruction, leadership-style interpretation, and psychometric insights. He manages and mentors the AI intern team through structured development sprints. Amit also works closely with the product and engineering teams to ship new AI-driven features.
+                  At RoleColorFinder, Amit oversees all AI engineering efforts behind RoleColorAI, architecting and training models that power resume reconstruction, leadership-style interpretation, and psychometric insights. He manages and mentors the AI team through structured development sprints and works closely with the product and engineering teams to ship new AI-driven features at scale.
                 </p>
               </div>
             </section>
@@ -155,7 +155,7 @@ const AmitSuthar = () => {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span>Leading AI engineering efforts behind RoleColorAI</span>
+                  <span>Overseeing all AI systems and architecture behind RoleColorAI</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />

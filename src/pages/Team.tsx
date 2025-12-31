@@ -65,10 +65,10 @@ const Team = () => {
     link: "/team/sam-otten"
   }, {
     name: "Amit Suthar",
-    title: "AI Engineer",
+    title: "Head of AI Systems",
     location: "Vadodara, Gujarat, India",
     image: "/images/amit-suthar.png",
-    summary: "AI Engineer leading RoleColorAI development, designing models for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems.",
+    summary: "Head of AI Systems leading RoleColorAI development, overseeing model design for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems at scale.",
     link: "/team/amit-suthar"
   }];
   const advisoryTeam = [{
