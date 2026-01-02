@@ -28,83 +28,90 @@ const Index = () => {
       }, 2000);
     }
   }, [searchParams, navigate]);
-  return <div className="min-h-screen">
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section - Bold Vibrant Style */}
-      <section className="relative min-h-screen overflow-hidden bg-[hsl(85,70%,55%)]" aria-label="Hero section">
-        {/* Add padding for floating navbar */}
-        <div className="pt-28 sm:pt-32 pb-16 sm:pb-24">
-          <div className="container-wide">
-            <div className="max-w-5xl mx-auto text-center">
-              
-              {/* Main Headline - Refined Typography */}
-              <h1 className="animate-fade-in">
-                <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-foreground/90 mb-2">
-                  Real
-                </span>
-                <span className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-foreground leading-none tracking-tight">
-                  leadership
-                </span>
-                <span className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-foreground leading-none tracking-tight">
-                  insights
-                </span>
+      {/* Hero Section - Values Bridge Style */}
+      <section className="relative section-padding overflow-hidden" aria-label="Hero section">
+        <div className="absolute inset-0 bg-background"></div>
+        
+        <div className="relative container-wide">
+          <div className="max-w-5xl mx-auto">
+            
+            {/* Main Headline - Centered, Large Serif */}
+            <div className="text-center space-y-8 mb-16">
+              <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
+                we discover leadership styles.
+                <span className="block">that makes you shine.</span>
+                <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">Then, learn how to adapt.</span>
               </h1>
-              
-              {/* Subheadline */}
-              <p className="text-xl sm:text-2xl md:text-3xl text-foreground/70 font-medium mb-16 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                One powerful assessment
-              </p>
-
-              {/* Pastel Circles with Icons - Staggered Animation */}
-              <div className="flex items-end justify-center gap-3 sm:gap-4 md:gap-6 flex-wrap max-w-4xl mx-auto px-4 mb-12">
-                {[
-                  { Icon: Target, size: 'small', bg: 'bg-yellow-400', text: 'text-yellow-900', delay: 0.3 },
-                  { Icon: Heart, size: 'medium', bg: 'bg-red-400', text: 'text-red-900', delay: 0.4 },
-                  { Icon: Brain, size: 'large', bg: 'bg-emerald-500', text: 'text-emerald-900', delay: 0.5 },
-                  { Icon: Lightbulb, size: 'medium', bg: 'bg-blue-400', text: 'text-blue-900', delay: 0.6 },
-                  { Icon: Sparkles, size: 'small', bg: 'bg-purple-400', text: 'text-purple-900', delay: 0.7 },
-                ].map(({ Icon, size, bg, text, delay }, i) => {
-                  const sizeClasses = {
-                    small: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24',
-                    medium: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28',
-                    large: 'w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32',
-                  };
-                  const iconSizes = {
-                    small: 'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12',
-                    medium: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14',
-                    large: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16',
-                  };
-                  return (
-                    <div
-                      key={i}
-                      className={`${sizeClasses[size]} rounded-full ${bg} flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 opacity-0 animate-bounce-in`}
-                      style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}
-                    >
-                      <Icon className={`${iconSizes[size]} ${text}`} strokeWidth={1.5} />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* CTA Button */}
-              <div className="text-center">
-                <Button size="lg" className="text-lg sm:text-xl px-10 sm:px-14 py-6 sm:py-8 font-bold rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-xl" onClick={() => navigate('/free-assessment')}>
-                  Get Started <ArrowRight className="ml-2 w-5 h-5 sm:w-6 sm:h-6" />
-                </Button>
-              </div>
-
-              {/* Brochure Download */}
-              <div className="text-center mt-6">
-                <Button variant="ghost" size="lg" className="text-base text-foreground/70 hover:text-foreground hover:bg-white/20" asChild>
-                  <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-3">
-                    <FileText className="w-5 h-5" />
-                    <span>Download Brochure</span>
-                  </a>
-                </Button>
-              </div>
-
             </div>
+
+            {/* Pastel Circles with Icons - Scrolling Row */}
+            <div className="mb-16 overflow-hidden">
+              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 flex-wrap max-w-6xl mx-auto px-4">
+                {/* Yellow Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-yellow-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Red Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-red-light flex items-center justify-center">
+                  <Heart className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-red-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Green Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-green-light flex items-center justify-center">
+                  <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Blue Circle */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-blue-light flex items-center justify-center">
+                  <Lightbulb className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-dark" strokeWidth={1.5} />
+                </div>
+                
+                {/* Additional smaller circles for variety */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-light flex items-center justify-center">
+                  <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-yellow-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-red-light flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-red-dark" strokeWidth={1.5} />
+                </div>
+                
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-green-light flex items-center justify-center">
+                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-dark" strokeWidth={1.5} />
+                </div>
+                
+                
+              </div>
+            </div>
+
+            {/* Description Text */}
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <p className="text-lg sm:text-xl md:text-2xl text-foreground leading-relaxed">
+                Receive your unique RoleColor™ profile, contextual leadership insights, 
+                and practical strategies to adapt your strengths across different team stages and challenges.
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <div className="text-center">
+              <Button variant="default" size="lg" className="text-lg px-12 py-6 font-semibold rounded-full" onClick={() => navigate('/free-assessment')}>
+                Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Brochure Download */}
+            <div className="text-center mt-8">
+              <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
+                <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-3">
+                  <FileText className="w-5 h-5" />
+                  <span>Download Brochure</span>
+                </a>
+              </Button>
+            </div>
+
           </div>
         </div>
       </section>

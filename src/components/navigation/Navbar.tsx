@@ -17,12 +17,15 @@ export function Navbar() {
   
   // Route to B2B company portal if user has company access, otherwise regular dashboard
   const dashboardPath = company ? '/b2b/company-portal' : '/dashboard';
-  return <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex h-16 items-center justify-between bg-white rounded-full px-6 shadow-lg border border-border/10">
+  return <div className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90 shadow-soft">
+      <div className="container-wide">
+        <div className="flex h-20 items-center justify-between py-2">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0 smooth-hover hover:scale-105">
-            <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-7 w-auto sm:h-8" />
+            <div className="relative">
+              <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-8 w-auto sm:h-10" />
+              <div className="absolute inset-0 bg-gradient-primary opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300"></div>
+            </div>
           </Link>
 
           {/* Desktop Navigation Menu */}
@@ -78,25 +81,25 @@ export function Navbar() {
           </div>
 
           {/* Desktop Action Buttons */}
-          <div className="hidden lg:flex items-center space-x-2">
+          <div className="hidden lg:flex items-center space-x-3">
             {user ? <>
-                <Button variant="ghost" size="sm" className="rounded-full" asChild>
+                <Button variant="glass" size="sm" asChild>
                   <Link to={dashboardPath}>
                     <User className="w-4 h-4 mr-2" />
                     Dashboard
                   </Link>
                 </Button>
-                <Button variant="ghost" size="sm" className="rounded-full" onClick={signOut}>
+                <Button variant="outline" size="sm" onClick={signOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
                 </Button>
               </> : <>
-                <Button variant="ghost" size="sm" className="rounded-full" asChild>
+                <Button variant="modern" size="sm" asChild>
                   <Link to="/auth">
                     Sign In
                   </Link>
                 </Button>
-                <Button size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-6" asChild>
+                <Button variant="default" size="sm" asChild>
                   <Link to="/free-assessment">
                     Get Started
                   </Link>
@@ -105,54 +108,61 @@ export function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="lg:hidden p-2 rounded-full hover:bg-accent/50 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <button className="lg:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && <div className="lg:hidden mt-2 bg-white rounded-2xl shadow-lg border border-border/10 overflow-hidden">
-            <div className="px-4 py-4 space-y-1">
-              <Link to="/" className={`block px-4 py-3 rounded-xl text-base font-medium ${isActive('/') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+        {mobileMenuOpen && <div className="lg:hidden border-t bg-background/95 backdrop-blur">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link to="/" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <Home className="w-4 h-4 mr-2 inline" />
                 Home
               </Link>
-              <Link to="/pricing" className={`block px-4 py-3 rounded-xl text-base font-medium ${isActive('/pricing') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/pricing" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/pricing') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <CreditCard className="w-4 h-4 mr-2 inline" />
                 Pricing
               </Link>
-              <Link to="/free-assessment" className={`block px-4 py-3 rounded-xl text-base font-medium ${isActive('/free-assessment') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/free-assessment" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/free-assessment') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <Palette className="w-4 h-4 mr-2 inline" />
                 Free Assessment
               </Link>
-              <Link to="/team" className={`block px-4 py-3 rounded-xl text-base font-medium ${isActive('/team') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/team" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/team') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <UserCircle className="w-4 h-4 mr-2 inline" />
                 Our Team
               </Link>
-              <Link to="/blog" className={`block px-4 py-3 rounded-xl text-base font-medium ${isActive('/blog') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/blog" className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/blog') ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/50'}`} onClick={() => setMobileMenuOpen(false)}>
+                <Users className="w-4 h-4 mr-2 inline" />
                 Blog
               </Link>
               
-              <div className="pt-3 border-t border-border/20 mt-3 space-y-2">
-                {user ? <>
-                    <Button variant="ghost" size="sm" className="w-full justify-start rounded-xl" asChild>
-                      <Link to={dashboardPath}>
-                        <User className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full justify-start rounded-xl" onClick={signOut}>
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </Button>
-                  </> : <>
-                    <Button variant="ghost" size="sm" className="w-full rounded-xl" asChild>
-                      <Link to="/auth">
-                        Sign In
-                      </Link>
-                    </Button>
-                    <Button asChild size="sm" className="w-full rounded-xl bg-foreground text-background">
-                      <Link to="/free-assessment">
-                        Get Started
-                      </Link>
-                    </Button>
-                  </>}
+              <div className="px-3 py-2">
+                <div className="space-y-2">
+                  {user ? <>
+                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                        <Link to={dashboardPath}>
+                          <User className="w-4 h-4 mr-2" />
+                          Dashboard
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start" onClick={signOut}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </> : <>
+                      <Button variant="ghost" size="sm" className="w-full" asChild>
+                        <Link to="/auth">
+                          Sign In
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" className="w-full">
+                        <Link to="/free-assessment">
+                          Get Started
+                        </Link>
+                      </Button>
+                    </>}
+                </div>
               </div>
             </div>
           </div>}
