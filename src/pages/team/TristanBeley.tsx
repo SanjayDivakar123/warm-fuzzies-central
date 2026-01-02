@@ -40,7 +40,7 @@ const TristanBeley = () => {
         "name": "RoleColorFinder"
       },
       "url": canonicalHref,
-      "image": `${window.location.origin}/images/tristan-beley.png`,
+      "image": `${window.location.origin}/images/tristan-beley-new.png`,
       "email": "tristan@rolecolorfinder.com",
       "address": {
         "@type": "PostalAddress",
@@ -79,7 +79,7 @@ const TristanBeley = () => {
               <CardContent className="p-0">
                 <div className="aspect-square overflow-hidden relative">
                   <img 
-                    src="/images/tristan-beley.png?v=2" 
+                    src="/images/tristan-beley-new.png" 
                     alt="Tristan Beley"
                     className="w-full h-full object-cover"
                   />
