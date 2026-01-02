@@ -38,44 +38,53 @@ const Index = () => {
           <div className="container-wide">
             <div className="max-w-5xl mx-auto text-center">
               
-              {/* Main Headline - Large Bold */}
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-foreground leading-[0.95] tracking-tight mb-8">
-                Real leadership
-                <br />
-                insights
+              {/* Main Headline - Refined Typography */}
+              <h1 className="animate-fade-in">
+                <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-foreground/90 mb-2">
+                  Real
+                </span>
+                <span className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-foreground leading-none tracking-tight">
+                  leadership
+                </span>
+                <span className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-foreground leading-none tracking-tight">
+                  insights
+                </span>
               </h1>
               
               {/* Subheadline */}
-              <p className="text-xl sm:text-2xl md:text-3xl text-foreground/80 font-medium mb-16">
+              <p className="text-xl sm:text-2xl md:text-3xl text-foreground/70 font-medium mb-16 animate-fade-in" style={{ animationDelay: '0.2s' }}>
                 One powerful assessment
               </p>
 
-              {/* Pastel Circles with Icons */}
+              {/* Pastel Circles with Icons - Staggered Animation */}
               <div className="flex items-end justify-center gap-3 sm:gap-4 md:gap-6 flex-wrap max-w-4xl mx-auto px-4 mb-12">
-                {/* Yellow Circle */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-yellow-900" strokeWidth={1.5} />
-                </div>
-                
-                {/* Red Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-red-400 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <Heart className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-red-900" strokeWidth={1.5} />
-                </div>
-                
-                {/* Green Circle - Larger */}
-                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <Brain className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-emerald-900" strokeWidth={1.5} />
-                </div>
-                
-                {/* Blue Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-blue-400 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <Lightbulb className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-blue-900" strokeWidth={1.5} />
-                </div>
-                
-                {/* Purple Circle */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-purple-400 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
-                  <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-purple-900" strokeWidth={1.5} />
-                </div>
+                {[
+                  { Icon: Target, size: 'small', bg: 'bg-yellow-400', text: 'text-yellow-900', delay: 0.3 },
+                  { Icon: Heart, size: 'medium', bg: 'bg-red-400', text: 'text-red-900', delay: 0.4 },
+                  { Icon: Brain, size: 'large', bg: 'bg-emerald-500', text: 'text-emerald-900', delay: 0.5 },
+                  { Icon: Lightbulb, size: 'medium', bg: 'bg-blue-400', text: 'text-blue-900', delay: 0.6 },
+                  { Icon: Sparkles, size: 'small', bg: 'bg-purple-400', text: 'text-purple-900', delay: 0.7 },
+                ].map(({ Icon, size, bg, text, delay }, i) => {
+                  const sizeClasses = {
+                    small: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24',
+                    medium: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28',
+                    large: 'w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32',
+                  };
+                  const iconSizes = {
+                    small: 'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12',
+                    medium: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14',
+                    large: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16',
+                  };
+                  return (
+                    <div
+                      key={i}
+                      className={`${sizeClasses[size]} rounded-full ${bg} flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 opacity-0 animate-bounce-in`}
+                      style={{ animationDelay: `${delay}s`, animationFillMode: 'forwards' }}
+                    >
+                      <Icon className={`${iconSizes[size]} ${text}`} strokeWidth={1.5} />
+                    </div>
+                  );
+                })}
               </div>
 
               {/* CTA Button */}
