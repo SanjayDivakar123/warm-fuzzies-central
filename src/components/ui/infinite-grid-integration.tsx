@@ -6,9 +6,9 @@ import {
   useMotionTemplate, 
   useAnimationFrame 
 } from "framer-motion";
-import { ArrowRight, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -137,14 +137,11 @@ const InfiniteGrid = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Button 
-              variant="default" 
-              size="lg" 
-              className="text-lg px-12 py-6 font-semibold rounded-full"
+            <InteractiveHoverButton 
+              text="Get Started Now"
               onClick={() => navigate('/free-assessment')}
-            >
-              Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+              className="text-lg py-4 px-8"
+            />
 
             <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
               <a 
