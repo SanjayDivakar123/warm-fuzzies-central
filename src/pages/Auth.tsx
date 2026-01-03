@@ -360,11 +360,11 @@ export const Auth = () => {
             >
               {/* Header */}
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="flex items-center justify-center mx-auto mb-4">
                   <img 
                     src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
                     alt="RoleColor™ Finder" 
-                    className="w-8 h-auto"
+                    className="h-12 w-auto"
                   />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">

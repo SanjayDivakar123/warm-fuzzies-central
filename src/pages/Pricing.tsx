@@ -3,6 +3,7 @@ import { Star, UserCheck, Palette } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { LuminousPricingCard } from "@/components/pricing/LuminousPricingCard"
+import { SinglePricingCard } from "@/components/ui/single-pricing-card"
 import "@/components/pricing/luminous-card.css"
 
 export default function Pricing() {
@@ -86,6 +87,9 @@ export default function Pricing() {
       </div>
 
       <div className="container mx-auto px-4 py-12 sm:py-16">
+        {/* Single Pricing Card Component */}
+        <SinglePricingCard />
+
         {/* Individual Plans */}
         <div className="mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
