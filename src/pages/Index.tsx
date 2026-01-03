@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -8,9 +8,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
-import heroImage from "@/assets/hero-image.jpg";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
+import InfiniteGrid from "@/components/ui/infinite-grid-integration";
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -31,90 +32,8 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section - Values Bridge Style */}
-      <section className="relative section-padding overflow-hidden" aria-label="Hero section">
-        <div className="absolute inset-0 bg-background"></div>
-        
-        <div className="relative container-wide">
-          <div className="max-w-5xl mx-auto">
-            
-            {/* Main Headline - Centered, Large Serif */}
-            <div className="text-center space-y-8 mb-16">
-              <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
-                we discover leadership styles.
-                <span className="block">that makes you shine.</span>
-                <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">Then, learn how to adapt.</span>
-              </h1>
-            </div>
-
-            {/* Pastel Circles with Icons - Scrolling Row */}
-            <div className="mb-16 overflow-hidden">
-              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 flex-wrap max-w-6xl mx-auto px-4">
-                {/* Yellow Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-yellow-light flex items-center justify-center">
-                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-yellow-dark" strokeWidth={1.5} />
-                </div>
-                
-                {/* Red Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-red-light flex items-center justify-center">
-                  <Heart className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-red-dark" strokeWidth={1.5} />
-                </div>
-                
-                {/* Green Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-green-light flex items-center justify-center">
-                  <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-dark" strokeWidth={1.5} />
-                </div>
-                
-                {/* Blue Circle */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-blue-light flex items-center justify-center">
-                  <Lightbulb className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-dark" strokeWidth={1.5} />
-                </div>
-                
-                {/* Additional smaller circles for variety */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-light flex items-center justify-center">
-                  <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-yellow-dark" strokeWidth={1.5} />
-                </div>
-                
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-red-light flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-red-dark" strokeWidth={1.5} />
-                </div>
-                
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-green-light flex items-center justify-center">
-                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-dark" strokeWidth={1.5} />
-                </div>
-                
-                
-              </div>
-            </div>
-
-            {/* Description Text */}
-            <div className="text-center mb-12 max-w-4xl mx-auto">
-              <p className="text-lg sm:text-xl md:text-2xl text-foreground leading-relaxed">
-                Receive your unique RoleColor™ profile, contextual leadership insights, 
-                and practical strategies to adapt your strengths across different team stages and challenges.
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <div className="text-center">
-              <Button variant="default" size="lg" className="text-lg px-12 py-6 font-semibold rounded-full" onClick={() => navigate('/free-assessment')}>
-                Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
-
-            {/* Brochure Download */}
-            <div className="text-center mt-8">
-              <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
-                <a href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" rel="noopener noreferrer" className="flex items-center gap-3">
-                  <FileText className="w-5 h-5" />
-                  <span>Download Brochure</span>
-                </a>
-              </Button>
-            </div>
-
-          </div>
-        </div>
-      </section>
+      {/* Hero Section - Infinite Grid */}
+      <InfiniteGrid />
 
       {/* Philosophy Section - Enhanced */}
       <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">

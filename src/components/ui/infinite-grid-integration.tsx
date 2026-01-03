@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   motion, 
   useMotionValue, 
   useMotionTemplate, 
   useAnimationFrame 
 } from "framer-motion";
-import { MousePointerClick, Info, Settings2 } from 'lucide-react';
+import { ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -39,15 +41,14 @@ const GridPattern = ({ offsetX, offsetY, size }: { offsetX: any; offsetY: any; s
 };
 
 /**
- * The Infinite Grid Component
- * Displays a scrolling background grid that reveals an active layer on mouse hover.
+ * The Infinite Grid Component - RoleColor Hero
  */
 const InfiniteGrid = () => {
-  const [count, setCount] = useState(0);
-  const [gridSize, setGridSize] = useState(40);
+  const navigate = useNavigate();
+  const [gridSize] = useState(40);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Track mouse position with Motion Values for performance (avoids React re-renders)
+  // Track mouse position with Motion Values for performance
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -61,109 +62,104 @@ const InfiniteGrid = () => {
   const gridOffsetX = useMotionValue(0);
   const gridOffsetY = useMotionValue(0);
 
-  const speedX = 0.5; 
-  const speedY = 0.5;
+  const speedX = 0.3; 
+  const speedY = 0.3;
 
   useAnimationFrame(() => {
     const currentX = gridOffsetX.get();
     const currentY = gridOffsetY.get();
-    // Reset offset at pattern width to simulate infinity
     gridOffsetX.set((currentX + speedX) % gridSize);
     gridOffsetY.set((currentY + speedY) % gridSize);
   });
 
-  // Create a dynamic radial mask for the "flashlight" effect
-  const maskImage = useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
+  // Radial mask for the "flashlight" effect
+  const maskImage = useMotionTemplate`radial-gradient(350px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
 
   return (
-    <div
+    <section
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative w-full h-screen overflow-hidden bg-background"
+      className="relative w-full min-h-[90vh] overflow-hidden bg-background"
+      aria-label="Hero section"
     >
-      {/* Layer 1: Subtle background grid (always visible) */}
-      <div className="absolute inset-0 text-muted-foreground/20">
+      {/* Layer 1: Subtle background grid */}
+      <div className="absolute inset-0 text-muted-foreground/15">
         <motion.div className="absolute inset-0" style={{ x: gridOffsetX, y: gridOffsetY }}>
           <GridPattern offsetX={0} offsetY={0} size={gridSize} />
         </motion.div>
       </div>
 
-      {/* Layer 2: Highlighted grid (revealed by mouse mask) */}
+      {/* Layer 2: Highlighted grid (revealed by mouse) */}
       <motion.div
-        className="absolute inset-0 text-primary/50"
+        className="absolute inset-0 text-primary/40"
         style={{ maskImage, WebkitMaskImage: maskImage }}
       >
         <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} size={gridSize} />
       </motion.div>
 
-      {/* Decorative Blur Spheres */}
+      {/* Decorative Blur Spheres - RoleColor themed */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-20 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
-      </div>
-
-      {/* Grid Density Control Panel */}
-      <div className="absolute top-4 left-4 z-20">
-        <div className="flex flex-col gap-2 p-4 bg-background/80 backdrop-blur-sm rounded-lg border border-border shadow-lg">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Settings2 className="w-4 h-4" />
-            Grid Density
-          </div>
-          <input
-            type="range"
-            min="20"
-            max="80"
-            value={gridSize}
-            onChange={(e) => setGridSize(Number(e.target.value))}
-            className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Dense</span>
-            <span>Sparse ({gridSize}px)</span>
-          </div>
-        </div>
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-yellow/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 -right-20 w-96 h-96 bg-red/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-green/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 right-1/3 w-72 h-72 bg-blue/20 rounded-full blur-3xl" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
-            The Infinite Grid
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Move your cursor to reveal the active grid layer.
-            The pattern scrolls infinitely in the background.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-4 justify-center">
-          <motion.button
-            onClick={() => setCount(count + 1)}
-            whileHover={{ 
-              scale: 1.05, 
-              y: -4,
-            }}
-            whileTap={{ scale: 0.98, y: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-md shadow-md border-2 border-transparent hover:shadow-lg transition-shadow"
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-4 py-20">
+        <div className="text-center max-w-5xl mx-auto">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance mb-6"
           >
-            <MousePointerClick className="w-5 h-5" />
-            Interact ({count})
-          </motion.button>
+            we discover leadership styles.
+            <span className="block">that makes you shine.</span>
+            <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">
+              Then, learn how to adapt.
+            </span>
+          </motion.h1>
 
-          <motion.button
-            whileHover={{ scale: 1.05, y: -4 }}
-            whileTap={{ scale: 0.98, y: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            className="flex items-center gap-2 px-8 py-3 bg-secondary text-secondary-foreground font-semibold rounded-md shadow-md border border-border hover:shadow-lg transition-shadow"
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-4xl mx-auto mb-10"
           >
-            <Info className="w-5 h-5" />
-            Learn More
-          </motion.button>
+            Receive your unique RoleColor™ profile, contextual leadership insights, 
+            and practical strategies to adapt your strengths across different team stages and challenges.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          >
+            <Button 
+              variant="default" 
+              size="lg" 
+              className="text-lg px-12 py-6 font-semibold rounded-full"
+              onClick={() => navigate('/free-assessment')}
+            >
+              Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+
+            <Button variant="ghost" size="lg" className="text-base px-8 py-4" asChild>
+              <a 
+                href="https://static.wixstatic.com/ugd/9b68f8_417b1cdded3c4bef94e31bea9343cf47.pdf" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3"
+              >
+                <FileText className="w-5 h-5" />
+                <span>Download Brochure</span>
+              </a>
+            </Button>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
