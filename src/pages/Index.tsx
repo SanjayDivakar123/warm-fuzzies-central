@@ -85,11 +85,21 @@ const Index = () => {
                   </div>
                 </div>
                 
-                <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
-                  <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed">
-                    Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
-                    <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
-                  </p>
+                <div className="relative rounded-3xl border border-border p-1">
+                  <GlowingEffect
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={3}
+                  />
+                  <div className="relative glass-card-strong rounded-[1.25rem] p-6 sm:p-8 md:p-12 bg-gradient-to-br from-primary/5 to-green/5">
+                    <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed">
+                      Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
+                      <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
+                    </p>
+                  </div>
                 </div>
               </div>
               
