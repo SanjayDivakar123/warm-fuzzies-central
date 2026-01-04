@@ -22,8 +22,8 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Request body:", body);
     
-    const { productType, successUrl, cancelUrl, customAmount, customDescription, promoCode } = body;
-    console.log("Extracted data:", { productType, successUrl, cancelUrl, customAmount, customDescription, promoCode });
+    const { productType, successUrl, cancelUrl, customAmount, customDescription } = body;
+    console.log("Extracted data:", { productType, successUrl, cancelUrl, customAmount, customDescription });
 
     if (!productType) {
       throw new Error("Product type is required");
@@ -69,8 +69,8 @@ serve(async (req) => {
 
     console.log("Creating payment for:", productConfig.name, "Amount:", productConfig.amount);
 
-    // Build session options
-    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
+    // Create a one-time payment session (no authentication required)
+    const session = await stripe.checkout.sessions.create({
       line_items: [
         {
           price_data: {
@@ -91,38 +91,7 @@ serve(async (req) => {
       metadata: {
         product_type: productType,
       },
-    };
-
-    // If a promo code is provided, try to find and apply it
-    if (promoCode) {
-      console.log("Promo code provided:", promoCode);
-      try {
-        // Search for promotion codes matching the provided code
-        const promotionCodes = await stripe.promotionCodes.list({
-          code: promoCode,
-          active: true,
-          limit: 1,
-        });
-        
-        if (promotionCodes.data.length > 0) {
-          const promotionCode = promotionCodes.data[0];
-          console.log("Found promotion code:", promotionCode.id);
-          
-          // Apply the discount to the session
-          sessionOptions.discounts = [{ promotion_code: promotionCode.id }];
-          // Remove allow_promotion_codes since we're applying one directly
-          delete sessionOptions.allow_promotion_codes;
-        } else {
-          console.log("No matching promotion code found, allowing manual entry");
-        }
-      } catch (promoError) {
-        console.error("Error looking up promo code:", promoError);
-        // Continue without the promo code - user can enter it on Stripe checkout
-      }
-    }
-
-    // Create the checkout session
-    const session = await stripe.checkout.sessions.create(sessionOptions);
+    });
 
     console.log("Payment session created successfully:", session.id);
     console.log("Session URL:", session.url);
