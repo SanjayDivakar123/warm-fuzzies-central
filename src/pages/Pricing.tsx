@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { BorderTrail } from "@/components/ui/border-trail"
+import { GlowingEffect } from "@/components/ui/glowing-effect"
 import { PaymentButton } from "@/components/payment/PaymentButton"
 import { cn } from "@/lib/utils"
 
@@ -22,64 +23,76 @@ interface PlanCardProps {
 
 function PlanCard({ name, price, priceNote, target, description, features, cta, popular, icon: Icon, ctaAction }: PlanCardProps) {
   return (
-    <div className="relative flex-1 overflow-hidden rounded-xl bg-muted/40 p-6 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 hover:bg-muted/60 group cursor-pointer">
-      <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
-      <PlusIcon className="absolute -bottom-3 -left-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
-      
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <p className="font-semibold text-foreground">{name}</p>
-          {popular && (
-            <Badge variant="secondary" className="rounded-full font-normal">
-              Popular
-            </Badge>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">{target}</p>
-        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-        
-        <div className="mt-6">
-          <div className="flex items-baseline gap-1">
-            {price !== "Free" && <span className="text-muted-foreground">$</span>}
-            <span className="text-4xl font-bold tracking-tight text-foreground">
-              {price === "Free" ? "Free" : price.replace("$", "")}
-            </span>
-            {priceNote && <span className="text-muted-foreground">/{priceNote}</span>}
+    <div className="relative flex-1 min-h-[24rem]">
+      <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+        <GlowingEffect
+          spread={40}
+          glow={true}
+          disabled={false}
+          proximity={64}
+          inactiveZone={0.01}
+          borderWidth={3}
+        />
+        <div className="relative h-full overflow-hidden rounded-xl bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)]">
+          <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+          <PlusIcon className="absolute -bottom-3 -left-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className="w-5 h-5 text-primary" />
+              <p className="font-semibold text-foreground">{name}</p>
+              {popular && (
+                <Badge variant="secondary" className="rounded-full font-normal">
+                  Popular
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">{target}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+            
+            <div className="mt-6">
+              <div className="flex items-baseline gap-1">
+                {price !== "Free" && <span className="text-muted-foreground">$</span>}
+                <span className="text-4xl font-bold tracking-tight text-foreground">
+                  {price === "Free" ? "Free" : price.replace("$", "")}
+                </span>
+                {priceNote && <span className="text-muted-foreground">/{priceNote}</span>}
+              </div>
+            </div>
+
+            <ul className="mt-6 space-y-2">
+              {features.map((feature, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-6">
+              {ctaAction === "free" ? (
+                <Button className="w-full rounded-full" variant={popular ? "default" : "outline"} asChild>
+                  <Link to="/free-assessment">{cta}</Link>
+                </Button>
+              ) : ctaAction === "premium" ? (
+                <PaymentButton 
+                  productType="premium" 
+                  className="w-full rounded-full" 
+                  variant={popular ? "default" : "outline"}
+                >
+                  {cta}
+                </PaymentButton>
+              ) : (
+                <PaymentButton 
+                  productType="pro" 
+                  className="w-full rounded-full" 
+                  variant={popular ? "default" : "outline"}
+                >
+                  {cta}
+                </PaymentButton>
+              )}
+            </div>
           </div>
-        </div>
-
-        <ul className="mt-6 space-y-2">
-          {features.map((feature, idx) => (
-            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6">
-          {ctaAction === "free" ? (
-            <Button className="w-full rounded-full" variant={popular ? "default" : "outline"} asChild>
-              <Link to="/free-assessment">{cta}</Link>
-            </Button>
-          ) : ctaAction === "premium" ? (
-            <PaymentButton 
-              productType="premium" 
-              className="w-full rounded-full" 
-              variant={popular ? "default" : "outline"}
-            >
-              {cta}
-            </PaymentButton>
-          ) : (
-            <PaymentButton 
-              productType="pro" 
-              className="w-full rounded-full" 
-              variant={popular ? "default" : "outline"}
-            >
-              {cta}
-            </PaymentButton>
-          )}
         </div>
       </div>
     </div>
