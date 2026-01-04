@@ -1,10 +1,90 @@
 import { Button } from "@/components/ui/button"
-import { Star, UserCheck, Palette } from "lucide-react"
+import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
-import { LuminousPricingCard } from "@/components/pricing/LuminousPricingCard"
-import { SinglePricingCard } from "@/components/ui/single-pricing-card"
-import "@/components/pricing/luminous-card.css"
+import { Badge } from "@/components/ui/badge"
+import { BorderTrail } from "@/components/ui/border-trail"
+import { PaymentButton } from "@/components/payment/PaymentButton"
+import { cn } from "@/lib/utils"
+
+interface PlanCardProps {
+  name: string
+  price: string
+  priceNote?: string
+  target: string
+  description: string
+  features: string[]
+  cta: string
+  popular: boolean
+  icon: React.ElementType
+  ctaAction: "free" | "premium" | "pro"
+}
+
+function PlanCard({ name, price, priceNote, target, description, features, cta, popular, icon: Icon, ctaAction }: PlanCardProps) {
+  return (
+    <div className="relative flex-1 overflow-hidden rounded-xl bg-muted/40 p-6 text-left">
+      <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+      <PlusIcon className="absolute -bottom-3 -left-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+      
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon className="w-5 h-5 text-primary" />
+          <p className="font-semibold text-foreground">{name}</p>
+          {popular && (
+            <Badge variant="secondary" className="rounded-full font-normal">
+              Popular
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">{target}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        
+        <div className="mt-6">
+          <div className="flex items-baseline gap-1">
+            {price !== "Free" && <span className="text-muted-foreground">$</span>}
+            <span className="text-4xl font-bold tracking-tight text-foreground">
+              {price === "Free" ? "Free" : price.replace("$", "")}
+            </span>
+            {priceNote && <span className="text-muted-foreground">/{priceNote}</span>}
+          </div>
+        </div>
+
+        <ul className="mt-6 space-y-2">
+          {features.map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-6">
+          {ctaAction === "free" ? (
+            <Button className="w-full rounded-full" variant={popular ? "default" : "outline"} asChild>
+              <Link to="/free-assessment">{cta}</Link>
+            </Button>
+          ) : ctaAction === "premium" ? (
+            <PaymentButton 
+              productType="premium" 
+              className="w-full rounded-full" 
+              variant={popular ? "default" : "outline"}
+            >
+              {cta}
+            </PaymentButton>
+          ) : (
+            <PaymentButton 
+              productType="pro" 
+              className="w-full rounded-full" 
+              variant={popular ? "default" : "outline"}
+            >
+              {cta}
+            </PaymentButton>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Pricing() {
   const individualPlans = [
@@ -21,7 +101,8 @@ export default function Pricing() {
       ],
       cta: "Try Free Preview",
       popular: false,
-      icon: Palette
+      icon: Palette,
+      ctaAction: "free" as const
     },
     {
       name: "Premium Assessment",
@@ -38,7 +119,8 @@ export default function Pricing() {
       ],
       cta: "Get Premium Assessment",
       popular: true,
-      icon: Star
+      icon: Star,
+      ctaAction: "premium" as const
     },
     {
       name: "Pro Deep Dive",
@@ -56,10 +138,10 @@ export default function Pricing() {
       ],
       cta: "Get Pro Analysis",
       popular: false,
-      icon: UserCheck
+      icon: UserCheck,
+      ctaAction: "pro" as const
     }
   ]
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,33 +169,43 @@ export default function Pricing() {
       </div>
 
       <div className="container mx-auto px-4 py-12 sm:py-16">
-        {/* Single Pricing Card Component */}
-        <SinglePricingCard />
-
         {/* Individual Plans */}
         <div className="mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Choose Your Assessment Level</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-            {individualPlans.map((plan) => (
-              <LuminousPricingCard
-                key={plan.name}
-                name={plan.name}
-                price={plan.price}
-                priceNote={plan.priceNote}
-                target={plan.target}
-                description={plan.description}
-                features={plan.features}
-                cta={plan.cta}
-                popular={plan.popular}
-                icon={plan.icon}
-                ctaAction={
-                  plan.name === "Free Assessment" ? "free" :
-                  plan.name === "Premium Assessment" ? "premium" :
-                  plan.name === "Pro Deep Dive" ? "pro" :
-                  undefined
-                }
-              />
-            ))}
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground mb-2">Pricing</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Choose Your Assessment Level
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+              We offer tiered pricing based on the depth of analysis you need. All assessments are one-time purchases with lifetime access to your results.
+            </p>
+          </div>
+
+          <div className="relative max-w-5xl mx-auto">
+            <BorderTrail
+              className={cn(
+                'bg-gradient-to-l from-primary via-primary/80 to-primary/20'
+              )}
+              size={80}
+              transition={{
+                repeat: Infinity,
+                duration: 6,
+                ease: 'linear',
+              }}
+            />
+            <div className="flex flex-col lg:flex-row gap-4">
+              {individualPlans.map((plan) => (
+                <PlanCard
+                  key={plan.name}
+                  {...plan}
+                />
+              ))}
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <ShieldCheckIcon className="size-4" />
+              All features included with no hidden fees
+            </div>
           </div>
         </div>
 
