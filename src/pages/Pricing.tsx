@@ -22,7 +22,7 @@ interface PlanCardProps {
 
 function PlanCard({ name, price, priceNote, target, description, features, cta, popular, icon: Icon, ctaAction }: PlanCardProps) {
   return (
-    <div className="relative flex-1 overflow-hidden rounded-xl bg-muted/40 p-6 text-left">
+    <div className="relative flex-1 overflow-hidden rounded-xl bg-muted/40 p-6 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 hover:bg-muted/60 group cursor-pointer">
       <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
       <PlusIcon className="absolute -bottom-3 -left-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
       
