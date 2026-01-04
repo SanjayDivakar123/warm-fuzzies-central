@@ -3,6 +3,9 @@ project_id = "qbuxoetprodjxpagfkoi"
 [functions.create-payment]
 verify_jwt = false
 
+[functions.create-payment-intent]
+verify_jwt = false
+
 [functions.check-payment-status]
 verify_jwt = false
 
