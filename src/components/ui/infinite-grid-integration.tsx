@@ -12,6 +12,7 @@ import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button
 import { GooeyText } from '@/components/ui/gooey-text-morphing';
 import { ParticleTextEffect } from '@/components/ui/interactive-text-particle';
 import { HyperText } from '@/components/ui/hyper-text';
+import { FlipWords } from '@/components/ui/flip-words';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -144,15 +145,21 @@ const InfiniteGrid = () => {
             </div>
           </motion.div>
 
-          <motion.p 
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-4xl mx-auto mb-10"
           >
-            Receive your unique RoleColor™ profile, contextual leadership insights, 
-            and practical strategies to adapt your strengths across different team stages and challenges.
-          </motion.p>
+            Receive your unique RoleColor™ profile,
+            <FlipWords 
+              words={["leadership insights", "team strategies", "adaptive strengths", "practical guidance"]} 
+              className="text-primary font-medium"
+              duration={2500}
+            />
+            <br className="hidden sm:block" />
+            and practical strategies to adapt across different team stages and challenges.
+          </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
