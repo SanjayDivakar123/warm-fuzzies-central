@@ -12,6 +12,7 @@ import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import InfiniteGrid from "@/components/ui/infinite-grid-integration";
 import ScrollExpansionHero from "@/components/ui/scroll-expansion-hero";
+import { TestimonialsCarousel } from "@/components/ui/testimonials-carousel";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -360,53 +361,15 @@ const Index = () => {
               <Star className="w-5 h-5 mr-2" />
               Testimonials
             </Badge>
-            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">What Users Are <span className="gradient-text-primary">Saying</span>
+            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
+              Trusted by <span className="gradient-text-primary">Industry Leaders</span>
             </h3>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              See what CEOs, executives, and professionals are saying about RoleColorFinder.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
-              <div className="flex items-start gap-2 mb-6">
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <div className="relative w-6 h-6 flex-shrink-0">
-                  <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 absolute" style={{
-                  clipPath: 'inset(0 50% 0 0)'
-                }} />
-                  <Star className="w-6 h-6 text-yellow-500 absolute" />
-                </div>
-              </div>
-              
-              <blockquote className="text-xl md:text-2xl text-foreground leading-relaxed mb-8 italic">
-                "Loved the simplicity and effectiveness of the test- it was engaging and focused only on leadership which was interesting. I was quite intrigued by the accuracy of the results. All the best Sanjay and RoleColorFinder."
-              </blockquote>
-              
-              <div className="border-t border-border pt-6">
-                <p className="text-lg font-semibold text-foreground mb-1">Divakar Vijayasarathy</p>
-                <p className="text-base text-muted-foreground">Founder and CEO of DVS Advisory Group</p>
-              </div>
-            </div>
-
-            <div className="glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20 shadow-elegant hover-lift">
-              <div className="flex items-start gap-2 mb-6">
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-              </div>
-              
-              <blockquote className="text-xl md:text-2xl text-foreground leading-relaxed mb-8 italic">
-                "RoleColorFinder helped me discover my ideal career path"
-              </blockquote>
-              
-              <div className="border-t border-border pt-6">
-                <p className="text-lg font-semibold text-foreground mb-1">Amit Suthar</p>
-              </div>
-            </div>
-          </div>
+          <TestimonialsCarousel />
         </div>
       </section>
 
