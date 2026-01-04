@@ -5,7 +5,7 @@ import { Navbar } from "@/components/navigation/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { BorderTrail } from "@/components/ui/border-trail"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
-import { PaymentButton } from "@/components/payment/PaymentButton"
+import { PaymentDialog } from "@/components/ui/payment-dialog"
 import { cn } from "@/lib/utils"
 
 interface PlanCardProps {
@@ -75,21 +75,27 @@ function PlanCard({ name, price, priceNote, target, description, features, cta, 
                   <Link to="/free-assessment">{cta}</Link>
                 </Button>
               ) : ctaAction === "premium" ? (
-                <PaymentButton 
-                  productType="premium" 
-                  className="w-full rounded-full" 
-                  variant={popular ? "default" : "outline"}
+                <PaymentDialog
+                  productType="premium"
+                  productName="Premium Leadership Assessment"
+                  price="$19"
+                  description="Complete 25-question assessment with detailed insights"
                 >
-                  {cta}
-                </PaymentButton>
+                  <Button className="w-full rounded-full" variant={popular ? "default" : "outline"}>
+                    {cta}
+                  </Button>
+                </PaymentDialog>
               ) : (
-                <PaymentButton 
-                  productType="pro" 
-                  className="w-full rounded-full" 
-                  variant={popular ? "default" : "outline"}
+                <PaymentDialog
+                  productType="pro"
+                  productName="Pro Deep Dive Assessment"
+                  price="$49"
+                  description="Ultimate 50-question assessment with comprehensive 3-page report"
                 >
-                  {cta}
-                </PaymentButton>
+                  <Button className="w-full rounded-full" variant={popular ? "default" : "outline"}>
+                    {cta}
+                  </Button>
+                </PaymentDialog>
               )}
             </div>
           </div>
