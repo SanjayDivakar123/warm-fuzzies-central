@@ -119,7 +119,7 @@ const InfiniteGrid = () => {
             <div className="h-20 sm:h-24 md:h-32 lg:h-40 xl:h-48 w-full max-w-4xl mx-auto">
               <ParticleTextEffect
                 text="LEADERSHIP"
-                colors={['22c55e', '4ade80', '86efac', '16a34a', '15803d']}
+                colors={['eab308', 'facc15', 'ef4444', 'f87171', '22c55e', '4ade80', '3b82f6', '60a5fa', 'a855f7']}
                 animationForce={60}
                 particleDensity={3}
               />
