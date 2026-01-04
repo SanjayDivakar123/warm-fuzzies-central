@@ -8,51 +8,34 @@ import {
 } from 'react';
 import { motion } from 'framer-motion';
 
-interface ScrollExpandMediaProps {
-  mediaType?: 'video' | 'image';
-  mediaSrc: string;
-  posterSrc?: string;
-  bgImageSrc: string;
-  title?: string;
-  subtitle?: string;
-  scrollToExpand?: string;
-  textBlend?: boolean;
+interface ScrollExpansionHeroProps {
   children?: ReactNode;
+  heroContent: ReactNode;
+  scrollToExpand?: string;
 }
 
-const ScrollExpandMedia = ({
-  mediaType = 'image',
-  mediaSrc,
-  posterSrc,
-  bgImageSrc,
-  title,
-  subtitle,
-  scrollToExpand = "Scroll to explore",
-  textBlend = false,
+const ScrollExpansionHero = ({
   children,
-}: ScrollExpandMediaProps) => {
+  heroContent,
+  scrollToExpand = "↓ Scroll to explore",
+}: ScrollExpansionHeroProps) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
-  const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
+  const [heroFullyExpanded, setHeroFullyExpanded] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [isMobileState, setIsMobileState] = useState(false);
 
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setScrollProgress(0);
-    setShowContent(false);
-    setMediaFullyExpanded(false);
-  }, [mediaType]);
-
-  useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
-        setMediaFullyExpanded(false);
+      if (heroFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
+        setHeroFullyExpanded(false);
+        setShowContent(false);
         e.preventDefault();
-      } else if (!mediaFullyExpanded) {
+      } else if (!heroFullyExpanded) {
         e.preventDefault();
-        const scrollDelta = e.deltaY * 0.0009;
+        const scrollDelta = e.deltaY * 0.002;
         const newProgress = Math.min(
           Math.max(scrollProgress + scrollDelta, 0),
           1
@@ -60,7 +43,7 @@ const ScrollExpandMedia = ({
         setScrollProgress(newProgress);
 
         if (newProgress >= 1) {
-          setMediaFullyExpanded(true);
+          setHeroFullyExpanded(true);
           setShowContent(true);
         } else if (newProgress < 0.75) {
           setShowContent(false);
@@ -78,12 +61,13 @@ const ScrollExpandMedia = ({
       const touchY = e.touches[0].clientY;
       const deltaY = touchStartY - touchY;
 
-      if (mediaFullyExpanded && deltaY < -20 && window.scrollY <= 5) {
-        setMediaFullyExpanded(false);
+      if (heroFullyExpanded && deltaY < -20 && window.scrollY <= 5) {
+        setHeroFullyExpanded(false);
+        setShowContent(false);
         e.preventDefault();
-      } else if (!mediaFullyExpanded) {
+      } else if (!heroFullyExpanded) {
         e.preventDefault();
-        const scrollFactor = deltaY < 0 ? 0.008 : 0.005;
+        const scrollFactor = deltaY < 0 ? 0.01 : 0.008;
         const scrollDelta = deltaY * scrollFactor;
         const newProgress = Math.min(
           Math.max(scrollProgress + scrollDelta, 0),
@@ -92,7 +76,7 @@ const ScrollExpandMedia = ({
         setScrollProgress(newProgress);
 
         if (newProgress >= 1) {
-          setMediaFullyExpanded(true);
+          setHeroFullyExpanded(true);
           setShowContent(true);
         } else if (newProgress < 0.75) {
           setShowContent(false);
@@ -107,7 +91,7 @@ const ScrollExpandMedia = ({
     };
 
     const handleScroll = (): void => {
-      if (!mediaFullyExpanded) {
+      if (!heroFullyExpanded) {
         window.scrollTo(0, 0);
       }
     };
@@ -125,7 +109,7 @@ const ScrollExpandMedia = ({
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [scrollProgress, mediaFullyExpanded, touchStartY]);
+  }, [scrollProgress, heroFullyExpanded, touchStartY]);
 
   useEffect(() => {
     const checkIfMobile = (): void => {
@@ -138,127 +122,57 @@ const ScrollExpandMedia = ({
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
-  const mediaWidth = 300 + scrollProgress * (isMobileState ? 650 : 1250);
-  const mediaHeight = 400 + scrollProgress * (isMobileState ? 200 : 400);
-  const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
-
-  const firstWord = title ? title.split(' ')[0] : '';
-  const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
+  // Calculate hero container dimensions based on scroll
+  const heroScale = 0.85 + scrollProgress * 0.15;
+  const heroBorderRadius = 24 - scrollProgress * 24;
+  const heroOpacity = 1 - scrollProgress * 0.3;
 
   return (
-    <div className="relative w-full">
-      <section
-        ref={sectionRef}
-        className="fixed inset-0 z-40 overflow-hidden"
+    <div className="relative w-full" ref={sectionRef}>
+      {/* Fixed Hero Container */}
+      <div
+        className="fixed inset-0 z-30 flex items-center justify-center p-4 md:p-8"
         style={{
-          opacity: mediaFullyExpanded ? 0 : 1,
-          pointerEvents: mediaFullyExpanded ? 'none' : 'auto',
+          opacity: heroFullyExpanded ? 0 : 1,
+          pointerEvents: heroFullyExpanded ? 'none' : 'auto',
           transition: 'opacity 0.5s ease-out',
         }}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${bgImageSrc})` }}
+        <motion.div
+          className="relative w-full h-full overflow-hidden bg-background shadow-2xl"
+          style={{
+            scale: heroScale,
+            borderRadius: `${heroBorderRadius}px`,
+          }}
         >
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        </div>
-
-        <div className="relative h-screen flex flex-col items-center justify-center">
-          <div className="flex flex-col items-center justify-center gap-6 w-full px-4">
-            <div
-              className="relative overflow-hidden rounded-xl shadow-2xl transition-none"
-              style={{
-                width: `${mediaWidth}px`,
-                height: `${mediaHeight}px`,
-                maxWidth: '95vw',
-                maxHeight: '85vh',
-              }}
+          {/* Hero content inside the expanding container */}
+          {heroContent}
+          
+          {/* Scroll indicator */}
+          {scrollProgress < 0.3 && (
+            <motion.div
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1 - scrollProgress * 3, y: 0 }}
+              transition={{ duration: 0.5, delay: 1 }}
             >
-              {mediaType === 'video' ? (
-                <div className="relative w-full h-full pointer-events-none">
-                  <video
-                    src={mediaSrc}
-                    poster={posterSrc}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                    className="w-full h-full object-cover rounded-xl"
-                    controls={false}
-                  />
-                  <motion.div
-                    className="absolute inset-0 bg-black/30 rounded-xl"
-                    initial={{ opacity: 0.7 }}
-                    animate={{ opacity: 0.5 - scrollProgress * 0.3 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </div>
-              ) : (
-                <div className="relative w-full h-full">
-                  <img
-                    src={mediaSrc}
-                    alt={title || 'Media content'}
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                  <motion.div
-                    className="absolute inset-0 bg-black/50 rounded-xl"
-                    initial={{ opacity: 0.7 }}
-                    animate={{ opacity: 0.7 - scrollProgress * 0.3 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </div>
-              )}
+              <p className="text-muted-foreground font-medium text-sm animate-bounce">
+                {scrollToExpand}
+              </p>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
 
-              <div className="flex flex-col items-center text-center relative z-10 mt-4 transition-none">
-                {subtitle && (
-                  <p
-                    className="text-xl text-primary/80"
-                    style={{ transform: `translateX(-${textTranslateX}vw)` }}
-                  >
-                    {subtitle}
-                  </p>
-                )}
-                {scrollToExpand && scrollProgress < 0.5 && (
-                  <motion.p
-                    className="text-muted-foreground font-medium text-center text-sm"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 - scrollProgress * 2 }}
-                    style={{ transform: `translateX(${textTranslateX}vw)` }}
-                  >
-                    {scrollToExpand}
-                  </motion.p>
-                )}
-              </div>
-            </div>
+      {/* Spacer to account for fixed hero */}
+      <div className="h-screen" />
 
-            <div
-              className={`flex items-center justify-center text-center gap-2 md:gap-4 w-full relative z-10 transition-none flex-col ${
-                textBlend ? 'mix-blend-difference' : 'mix-blend-normal'
-              }`}
-            >
-              <motion.h2
-                className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground transition-none"
-                style={{ transform: `translateX(-${textTranslateX}vw)` }}
-              >
-                {firstWord}
-              </motion.h2>
-              <motion.h2
-                className="text-3xl md:text-5xl lg:text-6xl font-bold text-center text-primary transition-none"
-                style={{ transform: `translateX(${textTranslateX}vw)` }}
-              >
-                {restOfTitle}
-              </motion.h2>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      {/* Content that appears after expansion */}
       <motion.div
-        className="relative"
+        className="relative z-20 bg-background"
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: 0.5 }}
         style={{ pointerEvents: showContent ? 'auto' : 'none' }}
       >
         {children}
@@ -267,4 +181,4 @@ const ScrollExpandMedia = ({
   );
 };
 
-export default ScrollExpandMedia;
+export default ScrollExpansionHero;
