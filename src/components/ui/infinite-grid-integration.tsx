@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
 import { GooeyText } from '@/components/ui/gooey-text-morphing';
 import { ParticleTextEffect } from '@/components/ui/interactive-text-particle';
+import { HyperText } from '@/components/ui/hyper-text';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -134,9 +135,13 @@ const InfiniteGrid = () => {
                 textClassName="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-primary"
               />
             </div>
-            <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">
-              Then, learn how to adapt.
-            </span>
+            <div className="flex justify-center mt-4">
+              <HyperText
+                text="Then, learn how to adapt."
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground"
+                duration={1200}
+              />
+            </div>
           </motion.div>
 
           <motion.p 
