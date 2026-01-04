@@ -54,6 +54,11 @@ const ParticleTextEffect: React.FC<ParticleTextEffectProps> = ({
   const hasPointerRef = useRef<boolean>(false);
   const interactionRadiusRef = useRef<number>(100);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number; visible: boolean }>({
+    x: 0,
+    y: 0,
+    visible: false,
+  });
 
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
     width: 800,
@@ -248,13 +253,27 @@ const ParticleTextEffect: React.FC<ParticleTextEffectProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    
     const rect = canvas.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     pointerRef.current.x = (e.clientX - rect.left) * scaleX;
     pointerRef.current.y = (e.clientY - rect.top) * scaleY;
+    hasPointerRef.current = true;
+    
+    // Update custom cursor position
+    setCursorPos({
+      x: e.clientX - containerRect.left,
+      y: e.clientY - containerRect.top,
+      visible: true,
+    });
+
+    if (!animationIdRef.current) animate();
+  };
     hasPointerRef.current = true;
 
     if (!animationIdRef.current) animate();
@@ -264,16 +283,29 @@ const ParticleTextEffect: React.FC<ParticleTextEffectProps> = ({
     hasPointerRef.current = false;
     pointerRef.current.x = undefined;
     pointerRef.current.y = undefined;
+    setCursorPos(prev => ({ ...prev, visible: false }));
 
     if (!animationIdRef.current) animate();
   };
 
   const handlePointerEnter = () => {
     hasPointerRef.current = true;
+    setCursorPos(prev => ({ ...prev, visible: true }));
   };
 
   return (
-    <div ref={containerRef} className={`w-full h-full ${className}`}>
+    <div ref={containerRef} className={`w-full h-full relative ${className}`}>
+      {/* Custom circle cursor */}
+      <div
+        className="pointer-events-none absolute z-50 transition-opacity duration-150"
+        style={{
+          left: cursorPos.x - 20,
+          top: cursorPos.y - 20,
+          opacity: cursorPos.visible ? 1 : 0,
+        }}
+      >
+        <div className="w-10 h-10 rounded-full border-2 border-primary bg-primary/20 backdrop-blur-sm" />
+      </div>
       <canvas
         ref={canvasRef}
         className="w-full h-full cursor-none"
