@@ -274,10 +274,6 @@ const ParticleTextEffect: React.FC<ParticleTextEffectProps> = ({
 
     if (!animationIdRef.current) animate();
   };
-    hasPointerRef.current = true;
-
-    if (!animationIdRef.current) animate();
-  };
 
   const handlePointerLeave = () => {
     hasPointerRef.current = false;
