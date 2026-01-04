@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { FAQAccordion } from "@/components/ui/faq-accordion";
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -427,63 +427,40 @@ const Index = () => {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <Accordion type="single" collapsible className="space-y-4">
-              <AccordionItem value="what-is-rolecolor" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  What is RoleColorFinder and how is it different from other assessments?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  RoleColorFinder is our patent-pending leadership assessment platform based on real group psychology, specifically Tuckman's Five Stages of Team Development. Unlike static personality tests, our system reveals how your leadership style adapts across different team contexts and stages. It's designed for modern teams who need flexible, contextual leadership rather than rigid personality boxes.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="how-long" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  How long does the assessment take?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  The assessment offers two options: a quick 25-question version (3 minutes) or a comprehensive 50-question version (6 minutes). Both are carefully crafted to provide deep insights into your leadership style and team dynamics, with the longer version offering more detailed analysis.
-                </AccordionContent>
-              </AccordionItem>
-
-              
-
-              <AccordionItem value="team-vs-individual" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  Can I use this for my entire team or just individually?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Both! Individual assessments help you understand your own leadership style, while our Team Program is specifically designed for organizations wanting to improve team dynamics. The Team Program includes group workshops, role mapping, and a 12-week implementation plan. Many users start with the individual assessment and then bring it to their team.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="cost" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  What does it cost?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  The basic assessment is completely free! We also offer Premium reports ($19) with detailed insights and action plans, and Pro Deep Dive reports ($49) with comprehensive team-building recommendations. We believe everyone should have access to understanding their leadership style, which is why we start with a free option.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="getting-started" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  How do I get started?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Simply click "Start Your Free Assessment" above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™ profile.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="scientific-backing" className="glass-card-strong rounded-2xl border border-primary/20 p-6">
-                <AccordionTrigger className="text-left text-xl font-semibold text-foreground hover:text-primary hover:no-underline">
-                  What's the scientific backing behind this approach?
-                </AccordionTrigger>
-                <AccordionContent className="text-lg text-muted-foreground leading-relaxed pt-4">
-                  Our assessment is built on Bruce Tuckman's well-established Five Stages of Team Development (Forming, Storming, Norming, Performing, Adjourning), combined with modern organizational psychology research on contextual leadership. We've integrated insights from adaptive leadership theory and situational leadership models to create a framework that's both scientifically grounded and practically applicable.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <FAQAccordion
+              items={[
+                {
+                  id: "1",
+                  title: "What is RoleColorFinder and how is it different?",
+                  content: "RoleColorFinder is our patent-pending leadership assessment platform based on real group psychology, specifically Tuckman's Five Stages of Team Development. Unlike static personality tests, our system reveals how your leadership style adapts across different team contexts and stages."
+                },
+                {
+                  id: "2",
+                  title: "How long does the assessment take?",
+                  content: "The assessment offers two options: a quick 25-question version (3 minutes) or a comprehensive 50-question version (6 minutes). Both are carefully crafted to provide deep insights into your leadership style and team dynamics."
+                },
+                {
+                  id: "3",
+                  title: "Can I use this for my entire team?",
+                  content: "Both! Individual assessments help you understand your own leadership style, while our Team Program is specifically designed for organizations wanting to improve team dynamics. The Team Program includes group workshops, role mapping, and a 12-week implementation plan."
+                },
+                {
+                  id: "4",
+                  title: "What does it cost?",
+                  content: "The basic assessment is completely free! We also offer Premium reports ($19) with detailed insights and action plans, and Pro Deep Dive reports ($49) with comprehensive team-building recommendations."
+                },
+                {
+                  id: "5",
+                  title: "How do I get started?",
+                  content: "Simply click 'Start Your Free Assessment' above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™ profile."
+                },
+                {
+                  id: "6",
+                  title: "What's the scientific backing?",
+                  content: "Our assessment is built on Bruce Tuckman's well-established Five Stages of Team Development, combined with modern organizational psychology research on contextual leadership and adaptive leadership theory."
+                },
+              ]}
+            />
           </div>
         </div>
       </section>
