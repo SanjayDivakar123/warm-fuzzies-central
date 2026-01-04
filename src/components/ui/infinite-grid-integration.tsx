@@ -9,6 +9,7 @@ import {
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
+import { GooeyText } from '@/components/ui/gooey-text-morphing';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -108,18 +109,28 @@ const InfiniteGrid = () => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-4 py-20">
         <div className="text-center max-w-5xl mx-auto">
-          <motion.h1 
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance mb-6"
+            className="mb-6"
           >
-            we discover leadership styles.
-            <span className="block">that makes you shine.</span>
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
+              we discover leadership styles
+            </h1>
+            <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 flex items-center justify-center">
+              <GooeyText
+                texts={["that makes you shine.", "that drives results.", "that inspires teams.", "that adapts to change."]}
+                morphTime={1.5}
+                cooldownTime={1}
+                className="h-full"
+                textClassName="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-primary"
+              />
+            </div>
             <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-muted-foreground mt-4">
               Then, learn how to adapt.
             </span>
-          </motion.h1>
+          </motion.div>
 
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
