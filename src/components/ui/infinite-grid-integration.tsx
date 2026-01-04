@@ -118,7 +118,7 @@ const InfiniteGrid = () => {
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
               we discover leadership styles
             </h1>
-            <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 flex items-center justify-center">
+            <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 flex items-center justify-center mt-4">
               <GooeyText
                 texts={["that makes you shine.", "that drives results.", "that inspires teams.", "that adapts to change."]}
                 morphTime={1.5}
