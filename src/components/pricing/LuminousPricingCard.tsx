@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Check, LucideIcon } from "lucide-react"
 import { Link } from "react-router-dom"
 import { PaymentButton } from "@/components/payment/PaymentButton"
+import { GlowingEffect } from "@/components/ui/glowing-effect"
 
 interface LuminousPricingCardProps {
   name: string
@@ -32,7 +33,15 @@ export function LuminousPricingCard({
   const [isActive, setIsActive] = useState(false)
 
   return (
-    <div className={`luminous-card ${isActive ? 'active' : ''} ${popular ? 'popular' : ''}`}>
+    <div className={`luminous-card ${isActive ? 'active' : ''} ${popular ? 'popular' : ''} relative`}>
+      <GlowingEffect
+        spread={40}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+        borderWidth={3}
+      />
       {popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium z-10">
           Most Popular
