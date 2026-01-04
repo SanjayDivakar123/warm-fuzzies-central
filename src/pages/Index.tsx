@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import InfiniteGrid from "@/components/ui/infinite-grid-integration";
+import ScrollExpandMedia from "@/components/ui/scroll-expansion-hero";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -32,6 +33,15 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
+      {/* Scroll Expansion Hero Transition */}
+      <ScrollExpandMedia
+        mediaType="image"
+        mediaSrc={professionalTeamImage}
+        bgImageSrc={professionalTeamImage}
+        title="Discover Your Leadership Color"
+        subtitle="RoleColor™ Finder"
+        scrollToExpand="↓ Scroll to explore"
+      >
       {/* Hero Section - Infinite Grid */}
       <InfiniteGrid />
 
@@ -483,6 +493,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      </ScrollExpandMedia>
     </div>;
 };
 export default Index;
