@@ -10,6 +10,7 @@ import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
 import { GooeyText } from '@/components/ui/gooey-text-morphing';
+import { ParticleTextEffect } from '@/components/ui/interactive-text-particle';
 
 /**
  * Helper component for the SVG grid pattern.
@@ -115,9 +116,15 @@ const InfiniteGrid = () => {
             transition={{ duration: 0.6 }}
             className="mb-6"
           >
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium text-foreground leading-tight text-balance">
-              we discover leadership styles
-            </h1>
+            <div className="h-20 sm:h-24 md:h-32 lg:h-40 xl:h-48 w-full max-w-4xl mx-auto">
+              <ParticleTextEffect
+                text="LEADERSHIP"
+                colors={['22c55e', '4ade80', '86efac', '16a34a', '15803d']}
+                animationForce={60}
+                particleDensity={3}
+              />
+            </div>
+            <h1 className="sr-only">we discover leadership styles</h1>
             <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 flex items-center justify-center mt-4">
               <GooeyText
                 texts={["that makes you shine.", "that drives results.", "that inspires teams.", "that adapts to change."]}
