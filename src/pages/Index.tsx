@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/ui/faq-accordion";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,11 +68,21 @@ const Index = () => {
           <div className="max-w-7xl mx-auto mb-12 sm:mb-16 md:mb-24">
             <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 lg:gap-20 items-center">
               <div className="space-y-6 sm:space-y-8 md:space-y-12 animate-fade-in delay-200">
-                <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 border border-primary/20 shadow-elegant hover:shadow-colorful transition-all duration-700 hover-lift">
-                  <h4 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 sm:mb-6 md:mb-8">Contextual Leadership</h4>
-                  <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-                    We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
-                  </p>
+                <div className="relative rounded-3xl border border-border p-1">
+                  <GlowingEffect
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={3}
+                  />
+                  <div className="relative glass-card-strong rounded-[1.25rem] p-6 sm:p-8 md:p-12 bg-background">
+                    <h4 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 sm:mb-6 md:mb-8">Contextual Leadership</h4>
+                    <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
+                      We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="glass-card-strong rounded-3xl p-6 sm:p-8 md:p-12 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-green/5 hover-lift">
