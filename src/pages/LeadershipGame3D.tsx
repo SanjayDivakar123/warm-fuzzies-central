@@ -14,10 +14,7 @@ import {
   type ColorType,
   type GameScenario,
 } from "@/lib/leadershipGameScenarios";
-import { ChevronRight, Gamepad2, Loader2 } from "lucide-react";
-
-// NOTE: We intentionally use plain Three.js (not React Three Fiber) to avoid
-// runtime crashes caused by editor-injected data-* props being applied to 3D objects.
+import { ChevronRight, Gamepad2, Loader2, Volume2, VolumeX, MapPin } from "lucide-react";
 
 const officeNPCs = [
   { id: 1, name: "Alex", position: [-8, 0, -6] as [number, number, number], color: 0x4299e1 },
@@ -47,14 +44,97 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+// Minimap component
+function Minimap({ 
+  playerPosition, 
+  playerRotation, 
+  completedScenarios 
+}: { 
+  playerPosition: { x: number; z: number }; 
+  playerRotation: number;
+  completedScenarios: Set<number>;
+}) {
+  const mapSize = 120;
+  const scale = mapSize / 30; // 30 is the office size
+  
+  const toMapCoord = (worldX: number, worldZ: number) => ({
+    x: (worldX + 15) * scale,
+    y: (worldZ + 15) * scale,
+  });
+
+  const hasAvailableScenario = (npcId: number) => {
+    const ids = npcScenarioMap[npcId] || [];
+    return ids.some(id => !completedScenarios.has(id));
+  };
+
+  return (
+    <div className="absolute bottom-4 right-4 z-30 pointer-events-none">
+      <div 
+        className="relative bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-600 overflow-hidden"
+        style={{ width: mapSize, height: mapSize }}
+      >
+        {/* Office walls */}
+        <div className="absolute inset-2 border-2 border-slate-500 rounded" />
+        
+        {/* Desk areas */}
+        <div className="absolute bg-amber-900/50 rounded" style={{ left: 20, top: 15, width: 60, height: 25 }} />
+        <div className="absolute bg-amber-900/50 rounded" style={{ left: 20, top: 45, width: 40, height: 15 }} />
+        
+        {/* Meeting area */}
+        <div className="absolute bg-slate-700/50 rounded" style={{ left: 85, top: 45, width: 25, height: 30 }} />
+        
+        {/* NPCs */}
+        {officeNPCs.map((npc) => {
+          const pos = toMapCoord(npc.position[0], npc.position[2]);
+          const hasScenario = hasAvailableScenario(npc.id);
+          return (
+            <div
+              key={npc.id}
+              className={`absolute w-2.5 h-2.5 rounded-full border border-white/50 ${
+                hasScenario ? 'animate-pulse' : 'opacity-50'
+              }`}
+              style={{
+                left: pos.x - 5,
+                top: pos.y - 5,
+                backgroundColor: `#${npc.color.toString(16).padStart(6, '0')}`,
+              }}
+              title={npc.name}
+            />
+          );
+        })}
+        
+        {/* Player */}
+        <div
+          className="absolute w-0 h-0 transition-all duration-75"
+          style={{
+            left: toMapCoord(playerPosition.x, playerPosition.z).x,
+            top: toMapCoord(playerPosition.x, playerPosition.z).y,
+            transform: `translate(-50%, -50%) rotate(${-playerRotation * (180 / Math.PI)}deg)`,
+            borderLeft: '4px solid transparent',
+            borderRight: '4px solid transparent',
+            borderBottom: '10px solid #22c55e',
+          }}
+        />
+        
+        {/* Legend */}
+        <div className="absolute bottom-1 left-1 flex items-center gap-1">
+          <MapPin className="w-3 h-3 text-green-500" />
+          <span className="text-[8px] text-slate-400">You</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LeadershipGame3D() {
   const navigate = useNavigate();
 
   const [isStarted, setIsStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const [activeNPC, setActiveNPC] = useState<number | null>(null);
-  const [hoveredNPC, setHoveredNPC] = useState<string | null>(null);
+  const [hoveredNPC, setHoveredNPC] = useState<{ name: string; id: number } | null>(null);
 
   const [currentScenario, setCurrentScenario] = useState<GameScenario | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
@@ -62,6 +142,13 @@ export default function LeadershipGame3D() {
 
   const [choices, setChoices] = useState<Record<number, ColorType>>({});
   const [completedScenarios, setCompletedScenarios] = useState<Set<number>>(new Set());
+  
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, z: 5 });
+  const [playerRotation, setPlayerRotation] = useState(0);
+
+  // Audio refs
+  const ambienceRef = useRef<HTMLAudioElement | null>(null);
+  const interactSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Refs for immediate reads inside event handlers / RAF
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,6 +156,7 @@ export default function LeadershipGame3D() {
   const currentScenarioRef = useRef<GameScenario | null>(null);
   const completedRef = useRef<Set<number>>(new Set());
   const choicesRef = useRef<Record<number, ColorType>>({});
+  const isMutedRef = useRef(false);
 
   useEffect(() => {
     currentScenarioRef.current = currentScenario;
@@ -79,6 +167,12 @@ export default function LeadershipGame3D() {
   useEffect(() => {
     choicesRef.current = choices;
   }, [choices]);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+    if (ambienceRef.current) {
+      ambienceRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   const hasAvailableScenario = useCallback((npcId: number) => {
     const ids = npcScenarioMap[npcId] || [];
@@ -95,11 +189,37 @@ export default function LeadershipGame3D() {
     return null;
   }, []);
 
+  const playInteractSound = useCallback(() => {
+    if (isMutedRef.current) return;
+    // Play a simple click/interact sound using Web Audio API
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+      // Audio not supported
+    }
+  }, []);
+
   const handleNPCInteract = useCallback(
     (npcId: number) => {
       const scenario = getNextScenarioForNPC(npcId);
       if (!scenario) return;
 
+      playInteractSound();
+      
       setActiveNPC(npcId);
       setCurrentScenario(scenario);
       setShowOutcome(false);
@@ -107,7 +227,7 @@ export default function LeadershipGame3D() {
 
       if (document.pointerLockElement) document.exitPointerLock();
     },
-    [getNextScenarioForNPC]
+    [getNextScenarioForNPC, playInteractSound]
   );
 
   const handleChoiceSelect = useCallback(
@@ -115,11 +235,12 @@ export default function LeadershipGame3D() {
       if (!currentScenarioRef.current) return;
       const scenarioId = currentScenarioRef.current.id;
 
+      playInteractSound();
       setChoices((prev) => ({ ...prev, [scenarioId]: choice.color }));
       setSelectedOutcome(choice.outcome);
       setShowOutcome(true);
     },
-    []
+    [playInteractSound]
   );
 
   const handleContinue = useCallback(() => {
@@ -128,10 +249,7 @@ export default function LeadershipGame3D() {
 
     const scenarioId = scenario.id;
 
-    // Mark completed
     setCompletedScenarios((prev) => new Set([...prev, scenarioId]));
-
-    // Close dialog
     setCurrentScenario(null);
     setActiveNPC(null);
     setShowOutcome(false);
@@ -153,19 +271,59 @@ export default function LeadershipGame3D() {
     setActiveNPC(null);
   }, [showOutcome]);
 
-  // --- Three.js office scene ---
   const npcIndexById = useMemo(() => {
     const m = new Map<number, number>();
     officeNPCs.forEach((n, idx) => m.set(n.id, idx));
     return m;
   }, []);
 
+  // Three.js scene setup
   useEffect(() => {
     if (!isStarted) return;
     if (!canvasRef.current) return;
 
     let raf = 0;
     const canvas = canvasRef.current;
+
+    // Start ambient audio
+    const startAmbience = () => {
+      if (isMutedRef.current) return;
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        
+        // Create ambient noise
+        const bufferSize = audioContext.sampleRate * 2;
+        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.02; // Very quiet white noise
+        }
+        
+        const noise = audioContext.createBufferSource();
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+        
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 400;
+        
+        const gain = audioContext.createGain();
+        gain.gain.value = 0.05;
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioContext.destination);
+        
+        noise.start();
+        
+        // Store reference for cleanup
+        (canvas as any).__ambienceContext = audioContext;
+        (canvas as any).__ambienceNoise = noise;
+      } catch (e) {
+        // Audio not supported
+      }
+    };
 
     // Scene
     const scene = new THREE.Scene();
@@ -205,7 +363,7 @@ export default function LeadershipGame3D() {
     makeWall(0.2, 4, 30, -15, 2, 0);
     makeWall(0.2, 4, 30, 15, 2, 0);
 
-    // A few desks (simple boxes)
+    // Desks
     const deskMat = new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.8 });
     const deskLegMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.9 });
     const deskTopGeo = new THREE.BoxGeometry(1.5, 0.1, 0.8);
@@ -216,12 +374,7 @@ export default function LeadershipGame3D() {
       const top = new THREE.Mesh(deskTopGeo, deskMat);
       top.position.set(0, 0.75, 0);
       g.add(top);
-      const legs = [
-        [-0.6, 0.375, -0.3],
-        [0.6, 0.375, -0.3],
-        [-0.6, 0.375, 0.3],
-        [0.6, 0.375, 0.3],
-      ];
+      const legs = [[-0.6, 0.375, -0.3], [0.6, 0.375, -0.3], [-0.6, 0.375, 0.3], [0.6, 0.375, 0.3]];
       legs.forEach(([lx, ly, lz]) => {
         const leg = new THREE.Mesh(legGeo, deskLegMat);
         leg.position.set(lx, ly, lz);
@@ -241,7 +394,6 @@ export default function LeadershipGame3D() {
     // NPCs
     const npcObjects: THREE.Object3D[] = [];
     const npcBodyMaterialsById = new Map<number, THREE.MeshStandardMaterial>();
-
     const bodyGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
     const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
     const headMat = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.9 });
@@ -271,7 +423,7 @@ export default function LeadershipGame3D() {
     }
 
     // Controls
-    const keys = { w: false, a: false, s: false, d: false };
+    const keys = { w: false, a: false, s: false, d: false, e: false };
     const yawPitch = { yaw: 0, pitch: 0 };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -280,6 +432,12 @@ export default function LeadershipGame3D() {
       if (e.code === "KeyS" || e.code === "ArrowDown") keys.s = true;
       if (e.code === "KeyA" || e.code === "ArrowLeft") keys.a = true;
       if (e.code === "KeyD" || e.code === "ArrowRight") keys.d = true;
+      if (e.code === "KeyE") {
+        // Interact with E key
+        if (hoveredNpcIdRef.current && document.pointerLockElement === canvas) {
+          handleNPCInteract(hoveredNpcIdRef.current);
+        }
+      }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === "KeyW" || e.code === "ArrowUp") keys.w = false;
@@ -300,6 +458,8 @@ export default function LeadershipGame3D() {
       camera.rotation.order = "YXZ";
       camera.rotation.y = yawPitch.yaw;
       camera.rotation.x = yawPitch.pitch;
+      
+      setPlayerRotation(yawPitch.yaw);
     };
 
     const raycaster = new THREE.Raycaster();
@@ -308,23 +468,20 @@ export default function LeadershipGame3D() {
     let lastHoverId: number | null = null;
 
     const onCanvasClick = () => {
-      // If dialog is open, ignore clicks
       if (currentScenarioRef.current) return;
 
-      // First click: lock pointer
       if (document.pointerLockElement !== canvas) {
         canvas.requestPointerLock();
+        startAmbience();
         return;
       }
 
-      // If we have an NPC in sights, open scenario
       if (hoveredNpcIdRef.current) {
         handleNPCInteract(hoveredNpcIdRef.current);
       }
     };
 
     const onPointerLockChange = () => {
-      // If pointer lock is lost, we also clear hover (so UI doesn't mislead)
       if (document.pointerLockElement !== canvas) {
         hoveredNpcIdRef.current = null;
         lastHoverId = null;
@@ -333,7 +490,6 @@ export default function LeadershipGame3D() {
       }
     };
 
-    // Resize
     const resize = () => {
       const { clientWidth, clientHeight } = canvas;
       if (clientWidth === 0 || clientHeight === 0) return;
@@ -342,7 +498,6 @@ export default function LeadershipGame3D() {
       renderer.setSize(clientWidth, clientHeight, false);
     };
 
-    // Animation
     let prev = performance.now();
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -353,10 +508,8 @@ export default function LeadershipGame3D() {
 
       resize();
 
-      // Skip movement + raycast while dialog is open
       const dialogOpen = !!currentScenarioRef.current;
       if (!dialogOpen) {
-        // Movement (WASD)
         const speed = 4;
         const dir = new THREE.Vector3();
         const forward = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
@@ -369,9 +522,10 @@ export default function LeadershipGame3D() {
           const nz = clamp(camera.position.z + dir.z, -14, 14);
           camera.position.x = nx;
           camera.position.z = nz;
+          
+          setPlayerPosition({ x: nx, z: nz });
         }
 
-        // Hover / interact detection (center ray)
         raycaster.setFromCamera(center, camera);
         const intersects = raycaster.intersectObjects(npcObjects, true);
 
@@ -390,7 +544,7 @@ export default function LeadershipGame3D() {
           if (name !== lastHoverName) {
             lastHoverName = name;
             lastHoverId = npcId;
-            setHoveredNPC(name);
+            setHoveredNPC({ name, id: npcId });
           }
         } else {
           hoveredNpcIdRef.current = null;
@@ -401,7 +555,6 @@ export default function LeadershipGame3D() {
           }
         }
 
-        // Small idle bounce for active NPC (purely cosmetic)
         const t = now * 0.002;
         for (const obj of npcObjects) {
           const npcId = obj.userData?.npcId as number | undefined;
@@ -414,7 +567,6 @@ export default function LeadershipGame3D() {
       renderer.render(scene, camera);
     };
 
-    // Events
     window.addEventListener("resize", resize);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("keyup", onKeyUp);
@@ -422,7 +574,6 @@ export default function LeadershipGame3D() {
     document.addEventListener("pointerlockchange", onPointerLockChange);
     canvas.addEventListener("click", onCanvasClick);
 
-    // First layout
     resize();
     setIsLoading(false);
     tick();
@@ -439,7 +590,14 @@ export default function LeadershipGame3D() {
 
       if (document.pointerLockElement === canvas) document.exitPointerLock();
 
-      // Dispose
+      // Stop ambient audio
+      try {
+        const ctx = (canvas as any).__ambienceContext;
+        const noise = (canvas as any).__ambienceNoise;
+        if (noise) noise.stop();
+        if (ctx) ctx.close();
+      } catch (e) {}
+
       renderer.dispose();
       floorGeo.dispose();
       floorMat.dispose();
@@ -453,18 +611,15 @@ export default function LeadershipGame3D() {
       deskLegMat.dispose();
       npcBodyMaterialsById.forEach((m) => m.dispose());
 
-      // Ensure we clear hover UI
       hoveredNpcIdRef.current = null;
       setHoveredNPC(null);
     };
   }, [hasAvailableScenario, handleNPCInteract, isStarted, npcIndexById]);
 
-  // When completion state changes, store it in ref (for Three.js loop)
   useEffect(() => {
     completedRef.current = completedScenarios;
   }, [completedScenarios]);
 
-  // Extra: if the user completes all scenarios (e.g. tab focus issues), ensure we navigate
   useEffect(() => {
     if (completedScenarios.size >= leadershipGameScenarios.length && Object.keys(choices).length >= leadershipGameScenarios.length) {
       const results = calculateGameResults(choices);
@@ -505,8 +660,8 @@ export default function LeadershipGame3D() {
                     <span>Look around</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">Click</Badge>
-                    <span>Lock / Interact</span>
+                    <Badge variant="outline">E</Badge>
+                    <span>Interact with NPC</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">ESC</Badge>
@@ -521,7 +676,9 @@ export default function LeadershipGame3D() {
                 Enter the Office
                 <ChevronRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/leadership-game")}>Play Text Version Instead</Button>
+              <Button size="lg" variant="outline" onClick={() => navigate("/leadership-game")}>
+                Play Text Version Instead
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -546,9 +703,40 @@ export default function LeadershipGame3D() {
 
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
+      {/* NPC Nameplate Overlay */}
+      <AnimatePresence>
+        {hoveredNPC && !currentScenario && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-20"
+          >
+            <div className="bg-background/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-primary/50 shadow-lg">
+              <p className="text-lg font-semibold text-center">{hoveredNPC.name}</p>
+              <p className="text-sm text-muted-foreground text-center">Press E to interact</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Crosshair */}
+      {!currentScenario && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+          <div className={`w-2 h-2 rounded-full border-2 ${hoveredNPC ? 'border-primary bg-primary/30' : 'border-white/50'}`} />
+        </div>
+      )}
+
+      {/* Minimap */}
+      <Minimap 
+        playerPosition={playerPosition} 
+        playerRotation={playerRotation}
+        completedScenarios={completedScenarios}
+      />
+
       <GameUI
         scenario={currentScenario}
-        npcName={hoveredNPC}
+        npcName={null}
         onChoiceSelect={handleChoiceSelect}
         onClose={handleCloseDialog}
         completedCount={completedScenarios.size}
@@ -558,19 +746,46 @@ export default function LeadershipGame3D() {
         onContinue={handleContinue}
       />
 
-      <div className="absolute top-4 left-4 z-40">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            if (document.pointerLockElement) document.exitPointerLock();
-            navigate("/");
-          }}
-          className="bg-background/80 backdrop-blur-sm"
-        >
-          Exit Game
-        </Button>
+      {/* Top bar with exit and mute */}
+      <div className="absolute top-4 left-4 right-4 z-40 flex justify-between items-center pointer-events-none">
+        <div className="flex gap-2 pointer-events-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (document.pointerLockElement) document.exitPointerLock();
+              navigate("/");
+            }}
+            className="bg-background/80 backdrop-blur-sm"
+          >
+            Exit Game
+          </Button>
+        </div>
+        
+        <div className="flex gap-2 pointer-events-auto">
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => setIsMuted(!isMuted)}
+            className="bg-background/80 backdrop-blur-sm"
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </Button>
+        </div>
       </div>
+
+      {/* Instructions overlay when starting */}
+      {completedScenarios.size === 0 && !currentScenario && !hoveredNPC && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center pointer-events-none z-10">
+          <motion.p
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-white text-lg font-medium drop-shadow-lg"
+          >
+            Click to look around, find team members to interact with
+          </motion.p>
+        </div>
+      )}
     </div>
   );
 }
