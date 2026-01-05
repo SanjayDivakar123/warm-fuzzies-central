@@ -35,7 +35,7 @@ const GlowingEffect = memo(
     const animationFrameRef = useRef<number>(0);
 
     const handleMove = useCallback(
-      (e?: MouseEvent | { x: number; y: number }) => {
+      (e?: PointerEvent | MouseEvent | { x: number; y: number }) => {
         if (!containerRef.current) return;
 
         if (animationFrameRef.current) {
@@ -47,8 +47,15 @@ const GlowingEffect = memo(
           if (!element) return;
 
           const { left, top, width, height } = element.getBoundingClientRect();
-          const mouseX = e?.x ?? lastPosition.current.x;
-          const mouseY = e?.y ?? lastPosition.current.y;
+
+          const mouseX =
+            e && "clientX" in e
+              ? e.clientX
+              : e?.x ?? lastPosition.current.x;
+          const mouseY =
+            e && "clientY" in e
+              ? e.clientY
+              : e?.y ?? lastPosition.current.y;
 
           if (e) {
             lastPosition.current = { x: mouseX, y: mouseY };
