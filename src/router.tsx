@@ -38,6 +38,7 @@ import SharedResult from "@/pages/SharedResult";
 import LeadershipAssessment from "@/pages/LeadershipAssessment";
 import LeadershipResults from "@/pages/LeadershipResults";
 import LeadershipGame from "@/pages/LeadershipGame";
+import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -208,6 +209,10 @@ export const router = createBrowserRouter([
   {
     path: "/leadership-game",
     element: <Layout><LeadershipGame /></Layout>,
+  },
+  {
+    path: "/leadership-game-3d",
+    element: <LeadershipGame3D />,
   },
   {
     path: "/blog",
