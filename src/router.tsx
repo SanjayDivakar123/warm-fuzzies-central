@@ -37,6 +37,7 @@ import { VoiceResults } from "@/pages/VoiceResults";
 import SharedResult from "@/pages/SharedResult";
 import LeadershipAssessment from "@/pages/LeadershipAssessment";
 import LeadershipResults from "@/pages/LeadershipResults";
+import LeadershipGame from "@/pages/LeadershipGame";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -199,6 +200,14 @@ export const router = createBrowserRouter([
   {
     path: "/leadership-results/:type",
     element: <Layout><LeadershipResults /></Layout>,
+  },
+  {
+    path: "/leadership-results",
+    element: <Layout><LeadershipResults /></Layout>,
+  },
+  {
+    path: "/leadership-game",
+    element: <Layout><LeadershipGame /></Layout>,
   },
   {
     path: "/blog",

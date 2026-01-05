@@ -629,6 +629,40 @@ const LeadershipResults = () => {
   useEffect(() => {
     const processResults = async () => {
       try {
+        // Check if this is from the leadership game
+        const storedType = localStorage.getItem("assessmentType");
+        const gameResults = localStorage.getItem("leadershipGameResults");
+        
+        if (storedType === "game" && gameResults) {
+          // Handle game results
+          const parsedResults = JSON.parse(gameResults);
+          setResults(parsedResults);
+          
+          // Get AI analysis using 50q-student type for comprehensive report
+          const { data, error } = await supabase.functions.invoke('analyze-leadership', {
+            body: { 
+              assessmentType: "50q-student", 
+              colorScores: parsedResults.colorScores, 
+              primaryColor: parsedResults.primaryColor, 
+              secondaryColor: parsedResults.secondaryColor 
+            }
+          });
+          
+          if (error) {
+            console.error('AI error:', error);
+            toast({ title: "Analysis incomplete", description: "Results calculated but couldn't generate insights.", variant: "default" });
+          } else if (data) {
+            setAnalysis(Array.isArray(data) ? data[0] : data);
+          }
+          
+          // Clear stored game data
+          localStorage.removeItem("assessmentType");
+          localStorage.removeItem("leadershipGameResults");
+          setIsLoading(false);
+          return;
+        }
+        
+        // Handle traditional assessment results
         const { answers } = location.state || {};
         if (!answers || !type) {
           toast({ title: "No assessment data", description: "Please complete an assessment first.", variant: "destructive" });
@@ -667,8 +701,15 @@ const LeadershipResults = () => {
   }, [location.state, type, navigate, toast]);
 
   const getTitle = () => {
+    const storedType = localStorage.getItem("assessmentType");
+    if (storedType === "game" || !type) return "Leadership Adventure";
     const titles = { "50q-teacher": "50-Question Teacher", "50q-student": "50-Question Student", "25q-teacher": "25-Question Teacher", "25q-student": "25-Question Student" };
     return titles[type as keyof typeof titles] || "Assessment";
+  };
+  
+  const getReportType = () => {
+    if (!type) return "50q-student"; // Game uses 50q-student report format
+    return type;
   };
 
   const handleDownloadPDF = async () => {
@@ -741,7 +782,7 @@ const LeadershipResults = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="gradient-text-primary">{getTitle()} Report</span></h1>
             <p className="text-lg text-muted-foreground">Your personalized leadership color profile</p>
           </div>
-          {type === "50q-student" && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {(type === "50q-student" || !type) && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
           {type === "25q-student" && <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
           {type === "50q-teacher" && <TeacherReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
           {type === "25q-teacher" && <TeacherReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
