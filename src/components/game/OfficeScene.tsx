@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Box, Cylinder, Plane, Text } from "@react-three/drei";
+import { Box, Cylinder, Plane } from "@react-three/drei";
 import * as THREE from "three";
 
 interface NPCProps {
@@ -11,12 +11,17 @@ interface NPCProps {
   onClick: () => void;
 }
 
-const NPC = ({ position, color, name, isActive, onClick }: NPCProps) => {
+const NPC = ({ position, color, isActive, onClick }: NPCProps) => {
   const meshRef = useRef<THREE.Group>(null);
+  const baseY = position[1];
   
   useFrame((state) => {
-    if (meshRef.current && isActive) {
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.1;
+    if (meshRef.current) {
+      if (isActive) {
+        meshRef.current.position.y = baseY + Math.sin(state.clock.elapsedTime * 2) * 0.1;
+      } else {
+        meshRef.current.position.y = baseY;
+      }
     }
   });
 
@@ -31,22 +36,10 @@ const NPC = ({ position, color, name, isActive, onClick }: NPCProps) => {
         <sphereGeometry args={[0.25, 16, 16]} />
         <meshStandardMaterial color="#FFE0BD" />
       </mesh>
-      {/* Name tag */}
-      <Text
-        position={[0, 2, 0]}
-        fontSize={0.2}
-        color={isActive ? "#FFD700" : "#FFFFFF"}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.02}
-        outlineColor="#000000"
-      >
-        {name}
-      </Text>
       {/* Interaction indicator */}
       {isActive && (
-        <mesh position={[0, 2.4, 0]}>
-          <sphereGeometry args={[0.1, 8, 8]} />
+        <mesh position={[0, 2, 0]}>
+          <sphereGeometry args={[0.15, 8, 8]} />
           <meshStandardMaterial color="#FFD700" emissive="#FFD700" emissiveIntensity={0.5} />
         </mesh>
       )}
