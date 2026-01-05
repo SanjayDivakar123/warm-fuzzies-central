@@ -6,14 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/ui/faq-accordion";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, Star, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
+import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import InfiniteGrid from "@/components/ui/infinite-grid-integration";
 import ScrollExpansionHero from "@/components/ui/scroll-expansion-hero";
-import { TestimonialsCarousel } from "@/components/ui/testimonials-carousel";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -374,25 +373,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="section-padding bg-gradient-soft" aria-label="Testimonials">
-        <div className="container-wide">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
-              <Star className="w-5 h-5 mr-2" />
-              Testimonials
-            </Badge>
-            <h3 className="text-4xl md:text-6xl font-bold text-foreground mb-8">
-              Trusted by <span className="gradient-text-primary">Industry Leaders</span>
-            </h3>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              See what CEOs, executives, and professionals are saying about RoleColorFinder.
-            </p>
-          </div>
-
-          <TestimonialsCarousel />
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="section-padding bg-gradient-soft" aria-label="Frequently Asked Questions">
