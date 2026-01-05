@@ -170,7 +170,7 @@ const GlowingEffect = memo(
           <div
             className={cn(
               "glow",
-              "rounded-[inherit]",
+              "absolute inset-0 h-full w-full rounded-[inherit]",
               'after:content-[""] after:rounded-[inherit] after:absolute after:inset-[calc(-1*var(--glowingeffect-border-width))]',
               "after:[border:var(--glowingeffect-border-width)_solid_transparent]",
               "after:[background:var(--gradient)] after:[background-attachment:fixed]",
