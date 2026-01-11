@@ -19,6 +19,15 @@ const PaymentSuccess = () => {
     // Store the successful payment in the database
     if (user && assessmentType) {
       storePaymentRecord();
+      
+      // Fire Google Ads conversion tracking
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'conversion', {
+          'send_to': 'AW-17863629259/VC_nCNu61uAbEMuzhcZC',
+          'transaction_id': `${user.id}_${assessmentType}_${Date.now()}`
+        });
+        console.log('Google Ads conversion tracked for purchase');
+      }
     }
   }, [user, assessmentType]);
 
