@@ -83,14 +83,6 @@ const Team = () => {
     summary: "Oversees technical architecture and engineering strategy at RoleColorFinder. Known for his builder's mindset, translating high-level psychological theories into functional, scalable code.",
     link: "/team/sam-otten",
     roleColor: "yellow" as const
-  }, {
-    name: "Amit Suthar",
-    title: "Head of AI Systems",
-    location: "Vadodara, Gujarat, India",
-    image: "/images/amit-suthar.png",
-    summary: "Head of AI Systems leading RoleColorAI development, overseeing model design for resume reconstruction, leadership-style interpretation, and psychometric insights. Passionate about building human-centered AI systems at scale.",
-    link: "/team/amit-suthar",
-    roleColor: "yellow" as const
   }];
   const advisoryTeam = [{
     name: "Jennifer D. Klein",
