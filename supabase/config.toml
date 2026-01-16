@@ -16,7 +16,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-company]
-verify_jwt = true
+verify_jwt = false
 
 [functions.invite-company-user]
 verify_jwt = true
