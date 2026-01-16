@@ -46,19 +46,19 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.log('No authorization header provided');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Please sign in to create a company' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
     // Verify user's JWT
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
@@ -70,10 +70,12 @@ serve(async (req) => {
     if (authError || !user) {
       console.log('Invalid token:', authError?.message);
       return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
+        JSON.stringify({ error: 'Session expired. Please sign in again.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Authenticated user:', user.id, user.email);
 
     const body = await req.json();
     let { name, subdomain, admin_email, seats_purchased, assessment_type } = body;

@@ -116,9 +116,17 @@ export default function B2B() {
       // Navigate to company portal
       navigate('/b2b/company-portal');
     } catch (error: any) {
+      console.error('Create company error:', error);
+      
+      // Parse the error message from edge function response
+      let errorMessage = 'Failed to create company. Please try again.';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Error creating company',
-        description: error.message || 'Failed to create company. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
