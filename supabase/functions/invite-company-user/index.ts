@@ -249,7 +249,7 @@ serve(async (req) => {
 
     if (activeUsers && activeUsers.length >= company.seats_purchased) {
       return new Response(
-        JSON.stringify({ error: 'No seats available' }),
+        JSON.stringify({ error: 'No seats available', errorCode: 'NO_SEATS', seatsUsed: activeUsers.length, seatsPurchased: company.seats_purchased }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
