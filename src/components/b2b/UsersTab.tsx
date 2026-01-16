@@ -98,6 +98,11 @@ export default function UsersTab({ company }: UsersTabProps) {
       });
 
       if (error) throw error;
+      
+      // Check if the response contains an error message
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'User invited!',
@@ -109,7 +114,7 @@ export default function UsersTab({ company }: UsersTabProps) {
     } catch (error: any) {
       toast({
         title: 'Error inviting user',
-        description: error.message,
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -166,6 +171,31 @@ export default function UsersTab({ company }: UsersTabProps) {
     } catch (error: any) {
       toast({
         title: 'Error revoking access',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('company_users')
+        .delete()
+        .eq('id', userId)
+        .eq('status', 'revoked'); // Only allow deleting revoked users
+
+      if (error) throw error;
+
+      toast({
+        title: 'User deleted',
+        description: 'User has been permanently removed',
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error deleting user',
         description: error.message,
         variant: 'destructive',
       });
@@ -473,14 +503,34 @@ export default function UsersTab({ company }: UsersTabProps) {
                               </TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== 'admin' && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRevokeAccess(user.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          {user.role !== 'admin' && user.status !== 'revoked' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleRevokeAccess(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Revoke access</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {user.role !== 'admin' && user.status === 'revoked' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete permanently</TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
