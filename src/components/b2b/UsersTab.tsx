@@ -198,6 +198,26 @@ export default function UsersTab({ company }: UsersTabProps) {
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      // First, clear any task assignments that reference this user
+      const { error: primaryError } = await supabase
+        .from('task_assignments')
+        .update({ primary_assignee_id: null })
+        .eq('primary_assignee_id', userId);
+
+      if (primaryError) {
+        console.error('Error clearing primary assignments:', primaryError);
+      }
+
+      const { error: secondaryError } = await supabase
+        .from('task_assignments')
+        .update({ secondary_assignee_id: null })
+        .eq('secondary_assignee_id', userId);
+
+      if (secondaryError) {
+        console.error('Error clearing secondary assignments:', secondaryError);
+      }
+
+      // Now delete the user
       const { error } = await supabase
         .from('company_users')
         .delete()
