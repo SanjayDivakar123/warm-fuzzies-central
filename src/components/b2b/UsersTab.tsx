@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Trash2, Loader2, Copy, Check, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Plus, Mail, Trash2, Loader2, Copy, Check, ChevronDown, ChevronUp, X, AlertCircle, CreditCard } from 'lucide-react';
 
 interface UsersTabProps {
   company: any;
@@ -60,6 +61,7 @@ export default function UsersTab({ company }: UsersTabProps) {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
   const [newSkillInput, setNewSkillInput] = useState('');
+  const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,6 +90,7 @@ export default function UsersTab({ company }: UsersTabProps) {
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setInviting(true);
+    setShowSeatPrompt(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('invite-company-user', {
@@ -101,6 +104,11 @@ export default function UsersTab({ company }: UsersTabProps) {
       
       // Check if the response contains an error message
       if (data?.error) {
+        // Check if it's a "no seats" error
+        if (data.error.toLowerCase().includes('no seats') || data.errorCode === 'NO_SEATS') {
+          setShowSeatPrompt(true);
+          return;
+        }
         throw new Error(data.error);
       }
 
@@ -112,14 +120,25 @@ export default function UsersTab({ company }: UsersTabProps) {
       setNewUserEmail('');
       fetchUsers();
     } catch (error: any) {
+      const errorMessage = error.message || 'An unexpected error occurred';
+      // Check if it's a "no seats" error from the error message
+      if (errorMessage.toLowerCase().includes('no seats')) {
+        setShowSeatPrompt(true);
+        return;
+      }
       toast({
         title: 'Error inviting user',
-        description: error.message || 'An unexpected error occurred',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setInviting(false);
     }
+  };
+
+  const getAvailableSeats = () => {
+    const activeUsers = users.filter((u: any) => u.status !== 'revoked').length;
+    return company.seats_purchased - activeUsers;
   };
 
   const handleResendInvite = async (userId: string) => {
@@ -354,23 +373,71 @@ export default function UsersTab({ company }: UsersTabProps) {
           <CardHeader>
             <CardTitle>Invite New User</CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleInviteUser} className="flex gap-4">
-              <Input
-                type="email"
-                placeholder="user@company.com"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                required
-              />
-              <Button type="submit" disabled={inviting}>
-                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                Invite
-              </Button>
-            </form>
-            <p className="text-sm text-muted-foreground mt-2">
-              Seats available: {company.seats_purchased - users.filter((u: any) => u.status !== 'revoked').length}
-            </p>
+          <CardContent className="space-y-4">
+            {showSeatPrompt ? (
+              <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800 dark:text-amber-400">You've run out of seats</AlertTitle>
+                <AlertDescription className="text-amber-700 dark:text-amber-300">
+                  <p className="mb-3">
+                    All {company.seats_purchased} seats are currently in use. Would you like to add more seats to your plan?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-amber-600 hover:bg-amber-700"
+                      onClick={() => {
+                        // TODO: Navigate to billing/settings or open billing modal
+                        toast({
+                          title: 'Contact us',
+                          description: 'Please contact support@rolecolorfinder.com to add more seats.',
+                        });
+                      }}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Add More Seats
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowSeatPrompt(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <form onSubmit={handleInviteUser} className="flex gap-4">
+                  <Input
+                    type="email"
+                    placeholder="user@company.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    required
+                    disabled={getAvailableSeats() <= 0}
+                  />
+                  <Button type="submit" disabled={inviting || getAvailableSeats() <= 0}>
+                    {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                    Invite
+                  </Button>
+                </form>
+                <p className={`text-sm ${getAvailableSeats() <= 0 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                  Seats available: {getAvailableSeats()} / {company.seats_purchased}
+                  {getAvailableSeats() <= 0 && (
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="ml-2 h-auto p-0 text-amber-600 hover:text-amber-700"
+                      onClick={() => setShowSeatPrompt(true)}
+                    >
+                      Add more seats
+                    </Button>
+                  )}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
