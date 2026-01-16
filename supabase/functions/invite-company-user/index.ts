@@ -203,9 +203,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (adminError || !adminCheck) {
-      console.log('User is not a company admin for this company');
+      console.log('User is not a company admin for this company. User ID:', user.id, 'Company ID:', company_id);
       return new Response(
-        JSON.stringify({ error: 'Forbidden: You must be a company admin' }),
+        JSON.stringify({ error: 'Forbidden: You must be a company admin for this company. Please ensure you are logged into the correct account.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
