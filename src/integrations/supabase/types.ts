@@ -355,6 +355,60 @@ export type Database = {
         }
         Relationships: []
       }
+      registrants_hg: {
+        Row: {
+          created_at: string | null
+          email: string
+          experience_level: string
+          full_name: string
+          id: string
+          registered_at: string | null
+          school_organization: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          experience_level: string
+          full_name: string
+          id?: string
+          registered_at?: string | null
+          school_organization: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          experience_level?: string
+          full_name?: string
+          id?: string
+          registered_at?: string | null
+          school_organization?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: number
+          idea: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: number
+          idea?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: number
+          idea?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       school_classes: {
         Row: {
           admin_id: string
