@@ -23,46 +23,6 @@ export default function B2BDashboard() {
     window.location.href = '/b2b';
   };
 
-  const handleClaimAccess = async () => {
-    if (!user) {
-      window.location.href = '/auth';
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('link-test-company', {
-        body: {
-          user_id: user.id,
-        },
-      });
-
-      if (error || (data && (data as any).error)) {
-        const message = (error as any)?.message ?? (data as any)?.error ?? 'Unknown error';
-        console.error('Error linking company access via edge function:', message);
-        toast({
-          title: 'Unable to link company access',
-          description: message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      await refreshCompany();
-
-      toast({
-        title: 'Company access linked',
-        description: 'Your B2B dashboard is now ready.',
-      });
-    } catch (err: any) {
-      console.error('Unexpected error linking company access:', err);
-      toast({
-        title: 'Unexpected error',
-        description: err.message ?? 'Please try again or contact support.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   // Re-fetch company data on mount to ensure we have the latest data
   useEffect(() => {
     refreshCompany();
@@ -77,21 +37,19 @@ export default function B2BDashboard() {
   }
 
   if (!company || !companyUser) {
+    // Redirect to create company page if user doesn't have a company
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>No Company Access</CardTitle>
             <CardDescription>
-              You don't have access to any company portal yet.
+              You don't have access to any company portal yet. Create one to get started.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Button onClick={() => window.location.href = '/b2b'}>
+          <CardContent>
+            <Button onClick={() => window.location.href = '/b2b'} className="w-full">
               Create Company
-            </Button>
-            <Button variant="outline" onClick={handleClaimAccess}>
-              Use Test Company / Link Access
             </Button>
           </CardContent>
         </Card>

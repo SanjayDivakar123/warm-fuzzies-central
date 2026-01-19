@@ -7,9 +7,10 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2 } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
+import DeleteCompanyModal from './DeleteCompanyModal';
 
 interface SettingsTabProps {
   company: any;
@@ -29,6 +30,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
   const [billingOpen, setBillingOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -422,6 +424,32 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         Save All Settings
       </Button>
 
+      {/* Danger Zone - Delete Company */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>
+            Permanently delete this company and all associated data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Once you delete your company, there is no going back. All users, assessments, tasks, and settings will be permanently removed.
+          </p>
+          <Button 
+            variant="destructive" 
+            className="w-full gap-2"
+            onClick={() => setDeleteModalOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Company
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Assessment Preview Modal */}
       <AssessmentPreviewModal 
         open={previewOpen}
@@ -437,6 +465,13 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         onSeatsUpdated={() => {
           if (onSettingsSaved) onSettingsSaved();
         }}
+      />
+
+      {/* Delete Company Modal */}
+      <DeleteCompanyModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        company={company}
       />
     </div>
   );
