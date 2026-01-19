@@ -170,6 +170,18 @@ function DownloadActions({
 export default function CompanyResults() {
   const { company, employee, assessmentResults, loading, fetchAssessmentResults } = useCompanyPortal();
   const navigate = useNavigate();
+  const [isSessionChecked, setIsSessionChecked] = useState(false);
+
+  // Wait for session restoration to complete before checking employee
+  useEffect(() => {
+    if (!loading && company) {
+      // Give a brief delay for session restoration from localStorage
+      const timer = setTimeout(() => {
+        setIsSessionChecked(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, company]);
 
   // Fetch results when component mounts
   useEffect(() => {
@@ -178,14 +190,41 @@ export default function CompanyResults() {
     }
   }, [employee, assessmentResults, fetchAssessmentResults]);
 
-  // Redirect if no employee
+  // Redirect if no employee ONLY after session check is complete
   useEffect(() => {
-    if (!loading && company && !employee) {
+    if (isSessionChecked && company && !employee) {
       navigate(`/company/${company.subdomain}/login`);
     }
-  }, [loading, company, employee, navigate]);
+  }, [isSessionChecked, company, employee, navigate]);
 
-  if (loading || !company) {
+  // Show loading while initial load or session check is happening
+  if (loading || !company || !isSessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show loading for assessment results after employee is confirmed
+  if (employee && !assessmentResults) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-8 pb-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <h1 className="text-xl font-bold mb-2">Loading Results...</h1>
+            <p className="text-muted-foreground">
+              Please wait while we fetch your assessment results.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If no employee after session check, show message (redirect will happen via useEffect)
+  if (!employee) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
