@@ -162,13 +162,30 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
       return;
     }
 
+    // Preferred path: edge function (returns employee + results)
     try {
       const { data, error: fetchError } = await supabase.functions.invoke('get-employee-data', {
-        body: { employeeId: employee.id, companyId: company?.id }
+        body: { employeeId: employee.id, companyId: company?.id },
       });
 
-      if (!fetchError && data?.success && data.assessmentResults) {
+      if (!fetchError && data?.success && data.assessmentResults?.results) {
         setAssessmentResults(data.assessmentResults.results);
+        return;
+      }
+    } catch {
+      // fall through to direct query
+    }
+
+    // Fallback: direct read by assessment_result_id (works when the user has RLS access)
+    try {
+      const { data: row, error: directError } = await supabase
+        .from('assessment_results')
+        .select('results')
+        .eq('id', employee.assessment_result_id)
+        .maybeSingle();
+
+      if (!directError && row?.results) {
+        setAssessmentResults(row.results as unknown as AssessmentResults);
       }
     } catch (err) {
       console.error('Error fetching assessment results:', err);
