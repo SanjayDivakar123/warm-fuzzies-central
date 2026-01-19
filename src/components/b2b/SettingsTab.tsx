@@ -21,8 +21,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
   const [subdomain, setSubdomain] = useState(company.subdomain);
-  const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled);
-  const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || '');
   const [customDomain, setCustomDomain] = useState(company.custom_domain || '');
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>(company.assessment_type);
@@ -141,8 +139,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           subdomain,
-          google_sso_enabled: googleSsoEnabled,
-          google_workspace_domain: googleWorkspaceDomain,
           custom_domain: customDomain,
           custom_domain_enabled: customDomainEnabled,
           assessment_type: assessmentType,
@@ -277,7 +273,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customDomain">Custom Domain (+$10/mo)</Label>
+            <Label htmlFor="customDomain">Custom Domain</Label>
             <Input
               id="customDomain"
               value={customDomain}
@@ -296,39 +292,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Authentication</CardTitle>
-          <CardDescription>Configure authentication options</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="googleSso">Google SSO (+$10/mo)</Label>
-              <p className="text-sm text-muted-foreground">
-                Enable Google Workspace single sign-on
-              </p>
-            </div>
-            <Switch
-              id="googleSso"
-              checked={googleSsoEnabled}
-              onCheckedChange={setGoogleSsoEnabled}
-            />
-          </div>
-
-          {googleSsoEnabled && (
-            <div className="space-y-2">
-              <Label htmlFor="googleWorkspaceDomain">Google Workspace Domain</Label>
-              <Input
-                id="googleWorkspaceDomain"
-                value={googleWorkspaceDomain}
-                onChange={(e) => setGoogleWorkspaceDomain(e.target.value)}
-                placeholder="company.com"
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Assessment Type Selection */}
       <Card>
