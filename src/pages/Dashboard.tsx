@@ -19,7 +19,8 @@ import {
   ChevronRight,
   User,
   Settings,
-  KeyRound
+  KeyRound,
+  Building2
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -45,12 +46,32 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [isCompanyAdmin, setIsCompanyAdmin] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
+      checkCompanyAdmin();
     }
   }, [user]);
+
+  const checkCompanyAdmin = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_users')
+        .select('id, role')
+        .eq('email', user?.email)
+        .eq('role', 'admin')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (!error && data) {
+        setIsCompanyAdmin(true);
+      }
+    } catch (error) {
+      console.error('Error checking company admin status:', error);
+    }
+  };
 
   const fetchUserAssessments = async () => {
     try {
@@ -222,6 +243,29 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="space-y-8">
+              {/* B2B Dashboard Access */}
+              {isCompanyAdmin && (
+                <section>
+                  <Card className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                    <CardContent className="flex items-center justify-between py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">B2B Company Portal</h3>
+                          <p className="text-sm text-muted-foreground">Manage your company assessments and team</p>
+                        </div>
+                      </div>
+                      <Button onClick={() => navigate('/b2b/company-portal')}>
+                        <Building2 className="w-4 h-4 mr-2" />
+                        B2B Dashboard
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </section>
+              )}
+
               {/* Account Settings */}
               <section>
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
