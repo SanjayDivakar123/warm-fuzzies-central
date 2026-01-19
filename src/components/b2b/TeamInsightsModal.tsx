@@ -72,7 +72,6 @@ interface InsightData {
   teamDynamics: string;
   memberInsights: MemberInsight[];
   recommendations: string[];
-  hiringRecommendations: string[];
 }
 
 interface TeamInsightsModalProps {
@@ -116,10 +115,12 @@ const fitScoreStyles: Record<string, { bg: string; text: string; icon: typeof Ch
   mismatch: { bg: 'bg-red-100', text: 'text-red-800', icon: AlertTriangle },
 };
 
-// Generate a hash of team members to detect changes
+// Generate a hash of team members to detect changes (includes scores to detect assessment changes)
 function generateTeamHash(teamMembers: TeamMember[]): string {
   const sortedMembers = [...teamMembers].sort((a, b) => a.email.localeCompare(b.email));
-  const hashData = sortedMembers.map(m => `${m.email}:${m.job_role}:${m.dominantColor}`).join('|');
+  const hashData = sortedMembers.map(m => 
+    `${m.email}:${m.job_role}:${m.dominantColor}:${m.scores.yellow}-${m.scores.red}-${m.scores.green}-${m.scores.blue}`
+  ).join('|');
   return btoa(hashData);
 }
 
@@ -517,24 +518,6 @@ export default function TeamInsightsModal({
                                     <p className="text-sm text-muted-foreground">{member.potentialChallenges}</p>
                                   </div>
                                 )}
-
-                                {/* Suggested Roles */}
-                                {member.suggestedRoles && member.suggestedRoles.length > 0 && member.fitScore !== 'excellent' && (
-                                  <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                    <ArrowRight className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                                    <div>
-                                      <span className="text-sm font-medium">Alternative roles to consider:</span>
-                                      <div className="flex flex-wrap gap-2 mt-2">
-                                        {member.suggestedRoles.map((role, j) => (
-                                          <Badge key={j} variant="secondary">
-                                            {role}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
                                 {/* Actionable Advice */}
                                 {member.actionableAdvice && (
                                   <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
@@ -545,6 +528,54 @@ export default function TeamInsightsModal({
                                     <p className="text-sm text-blue-700">{member.actionableAdvice}</p>
                                   </div>
                                 )}
+
+                                {/* Match Section */}
+                                <div className={`p-4 rounded-lg border-2 ${
+                                  member.fitScore === 'excellent' ? 'bg-green-50 border-green-300' :
+                                  member.fitScore === 'good' ? 'bg-blue-50 border-blue-300' :
+                                  member.fitScore === 'moderate' ? 'bg-amber-50 border-amber-300' :
+                                  'bg-red-50 border-red-300'
+                                }`}>
+                                  <p className="font-semibold text-sm mb-2 flex items-center gap-2">
+                                    <Target className="h-4 w-4" />
+                                    Match Analysis for {member.currentRole}
+                                  </p>
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className={`text-2xl font-bold ${
+                                      member.fitScore === 'excellent' ? 'text-green-700' :
+                                      member.fitScore === 'good' ? 'text-blue-700' :
+                                      member.fitScore === 'moderate' ? 'text-amber-700' :
+                                      'text-red-700'
+                                    }`}>
+                                      {member.matchPercentage || (member.fitScore === 'excellent' ? 92 : member.fitScore === 'good' ? 78 : member.fitScore === 'moderate' ? 58 : 35)}% Match
+                                    </div>
+                                    <Badge className={`${
+                                      member.fitScore === 'excellent' ? 'bg-green-600' :
+                                      member.fitScore === 'good' ? 'bg-blue-600' :
+                                      member.fitScore === 'moderate' ? 'bg-amber-600' :
+                                      'bg-red-600'
+                                    } text-white`}>
+                                      {member.fitScore === 'excellent' ? 'Excellent Fit' :
+                                       member.fitScore === 'good' ? 'Good Fit' :
+                                       member.fitScore === 'moderate' ? 'Moderate Fit' :
+                                       'Consider Reassignment'}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-3">{member.matchAnalysis}</p>
+                                  
+                                  {member.fitScore !== 'excellent' && member.suggestedRoles && member.suggestedRoles.length > 0 && (
+                                    <div className="pt-3 border-t border-current/10">
+                                      <p className="font-medium text-sm mb-2">Stronger Matches for This Person:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {member.suggestedRoles.map((role, j) => (
+                                          <Badge key={j} variant="outline" className="bg-white">
+                                            {role}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </CardContent>
                             </CollapsibleContent>
                           </Card>
@@ -576,27 +607,6 @@ export default function TeamInsightsModal({
                   </CardContent>
                 </Card>
 
-                {/* Hiring Recommendations */}
-                {insights.hiringRecommendations && insights.hiringRecommendations.length > 0 && (
-                  <Card className="border-dashed border-2">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
-                        Hiring Recommendations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-3">
-                        {insights.hiringRecommendations.map((rec, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="text-primary mt-1">→</span>
-                            <span className="text-sm leading-relaxed">{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             )}
           </div>
