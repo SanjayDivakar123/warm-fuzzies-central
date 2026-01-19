@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Minus, CreditCard, Users } from 'lucide-react';
+import { Loader2, Plus, Minus, CreditCard, Users, Tag } from 'lucide-react';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 interface BillingModalProps {
   open: boolean;
@@ -16,15 +17,19 @@ interface BillingModalProps {
 }
 
 const PRICE_PER_SEAT = 20;
+const PROMO_CODE = 'LEADERSWELCOME';
 
 export default function BillingModal({ open, onClose, company, onSeatsUpdated }: BillingModalProps) {
   const [additionalSeats, setAdditionalSeats] = useState(0);
+  const [promoCode, setPromoCode] = useState('');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   const currentSeats = company.seats_purchased || 0;
   const newTotal = currentSeats + additionalSeats;
-  const additionalCost = additionalSeats * PRICE_PER_SEAT;
+  
+  const isPromoValid = promoCode.toUpperCase().trim() === PROMO_CODE;
+  const additionalCost = isPromoValid ? 0 : additionalSeats * PRICE_PER_SEAT;
 
   const handleIncrement = () => {
     setAdditionalSeats(prev => prev + 1);
@@ -39,25 +44,58 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('companies')
-        .update({ seats_purchased: newTotal })
-        .eq('id', company.id);
+      // If promo code is valid, add seats directly (free)
+      if (isPromoValid) {
+        const { error } = await supabase
+          .from('companies')
+          .update({ seats_purchased: newTotal })
+          .eq('id', company.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: 'Seats added successfully!',
-        description: `You now have ${newTotal} seats available.`,
+        toast({
+          title: 'Seats added for free!',
+          description: `Promo code applied! You now have ${newTotal} seats.`,
+        });
+
+        onSeatsUpdated();
+        setAdditionalSeats(0);
+        setPromoCode('');
+        onClose();
+        return;
+      }
+
+      // Otherwise, redirect to Stripe checkout
+      const { data, error } = await supabase.functions.invoke('add-seats-payment', {
+        body: {
+          companyId: company.id,
+          companyName: company.name,
+          additionalSeats,
+          currentSeats,
+          successUrl: `${window.location.origin}/b2b/company-portal?seats_added=true`,
+          cancelUrl: `${window.location.origin}/b2b/company-portal`,
+        },
       });
 
-      onSeatsUpdated();
-      setAdditionalSeats(0);
-      onClose();
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const payload = await error.context.json().catch(() => null);
+          if (payload?.error) throw new Error(payload.error);
+        }
+        throw error;
+      }
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
     } catch (error: any) {
+      console.error('Add seats error:', error);
       toast({
         title: 'Error adding seats',
-        description: error.message,
+        description: error.message || 'Failed to process. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -135,6 +173,26 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
 
           <Separator />
 
+          {/* Promo Code Section */}
+          <div className="space-y-2">
+            <Label htmlFor="promoCode" className="text-sm font-medium flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Promo Code (Optional)
+            </Label>
+            <Input
+              id="promoCode"
+              placeholder="Enter promo code"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              className="uppercase"
+            />
+            {isPromoValid && (
+              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                ✓ Promo code applied! Additional seats are free
+              </p>
+            )}
+          </div>
+
           {/* Cost Summary */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <div className="flex justify-between items-center">
@@ -144,7 +202,18 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
                   {additionalSeats} seat{additionalSeats !== 1 ? 's' : ''} × ${PRICE_PER_SEAT}
                 </p>
               </div>
-              <span className="text-2xl font-bold">${additionalCost}</span>
+              <div className="text-right">
+                {isPromoValid && additionalSeats > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm line-through text-muted-foreground">
+                      ${additionalSeats * PRICE_PER_SEAT}
+                    </span>
+                    <span className="text-2xl font-bold text-green-600">$0</span>
+                  </div>
+                ) : (
+                  <span className="text-2xl font-bold">${additionalCost}</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -163,12 +232,15 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
               ) : (
                 <Users className="h-4 w-4" />
               )}
-              Add {additionalSeats} Seat{additionalSeats !== 1 ? 's' : ''}
+              {isPromoValid 
+                ? `Add ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''} (Free!)`
+                : `Pay $${additionalCost} for ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''}`
+              }
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Payment will be processed securely. Seats are available immediately after purchase.
+            Payment will be processed securely via Stripe. Seats are available immediately after purchase.
           </p>
         </div>
       </DialogContent>

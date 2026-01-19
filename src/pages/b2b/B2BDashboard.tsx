@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,16 +18,49 @@ export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const handleLogout = async () => {
     await signOut();
     window.location.href = '/b2b';
   };
 
-  // Re-fetch company data on mount to ensure we have the latest data
+  // Handle return from Stripe add seats payment
   useEffect(() => {
-    refreshCompany();
-  }, []);
+    const seatsAdded = searchParams.get('seats_added');
+    const sessionId = searchParams.get('session_id');
+
+    if (seatsAdded === 'true' && sessionId) {
+      // Verify the payment and update seats
+      const verifyPayment = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-add-seats-payment', {
+            body: { sessionId },
+          });
+
+          if (error || !data?.success) {
+            console.error('Seat payment verification failed:', error || data?.error);
+          } else {
+            toast({
+              title: 'Seats added successfully!',
+              description: `Your company now has ${data.newTotal} seats.`,
+            });
+          }
+        } catch (err) {
+          console.error('Error verifying seat payment:', err);
+        }
+
+        // Clear the URL params and refresh company data
+        setSearchParams({});
+        refreshCompany();
+      };
+
+      verifyPayment();
+    } else {
+      // Re-fetch company data on mount to ensure we have the latest data
+      refreshCompany();
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
