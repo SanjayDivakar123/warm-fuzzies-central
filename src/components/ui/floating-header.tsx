@@ -5,16 +5,13 @@ import { Sheet, SheetContent, SheetTrigger, SheetFooter } from '@/components/ui/
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 
 export function FloatingHeader() {
   const [open, setOpen] = React.useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { company } = useCompany();
   
   const isActive = (path: string) => location.pathname === path;
-  const dashboardPath = company ? '/b2b/company-portal' : '/dashboard';
 
   const links = [
     { label: 'Home', href: '/', icon: Home },
@@ -60,7 +57,7 @@ export function FloatingHeader() {
           {user ? (
             <>
               <Link
-                to={dashboardPath}
+                to="/dashboard"
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
                   'rounded-xl'
@@ -141,7 +138,7 @@ export function FloatingHeader() {
                   {user ? (
                     <>
                       <Link
-                        to={dashboardPath}
+                        to="/dashboard"
                         onClick={() => setOpen(false)}
                         className={cn(
                           buttonVariants({ variant: 'outline' }),
