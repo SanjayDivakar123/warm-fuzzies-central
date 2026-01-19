@@ -146,11 +146,23 @@ export default function B2B() {
       }
     } catch (error: any) {
       console.error('Create company error:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to process. Please try again.',
-        variant: 'destructive',
-      });
+      
+      // Check for subdomain already taken error
+      const errorMessage = error.message || '';
+      if (errorMessage.toLowerCase().includes('subdomain already taken') || 
+          errorMessage.toLowerCase().includes('subdomain') && errorMessage.toLowerCase().includes('exists')) {
+        toast({
+          title: 'Subdomain Already Exists',
+          description: `The name "${companyName}" is already taken. Please try a different company name.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: errorMessage || 'Failed to process. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
