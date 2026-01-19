@@ -21,12 +21,14 @@ async function sendInviteEmail(
   subdomain: string
 ) {
   const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
-  const mailgunDomain = 'sandbox92196452a63b48f1a6b54431b47d0dea.mailgun.org';
+  const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN') || 'rolecolorfinder.com';
   
-  if (!mailgunApiKey) {
-    console.error('MAILGUN_API_KEY not configured');
+  if (!mailgunApiKey || !mailgunDomain) {
+    console.error('MAILGUN_API_KEY or MAILGUN_DOMAIN not configured');
     return false;
   }
+  
+  console.log('Sending email via Mailgun domain:', mailgunDomain);
 
   const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
   
