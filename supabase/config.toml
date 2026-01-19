@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.analyze-task-assignment]
 verify_jwt = true
+
+[functions.delete-company]
+verify_jwt = true
