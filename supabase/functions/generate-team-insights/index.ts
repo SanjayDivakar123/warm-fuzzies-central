@@ -97,19 +97,18 @@ Provide a comprehensive analysis in the following JSON format. For memberInsight
       "currentRole": "their current job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
-      "matchPercentage": "A number between 0-100 representing how well the person's leadership style matches their job role. Excellent=85-100, Good=70-84, Moderate=50-69, Mismatch=0-49",
-      "matchAnalysis": "3-4 sentences specifically analyzing how their dominant color (and secondary tendencies) align or conflict with their job role. Be specific about what works and what doesn't.",
+      "matchPercentage": "A number between 0-100 representing how well the person's leadership style matches their job role. Be precise - Excellent=85-100, Good=70-84, Moderate=50-69, Mismatch=0-49. Calculate based on how well their color profile aligns with role requirements.",
+      "matchAnalysis": "4-5 sentences deeply analyzing whether this person is a MATCH for their role. Explain specifically WHY their dominant color and score distribution makes them suited or unsuited for this position. If they're not a great match, explain what role would be a STRONGER match for them and why. Be direct about fit quality.",
       "leadershipStyle": "2-3 sentences describing their leadership approach based on their score distribution",
       "workplaceContribution": "2 sentences about what unique value they bring to the team",
       "strengths": ["3-4 specific strengths this person brings based on their color profile and role"],
       "developmentAreas": ["2-3 specific areas where they could grow given their role requirements"],
       "potentialChallenges": "1-2 sentences about challenges they might face in their role due to their style",
-      "suggestedRoles": ["2-3 alternative roles if fit is moderate/mismatch, or complementary responsibilities if fit is good/excellent"],
-      "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness in their current role"
+      "suggestedRoles": ["If fit is moderate/mismatch: 2-3 STRONGER matching roles for this person. If fit is good/excellent: 2-3 complementary responsibilities they could excel at"],
+      "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness"
     }
   ],
-  "recommendations": ["5-6 strategic recommendations for team optimization, collaboration improvements, and role adjustments"],
-  "hiringRecommendations": ["2-3 recommendations about what leadership styles would complement this team for future hires"]
+  "recommendations": ["5-6 strategic recommendations for team optimization, collaboration improvements, and role adjustments"]
 }
 
 Role-leadership style alignment guidelines:
