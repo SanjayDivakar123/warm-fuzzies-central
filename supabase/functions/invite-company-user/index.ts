@@ -23,99 +23,88 @@ async function sendInviteEmail(
   companyName: string,
   subdomain: string
 ) {
-  const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
+  const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
+  const mailgunDomain = 'sandbox92196452a63b48f1a6b54431b47d0dea.mailgun.org';
   
-  if (!sendgridApiKey) {
-    console.error('SENDGRID_API_KEY not configured');
+  if (!mailgunApiKey) {
+    console.error('MAILGUN_API_KEY not configured');
     return false;
   }
 
-  const portalUrl = `https://preview--role-color-finder.lovable.app/company/${subdomain}/login`;
+  const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
   
-  const emailContent = {
-    personalizations: [
-      {
-        to: [{ email }],
-        subject: `You're invited to take the Role Color Assessment for ${companyName}`,
-      },
-    ],
-    from: {
-      email: 'noreply@rolecolorfinder.com',
-      name: 'Role Color Finder',
-    },
-    content: [
-      {
-        type: 'text/html',
-        value: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">Role Color Finder</h1>
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">Role Color Finder</h1>
+      </div>
+      
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 12px 12px;">
+        <h2 style="color: #333; margin-top: 0;">You've been invited!</h2>
+        
+        <p>Hi there,</p>
+        
+        <p><strong>${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.</p>
+        
+        <div style="background: white; border: 2px solid #9b87f5; border-radius: 8px; padding: 20px; margin: 25px 0;">
+          <p style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-align: center;"><strong>To log in, you'll need:</strong></p>
+          
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
+              <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Email</p>
+              <p style="margin: 0; font-size: 16px; font-weight: 600; color: #333;">${email}</p>
             </div>
             
-            <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 12px 12px;">
-              <h2 style="color: #333; margin-top: 0;">You've been invited!</h2>
-              
-              <p>Hi there,</p>
-              
-              <p><strong>${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.</p>
-              
-              <div style="background: white; border: 2px solid #9b87f5; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                <p style="margin: 0 0 15px 0; color: #666; font-size: 14px; text-align: center;"><strong>To log in, you'll need:</strong></p>
-                
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                  <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Email</p>
-                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #333;">${email}</p>
-                  </div>
-                  
-                  <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Invite Code</p>
-                    <p style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #9b87f5;">${inviteCode}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <p style="text-align: center;">
-                <a href="${portalUrl}" style="display: inline-block; background: #9b87f5; color: white; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600;">Start Assessment</a>
-              </p>
-              
-              <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                Or go directly to: <a href="${portalUrl}" style="color: #9b87f5;">${portalUrl}</a>
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-              
-              <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This invitation was sent by ${companyName} through Role Color Finder.<br>
-                If you didn't expect this email, you can safely ignore it.
-              </p>
+            <div style="background: #f5f3ff; border-radius: 6px; padding: 12px; text-align: center;">
+              <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Your Invite Code</p>
+              <p style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #9b87f5;">${inviteCode}</p>
             </div>
-          </body>
-          </html>
-        `,
-      },
-    ],
-  };
+          </div>
+        </div>
+        
+        <p style="text-align: center;">
+          <a href="${portalUrl}" style="display: inline-block; background: #9b87f5; color: white; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600;">Start Assessment</a>
+        </p>
+        
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">
+          Or go directly to: <a href="${portalUrl}" style="color: #9b87f5;">${portalUrl}</a>
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        
+        <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+          This invitation was sent by ${companyName} through Role Color Finder.<br>
+          If you didn't expect this email, you can safely ignore it.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
 
   try {
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const formData = new FormData();
+    formData.append('from', `Role Color Finder <postmaster@${mailgunDomain}>`);
+    formData.append('to', email);
+    formData.append('subject', `You're invited to take the Role Color Assessment for ${companyName}`);
+    formData.append('html', htmlContent);
+
+    const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${sendgridApiKey}`,
-        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + btoa(`api:${mailgunApiKey}`),
       },
-      body: JSON.stringify(emailContent),
+      body: formData,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('SendGrid error:', response.status, errorText);
+      console.error('Mailgun error:', response.status, errorText);
       return false;
     }
 
