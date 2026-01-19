@@ -8,14 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Building2, Users, Shield, Sparkles } from 'lucide-react';
+import { Loader2, Building2, Users, Shield, Sparkles, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const PROMO_CODE = 'LEADERSWELCOME';
 
 export default function B2B() {
   const [companyName, setCompanyName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [seats, setSeats] = useState('2'); // Min 2 per spec
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>('25q');
+  const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const { toast } = useToast();
@@ -60,6 +63,10 @@ export default function B2B() {
       .substring(0, 63);
   };
 
+  const isPromoValid = promoCode.toUpperCase().trim() === PROMO_CODE;
+  const seatCount = parseInt(seats) || 2;
+  const totalPrice = isPromoValid ? 0 : seatCount * 20;
+
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,7 +82,6 @@ export default function B2B() {
     }
 
     // Validate minimum seats
-    const seatCount = parseInt(seats);
     if (seatCount < 2) {
       toast({
         title: 'Minimum 2 seats required',
@@ -90,44 +96,59 @@ export default function B2B() {
     try {
       const subdomain = generateSubdomain(companyName);
 
-      // Call edge function to create company with user_id
-      const { data, error } = await supabase.functions.invoke('create-company', {
+      // If promo code is valid, create company directly (free)
+      if (isPromoValid) {
+        const { data, error } = await supabase.functions.invoke('create-company', {
+          body: {
+            name: companyName,
+            subdomain,
+            admin_email: adminEmail,
+            seats_purchased: seatCount,
+            assessment_type: assessmentType,
+            user_id: user.id,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        toast({
+          title: 'Company created! 🎉',
+          description: `Promo code applied! Your portal is ready at ${subdomain}.rolecolorfinder.com`,
+        });
+
+        navigate('/b2b/company-portal');
+        return;
+      }
+
+      // Otherwise, redirect to Stripe checkout
+      const { data, error } = await supabase.functions.invoke('create-b2b-payment', {
         body: {
-          name: companyName,
+          companyName,
+          adminEmail,
+          seats: seatCount,
+          assessmentType,
+          userId: user.id,
           subdomain,
-          admin_email: adminEmail,
-          seats_purchased: seatCount,
-          assessment_type: assessmentType,
-          user_id: user.id, // Link to current user
+          successUrl: `${window.location.origin}/b2b/payment-success`,
+          cancelUrl: `${window.location.origin}/b2b`,
         },
       });
 
       if (error) throw error;
-      
-      // Check for error in response body
-      if (data?.error) {
-        throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('Failed to create checkout session');
       }
-
-      toast({
-        title: 'Company created!',
-        description: `Your company subdomain is: ${subdomain}.rolecolorfinder.com`,
-      });
-
-      // Navigate to company portal
-      navigate('/b2b/company-portal');
     } catch (error: any) {
       console.error('Create company error:', error);
-      
-      // Parse the error message from edge function response
-      let errorMessage = 'Failed to create company. Please try again.';
-      if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
-        title: 'Error creating company',
-        description: errorMessage,
+        title: 'Error',
+        description: error.message || 'Failed to process. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -274,13 +295,52 @@ export default function B2B() {
                     </div>
                   </div>
 
+                  {/* Promo Code Section */}
+                  <div className="space-y-2">
+                    <Label htmlFor="promoCode" className="text-sm font-medium flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      Promo Code (Optional)
+                    </Label>
+                    <Input
+                      id="promoCode"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      className="h-11 bg-background/50 border-border/50 focus:border-primary/50 uppercase"
+                    />
+                    {isPromoValid && (
+                      <p className="text-xs text-role-green font-medium flex items-center gap-1">
+                        ✓ Promo code applied! Your total is now $0
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Price Summary */}
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        {seatCount} seats × $20
+                      </span>
+                      <div className="text-right">
+                        {isPromoValid ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm line-through text-muted-foreground">${seatCount * 20}</span>
+                            <span className="text-2xl font-bold text-role-green">$0</span>
+                          </div>
+                        ) : (
+                          <span className="text-2xl font-bold">${totalPrice}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25" 
                     disabled={loading}
                   >
                     {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                    {loading ? 'Creating Portal...' : 'Create Company Portal'}
+                    {loading ? 'Processing...' : isPromoValid ? 'Create Company Portal (Free!)' : `Pay $${totalPrice} & Create Portal`}
                   </Button>
                 </form>
               </CardContent>

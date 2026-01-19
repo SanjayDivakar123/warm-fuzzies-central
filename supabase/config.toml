@@ -41,3 +41,12 @@ verify_jwt = true
 
 [functions.generate-team-insights]
 verify_jwt = true
+
+[functions.create-b2b-payment]
+verify_jwt = false
+
+[functions.verify-b2b-payment]
+verify_jwt = false
+
+[functions.get-company-employee-session]
+verify_jwt = false
