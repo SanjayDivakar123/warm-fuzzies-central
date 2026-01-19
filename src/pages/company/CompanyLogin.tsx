@@ -216,12 +216,13 @@ export default function CompanyLogin() {
           href="https://rolecolorfinder.com" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-block hover:opacity-80 transition-opacity"
+          className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity text-muted-foreground"
         >
+          <span className="text-sm">Powered by</span>
           <img 
             src={rcfLogo} 
-            alt="Powered by RoleColorFinder" 
-            className="h-8 w-auto mx-auto"
+            alt="RoleColorFinder" 
+            className="h-6 w-auto"
           />
         </a>
       </footer>
