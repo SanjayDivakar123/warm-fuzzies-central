@@ -298,18 +298,6 @@ export default function OverviewTab({ company }: OverviewTabProps) {
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-muted-foreground">Google SSO</span>
-                <span 
-                  className={`font-semibold px-3 py-1 rounded-full text-sm ${
-                    company.google_sso_enabled 
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {company.google_sso_enabled ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-muted-foreground">Custom Domain</span>
                 <span 
                   className={`font-semibold px-3 py-1 rounded-full text-sm ${
