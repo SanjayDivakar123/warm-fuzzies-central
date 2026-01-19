@@ -92,8 +92,34 @@ export default function UsersTab({ company }: UsersTabProps) {
     setLoading(false);
   };
 
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side email validation with user-friendly toast
+    const trimmedEmail = newUserEmail.trim();
+    if (!trimmedEmail) {
+      toast({
+        title: 'Email required',
+        description: 'Please enter an email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!isValidEmail(trimmedEmail)) {
+      toast({
+        title: 'Invalid email format',
+        description: 'Please enter a valid email address (e.g., user@company.com).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setInviting(true);
     setShowSeatPrompt(false);
 
@@ -101,7 +127,7 @@ export default function UsersTab({ company }: UsersTabProps) {
       const { data, error } = await supabase.functions.invoke('invite-company-user', {
         body: {
           company_id: company.id,
-          email: newUserEmail,
+          email: trimmedEmail,
         },
       });
 
@@ -119,7 +145,7 @@ export default function UsersTab({ company }: UsersTabProps) {
 
       toast({
         title: 'User invited!',
-        description: `Invitation sent to ${newUserEmail}`,
+        description: `Invitation sent to ${trimmedEmail}`,
       });
 
       setNewUserEmail('');
