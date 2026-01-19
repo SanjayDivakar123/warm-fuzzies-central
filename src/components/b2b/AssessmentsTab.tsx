@@ -360,20 +360,28 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  onClick={() => setShowInsightsModal(true)}
-                  disabled={teamStats.pending > 0 || completedAssessments.length === 0}
-                  className="gap-2"
-                >
-                  <Lightbulb className="h-4 w-4" />
-                  Insights
-                </Button>
+                <span>
+                  <Button
+                    onClick={() => setShowInsightsModal(true)}
+                    disabled={
+                      teamStats.pending > 0 || 
+                      completedAssessments.length === 0 ||
+                      completedAssessments.some(a => !a.job_role)
+                    }
+                    className="gap-2"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    Insights
+                  </Button>
+                </span>
               </TooltipTrigger>
               <TooltipContent>
                 {completedAssessments.length === 0
                   ? 'No completed assessments yet'
                   : teamStats.pending > 0
                   ? `${teamStats.pending} team member${teamStats.pending !== 1 ? 's' : ''} still need to complete their assessment`
+                  : completedAssessments.some(a => !a.job_role)
+                  ? 'All team members need a job role assigned before generating insights'
                   : 'Get AI-powered team insights'}
               </TooltipContent>
             </Tooltip>
