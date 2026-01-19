@@ -1,15 +1,27 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Trash2, Loader2, Copy, Check, ChevronDown, ChevronUp, X, AlertCircle, CreditCard } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Plus,
+  Mail,
+  Trash2,
+  Loader2,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  X,
+  AlertCircle,
+  CreditCard,
+} from "lucide-react";
 
 interface UsersTabProps {
   company: any;
@@ -18,50 +30,50 @@ interface UsersTabProps {
 const MAX_INVITES = 3;
 
 const DEFAULT_JOB_ROLES = [
-  'Engineer',
-  'Designer',
-  'PM',
-  'Sales',
-  'Support',
-  'Analyst',
-  'Marketing',
-  'Founder',
-  'Intern',
-  'Operations',
-  'QA',
-  'Writer',
-  'Researcher',
+  "Engineer",
+  "Designer",
+  "PM",
+  "Sales",
+  "Support",
+  "Analyst",
+  "Marketing",
+  "Founder",
+  "Intern",
+  "Operations",
+  "QA",
+  "Writer",
+  "Researcher",
 ];
 
 const PREDEFINED_SKILLS = [
-  'UI Design',
-  'Data Analysis',
-  'Coding',
-  'Writing',
-  'Research',
-  'QA',
-  'Operations',
-  'Client Communication',
-  'Branding',
-  'Marketing',
-  'Project Management',
-  'Sales',
-  'Strategy',
-  'Content Creation',
-  'Technical Support',
+  "UI Design",
+  "Data Analysis",
+  "Coding",
+  "Writing",
+  "Research",
+  "QA",
+  "Operations",
+  "Client Communication",
+  "Branding",
+  "Marketing",
+  "Project Management",
+  "Sales",
+  "Strategy",
+  "Content Creation",
+  "Technical Support",
 ];
 
 export default function UsersTab({ company }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
-  const [newSkillInput, setNewSkillInput] = useState('');
-  const [newJobRoleInput, setNewJobRoleInput] = useState('');
+  const [newSkillInput, setNewSkillInput] = useState("");
+  const [newJobRoleInput, setNewJobRoleInput] = useState("");
   const [customJobRoles, setCustomJobRoles] = useState<string[]>([]);
   const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const { toast } = useToast();
@@ -75,16 +87,16 @@ export default function UsersTab({ company }: UsersTabProps) {
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
-      .from('company_users')
-      .select('*')
-      .eq('company_id', company.id)
-      .order('created_at', { ascending: false });
+      .from("company_users")
+      .select("*")
+      .eq("company_id", company.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
       toast({
-        title: 'Error fetching users',
+        title: "Error fetching users",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } else {
       setUsers(data || []);
@@ -92,51 +104,25 @@ export default function UsersTab({ company }: UsersTabProps) {
     setLoading(false);
   };
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-  };
-
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Client-side email validation with user-friendly toast
-    const trimmedEmail = newUserEmail.trim();
-    if (!trimmedEmail) {
-      toast({
-        title: 'Email required',
-        description: 'Please enter an email address.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (!isValidEmail(trimmedEmail)) {
-      toast({
-        title: 'Invalid email format',
-        description: 'Please enter a valid email address (e.g., user@company.com).',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setInviting(true);
     setShowSeatPrompt(false);
 
     try {
-      const { data, error } = await supabase.functions.invoke('invite-company-user', {
+      const { data, error } = await supabase.functions.invoke("invite-company-user", {
         body: {
           company_id: company.id,
-          email: trimmedEmail,
+          email: newUserEmail,
         },
       });
 
       if (error) throw error;
-      
+
       // Check if the response contains an error message
       if (data?.error) {
         // Check if it's a "no seats" error
-        if (data.error.toLowerCase().includes('no seats') || data.errorCode === 'NO_SEATS') {
+        if (data.error.toLowerCase().includes("no seats") || data.errorCode === "NO_SEATS") {
           setShowSeatPrompt(true);
           return;
         }
@@ -144,23 +130,23 @@ export default function UsersTab({ company }: UsersTabProps) {
       }
 
       toast({
-        title: 'User invited!',
-        description: `Invitation sent to ${trimmedEmail}`,
+        title: "User invited!",
+        description: `Invitation sent to ${newUserEmail}`,
       });
 
-      setNewUserEmail('');
+      setNewUserEmail("");
       fetchUsers();
     } catch (error: any) {
-      const errorMessage = error.message || 'An unexpected error occurred';
+      const errorMessage = error.message || "An unexpected error occurred";
       // Check if it's a "no seats" error from the error message
-      if (errorMessage.toLowerCase().includes('no seats')) {
+      if (errorMessage.toLowerCase().includes("no seats")) {
         setShowSeatPrompt(true);
         return;
       }
       toast({
-        title: 'Error inviting user',
+        title: "Error inviting user",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setInviting(false);
@@ -168,7 +154,7 @@ export default function UsersTab({ company }: UsersTabProps) {
   };
 
   const getAvailableSeats = () => {
-    const activeUsers = users.filter((u: any) => u.status !== 'revoked').length;
+    const activeUsers = users.filter((u: any) => u.status !== "revoked").length;
     return company.seats_purchased - activeUsers;
   };
 
@@ -176,7 +162,7 @@ export default function UsersTab({ company }: UsersTabProps) {
     setResendingId(userId);
 
     try {
-      const { data, error } = await supabase.functions.invoke('resend-invite', {
+      const { data, error } = await supabase.functions.invoke("resend-invite", {
         body: { user_id: userId },
       });
 
@@ -187,16 +173,16 @@ export default function UsersTab({ company }: UsersTabProps) {
       }
 
       toast({
-        title: 'Invite resent!',
+        title: "Invite resent!",
         description: `${data.remaining} resends remaining`,
       });
 
       fetchUsers();
     } catch (error: any) {
       toast({
-        title: 'Error resending invite',
+        title: "Error resending invite",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setResendingId(null);
@@ -205,24 +191,21 @@ export default function UsersTab({ company }: UsersTabProps) {
 
   const handleRevokeAccess = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('company_users')
-        .update({ status: 'revoked' })
-        .eq('id', userId);
+      const { error } = await supabase.from("company_users").update({ status: "revoked" }).eq("id", userId);
 
       if (error) throw error;
 
       toast({
-        title: 'Access revoked',
-        description: 'User access has been revoked',
+        title: "Access revoked",
+        description: "User access has been revoked",
       });
 
       fetchUsers();
     } catch (error: any) {
       toast({
-        title: 'Error revoking access',
+        title: "Error revoking access",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -231,43 +214,39 @@ export default function UsersTab({ company }: UsersTabProps) {
     try {
       // First, clear any task assignments that reference this user
       const { error: primaryError } = await supabase
-        .from('task_assignments')
+        .from("task_assignments")
         .update({ primary_assignee_id: null })
-        .eq('primary_assignee_id', userId);
+        .eq("primary_assignee_id", userId);
 
       if (primaryError) {
-        console.error('Error clearing primary assignments:', primaryError);
+        console.error("Error clearing primary assignments:", primaryError);
       }
 
       const { error: secondaryError } = await supabase
-        .from('task_assignments')
+        .from("task_assignments")
         .update({ secondary_assignee_id: null })
-        .eq('secondary_assignee_id', userId);
+        .eq("secondary_assignee_id", userId);
 
       if (secondaryError) {
-        console.error('Error clearing secondary assignments:', secondaryError);
+        console.error("Error clearing secondary assignments:", secondaryError);
       }
 
       // Now delete the user
-      const { error } = await supabase
-        .from('company_users')
-        .delete()
-        .eq('id', userId)
-        .eq('status', 'revoked'); // Only allow deleting revoked users
+      const { error } = await supabase.from("company_users").delete().eq("id", userId).eq("status", "revoked"); // Only allow deleting revoked users
 
       if (error) throw error;
 
       toast({
-        title: 'User deleted',
-        description: 'User has been permanently removed',
+        title: "User deleted",
+        description: "User has been permanently removed",
       });
 
       fetchUsers();
     } catch (error: any) {
       toast({
-        title: 'Error deleting user',
+        title: "Error deleting user",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -275,24 +254,21 @@ export default function UsersTab({ company }: UsersTabProps) {
   const handleUpdateJobRole = async (userId: string, jobRole: string) => {
     setSavingUserId(userId);
     try {
-      const { error } = await supabase
-        .from('company_users')
-        .update({ job_role: jobRole })
-        .eq('id', userId);
+      const { error } = await supabase.from("company_users").update({ job_role: jobRole }).eq("id", userId);
 
       if (error) throw error;
 
-      setUsers(users.map(u => u.id === userId ? { ...u, job_role: jobRole } : u));
-      
+      setUsers(users.map((u) => (u.id === userId ? { ...u, job_role: jobRole } : u)));
+
       toast({
-        title: 'Job role updated',
+        title: "Job role updated",
         description: `Job role set to ${jobRole}`,
       });
     } catch (error: any) {
       toast({
-        title: 'Error updating job role',
+        title: "Error updating job role",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSavingUserId(null);
@@ -300,41 +276,38 @@ export default function UsersTab({ company }: UsersTabProps) {
   };
 
   const handleAddSkill = async (userId: string, skill: string) => {
-    const user = users.find(u => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     const currentSkills = user?.skills || [];
-    
+
     if (currentSkills.includes(skill)) {
       toast({
-        title: 'Skill already exists',
+        title: "Skill already exists",
         description: `${skill} is already in the skill list`,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
 
     const newSkills = [...currentSkills, skill];
-    
+
     setSavingUserId(userId);
     try {
-      const { error } = await supabase
-        .from('company_users')
-        .update({ skills: newSkills })
-        .eq('id', userId);
+      const { error } = await supabase.from("company_users").update({ skills: newSkills }).eq("id", userId);
 
       if (error) throw error;
 
-      setUsers(users.map(u => u.id === userId ? { ...u, skills: newSkills } : u));
-      setNewSkillInput('');
-      
+      setUsers(users.map((u) => (u.id === userId ? { ...u, skills: newSkills } : u)));
+      setNewSkillInput("");
+
       toast({
-        title: 'Skill added',
+        title: "Skill added",
         description: `Added ${skill}`,
       });
     } catch (error: any) {
       toast({
-        title: 'Error adding skill',
+        title: "Error adding skill",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSavingUserId(null);
@@ -342,29 +315,26 @@ export default function UsersTab({ company }: UsersTabProps) {
   };
 
   const handleRemoveSkill = async (userId: string, skillToRemove: string) => {
-    const user = users.find(u => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     const newSkills = (user?.skills || []).filter((s: string) => s !== skillToRemove);
-    
+
     setSavingUserId(userId);
     try {
-      const { error } = await supabase
-        .from('company_users')
-        .update({ skills: newSkills })
-        .eq('id', userId);
+      const { error } = await supabase.from("company_users").update({ skills: newSkills }).eq("id", userId);
 
       if (error) throw error;
 
-      setUsers(users.map(u => u.id === userId ? { ...u, skills: newSkills } : u));
-      
+      setUsers(users.map((u) => (u.id === userId ? { ...u, skills: newSkills } : u)));
+
       toast({
-        title: 'Skill removed',
+        title: "Skill removed",
         description: `Removed ${skillToRemove}`,
       });
     } catch (error: any) {
       toast({
-        title: 'Error removing skill',
+        title: "Error removing skill",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSavingUserId(null);
@@ -373,9 +343,9 @@ export default function UsersTab({ company }: UsersTabProps) {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      invited: 'secondary',
-      active: 'default',
-      revoked: 'destructive',
+      invited: "secondary",
+      active: "default",
+      revoked: "destructive",
     };
     return <Badge variant={variants[status]}>{status}</Badge>;
   };
@@ -385,15 +355,15 @@ export default function UsersTab({ company }: UsersTabProps) {
   };
 
   const canResend = (user: any) => {
-    return user.status === 'invited' && getInviteCount(user) < MAX_INVITES;
+    return user.status === "invited" && getInviteCount(user) < MAX_INVITES;
   };
 
   const getResendTooltip = (user: any) => {
     const count = getInviteCount(user);
     const remaining = MAX_INVITES - count;
-    
+
     if (remaining <= 0) {
-      return 'Maximum invites sent (3/3)';
+      return "Maximum invites sent (3/3)";
     }
     return `Resend invite (${remaining} remaining)`;
   };
@@ -402,19 +372,23 @@ export default function UsersTab({ company }: UsersTabProps) {
     await navigator.clipboard.writeText(code);
     setCopiedId(userId);
     toast({
-      title: 'Copied!',
-      description: 'Invite code copied to clipboard',
+      title: "Copied!",
+      description: "Invite code copied to clipboard",
     });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const toggleExpanded = (userId: string) => {
     setExpandedUserId(expandedUserId === userId ? null : userId);
-    setNewSkillInput('');
+    setNewSkillInput("");
   };
 
   if (loading) {
-    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -431,28 +405,25 @@ export default function UsersTab({ company }: UsersTabProps) {
                 <AlertTitle className="text-amber-800 dark:text-amber-400">You've run out of seats</AlertTitle>
                 <AlertDescription className="text-amber-700 dark:text-amber-300">
                   <p className="mb-3">
-                    All {company.seats_purchased} seats are currently in use. Would you like to add more seats to your plan?
+                    All {company.seats_purchased} seats are currently in use. Would you like to add more seats to your
+                    plan?
                   </p>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="bg-amber-600 hover:bg-amber-700"
                       onClick={() => {
                         // TODO: Navigate to billing/settings or open billing modal
                         toast({
-                          title: 'Contact us',
-                          description: 'Please contact support@rolecolorfinder.com to add more seats.',
+                          title: "Contact us",
+                          description: "Please contact support@rolecolorfinder.com to add more seats.",
                         });
                       }}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Add More Seats
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowSeatPrompt(false)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setShowSeatPrompt(false)}>
                       Cancel
                     </Button>
                   </div>
@@ -474,12 +445,14 @@ export default function UsersTab({ company }: UsersTabProps) {
                     Invite
                   </Button>
                 </form>
-                <p className={`text-sm ${getAvailableSeats() <= 0 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                <p
+                  className={`text-sm ${getAvailableSeats() <= 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
+                >
                   Seats available: {getAvailableSeats()} / {company.seats_purchased}
                   {getAvailableSeats() <= 0 && (
-                    <Button 
-                      variant="link" 
-                      size="sm" 
+                    <Button
+                      variant="link"
+                      size="sm"
                       className="ml-2 h-auto p-0 text-amber-600 hover:text-amber-700"
                       onClick={() => setShowSeatPrompt(true)}
                     >
@@ -498,7 +471,7 @@ export default function UsersTab({ company }: UsersTabProps) {
               <CardTitle>Team Members</CardTitle>
               <div className="flex items-center gap-2">
                 <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
-                  {window.location.origin}/company/{company.subdomain}/login
+                  {window.location.origin}/company/{company.subdomain}
                 </code>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -509,8 +482,8 @@ export default function UsersTab({ company }: UsersTabProps) {
                         const url = `${window.location.origin}/company/${company.subdomain}/login`;
                         await navigator.clipboard.writeText(url);
                         toast({
-                          title: 'Link copied!',
-                          description: 'Employee login URL copied to clipboard',
+                          title: "Link copied!",
+                          description: "Employee login URL copied to clipboard",
                         });
                       }}
                     >
@@ -525,7 +498,7 @@ export default function UsersTab({ company }: UsersTabProps) {
           <CardContent>
             <Table>
               <TableHeader>
-              <TableRow>
+                <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Job Role</TableHead>
@@ -548,17 +521,13 @@ export default function UsersTab({ company }: UsersTabProps) {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {user.skills?.length || 0} skills
-                        </span>
+                        <span className="text-sm text-muted-foreground">{user.skills?.length || 0} skills</span>
                       </TableCell>
                       <TableCell>{getStatusBadge(user.status)}</TableCell>
                       <TableCell>
                         {user.invite_code ? (
                           <div className="flex items-center gap-2">
-                            <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                              {user.invite_code}
-                            </code>
+                            <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{user.invite_code}</code>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -586,11 +555,7 @@ export default function UsersTab({ company }: UsersTabProps) {
                         <div className="flex gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => toggleExpanded(user.id)}
-                              >
+                              <Button variant="outline" size="sm" onClick={() => toggleExpanded(user.id)}>
                                 {expandedUserId === user.id ? (
                                   <ChevronUp className="h-4 w-4" />
                                 ) : (
@@ -600,7 +565,7 @@ export default function UsersTab({ company }: UsersTabProps) {
                             </TooltipTrigger>
                             <TooltipContent>Edit job role & skills</TooltipContent>
                           </Tooltip>
-                          {user.status === 'invited' && (
+                          {user.status === "invited" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -621,21 +586,17 @@ export default function UsersTab({ company }: UsersTabProps) {
                               </TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== 'admin' && user.status !== 'revoked' && (
+                          {user.role !== "admin" && user.status !== "revoked" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleRevokeAccess(user.id)}
-                                >
+                                <Button variant="destructive" size="sm" onClick={() => handleRevokeAccess(user.id)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Revoke access</TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== 'admin' && user.status === 'revoked' && (
+                          {user.role !== "admin" && user.status === "revoked" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -662,7 +623,7 @@ export default function UsersTab({ company }: UsersTabProps) {
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">Job Role</label>
                                 <Select
-                                  value={user.job_role || ''}
+                                  value={user.job_role || ""}
                                   onValueChange={(value) => handleUpdateJobRole(user.id, value)}
                                   disabled={savingUserId === user.id}
                                 >
@@ -687,14 +648,14 @@ export default function UsersTab({ company }: UsersTabProps) {
                                     onChange={(e) => setNewJobRoleInput(e.target.value)}
                                     className="flex-1"
                                     onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && newJobRoleInput.trim()) {
+                                      if (e.key === "Enter" && newJobRoleInput.trim()) {
                                         e.preventDefault();
                                         const newRole = newJobRoleInput.trim();
                                         if (!allJobRoles.includes(newRole)) {
-                                          setCustomJobRoles(prev => [...prev, newRole]);
+                                          setCustomJobRoles((prev) => [...prev, newRole]);
                                         }
                                         handleUpdateJobRole(user.id, newRole);
-                                        setNewJobRoleInput('');
+                                        setNewJobRoleInput("");
                                       }
                                     }}
                                   />
@@ -705,10 +666,10 @@ export default function UsersTab({ company }: UsersTabProps) {
                                       if (newJobRoleInput.trim()) {
                                         const newRole = newJobRoleInput.trim();
                                         if (!allJobRoles.includes(newRole)) {
-                                          setCustomJobRoles(prev => [...prev, newRole]);
+                                          setCustomJobRoles((prev) => [...prev, newRole]);
                                         }
                                         handleUpdateJobRole(user.id, newRole);
-                                        setNewJobRoleInput('');
+                                        setNewJobRoleInput("");
                                       }
                                     }}
                                     disabled={!newJobRoleInput.trim() || savingUserId === user.id}
@@ -731,13 +692,13 @@ export default function UsersTab({ company }: UsersTabProps) {
                                       <SelectValue placeholder="Add a skill" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {PREDEFINED_SKILLS.filter(
-                                        (skill) => !(user.skills || []).includes(skill)
-                                      ).map((skill) => (
-                                        <SelectItem key={skill} value={skill}>
-                                          {skill}
-                                        </SelectItem>
-                                      ))}
+                                      {PREDEFINED_SKILLS.filter((skill) => !(user.skills || []).includes(skill)).map(
+                                        (skill) => (
+                                          <SelectItem key={skill} value={skill}>
+                                            {skill}
+                                          </SelectItem>
+                                        ),
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -748,7 +709,7 @@ export default function UsersTab({ company }: UsersTabProps) {
                                     onChange={(e) => setNewSkillInput(e.target.value)}
                                     className="flex-1"
                                     onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && newSkillInput.trim()) {
+                                      if (e.key === "Enter" && newSkillInput.trim()) {
                                         e.preventDefault();
                                         handleAddSkill(user.id, newSkillInput.trim());
                                       }
@@ -776,11 +737,7 @@ export default function UsersTab({ company }: UsersTabProps) {
                                 <label className="text-sm font-medium text-muted-foreground">Current Skills</label>
                                 <div className="flex flex-wrap gap-2">
                                   {user.skills.map((skill: string) => (
-                                    <Badge
-                                      key={skill}
-                                      variant="secondary"
-                                      className="flex items-center gap-1 pr-1"
-                                    >
+                                    <Badge key={skill} variant="secondary" className="flex items-center gap-1 pr-1">
                                       {skill}
                                       <button
                                         onClick={() => handleRemoveSkill(user.id, skill)}
