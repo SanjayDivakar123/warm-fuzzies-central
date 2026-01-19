@@ -46,65 +46,83 @@ serve(async (req) => {
     // Build the analysis prompt
     const teamSummary = teamMembers.map((m: TeamMember, i: number) => {
       const scoresSummary = `Yellow(Executor):${m.scores.yellow}, Red(Motivator):${m.scores.red}, Green(Organizer):${m.scores.green}, Blue(Innovator):${m.scores.blue}`;
+      const totalScore = m.scores.yellow + m.scores.red + m.scores.green + m.scores.blue;
+      const percentages = {
+        yellow: Math.round((m.scores.yellow / totalScore) * 100),
+        red: Math.round((m.scores.red / totalScore) * 100),
+        green: Math.round((m.scores.green / totalScore) * 100),
+        blue: Math.round((m.scores.blue / totalScore) * 100),
+      };
+      
       return `${i + 1}. Email: ${m.email}
-   - Current Role: ${m.jobRole || 'Not assigned'}
+   - Current Job Role: ${m.jobRole || 'Not assigned'}
    - Skills: ${m.skills?.join(', ') || 'None listed'}
    - Dominant Color: ${m.dominantColor} (${m.colorLabel})
-   - Score Distribution: ${scoresSummary}`;
+   - Score Distribution: ${scoresSummary}
+   - Percentages: Yellow:${percentages.yellow}%, Red:${percentages.red}%, Green:${percentages.green}%, Blue:${percentages.blue}%`;
     }).join('\n\n');
 
     const systemPrompt = `You are an expert organizational psychologist and leadership consultant specializing in team dynamics, role-person fit analysis, and leadership style assessment.
 
 You analyze teams using a color-based leadership assessment framework:
-- Yellow (Executor): Action-oriented, results-driven, decisive, competitive
-- Red (Motivator): Inspiring, people-focused, enthusiastic, relationship-builders
-- Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers
-- Blue (Innovator): Creative, visionary, strategic, big-picture thinkers
+- Yellow (Executor): Action-oriented, results-driven, decisive, competitive, quick decision-makers
+- Red (Motivator): Inspiring, people-focused, enthusiastic, relationship-builders, empathetic
+- Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers, process-focused
+- Blue (Innovator): Creative, visionary, strategic, big-picture thinkers, future-focused
 
-Your task is to analyze team members' leadership styles and compare them to their current job roles to identify:
-1. Role-leadership style alignment or mismatches
-2. Where team members might be better suited
-3. Team composition strengths and gaps
-4. Strategic recommendations for team optimization
+Your task is to provide DEEP, PERSONALIZED analysis for each team member, examining:
+1. How their leadership style matches or conflicts with their job role
+2. Their specific strengths in their current position
+3. Areas where their style might create friction with their responsibilities
+4. Concrete, actionable advice for improvement
 
-Always provide actionable, specific insights backed by the assessment data.`;
+Be specific and reference their actual scores and role. Avoid generic advice.`;
 
-    const userPrompt = `Analyze this team's leadership profiles and role alignment:
+    const userPrompt = `Analyze this team's leadership profiles and provide DETAILED individual analysis:
 
 TEAM MEMBERS:
 ${teamSummary}
 
-Provide a comprehensive analysis in the following JSON format:
+Provide a comprehensive analysis in the following JSON format. For memberInsights, be VERY specific about the leadership-role match for each person:
+
 {
-  "overallAnalysis": "A 2-3 sentence summary of the team's overall composition and dynamics",
-  "teamStrengths": ["3-4 specific strengths based on the team's color distribution"],
-  "teamChallenges": ["2-3 potential challenges or gaps in the team's composition"],
+  "overallAnalysis": "3-4 sentence comprehensive summary of the team's composition, dynamics, and potential",
+  "teamDynamics": "2-3 sentences about how the team members' different styles interact and complement each other",
+  "teamStrengths": ["4-5 specific strengths based on the team's color distribution and role mix"],
+  "teamChallenges": ["3-4 potential challenges or gaps in the team's composition"],
   "memberInsights": [
     {
       "email": "member email",
+      "name": "Extract a display name from email (capitalize first part before @)",
       "currentRole": "their current job role",
+      "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
-      "analysis": "2-3 sentences about how their leadership style aligns with their role",
-      "suggestedRoles": ["1-3 roles that might better suit their style if not excellent fit"],
-      "reasoning": "Brief explanation of the fit assessment"
+      "matchAnalysis": "3-4 sentences specifically analyzing how their dominant color (and secondary tendencies) align or conflict with their job role. Be specific about what works and what doesn't.",
+      "leadershipStyle": "2-3 sentences describing their leadership approach based on their score distribution",
+      "workplaceContribution": "2 sentences about what unique value they bring to the team",
+      "strengths": ["3-4 specific strengths this person brings based on their color profile and role"],
+      "developmentAreas": ["2-3 specific areas where they could grow given their role requirements"],
+      "potentialChallenges": "1-2 sentences about challenges they might face in their role due to their style",
+      "suggestedRoles": ["2-3 alternative roles if fit is moderate/mismatch, or complementary responsibilities if fit is good/excellent"],
+      "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness in their current role"
     }
   ],
-  "recommendations": ["3-5 strategic recommendations for team optimization and role adjustments"]
+  "recommendations": ["5-6 strategic recommendations for team optimization, collaboration improvements, and role adjustments"],
+  "hiringRecommendations": ["2-3 recommendations about what leadership styles would complement this team for future hires"]
 }
 
-Consider these role-leadership style alignments:
-- Engineers/QA: Often suit Green (systematic) or Blue (innovative problem-solving)
-- Designers: Often suit Blue (creative) or Yellow (results-focused execution)
-- PM/Operations: Often suit Green (organized) or Yellow (action-oriented)
-- Sales/Marketing: Often suit Red (people-focused) or Yellow (results-driven)
-- Support: Often suit Red (relationship-building) or Green (systematic)
-- Founders: Often suit Blue (visionary) or Yellow (decisive)
-- Analysts: Often suit Green (detail-oriented) or Blue (strategic)
-- Writers: Often suit Blue (creative) or Green (structured)
+Role-leadership style alignment guidelines:
+- Engineers/QA/Tech: Green (systematic) or Blue (innovative) styles work well
+- Designers/Creative: Blue (creative) or Yellow (results-focused) styles work well
+- PM/Operations/Admin: Green (organized) or Yellow (action-oriented) styles work well
+- Sales/Marketing/BD: Red (people-focused) or Yellow (results-driven) styles work well
+- HR/Support/Customer Success: Red (relationship-building) or Green (systematic) styles work well
+- Founders/Executives: Blue (visionary) or Yellow (decisive) styles work well
+- Data Analysts/Finance: Green (detail-oriented) or Blue (strategic) styles work well
 
 Return ONLY the JSON object, no additional text.`;
 
-    console.log("Calling Perplexity API for team insights...");
+    console.log("Calling Perplexity API for detailed team insights...");
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -113,12 +131,12 @@ Return ONLY the JSON object, no additional text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar",
+        model: "sonar-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 4000,
+        max_tokens: 8000,
         temperature: 0.3,
       }),
     });
@@ -175,7 +193,7 @@ Return ONLY the JSON object, no additional text.`;
       );
     }
 
-    console.log("Successfully generated team insights");
+    console.log("Successfully generated detailed team insights");
 
     return new Response(
       JSON.stringify({ insights }),
