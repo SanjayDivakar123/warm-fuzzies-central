@@ -357,35 +357,25 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
               {completedAssessments.length} team member{completedAssessments.length !== 1 ? 's' : ''} completed
             </CardDescription>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    onClick={() => setShowInsightsModal(true)}
-                    disabled={
-                      teamStats.pending > 0 || 
-                      completedAssessments.length === 0 ||
-                      completedAssessments.some(a => !a.job_role)
-                    }
-                    className="gap-2"
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                    Insights
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {completedAssessments.length === 0
-                  ? 'No completed assessments yet'
-                  : teamStats.pending > 0
-                  ? `${teamStats.pending} team member${teamStats.pending !== 1 ? 's' : ''} still need to complete their assessment`
-                  : completedAssessments.some(a => !a.job_role)
-                  ? 'All team members need a job role assigned before generating insights'
-                  : 'Get AI-powered team insights'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex flex-col items-end gap-1">
+            <Button
+              onClick={() => setShowInsightsModal(true)}
+              disabled={
+                teamStats.pending > 0 || 
+                completedAssessments.length === 0 ||
+                completedAssessments.some(a => !a.job_role)
+              }
+              className="gap-2"
+            >
+              <Lightbulb className="h-4 w-4" />
+              Insights
+            </Button>
+            {(teamStats.pending > 0 || completedAssessments.length === 0 || completedAssessments.some(a => !a.job_role)) && (
+              <p className="text-xs text-muted-foreground max-w-[200px] text-right">
+                All team assessments must be completed and all team members must have a job role set
+              </p>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {completedAssessments.length === 0 ? (
