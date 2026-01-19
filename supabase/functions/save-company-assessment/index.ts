@@ -94,35 +94,66 @@ Deno.serve(async (req) => {
     }
 
     // Insert into assessment_results
-    // Use the employee's user_id if they have one, otherwise generate a temporary UUID
-    const userId = employee.user_id || crypto.randomUUID()
+    // Use the employee's id as the user_id to ensure uniqueness per employee
+    // This avoids collisions when employees don't have a linked auth user_id
+    const userId = employee.user_id || employeeId
+    const assessmentType = results.assessmentType || 'professional_25q'
     
-    const { data: assessmentResult, error: insertError } = await supabase
+    // First check if an assessment already exists for this user/type combo
+    const { data: existingResult } = await supabase
       .from('assessment_results')
-      .insert({
-        user_id: userId,
-        assessment_type: results.assessmentType || 'professional_25q',
-        results: results
-      })
       .select('id')
-      .single()
+      .eq('user_id', userId)
+      .eq('assessment_type', assessmentType)
+      .maybeSingle()
 
-    if (insertError) {
-      console.error('Error inserting assessment result:', insertError)
-      return new Response(
-        JSON.stringify({ success: false, message: 'Failed to save assessment results' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    let assessmentResultId: string
+
+    if (existingResult) {
+      // Update existing result
+      const { error: updateResultError } = await supabase
+        .from('assessment_results')
+        .update({ results: results, updated_at: new Date().toISOString() })
+        .eq('id', existingResult.id)
+
+      if (updateResultError) {
+        console.error('Error updating assessment result:', updateResultError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Failed to update assessment results' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      assessmentResultId = existingResult.id
+      console.log('Updated existing assessment result:', assessmentResultId)
+    } else {
+      // Insert new result
+      const { data: newResult, error: insertError } = await supabase
+        .from('assessment_results')
+        .insert({
+          user_id: userId,
+          assessment_type: assessmentType,
+          results: results
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        console.error('Error inserting assessment result:', insertError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Failed to save assessment results' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      assessmentResultId = newResult.id
+      console.log('Created new assessment result:', assessmentResultId)
     }
-
-    console.log('Assessment result saved with ID:', assessmentResult.id)
 
     // Update company_users with the assessment result reference
     const { error: updateError } = await supabase
       .from('company_users')
       .update({
         assessment_completed_at: new Date().toISOString(),
-        assessment_result_id: assessmentResult.id,
+        assessment_result_id: assessmentResultId,
         status: 'active'
       })
       .eq('id', employeeId)
@@ -141,7 +172,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         message: 'Assessment saved successfully',
-        assessmentResultId: assessmentResult.id
+        assessmentResultId: assessmentResultId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
