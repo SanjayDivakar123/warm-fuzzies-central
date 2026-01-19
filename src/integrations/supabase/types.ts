@@ -616,6 +616,41 @@ export type Database = {
           },
         ]
       }
+      team_insights: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          insights: Json
+          team_hash: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          insights: Json
+          team_hash: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          insights?: Json
+          team_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_insights_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           advice_to_others: string

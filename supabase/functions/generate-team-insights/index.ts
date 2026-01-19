@@ -97,6 +97,7 @@ Provide a comprehensive analysis in the following JSON format. For memberInsight
       "currentRole": "their current job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
+      "matchPercentage": "A number between 0-100 representing how well the person's leadership style matches their job role. Excellent=85-100, Good=70-84, Moderate=50-69, Mismatch=0-49",
       "matchAnalysis": "3-4 sentences specifically analyzing how their dominant color (and secondary tendencies) align or conflict with their job role. Be specific about what works and what doesn't.",
       "leadershipStyle": "2-3 sentences describing their leadership approach based on their score distribution",
       "workplaceContribution": "2 sentences about what unique value they bring to the team",
