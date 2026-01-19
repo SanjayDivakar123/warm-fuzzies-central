@@ -17,7 +17,7 @@ interface UsersTabProps {
 
 const MAX_INVITES = 3;
 
-const JOB_ROLES = [
+const DEFAULT_JOB_ROLES = [
   'Engineer',
   'Designer',
   'PM',
@@ -61,8 +61,13 @@ export default function UsersTab({ company }: UsersTabProps) {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
   const [newSkillInput, setNewSkillInput] = useState('');
+  const [newJobRoleInput, setNewJobRoleInput] = useState('');
+  const [customJobRoles, setCustomJobRoles] = useState<string[]>([]);
   const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const { toast } = useToast();
+
+  // Combine default and custom job roles
+  const allJobRoles = [...DEFAULT_JOB_ROLES, ...customJobRoles].sort();
 
   useEffect(() => {
     fetchUsers();
@@ -639,13 +644,52 @@ export default function UsersTab({ company }: UsersTabProps) {
                                     <SelectValue placeholder="Select a job role" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {JOB_ROLES.map((role) => (
+                                    {allJobRoles.map((role) => (
                                       <SelectItem key={role} value={role}>
                                         {role}
+                                        {!DEFAULT_JOB_ROLES.includes(role) && (
+                                          <span className="ml-2 text-xs text-muted-foreground">(custom)</span>
+                                        )}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Input
+                                    placeholder="Or add custom role..."
+                                    value={newJobRoleInput}
+                                    onChange={(e) => setNewJobRoleInput(e.target.value)}
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && newJobRoleInput.trim()) {
+                                        e.preventDefault();
+                                        const newRole = newJobRoleInput.trim();
+                                        if (!allJobRoles.includes(newRole)) {
+                                          setCustomJobRoles(prev => [...prev, newRole]);
+                                        }
+                                        handleUpdateJobRole(user.id, newRole);
+                                        setNewJobRoleInput('');
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (newJobRoleInput.trim()) {
+                                        const newRole = newJobRoleInput.trim();
+                                        if (!allJobRoles.includes(newRole)) {
+                                          setCustomJobRoles(prev => [...prev, newRole]);
+                                        }
+                                        handleUpdateJobRole(user.id, newRole);
+                                        setNewJobRoleInput('');
+                                      }
+                                    }}
+                                    disabled={!newJobRoleInput.trim() || savingUserId === user.id}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
 
                               {/* Skills Section */}

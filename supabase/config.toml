@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.delete-company]
 verify_jwt = true
+
+[functions.generate-team-insights]
+verify_jwt = true

@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3 } from 'lucide-react';
+import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3, Lightbulb } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import EmployeeResultsModal from './EmployeeResultsModal';
+import TeamInsightsModal from './TeamInsightsModal';
 
 interface AssessmentsTabProps {
   company: any;
@@ -18,6 +20,8 @@ interface AssessmentsTabProps {
 interface CompletedAssessment {
   id: string;
   email: string;
+  job_role: string | null;
+  skills: string[] | null;
   assessment_completed_at: string;
   assessment_result_id: string;
   shareable_code?: string;
@@ -52,6 +56,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
   });
   const [previewType, setPreviewType] = useState<'25q' | '50q' | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<CompletedAssessment | null>(null);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,7 +69,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       // Fetch all company users with their assessment results
       const { data: users, error: usersError } = await supabase
         .from('company_users')
-        .select('id, email, status, assessment_completed_at, assessment_result_id')
+        .select('id, email, status, job_role, skills, assessment_completed_at, assessment_result_id')
         .eq('company_id', company.id)
         .neq('status', 'revoked');
 
@@ -85,6 +90,8 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         assessmentsWithResults.push({
           id: user.id,
           email: user.email,
+          job_role: user.job_role,
+          skills: user.skills,
           assessment_completed_at: user.assessment_completed_at,
           assessment_result_id: user.assessment_result_id,
           shareable_code: result?.shareable_code,
@@ -343,11 +350,34 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
 
       {/* Completed Assessments Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Completed Assessments</CardTitle>
-          <CardDescription>
-            {completedAssessments.length} team member{completedAssessments.length !== 1 ? 's' : ''} completed
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Completed Assessments</CardTitle>
+            <CardDescription>
+              {completedAssessments.length} team member{completedAssessments.length !== 1 ? 's' : ''} completed
+            </CardDescription>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setShowInsightsModal(true)}
+                  disabled={teamStats.pending > 0 || completedAssessments.length === 0}
+                  className="gap-2"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Insights
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {completedAssessments.length === 0
+                  ? 'No completed assessments yet'
+                  : teamStats.pending > 0
+                  ? `${teamStats.pending} team member${teamStats.pending !== 1 ? 's' : ''} still need to complete their assessment`
+                  : 'Get AI-powered team insights'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </CardHeader>
         <CardContent>
           {completedAssessments.length === 0 ? (
@@ -425,6 +455,23 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         email={selectedEmployee?.email || ''}
         results={selectedEmployee?.results || null}
         completedAt={selectedEmployee?.assessment_completed_at || ''}
+      />
+
+      {/* Team Insights Modal */}
+      <TeamInsightsModal
+        open={showInsightsModal}
+        onClose={() => setShowInsightsModal(false)}
+        companyId={company.id}
+        teamMembers={completedAssessments
+          .filter(a => a.results?.scores && a.results?.dominantColor)
+          .map(a => ({
+            id: a.id,
+            email: a.email,
+            job_role: a.job_role,
+            skills: a.skills,
+            dominantColor: a.results!.dominantColor,
+            scores: a.results!.scores,
+          }))}
       />
     </div>
   );
