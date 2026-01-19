@@ -8,6 +8,7 @@ import { useCompanyPortal } from '@/contexts/CompanyPortalContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2, KeyRound, Mail, ArrowLeft } from 'lucide-react';
+import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
 
 export default function CompanyLogin() {
   const { company, loading, error, setEmployee } = useCompanyPortal();
@@ -210,10 +211,19 @@ export default function CompanyLogin() {
         </div>
       </main>
 
-      <footer className="py-8 px-4 text-center text-sm">
-        <p className="text-muted-foreground">
-          Powered by <span style={{ color: secondaryColor }}>RoleColorFinder</span>
-        </p>
+      <footer className="py-8 px-4 text-center">
+        <a 
+          href="https://rolecolorfinder.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-block hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src={rcfLogo} 
+            alt="Powered by RoleColorFinder" 
+            className="h-8 w-auto mx-auto"
+          />
+        </a>
       </footer>
     </div>
   );
