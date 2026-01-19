@@ -115,77 +115,75 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
 
   // Try to restore employee session from localStorage
   useEffect(() => {
-    if (company && !employee) {
-      const savedEmployeeId = localStorage.getItem(`employee_session_${company.subdomain}`);
-      if (savedEmployeeId) {
-        // Fetch fresh employee data from Supabase
-        refreshEmployeeById(savedEmployeeId);
-      }
-    }
-  }, [company]);
+    if (!company || employee) return;
 
-  const refreshEmployeeById = async (employeeId: string) => {
+    const raw = localStorage.getItem(`employee_session_${company.subdomain}`);
+    if (!raw) return;
+
+    // Backward compatible: older versions stored just the employeeId
+    let employeeId: string | null = null;
+    let inviteCode: string | null = null;
+
+    try {
+      const parsed = JSON.parse(raw);
+      employeeId = parsed?.employeeId ?? null;
+      inviteCode = parsed?.inviteCode ?? null;
+    } catch {
+      employeeId = raw;
+      inviteCode = null;
+    }
+
+    if (!employeeId || !inviteCode) {
+      // Old/incomplete session format – require login
+      localStorage.removeItem(`employee_session_${company.subdomain}`);
+      return;
+    }
+
+    refreshEmployeeBySession(employeeId, inviteCode);
+  }, [company, employee]);
+
+  const refreshEmployeeBySession = async (employeeId: string, inviteCode: string) => {
     if (!company) return;
 
     try {
-      const { data, error: fetchError } = await supabase.functions.invoke('get-employee-data', {
-        body: { employeeId, companyId: company.id }
+      const { data, error: fetchError } = await supabase.functions.invoke('get-company-employee-session', {
+        body: { employeeId, companyId: company.id, inviteCode },
       });
 
       if (fetchError || !data?.success) {
-        console.error('Failed to refresh employee:', fetchError || data?.message);
+        console.error('Failed to refresh employee session:', fetchError || data?.message);
         localStorage.removeItem(`employee_session_${company.subdomain}`);
         setEmployee(null);
+        setAssessmentResults(null);
         return;
       }
 
       setEmployee(data.employee);
-      
-      // Fetch assessment results if completed
-      if (data.employee.assessment_result_id) {
-        setAssessmentResults(data.assessmentResults?.results || null);
-      }
+      setAssessmentResults(data.assessmentResults?.results ?? null);
     } catch (err) {
-      console.error('Error refreshing employee:', err);
+      console.error('Error refreshing employee session:', err);
     }
   };
 
   const refreshEmployee = async () => {
-    if (employee) {
-      await refreshEmployeeById(employee.id);
-    }
+    if (!company || !employee?.id || !employee?.invite_code) return;
+    await refreshEmployeeBySession(employee.id, employee.invite_code);
   };
 
   const fetchAssessmentResults = async () => {
-    if (!employee?.assessment_result_id) {
+    if (!company || !employee?.id || !employee?.invite_code) {
       setAssessmentResults(null);
       return;
     }
 
-    // Preferred path: edge function (returns employee + results)
     try {
-      const { data, error: fetchError } = await supabase.functions.invoke('get-employee-data', {
-        body: { employeeId: employee.id, companyId: company?.id },
+      const { data, error: fetchError } = await supabase.functions.invoke('get-company-employee-session', {
+        body: { employeeId: employee.id, companyId: company.id, inviteCode: employee.invite_code },
       });
 
-      if (!fetchError && data?.success && data.assessmentResults?.results) {
-        setAssessmentResults(data.assessmentResults.results);
-        return;
-      }
-    } catch {
-      // fall through to direct query
-    }
-
-    // Fallback: direct read by assessment_result_id (works when the user has RLS access)
-    try {
-      const { data: row, error: directError } = await supabase
-        .from('assessment_results')
-        .select('results')
-        .eq('id', employee.assessment_result_id)
-        .maybeSingle();
-
-      if (!directError && row?.results) {
-        setAssessmentResults(row.results as unknown as AssessmentResults);
+      if (!fetchError && data?.success) {
+        setEmployee(data.employee);
+        setAssessmentResults(data.assessmentResults?.results ?? null);
       }
     } catch (err) {
       console.error('Error fetching assessment results:', err);
@@ -196,9 +194,13 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
     setEmployee(emp);
     // Clear previous assessment results when employee changes
     setAssessmentResults(null);
-    
+
     if (emp && company) {
-      localStorage.setItem(`employee_session_${company.subdomain}`, emp.id);
+      // Persist a minimal employee session so they don't have to re-login
+      localStorage.setItem(
+        `employee_session_${company.subdomain}`,
+        JSON.stringify({ employeeId: emp.id, inviteCode: emp.invite_code })
+      );
     } else if (company) {
       localStorage.removeItem(`employee_session_${company.subdomain}`);
     }

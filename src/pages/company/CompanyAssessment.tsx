@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { professionalQuestions25Q, professionalQuestions50Q } from "@/lib/professionalAssessmentQuestions";
 
 export default function CompanyAssessment() {
-  const { company, employee, loading, refreshEmployee } = useCompanyPortal();
+  const { company, employee, loading, setEmployee } = useCompanyPortal();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -133,8 +133,13 @@ export default function CompanyAssessment() {
           // Clear draft progress
           localStorage.removeItem(`assessment_draft_${company.subdomain}_${employee.id}`);
           
-          // Refresh employee data to get updated assessment status
-          await refreshEmployee();
+          // Update local employee session immediately (prevents redirect back to login)
+          setEmployee({
+            ...employee,
+            status: 'active',
+            assessment_completed_at: results.completedAt,
+            assessment_result_id: data.assessmentResultId,
+          });
           
           toast({
             title: "Assessment Complete!",
