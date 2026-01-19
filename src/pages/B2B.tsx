@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Building2, Users, Shield, Sparkles, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 const PROMO_CODE = 'LEADERSWELCOME';
 
@@ -69,7 +70,7 @@ export default function B2B() {
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Require authentication
     if (!user) {
       toast({
@@ -109,11 +110,18 @@ export default function B2B() {
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          // Extract JSON body from non-2xx edge function responses
+          if (error instanceof FunctionsHttpError) {
+            const payload = await error.context.json().catch(() => null);
+            if (payload?.error) throw new Error(payload.error);
+          }
+          throw error;
+        }
         if (data?.error) throw new Error(data.error);
 
         toast({
-          title: 'Company created! 🎉',
+          title: 'Company created!',
           description: `Promo code applied! Your portal is ready at ${subdomain}.rolecolorfinder.com`,
         });
 
@@ -135,25 +143,35 @@ export default function B2B() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const payload = await error.context.json().catch(() => null);
+          if (payload?.error) throw new Error(payload.error);
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       if (data?.url) {
-        // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
         throw new Error('Failed to create checkout session');
       }
     } catch (error: any) {
-      console.error('Create company error:', error);
-      
-      // Check for subdomain already taken error
-      const errorMessage = error.message || '';
-      if (errorMessage.toLowerCase().includes('subdomain already taken') || 
-          errorMessage.toLowerCase().includes('subdomain') && errorMessage.toLowerCase().includes('exists')) {
+      const errorMessage = (error?.message || '').toString();
+      console.error('Create company error:', errorMessage);
+
+      const isSubdomainTaken =
+        errorMessage.toLowerCase().includes('subdomain already taken') ||
+        (errorMessage.toLowerCase().includes('subdomain') &&
+          errorMessage.toLowerCase().includes('taken')) ||
+        (errorMessage.toLowerCase().includes('subdomain') &&
+          errorMessage.toLowerCase().includes('exists'));
+
+      if (isSubdomainTaken) {
         toast({
-          title: 'Subdomain Already Exists',
-          description: `The name "${companyName}" is already taken. Please try a different company name.`,
+          title: 'That subdomain already exists',
+          description: 'Please try another company name.',
           variant: 'destructive',
         });
       } else {
