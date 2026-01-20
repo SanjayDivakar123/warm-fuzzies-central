@@ -7,12 +7,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CHARGE_AMOUNT = 2000; // $20.00 in cents
+const MONTHLY_RATE_CENTS = 2000; // $20.00 per user per month
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHARGE-INVITE] ${step}${detailsStr}`);
 };
+
+// Calculate pro-rated amount based on days remaining in the month
+function calculateProRatedAmount(): number {
+  const now = new Date();
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const daysRemaining = endOfMonth.getDate() - now.getDate() + 1; // +1 to include today
+  const daysInMonth = endOfMonth.getDate();
+  
+  const proRatedAmount = Math.round((daysRemaining / daysInMonth) * MONTHLY_RATE_CENTS);
+  logStep("Pro-rated calculation", { daysRemaining, daysInMonth, proRatedAmount });
+  
+  return proRatedAmount;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -81,15 +94,19 @@ serve(async (req) => {
       });
     }
 
+    // Calculate pro-rated charge amount for new user
+    const chargeAmount = calculateProRatedAmount();
     const creditBalance = company.credit_balance || 0;
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
+    logStep("Charge amount calculated", { chargeAmount, creditBalance });
+
     // Check if we can use credits
-    if (creditBalance >= CHARGE_AMOUNT) {
-      logStep("Using credit balance", { creditBalance, chargeAmount: CHARGE_AMOUNT });
+    if (creditBalance >= chargeAmount) {
+      logStep("Using credit balance", { creditBalance, chargeAmount });
 
       // Deduct from credit balance
-      const newBalance = creditBalance - CHARGE_AMOUNT;
+      const newBalance = creditBalance - chargeAmount;
       const { error: updateError } = await supabase
         .from("companies")
         .update({ credit_balance: newBalance })
@@ -100,9 +117,9 @@ serve(async (req) => {
       // Record transaction
       await supabase.from("billing_transactions").insert({
         company_id: company_id,
-        type: "credit_usage",
-        amount: -CHARGE_AMOUNT,
-        description: "Seat charge - used billing credits"
+        type: "user_addition_credits",
+        amount: -chargeAmount,
+        description: `Pro-rated user charge ($${(chargeAmount / 100).toFixed(2)}) - used billing credits`
       });
 
       logStep("Credits used successfully", { newBalance });
@@ -111,16 +128,40 @@ serve(async (req) => {
         success: true, 
         charged: false, 
         usedCredits: true,
-        creditsUsed: CHARGE_AMOUNT,
-        newBalance 
+        creditsUsed: chargeAmount,
+        newBalance,
+        proRatedAmount: chargeAmount
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    // Need to charge via Stripe
+    // Need to charge via Stripe (partial credits + card)
     logStep("Charging via Stripe");
+
+    let creditsUsed = 0;
+    let cardCharged = chargeAmount;
+
+    // Use any available credits first
+    if (creditBalance > 0) {
+      creditsUsed = creditBalance;
+      cardCharged = chargeAmount - creditBalance;
+
+      await supabase
+        .from("companies")
+        .update({ credit_balance: 0 })
+        .eq("id", company_id);
+
+      await supabase.from("billing_transactions").insert({
+        company_id: company_id,
+        type: "user_addition_credits",
+        amount: -creditBalance,
+        description: `Pro-rated user charge - used remaining credits ($${(creditBalance / 100).toFixed(2)})`
+      });
+
+      logStep("Used partial credits", { creditsUsed, cardCharged });
+    }
 
     // Get or create Stripe customer
     let customerId = company.stripe_customer_id;
@@ -171,18 +212,19 @@ serve(async (req) => {
     const defaultPaymentMethod = paymentMethods.data[0].id;
     logStep("Payment method found", { paymentMethodId: defaultPaymentMethod });
 
-    // Create and confirm payment intent
+    // Create and confirm payment intent for remaining amount
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: CHARGE_AMOUNT,
+      amount: cardCharged,
       currency: "usd",
       customer: customerId,
       payment_method: defaultPaymentMethod,
       off_session: true,
       confirm: true,
-      description: `Seat charge for ${company.name}`,
+      description: `Pro-rated user charge for ${company.name}`,
       metadata: {
         company_id: company.id,
-        type: "seat_charge"
+        type: "user_addition",
+        pro_rated_amount: cardCharged.toString()
       }
     });
 
@@ -195,10 +237,10 @@ serve(async (req) => {
     // Record transaction
     await supabase.from("billing_transactions").insert({
       company_id: company_id,
-      type: "seat_charge",
-      amount: CHARGE_AMOUNT,
+      type: "user_addition_card",
+      amount: cardCharged,
       stripe_payment_intent_id: paymentIntent.id,
-      description: "Seat charge - card payment"
+      description: `Pro-rated user charge ($${(cardCharged / 100).toFixed(2)}) - card payment`
     });
 
     logStep("Charge successful");
@@ -206,8 +248,11 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       charged: true, 
-      usedCredits: false,
-      amountCharged: CHARGE_AMOUNT,
+      usedCredits: creditsUsed > 0,
+      creditsUsed,
+      amountCharged: cardCharged,
+      totalAmount: chargeAmount,
+      proRatedAmount: chargeAmount,
       paymentIntentId: paymentIntent.id 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

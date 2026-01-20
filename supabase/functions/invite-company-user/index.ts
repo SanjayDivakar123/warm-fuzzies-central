@@ -464,6 +464,7 @@ serve(async (req) => {
         charged: chargeResult.charged || false,
         usedCredits: chargeResult.usedCredits || false,
         amount: chargeAmount,
+        proRatedAmount: chargeResult.proRatedAmount || chargeAmount,
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

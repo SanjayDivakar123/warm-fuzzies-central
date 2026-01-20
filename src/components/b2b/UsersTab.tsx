@@ -236,12 +236,18 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
         throw new Error(data.error);
       }
 
-      // Show billing info if charged
-      const billingMsg = data.billing?.charged 
-        ? " (Card charged $20)" 
-        : data.billing?.usedCredits 
-          ? " (Used $20 billing credit)" 
-          : "";
+      // Show billing info if charged (now pro-rated)
+      const proRatedAmount = data.billing?.proRatedAmount;
+      let billingMsg = "";
+      if (data.billing?.charged) {
+        billingMsg = proRatedAmount 
+          ? ` (Card charged $${(proRatedAmount / 100).toFixed(2)} pro-rated)` 
+          : " (Card charged)";
+      } else if (data.billing?.usedCredits) {
+        billingMsg = proRatedAmount 
+          ? ` (Used $${(proRatedAmount / 100).toFixed(2)} credit pro-rated)` 
+          : " (Used billing credit)";
+      }
 
       toast({
         title: "User invited!",
@@ -309,9 +315,38 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
 
   const handleRevokeAccess = async (userId: string) => {
     try {
+      // Get the user being revoked
+      const userToRevoke = users.find(u => u.id === userId);
+      
+      // Revoke access first
       const { error } = await supabase.from("company_users").update({ status: "revoked" }).eq("id", userId);
 
       if (error) throw error;
+
+      // Calculate and apply pro-rated refund for active employees
+      if (userToRevoke?.role === 'employee' && userToRevoke?.status === 'active') {
+        try {
+          const { data: refundData } = await supabase.functions.invoke("calculate-user-refund", {
+            body: {
+              company_id: company.id,
+              company_user_id: userId,
+            },
+          });
+
+          if (refundData?.refunded) {
+            toast({
+              title: "Access revoked",
+              description: `User access has been revoked. $${(refundData.refundAmount / 100).toFixed(2)} credit added to your balance.`,
+            });
+            if (onCompanyUpdate) onCompanyUpdate();
+            fetchUsers();
+            return;
+          }
+        } catch (refundError) {
+          console.error("Error calculating refund:", refundError);
+          // Continue even if refund fails
+        }
+      }
 
       toast({
         title: "Access revoked",
