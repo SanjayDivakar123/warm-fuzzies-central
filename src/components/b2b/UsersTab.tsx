@@ -156,7 +156,10 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
     }
   };
 
+  const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
+  
   const getAvailableSeats = () => {
+    if (isUnlimitedCompany) return Infinity;
     const activeUsers = users.filter((u: any) => u.status !== "revoked").length;
     return company.seats_purchased - activeUsers;
   };
@@ -399,7 +402,14 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Invite New User</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Invite New User</CardTitle>
+              {isUnlimitedCompany && (
+                <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0">
+                  ∞ Unlimited
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {showSeatPrompt ? (
@@ -441,28 +451,34 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     value={newUserEmail}
                     onChange={(e) => setNewUserEmail(e.target.value)}
                     required
-                    disabled={getAvailableSeats() <= 0}
+                    disabled={!isUnlimitedCompany && getAvailableSeats() <= 0}
                   />
-                  <Button type="submit" disabled={inviting || getAvailableSeats() <= 0}>
+                  <Button type="submit" disabled={inviting || (!isUnlimitedCompany && getAvailableSeats() <= 0)}>
                     {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
                     Invite
                   </Button>
                 </form>
-                <p
-                  className={`text-sm ${getAvailableSeats() <= 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
-                >
-                  Seats available: {getAvailableSeats()} / {company.seats_purchased}
-                  {getAvailableSeats() <= 0 && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="ml-2 h-auto p-0 text-amber-600 hover:text-amber-700"
-                      onClick={() => setShowSeatPrompt(true)}
-                    >
-                      Add more seats
-                    </Button>
-                  )}
-                </p>
+                {isUnlimitedCompany ? (
+                  <p className="text-sm text-muted-foreground">
+                    Active users: {users.filter((u: any) => u.status !== "revoked").length} (unlimited seats)
+                  </p>
+                ) : (
+                  <p
+                    className={`text-sm ${getAvailableSeats() <= 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
+                  >
+                    Seats available: {getAvailableSeats()} / {company.seats_purchased}
+                    {getAvailableSeats() <= 0 && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="ml-2 h-auto p-0 text-amber-600 hover:text-amber-700"
+                        onClick={() => setShowSeatPrompt(true)}
+                      >
+                        Add more seats
+                      </Button>
+                    )}
+                  </p>
+                )}
               </>
             )}
           </CardContent>
