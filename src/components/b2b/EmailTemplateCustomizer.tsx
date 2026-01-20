@@ -104,7 +104,7 @@ export default function EmailTemplateCustomizer({ company, onUpdate }: EmailTemp
           className="text-center p-6 rounded-t-lg"
           style={{ background: 'linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%)' }}
         >
-          <h1 className="text-white text-xl font-bold m-0">RoleColorFinder</h1>
+          <h1 className="text-white text-xl font-bold m-0">{company.name || 'Your Company'}</h1>
         </div>
         
         {/* Body */}
