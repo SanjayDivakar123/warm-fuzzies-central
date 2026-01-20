@@ -39,12 +39,8 @@ import LeadershipAssessment from "@/pages/LeadershipAssessment";
 import LeadershipResults from "@/pages/LeadershipResults";
 import LeadershipGame from "@/pages/LeadershipGame";
 import LeadershipGame3D from "@/pages/LeadershipGame3D";
-import Blog from "@/pages/Blog";
-import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
-import BlogManagement from "@/pages/admin/BlogManagement";
-import BlogEditor from "@/pages/admin/BlogEditor";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
@@ -216,28 +212,12 @@ export const router = createBrowserRouter([
     element: <LeadershipGame3D />,
   },
   {
-    path: "/blog",
-    element: <Layout><Blog /></Layout>,
-  },
-  {
-    path: "/blog/:slug",
-    element: <Layout><BlogPost /></Layout>,
-  },
-  {
     path: "/admin",
     element: <Layout><AdminDashboard /></Layout>,
   },
   {
     path: "/admin/users",
     element: <Layout><UserManagement /></Layout>,
-  },
-  {
-    path: "/admin/blogs",
-    element: <Layout><BlogManagement /></Layout>,
-  },
-  {
-    path: "/admin/blog/new",
-    element: <Layout><BlogEditor /></Layout>,
   },
   {
     path: "/b2b",

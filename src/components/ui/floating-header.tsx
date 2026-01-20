@@ -18,7 +18,6 @@ export function FloatingHeader() {
     { label: 'Pricing', href: '/pricing', icon: CreditCard },
     { label: 'Free Assessment', href: '/free-assessment', icon: Palette },
     { label: 'Our Team', href: '/team', icon: UserCircle },
-    { label: 'Blog', href: '/blog', icon: Users },
   ];
 
   return (
