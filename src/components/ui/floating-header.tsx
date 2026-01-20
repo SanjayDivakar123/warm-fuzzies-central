@@ -6,6 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { SlideTabs } from '@/components/ui/slide-tabs';
+import { MenuVertical } from '@/components/ui/menu-vertical';
 
 const navTabs = [
   { label: 'Home', href: '/' },
@@ -18,8 +19,6 @@ export function FloatingHeader() {
   const [open, setOpen] = React.useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
-  
-  const isActive = (path: string) => location.pathname === path;
 
   return (
     <>
@@ -102,23 +101,12 @@ export function FloatingHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] p-0">
               <div className="flex flex-col h-full">
-                {/* Mobile Nav Links */}
-              <div className="flex-1 px-4 py-6 space-y-2">
-                  {navTabs.map((tab) => (
-                    <Link
-                      key={tab.href}
-                      to={tab.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-all',
-                        isActive(tab.href)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-foreground hover:bg-accent'
-                      )}
-                    >
-                      {tab.label}
-                    </Link>
-                  ))}
+                {/* Mobile Nav Links - MenuVertical */}
+                <div className="flex-1 px-4 py-6">
+                  <MenuVertical 
+                    menuItems={navTabs} 
+                    onItemClick={() => setOpen(false)}
+                  />
                 </div>
 
                 {/* Mobile Auth Buttons */}
