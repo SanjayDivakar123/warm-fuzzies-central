@@ -200,6 +200,24 @@ serve(async (req) => {
 
     console.log('New employee created:', newEmployee.id);
 
+    // 9. Notify admins about the new employee (fire and forget)
+    try {
+      fetch(`${supabaseUrl}/functions/v1/notify-admin-new-employee`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({ 
+          companyId, 
+          employeeEmail: userEmail.toLowerCase() 
+        }),
+      }).catch(err => console.error('Failed to send admin notification:', err));
+    } catch (notifyError) {
+      console.error('Error triggering admin notification:', notifyError);
+      // Don't fail the main request if notification fails
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
