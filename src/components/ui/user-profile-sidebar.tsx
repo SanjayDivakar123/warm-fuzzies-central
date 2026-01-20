@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Camera, Loader2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface NavItem {
   icon: React.ReactNode;
@@ -10,12 +12,14 @@ interface NavItem {
   href?: string;
   onClick?: () => void;
   isSeparator?: boolean;
+  isActive?: boolean;
 }
 
 interface UserProfile {
   name: string;
   email: string;
   avatarUrl?: string;
+  userId?: string;
 }
 
 interface UserProfileSidebarProps {
@@ -26,7 +30,9 @@ interface UserProfileSidebarProps {
     label: string;
     onClick: () => void;
   };
+  activeSection?: string;
   className?: string;
+  onAvatarChange?: (url: string) => void;
 }
 
 const sidebarVariants = {
@@ -53,8 +59,84 @@ const itemVariants = {
 };
 
 export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSidebarProps>(
-  ({ user, navItems, logoutItem, className }, ref) => {
+  ({ user, navItems, logoutItem, activeSection, className, onAvatarChange }, ref) => {
     const location = useLocation();
+    const { toast } = useToast();
+    const [uploading, setUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !user.userId) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUploading(true);
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${user.userId}/avatar.${fileExt}`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        // Add cache-busting query param
+        const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+
+        // Update or insert profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            user_id: user.userId,
+            avatar_url: avatarUrl,
+          }, { onConflict: 'user_id' });
+
+        if (profileError) throw profileError;
+
+        onAvatarChange?.(avatarUrl);
+
+        toast({
+          title: "Avatar updated",
+          description: "Your profile picture has been updated",
+        });
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload avatar. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setUploading(false);
+      }
+    };
     
     return (
       <motion.aside
@@ -63,23 +145,44 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
         initial="hidden"
         animate="visible"
         className={cn(
-          'flex h-full w-64 flex-col rounded-2xl border border-border bg-card p-4 shadow-elegant',
+          'flex h-fit w-64 flex-col rounded-2xl border border-border bg-card p-4 shadow-elegant',
           className
         )}
       >
         {/* User Info Header */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 pb-4">
-          {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20"
+          <div className="relative group">
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20"
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-hero text-lg font-semibold text-white">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            {/* Upload overlay */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer"
+            >
+              {uploading ? (
+                <Loader2 className="h-5 w-5 text-white animate-spin" />
+              ) : (
+                <Camera className="h-5 w-5 text-white" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
             />
-          ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-hero text-lg font-semibold text-white">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          </div>
           <div className="flex-1 overflow-hidden">
             <p className="truncate font-semibold text-foreground">{user.name}</p>
             <p className="truncate text-sm text-muted-foreground">{user.email}</p>
@@ -115,13 +218,21 @@ export const UserProfileSidebar = React.forwardRef<HTMLDivElement, UserProfileSi
               ) : (
                 <button
                   onClick={item.onClick}
-                  className="group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:bg-accent"
+                  className={cn(
+                    'group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                    item.isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-accent'
+                  )}
                 >
                   <span className="flex items-center gap-3">
                     {item.icon}
                     {item.label}
                   </span>
-                  <ChevronRight className="h-4 w-4 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+                  <ChevronRight className={cn(
+                    'h-4 w-4 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5',
+                    item.isActive && 'opacity-100'
+                  )} />
                 </button>
               )}
             </motion.div>
