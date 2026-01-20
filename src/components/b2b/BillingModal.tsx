@@ -137,138 +137,151 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
               <span className="text-muted-foreground">Current Seats</span>
               <span className="font-semibold text-lg">{currentSeatsDisplay}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Price per Seat</span>
-              <span className="font-medium">${PRICE_PER_SEAT} (one-time)</span>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Add Seats Section */}
-          <div className="space-y-4">
-            <Label className="text-base font-medium">Add More Seats</Label>
-            
-            <div className="flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleDecrement}
-                disabled={additionalSeats <= 0}
-                className="h-12 w-12"
-              >
-                <Minus className="h-5 w-5" />
-              </Button>
-              
-              <div className="text-center min-w-[80px]">
-                <Input
-                  type="number"
-                  min="0"
-                  max={isUnlimitedCompany ? undefined : maxAddable}
-                  value={additionalSeats}
-                  onChange={(e) => handleSeatsInputChange(parseInt(e.target.value) || 0)}
-                  className="text-center text-2xl font-bold h-12"
-                />
+            {!isUnlimitedCompany && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Price per Seat</span>
+                <span className="font-medium">${PRICE_PER_SEAT} (one-time)</span>
               </div>
-              
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleIncrement}
-                disabled={!isUnlimitedCompany && additionalSeats >= maxAddable}
-                className="h-12 w-12"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            {!isUnlimitedCompany && maxAddable <= 0 ? (
-              <p className="text-sm text-amber-600 text-center">
-                You've reached the maximum of {MAX_SEATS_ALLOWED.toLocaleString()} seats
-              </p>
-            ) : !isUnlimitedCompany ? (
-              <p className="text-sm text-muted-foreground text-center">
-                New total: <span className="font-semibold">{newTotal} seats</span>
-                <span className="text-xs ml-2">(max {MAX_SEATS_ALLOWED.toLocaleString()})</span>
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center">
-                New total: <span className="font-semibold">{newTotal} seats</span>
-              </p>
             )}
           </div>
 
-          <Separator />
-
-          {/* Promo Code Section */}
-          <div className="space-y-2">
-            <Label htmlFor="promoCode" className="text-sm font-medium flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              Promo Code (Optional)
-            </Label>
-            <Input
-              id="promoCode"
-              placeholder="Enter promo code"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              className="uppercase"
-            />
-            {isPromoValid && (
-              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                ✓ Promo code applied! Additional seats are free
+          {isUnlimitedCompany ? (
+            /* Unlimited company message */
+            <div className="text-center py-6 space-y-3">
+              <div className="text-4xl">∞</div>
+              <p className="text-muted-foreground">
+                Your company has unlimited seats. No additional purchases needed.
               </p>
-            )}
-          </div>
+              <Button variant="outline" onClick={onClose} className="mt-4">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Separator />
 
-          {/* Cost Summary */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Additional Cost</p>
-                <p className="text-sm text-muted-foreground">
-                  {additionalSeats} seat{additionalSeats !== 1 ? 's' : ''} × ${PRICE_PER_SEAT}
-                </p>
-              </div>
-              <div className="text-right">
-                {isPromoValid && additionalSeats > 0 ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm line-through text-muted-foreground">
-                      ${additionalSeats * PRICE_PER_SEAT}
-                    </span>
-                    <span className="text-2xl font-bold text-green-600">$0</span>
+              {/* Add Seats Section */}
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Add More Seats</Label>
+                
+                <div className="flex items-center justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleDecrement}
+                    disabled={additionalSeats <= 0}
+                    className="h-12 w-12"
+                  >
+                    <Minus className="h-5 w-5" />
+                  </Button>
+                  
+                  <div className="text-center min-w-[80px]">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={maxAddable}
+                      value={additionalSeats}
+                      onChange={(e) => handleSeatsInputChange(parseInt(e.target.value) || 0)}
+                      className="text-center text-2xl font-bold h-12"
+                    />
                   </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleIncrement}
+                    disabled={additionalSeats >= maxAddable}
+                    className="h-12 w-12"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                {maxAddable <= 0 ? (
+                  <p className="text-sm text-amber-600 text-center">
+                    You've reached the maximum of {MAX_SEATS_ALLOWED.toLocaleString()} seats
+                  </p>
                 ) : (
-                  <span className="text-2xl font-bold">${additionalCost}</span>
+                  <p className="text-sm text-muted-foreground text-center">
+                    New total: <span className="font-semibold">{newTotal} seats</span>
+                    <span className="text-xs ml-2">(max {MAX_SEATS_ALLOWED.toLocaleString()})</span>
+                  </p>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddSeats} 
-              disabled={additionalSeats <= 0 || saving}
-              className="flex-1 gap-2"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Users className="h-4 w-4" />
-              )}
-              {isPromoValid 
-                ? `Add ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''} (Free!)`
-                : `Pay $${additionalCost} for ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''}`
-              }
-            </Button>
-          </div>
+              <Separator />
 
-          <p className="text-xs text-muted-foreground text-center">
-            Payment will be processed securely via Stripe. Seats are available immediately after purchase.
-          </p>
+              {/* Promo Code Section */}
+              <div className="space-y-2">
+                <Label htmlFor="promoCode" className="text-sm font-medium flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Promo Code (Optional)
+                </Label>
+                <Input
+                  id="promoCode"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  className="uppercase"
+                />
+                {isPromoValid && (
+                  <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                    ✓ Promo code applied! Additional seats are free
+                  </p>
+                )}
+              </div>
+
+              {/* Cost Summary */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">Additional Cost</p>
+                    <p className="text-sm text-muted-foreground">
+                      {additionalSeats} seat{additionalSeats !== 1 ? 's' : ''} × ${PRICE_PER_SEAT}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {isPromoValid && additionalSeats > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm line-through text-muted-foreground">
+                          ${additionalSeats * PRICE_PER_SEAT}
+                        </span>
+                        <span className="text-2xl font-bold text-green-600">$0</span>
+                      </div>
+                    ) : (
+                      <span className="text-2xl font-bold">${additionalCost}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={onClose} className="flex-1">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAddSeats} 
+                  disabled={additionalSeats <= 0 || saving}
+                  className="flex-1 gap-2"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Users className="h-4 w-4" />
+                  )}
+                  {isPromoValid 
+                    ? `Add ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''} (Free!)`
+                    : `Pay $${additionalCost} for ${additionalSeats} Seat${additionalSeats !== 1 ? 's' : ''}`
+                  }
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Payment will be processed securely via Stripe. Seats are available immediately after purchase.
+              </p>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
