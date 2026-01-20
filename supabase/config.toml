@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.verify-google-sso-employee]
 verify_jwt = false
+
+[functions.notify-admin-new-employee]
+verify_jwt = false

@@ -23,7 +23,7 @@ export default function CompanyAdminLogin() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(false);
 
-  // Check if user is already logged in and is admin for this company
+  // Check if user is already logged in and is admin for this company (including Google OAuth callback)
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!user || !company) return;
@@ -41,7 +41,26 @@ export default function CompanyAdminLogin() {
 
         if (adminUser && !adminError) {
           // User is already logged in and is an admin
+          toast({
+            title: "Welcome, Admin!",
+            description: "Redirecting to your dashboard...",
+          });
           navigate('/b2b/company-portal');
+        } else {
+          // User is logged in but not an admin for this company
+          // Check if they just came from Google OAuth (URL has hash/params)
+          const urlHasOAuthParams = window.location.hash.includes('access_token') || 
+                                    window.location.search.includes('code=');
+          
+          if (urlHasOAuthParams) {
+            // They tried to sign in via Google but aren't an admin
+            toast({
+              title: "Access Denied",
+              description: "You are not authorized as an admin for this company.",
+              variant: "destructive"
+            });
+            await supabase.auth.signOut();
+          }
         }
       } catch (err) {
         console.error('Error checking admin access:', err);
@@ -53,7 +72,7 @@ export default function CompanyAdminLogin() {
     if (!authLoading && !companyLoading) {
       checkAdminAccess();
     }
-  }, [user, company, authLoading, companyLoading, navigate]);
+  }, [user, company, authLoading, companyLoading, navigate, toast]);
 
   if (companyLoading || authLoading || checkingAdmin) {
     return (
