@@ -119,17 +119,26 @@ export default function B2BDashboard() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {company.logo_url ? (
-              <img 
-                src={company.logo_url} 
-                alt={`${company.name} logo`}
-                className="h-8 w-auto object-contain"
-              />
-            ) : (
-              <div className="h-8 w-8 rounded-lg bg-foreground/5 flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-foreground/60" />
-              </div>
-            )}
+            {(() => {
+              // Determine which logo to show based on current theme
+              const isDarkMode = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              const logoToShow = isDarkMode && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
+              
+              if (logoToShow) {
+                return (
+                  <img 
+                    src={logoToShow} 
+                    alt={`${company.name} logo`}
+                    className="h-8 w-auto object-contain"
+                  />
+                );
+              }
+              return (
+                <div className="h-8 w-8 rounded-lg bg-foreground/5 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-foreground/60" />
+                </div>
+              );
+            })()}
             <span className="font-semibold text-foreground">{company.name}</span>
           </div>
           <div className="flex items-center gap-2">
