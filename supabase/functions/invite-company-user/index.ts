@@ -2,39 +2,34 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // Input validation helpers
 function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return typeof email === 'string' && email.length <= 255 && emailRegex.test(email)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return typeof email === "string" && email.length <= 255 && emailRegex.test(email);
 }
 
 function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-  return typeof str === 'string' && uuidRegex.test(str)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return typeof str === "string" && uuidRegex.test(str);
 }
 
-async function sendInviteEmail(
-  email: string, 
-  inviteCode: string, 
-  companyName: string,
-  subdomain: string
-) {
-  const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
-  const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN') || 'rolecolorfinder.com';
-  
+async function sendInviteEmail(email: string, inviteCode: string, companyName: string, subdomain: string) {
+  const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
+  const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
+
   if (!mailgunApiKey || !mailgunDomain) {
-    console.error('MAILGUN_API_KEY or MAILGUN_DOMAIN not configured');
+    console.error("MAILGUN_API_KEY or MAILGUN_DOMAIN not configured");
     return false;
   }
-  
-  console.log('Sending email via Mailgun domain:', mailgunDomain);
+
+  console.log("Sending email via Mailgun domain:", mailgunDomain);
 
   const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
-  
+
   const timestamp = new Date().getTime();
   const htmlContent = `
     <!DOCTYPE html>
@@ -94,7 +89,7 @@ async function sendInviteEmail(
                     <tr>
                       <td style="vertical-align: middle; padding-right: 8px;">
                         <a href="https://rolecolorfinder.com" style="text-decoration: none;">
-                          <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" width="100" height="24" style="display: block;">
+                          <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" width="80" height="24" style="display: block;">
                         </a>
                       </td>
                       <td style="vertical-align: middle;">
@@ -111,72 +106,75 @@ async function sendInviteEmail(
           </td>
         </tr>
       </table>
-    </body>
+    </body80
     </html>
   `;
 
   try {
     const formData = new FormData();
-    formData.append('from', `Role Color Finder <no-reply@mg.rolecolorfinder.com>`);
-    formData.append('to', email);
-    formData.append('subject', `You're invited to take the Role Color Assessment for ${companyName}`);
-    formData.append('html', htmlContent);
+    formData.append("from", `Role Color Finder <no-reply@mg.rolecolorfinder.com>`);
+    formData.append("to", email);
+    formData.append("subject", `You're invited to take the Role Color Assessment for ${companyName}`);
+    formData.append("html", htmlContent);
 
     const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Basic ' + btoa(`api:${mailgunApiKey}`),
+        Authorization: "Basic " + btoa(`api:${mailgunApiKey}`),
       },
       body: formData,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Mailgun error:', response.status, errorText);
+      console.error("Mailgun error:", response.status, errorText);
       return false;
     }
 
-    console.log('Invite email sent successfully to:', email);
+    console.log("Invite email sent successfully to:", email);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error("Error sending email:", error);
     return false;
   }
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // Verify authentication
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.log('No authorization header provided');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log("No authorization header provided");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
     // Verify user's JWT
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+      global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAuth.auth.getUser();
+
     if (authError || !user) {
-      console.log('Invalid token:', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log("Invalid token:", authError?.message);
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const body = await req.json();
@@ -184,161 +182,162 @@ serve(async (req) => {
 
     // Input validation
     if (!company_id || !email) {
-      return new Response(
-        JSON.stringify({ error: 'Company ID and email are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Company ID and email are required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!isValidUUID(company_id)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid company ID format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid company ID format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!isValidEmail(email)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid email format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log('Inviting user:', { company_id, email });
+    console.log("Inviting user:", { company_id, email });
 
     // Create service role client for data operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify user is a company admin
     const { data: adminCheck, error: adminError } = await supabase
-      .from('company_users')
-      .select('role')
-      .eq('company_id', company_id)
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .eq('status', 'active')
+      .from("company_users")
+      .select("role")
+      .eq("company_id", company_id)
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .eq("status", "active")
       .maybeSingle();
 
     if (adminError || !adminCheck) {
-      console.log('User is not a company admin for this company. User ID:', user.id, 'Company ID:', company_id);
+      console.log("User is not a company admin for this company. User ID:", user.id, "Company ID:", company_id);
       return new Response(
-        JSON.stringify({ error: 'Forbidden: You must be a company admin for this company. Please ensure you are logged into the correct account.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error:
+            "Forbidden: You must be a company admin for this company. Please ensure you are logged into the correct account.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Check if user already exists
     const { data: existingUser } = await supabase
-      .from('company_users')
-      .select('id, status')
-      .eq('company_id', company_id)
-      .eq('email', email.toLowerCase().trim())
+      .from("company_users")
+      .select("id, status")
+      .eq("company_id", company_id)
+      .eq("email", email.toLowerCase().trim())
       .maybeSingle();
 
     // Get company details
     const { data: company } = await supabase
-      .from('companies')
-      .select('seats_purchased, name, subdomain')
-      .eq('id', company_id)
+      .from("companies")
+      .select("seats_purchased, name, subdomain")
+      .eq("id", company_id)
       .single();
 
     if (!company) {
-      return new Response(
-        JSON.stringify({ error: 'Company not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Company not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // If user exists and is not revoked, return error
-    if (existingUser && existingUser.status !== 'revoked') {
-      return new Response(
-        JSON.stringify({ error: 'User already invited' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (existingUser && existingUser.status !== "revoked") {
+      return new Response(JSON.stringify({ error: "User already invited" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Check seats available
     const { data: activeUsers } = await supabase
-      .from('company_users')
-      .select('id')
-      .eq('company_id', company_id)
-      .neq('status', 'revoked');
+      .from("company_users")
+      .select("id")
+      .eq("company_id", company_id)
+      .neq("status", "revoked");
 
     if (activeUsers && activeUsers.length >= company.seats_purchased) {
       return new Response(
-        JSON.stringify({ error: 'No seats available', errorCode: 'NO_SEATS', seatsUsed: activeUsers.length, seatsPurchased: company.seats_purchased }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: "No seats available",
+          errorCode: "NO_SEATS",
+          seatsUsed: activeUsers.length,
+          seatsPurchased: company.seats_purchased,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Generate invite code
-    const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
+    const { data: inviteCodeData } = await supabase.rpc("generate_invite_code");
     const inviteCode = inviteCodeData;
 
     let invitedUser;
-    
+
     // If user was revoked, update their record
-    if (existingUser && existingUser.status === 'revoked') {
+    if (existingUser && existingUser.status === "revoked") {
       const { data: updatedUser, error: updateError } = await supabase
-        .from('company_users')
+        .from("company_users")
         .update({
-          status: 'invited',
+          status: "invited",
           invite_code: inviteCode,
           invited_at: new Date().toISOString(),
           joined_at: null,
           assessment_completed_at: null,
           assessment_result_id: null,
         })
-        .eq('id', existingUser.id)
+        .eq("id", existingUser.id)
         .select()
         .single();
 
       if (updateError) {
-        console.error('Error re-inviting user:', updateError);
+        console.error("Error re-inviting user:", updateError);
         throw updateError;
       }
       invitedUser = updatedUser;
-      console.log('User re-invited:', invitedUser.id);
+      console.log("User re-invited:", invitedUser.id);
     } else {
       // Create new user invite
       const { data: newUser, error: userError } = await supabase
-        .from('company_users')
+        .from("company_users")
         .insert({
           company_id,
           email: email.toLowerCase().trim(),
-          role: 'employee',
-          status: 'invited',
+          role: "employee",
+          status: "invited",
           invite_code: inviteCode,
         })
         .select()
         .single();
 
       if (userError) {
-        console.error('Error creating user invite:', userError);
+        console.error("Error creating user invite:", userError);
         throw userError;
       }
       invitedUser = newUser;
-      console.log('User invited:', invitedUser.id);
+      console.log("User invited:", invitedUser.id);
     }
 
     // Send invitation email
-    const emailSent = await sendInviteEmail(
-      email.toLowerCase().trim(), 
-      inviteCode, 
-      company.name,
-      company.subdomain
-    );
+    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain);
 
-    return new Response(
-      JSON.stringify({ user: invitedUser, emailSent }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return new Response(JSON.stringify({ user: invitedUser, emailSent }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error("Error:", error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
