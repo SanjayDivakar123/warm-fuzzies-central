@@ -129,16 +129,42 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
           setShowSeatPrompt(true);
           return;
         }
+        // Check if they need to add a payment method
+        if (data.errorCode === "NEEDS_PAYMENT_METHOD" || data.needsPaymentMethod) {
+          toast({
+            title: "Payment method required",
+            description: "Please add a payment method in Settings before inviting users.",
+            variant: "destructive",
+          });
+          return;
+        }
+        // Check for charge failure
+        if (data.errorCode === "CHARGE_FAILED") {
+          toast({
+            title: "Payment failed",
+            description: data.error || "Failed to charge for this seat. Please check your payment method.",
+            variant: "destructive",
+          });
+          return;
+        }
         throw new Error(data.error);
       }
 
+      // Show billing info if charged
+      const billingMsg = data.billing?.charged 
+        ? " (Card charged $20)" 
+        : data.billing?.usedCredits 
+          ? " (Used $20 billing credit)" 
+          : "";
+
       toast({
         title: "User invited!",
-        description: `Invitation sent to ${newUserEmail}`,
+        description: `Invitation sent to ${newUserEmail}${billingMsg}`,
       });
 
       setNewUserEmail("");
       fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate(); // Refresh company data to update credit balance
     } catch (error: any) {
       const errorMessage = error.message || "An unexpected error occurred";
       // Check if it's a "no seats" error from the error message

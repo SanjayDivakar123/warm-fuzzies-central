@@ -282,6 +282,7 @@ export type Database = {
           primary_color: string | null
           seats_purchased: number
           secondary_color: string | null
+          stripe_customer_id: string | null
           subdomain: string
           updated_at: string | null
         }
@@ -305,6 +306,7 @@ export type Database = {
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          stripe_customer_id?: string | null
           subdomain: string
           updated_at?: string | null
         }
@@ -328,6 +330,7 @@ export type Database = {
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          stripe_customer_id?: string | null
           subdomain?: string
           updated_at?: string | null
         }

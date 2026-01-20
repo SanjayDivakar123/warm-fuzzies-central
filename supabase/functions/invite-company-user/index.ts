@@ -341,11 +341,55 @@ serve(async (req) => {
       );
     }
 
+    // ============ CHARGE FOR INVITE ============
+    // Call charge-invite function to handle billing
+    console.log("Attempting to charge for invite...");
+    
+    const chargeResponse = await fetch(`${supabaseUrl}/functions/v1/charge-invite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+      body: JSON.stringify({ company_id }),
+    });
+
+    const chargeResult = await chargeResponse.json();
+    console.log("Charge result:", chargeResult);
+
+    if (!chargeResult.success) {
+      // Check if they need to add a payment method
+      if (chargeResult.needsPaymentMethod) {
+        return new Response(
+          JSON.stringify({
+            error: "Please add a payment method before inviting users",
+            errorCode: "NEEDS_PAYMENT_METHOD",
+            needsPaymentMethod: true,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({
+          error: chargeResult.error || "Failed to process payment for invite",
+          errorCode: "CHARGE_FAILED",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Charge successful - proceeding with invite");
+
     // Generate invite code
     const { data: inviteCodeData } = await supabase.rpc("generate_invite_code");
     const inviteCode = inviteCodeData;
 
     let invitedUser;
+
+    // Determine charge info from result
+    const chargeAmount = chargeResult.charged ? 2000 : (chargeResult.usedCredits ? chargeResult.creditsUsed : 0);
+    const chargedAt = (chargeResult.charged || chargeResult.usedCredits) ? new Date().toISOString() : null;
 
     // If user was revoked, update their record
     if (existingUser && existingUser.status === "revoked") {
@@ -358,6 +402,8 @@ serve(async (req) => {
           joined_at: null,
           assessment_completed_at: null,
           assessment_result_id: null,
+          charge_amount: chargeAmount,
+          charged_at: chargedAt,
         })
         .eq("id", existingUser.id)
         .select()
@@ -379,6 +425,8 @@ serve(async (req) => {
           role: "employee",
           status: "invited",
           invite_code: inviteCode,
+          charge_amount: chargeAmount,
+          charged_at: chargedAt,
         })
         .select()
         .single();
@@ -404,7 +452,15 @@ serve(async (req) => {
     };
     const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
 
-    return new Response(JSON.stringify({ user: invitedUser, emailSent }), {
+    return new Response(JSON.stringify({ 
+      user: invitedUser, 
+      emailSent,
+      billing: {
+        charged: chargeResult.charged || false,
+        usedCredits: chargeResult.usedCredits || false,
+        amount: chargeAmount,
+      }
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
