@@ -10,6 +10,7 @@ interface Company {
   seats_purchased: number;
   assessment_type: '25q' | '50q';
   logo_url?: string;
+  logo_url_dark?: string;
   primary_color: string;
   secondary_color: string;
   google_sso_enabled: boolean;

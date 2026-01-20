@@ -318,6 +318,84 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             </p>
           </div>
 
+          {/* Logo Preview Section */}
+          {(logoUrl || logoUrlDark) && (
+            <div className="space-y-3 pt-2">
+              <Label className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Logo Preview
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Light Mode Preview */}
+                <div className="rounded-lg border overflow-hidden">
+                  <div 
+                    className="px-4 py-6 flex items-center justify-center min-h-[80px]"
+                    style={{ backgroundColor: '#ffffff' }}
+                  >
+                    {logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt="Light mode preview" 
+                        className="h-10 w-auto max-w-full object-contain"
+                      />
+                    ) : logoUrlDark ? (
+                      <img 
+                        src={logoUrlDark} 
+                        alt="Fallback to dark logo" 
+                        className="h-10 w-auto max-w-full object-contain opacity-50"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No logo</span>
+                    )}
+                  </div>
+                  <div 
+                    className="px-3 py-1.5 flex items-center justify-center gap-1.5 border-t"
+                    style={{ backgroundColor: '#f3f4f6' }}
+                  >
+                    <Sun className="h-3.5 w-3.5" style={{ color: '#6b7280' }} />
+                    <span className="text-xs font-medium" style={{ color: '#4b5563' }}>Light Mode</span>
+                  </div>
+                </div>
+
+                {/* Dark Mode Preview */}
+                <div className="rounded-lg border overflow-hidden">
+                  <div 
+                    className="px-4 py-6 flex items-center justify-center min-h-[80px]"
+                    style={{ backgroundColor: '#111827' }}
+                  >
+                    {logoUrlDark ? (
+                      <img 
+                        src={logoUrlDark} 
+                        alt="Dark mode preview" 
+                        className="h-10 w-auto max-w-full object-contain"
+                      />
+                    ) : logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt="Fallback to light logo" 
+                        className="h-10 w-auto max-w-full object-contain opacity-50"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No logo</span>
+                    )}
+                  </div>
+                  <div 
+                    className="px-3 py-1.5 flex items-center justify-center gap-1.5"
+                    style={{ backgroundColor: '#1f2937', borderTop: '1px solid #374151' }}
+                  >
+                    <Moon className="h-3.5 w-3.5" style={{ color: '#9ca3af' }} />
+                    <span className="text-xs font-medium" style={{ color: '#d1d5db' }}>Dark Mode</span>
+                  </div>
+                </div>
+              </div>
+              {!logoUrlDark && logoUrl && (
+                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2 rounded">
+                  💡 No dark mode logo uploaded. Your light mode logo will be used as a fallback.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="primaryColor">Primary Color</Label>
