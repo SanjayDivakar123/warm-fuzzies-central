@@ -21,9 +21,11 @@ import {
   X,
   AlertCircle,
   CreditCard,
+  Upload,
 } from "lucide-react";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
+import BulkImportModal from './BulkImportModal';
 
 interface UsersTabProps {
   company: any;
@@ -80,6 +82,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [customJobRoles, setCustomJobRoles] = useState<string[]>([]);
   const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const [fullNameInput, setFullNameInput] = useState<Record<string, string>>({});
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const { toast } = useToast();
 
   // Combine default and custom job roles
@@ -508,6 +511,14 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
                     Invite
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowBulkImport(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Import
+                  </Button>
                 </form>
                 {isUnlimitedCompany ? (
                   <p className="text-sm text-muted-foreground">
@@ -892,6 +903,16 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             </Table>
           </CardContent>
         </Card>
+        {/* Bulk Import Modal */}
+        <BulkImportModal
+          open={showBulkImport}
+          onClose={() => setShowBulkImport(false)}
+          companyId={company.id}
+          onImportComplete={() => {
+            fetchUsers();
+            if (onCompanyUpdate) onCompanyUpdate();
+          }}
+        />
       </div>
     </TooltipProvider>
   );
