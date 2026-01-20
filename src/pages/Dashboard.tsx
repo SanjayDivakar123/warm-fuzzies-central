@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfileSidebar } from "@/components/ui/user-profile-sidebar";
+import { MobileSidebar } from "@/components/dashboard/MobileSidebar";
 import { FloatingHeader } from "@/components/ui/floating-header";
 import { 
   Calendar, 
@@ -21,7 +22,10 @@ import {
   KeyRound,
   Building2,
   FileText,
-  LogOut
+  LogOut,
+  Briefcase,
+  Mail,
+  Plus
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -36,6 +40,14 @@ interface AssessmentResult {
   user_id: string;
 }
 
+interface CompanyAccess {
+  id: string;
+  role: 'admin' | 'employee';
+  status: 'invited' | 'active' | 'revoked';
+  companyName: string;
+  subdomain: string;
+}
+
 const Dashboard = () => {
   const { user, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
@@ -47,20 +59,33 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'company'>('overview');
-  const [companyAccessList, setCompanyAccessList] = useState<Array<{
-    id: string;
-    role: 'admin' | 'employee';
-    companyName: string;
-    subdomain: string;
-  }>>([]);
+  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business'>('overview');
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
       checkCompanyAccess();
+      fetchUserProfile();
     }
   }, [user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (error) {
+      // Profile doesn't exist yet, that's okay
+    }
+  };
 
   const checkCompanyAccess = async () => {
     try {
@@ -77,8 +102,7 @@ const Dashboard = () => {
             subdomain
           )
         `)
-        .eq('email', user?.email)
-        .eq('status', 'active');
+        .eq('email', user?.email);
 
       if (error || !companyUsers || companyUsers.length === 0) {
         setCompanyAccessList([]);
@@ -92,6 +116,7 @@ const Dashboard = () => {
           return {
             id: cu.id,
             role: cu.role as 'admin' | 'employee',
+            status: cu.status as 'invited' | 'active' | 'revoked',
             companyName: company.name,
             subdomain: company.subdomain,
           };
@@ -236,27 +261,37 @@ const Dashboard = () => {
     setPasswordLoading(false);
   };
 
-  // Build nav items dynamically
+  // Separate companies by status
+  const activeCompanies = companyAccessList.filter(c => c.status === 'active');
+  const pendingInvites = companyAccessList.filter(c => c.status === 'invited');
+  const adminCompanies = activeCompanies.filter(c => c.role === 'admin');
+  const employeeCompanies = activeCompanies.filter(c => c.role === 'employee');
+
+  // Build nav items
   const navItems = [
     {
       icon: <User className="h-4 w-4" />,
       label: 'Overview',
       onClick: () => setActiveSection('overview'),
+      isActive: activeSection === 'overview',
     },
     {
       icon: <BarChart3 className="h-4 w-4" />,
       label: 'My Assessments',
       onClick: () => setActiveSection('assessments'),
+      isActive: activeSection === 'assessments',
     },
-    ...(companyAccessList.length > 0 ? [{
-      icon: <Building2 className="h-4 w-4" />,
-      label: 'Company Portals',
-      onClick: () => setActiveSection('company'),
-    }] : []),
+    {
+      icon: <Briefcase className="h-4 w-4" />,
+      label: 'Business',
+      onClick: () => setActiveSection('business'),
+      isActive: activeSection === 'business',
+    },
     {
       icon: <Settings className="h-4 w-4" />,
       label: 'Settings',
       onClick: () => setActiveSection('settings'),
+      isActive: activeSection === 'settings',
       isSeparator: true,
     },
   ];
@@ -270,6 +305,8 @@ const Dashboard = () => {
   const userProfile = {
     name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
     email: user?.email || '',
+    avatarUrl: avatarUrl,
+    userId: user?.id,
   };
 
   if (!user) {
@@ -292,13 +329,26 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <FloatingHeader />
       <div className="container mx-auto px-4 py-8">
+        {/* Mobile Header with Sidebar Toggle */}
+        <div className="lg:hidden flex items-center gap-4 mb-6">
+          <MobileSidebar
+            user={userProfile}
+            navItems={navItems}
+            logoutItem={logoutItem}
+            onAvatarChange={setAvatarUrl}
+          />
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+        </div>
+
         <div className="flex gap-6">
-          {/* Sidebar */}
+          {/* Desktop Sidebar */}
           <div className="hidden lg:block sticky top-24 h-fit">
             <UserProfileSidebar
               user={userProfile}
               navItems={navItems}
               logoutItem={logoutItem}
+              activeSection={activeSection}
+              onAvatarChange={setAvatarUrl}
             />
           </div>
 
@@ -341,11 +391,11 @@ const Dashboard = () => {
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-primary/10">
-                              <Building2 className="h-5 w-5 text-primary" />
+                              <Briefcase className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="text-2xl font-bold">{companyAccessList.length}</p>
-                              <p className="text-sm text-muted-foreground">Company Portals</p>
+                              <p className="text-2xl font-bold">{activeCompanies.length}</p>
+                              <p className="text-sm text-muted-foreground">Businesses</p>
                             </div>
                           </div>
                         </CardContent>
@@ -393,6 +443,34 @@ const Dashboard = () => {
                             >
                               View All
                               <ChevronRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Pending Invites Alert */}
+                    {pendingInvites.length > 0 && (
+                      <Card className="shadow-elegant border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
+                              <Mail className="h-5 w-5 text-yellow-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-yellow-800 dark:text-yellow-200">
+                                You have {pendingInvites.length} pending invitation{pendingInvites.length > 1 ? 's' : ''}
+                              </p>
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                Check your Business section to accept or decline
+                              </p>
+                            </div>
+                            <Button 
+                              variant="outline"
+                              onClick={() => setActiveSection('business')}
+                              className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                            >
+                              View Invites
                             </Button>
                           </div>
                         </CardContent>
@@ -523,44 +601,126 @@ const Dashboard = () => {
                   </>
                 )}
 
-                {/* Company Portals Section */}
-                {activeSection === 'company' && (
+                {/* Business Section */}
+                {activeSection === 'business' && (
                   <>
                     <div className="mb-6">
-                      <h1 className="text-3xl font-bold">Company Portals</h1>
-                      <p className="text-muted-foreground mt-1">Access your company assessments and dashboards</p>
+                      <h1 className="text-3xl font-bold">Business</h1>
+                      <p className="text-muted-foreground mt-1">Manage your business accounts and invitations</p>
                     </div>
 
-                    <div className="space-y-3">
-                      {companyAccessList.map((access) => (
-                        <Card key={access.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-                          <CardContent className="flex items-center justify-between py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                <Building2 className="w-5 h-5 text-primary" />
-                              </div>
-                              <div>
-                                <h3 className="font-semibold">{access.companyName}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {access.role === 'admin' ? 'Admin access' : 'Employee access'}
-                                </p>
-                              </div>
-                            </div>
-                            {access.role === 'admin' ? (
-                              <Button onClick={() => navigate('/b2b/company-portal')}>
-                                <Building2 className="w-4 h-4 mr-2" />
-                                Admin Dashboard
-                              </Button>
-                            ) : (
-                              <Button onClick={() => navigate(`/company/${access.subdomain}`)}>
-                                <User className="w-4 h-4 mr-2" />
-                                Employee Portal
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                    {/* Pending Invites */}
+                    {pendingInvites.length > 0 && (
+                      <section className="mb-8">
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <Mail className="h-5 w-5 text-yellow-600" />
+                          Pending Invitations
+                        </h2>
+                        <div className="space-y-3">
+                          {pendingInvites.map((invite) => (
+                            <Card key={invite.id} className="shadow-elegant border-yellow-300/50 bg-yellow-50/50 dark:bg-yellow-950/10">
+                              <CardContent className="flex items-center justify-between py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                                    <Mail className="w-5 h-5 text-yellow-600" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold">{invite.companyName}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                      Invited as {invite.role}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button onClick={() => navigate(`/company/${invite.subdomain}`)}>
+                                  Accept Invite
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Your Businesses (Admin) */}
+                    {adminCompanies.length > 0 && (
+                      <section className="mb-8">
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <Building2 className="h-5 w-5" />
+                          Your Businesses
+                        </h2>
+                        <div className="space-y-3">
+                          {adminCompanies.map((company) => (
+                            <Card key={company.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                              <CardContent className="flex items-center justify-between py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <Building2 className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold">{company.companyName}</h3>
+                                    <Badge variant="outline" className="mt-1 text-xs">Admin</Badge>
+                                  </div>
+                                </div>
+                                <Button onClick={() => navigate('/b2b/company-portal')}>
+                                  <Building2 className="w-4 h-4 mr-2" />
+                                  Admin Dashboard
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Businesses You're Part Of (Employee) */}
+                    {employeeCompanies.length > 0 && (
+                      <section className="mb-8">
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <User className="h-5 w-5" />
+                          Businesses You're Part Of
+                        </h2>
+                        <div className="space-y-3">
+                          {employeeCompanies.map((company) => (
+                            <Card key={company.id} className="shadow-elegant border-border/20">
+                              <CardContent className="flex items-center justify-between py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                                    <Building2 className="w-5 h-5 text-muted-foreground" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold">{company.companyName}</h3>
+                                    <Badge variant="secondary" className="mt-1 text-xs">Employee</Badge>
+                                  </div>
+                                </div>
+                                <Button variant="outline" onClick={() => navigate(`/company/${company.subdomain}`)}>
+                                  <User className="w-4 h-4 mr-2" />
+                                  Employee Portal
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Empty State - No Businesses */}
+                    {activeCompanies.length === 0 && pendingInvites.length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                          <Briefcase className="w-10 h-10 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-2xl font-semibold mb-3">No businesses yet</h3>
+                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                          Start a business account to unlock team assessments, analytics, and AI-powered work assignments for your organization.
+                        </p>
+                        <Button size="lg" asChild>
+                          <Link to="/pricing">
+                            <Plus className="w-5 h-5 mr-2" />
+                            Start a Business
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
 
