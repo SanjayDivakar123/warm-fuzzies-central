@@ -40,13 +40,14 @@ async function sendInviteEmail(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="x-apple-disable-message-reformatting">
       <title>Reminder: Complete your Role Color Assessment</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <tr>
           <td>
             <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; font-family: Georgia, 'Times New Roman', serif;">RoleColorFinder</h1>
+              <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;">RoleColorFinder</h1>
             </div>
             
             <div style="background: #ffffff; padding: 40px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
@@ -72,7 +73,7 @@ async function sendInviteEmail(
             
             <div style="background: #f0f0f0; padding: 24px 30px; border-radius: 0 0 16px 16px; text-align: center;">
               <a href="https://rolecolorfinder.com" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
-                <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" style="width: 24px; height: auto; margin-right: 8px;">
+                <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" style="width: 100px; height: 24px; margin-right: 8px; object-fit: contain;">
                 <span style="color: #666; font-size: 13px;">Powered by <strong style="color: #9b87f5;">RoleColorFinder</strong></span>
               </a>
               <p style="color: #aaa; font-size: 11px; margin: 12px 0 0 0;">
