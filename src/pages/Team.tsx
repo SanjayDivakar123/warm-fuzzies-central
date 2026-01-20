@@ -74,7 +74,7 @@ const Team = () => {
     image: "/images/tristan-beley-new.png",
     summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
     link: "/team/tristan-beley",
-    roleColor: "yellow" as const
+    roleColor: "green" as const
   }, {
     name: "Sam Otten",
     title: "Head of Application Development",
