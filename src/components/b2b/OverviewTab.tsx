@@ -19,7 +19,9 @@ import {
   AlertCircle,
   TrendingUp,
   BarChart3,
-  Download
+  Download,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportDashboardPdf } from '@/lib/dashboardPdfExport';
@@ -470,15 +472,32 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 <p className="text-xs text-muted-foreground">Employee portal URL</p>
               </div>
             </div>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(companyPortalUrl, '_blank')}
-              className="gap-2"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              View Portal
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://rolecolorfinder.com/company/${company.subdomain}/login`);
+                  toast({
+                    title: "URL copied",
+                    description: "Portal URL copied to clipboard",
+                  });
+                }}
+                className="gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy URL
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(companyPortalUrl, '_blank')}
+                className="gap-2"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                View Portal
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
