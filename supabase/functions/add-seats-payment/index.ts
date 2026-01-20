@@ -31,6 +31,15 @@ serve(async (req) => {
       throw new Error("Invalid request: companyId and additionalSeats are required");
     }
 
+    // Enforce 20,000 seat maximum for non-unlimited companies
+    const MAX_SEATS_ALLOWED = 20000;
+    const isUnlimitedCompany = companyName === "RoleColorFinderLLC";
+    const newTotal = (currentSeats || 0) + additionalSeats;
+
+    if (!isUnlimitedCompany && newTotal > MAX_SEATS_ALLOWED) {
+      throw new Error(`Maximum ${MAX_SEATS_ALLOWED.toLocaleString()} seats allowed per company. You can add up to ${MAX_SEATS_ALLOWED - (currentSeats || 0)} more seats.`);
+    }
+
     const stripeSecret = Deno.env.get("STRIPE_SECRET");
     if (!stripeSecret) {
       console.error("STRIPE_SECRET not configured");
@@ -43,7 +52,6 @@ serve(async (req) => {
 
     const pricePerSeat = 2000; // $20.00 in cents
     const totalAmount = pricePerSeat * additionalSeats;
-    const newTotal = (currentSeats || 0) + additionalSeats;
 
     console.log(`Creating checkout for ${additionalSeats} additional seats at $${totalAmount / 100}`);
 

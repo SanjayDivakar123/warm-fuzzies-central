@@ -18,6 +18,7 @@ interface BillingModalProps {
 
 const PRICE_PER_SEAT = 20;
 const PROMO_CODE = 'LEADERSWELCOME';
+const MAX_SEATS_ALLOWED = 20000;
 
 export default function BillingModal({ open, onClose, company, onSeatsUpdated }: BillingModalProps) {
   const [additionalSeats, setAdditionalSeats] = useState(0);
@@ -26,17 +27,29 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
   const { toast } = useToast();
 
   const currentSeats = company.seats_purchased || 0;
+  const isUnlimitedCompany = company.name === "RoleColorFinderLLC";
+  const maxAddable = isUnlimitedCompany ? Infinity : Math.max(0, MAX_SEATS_ALLOWED - currentSeats);
   const newTotal = currentSeats + additionalSeats;
   
   const isPromoValid = promoCode.toUpperCase().trim() === PROMO_CODE;
   const additionalCost = isPromoValid ? 0 : additionalSeats * PRICE_PER_SEAT;
 
   const handleIncrement = () => {
-    setAdditionalSeats(prev => prev + 1);
+    if (isUnlimitedCompany || additionalSeats < maxAddable) {
+      setAdditionalSeats(prev => prev + 1);
+    }
   };
 
   const handleDecrement = () => {
     setAdditionalSeats(prev => Math.max(0, prev - 1));
+  };
+
+  const handleSeatsInputChange = (value: number) => {
+    if (isUnlimitedCompany) {
+      setAdditionalSeats(Math.max(0, value));
+    } else {
+      setAdditionalSeats(Math.max(0, Math.min(value, maxAddable)));
+    }
   };
 
   const handleAddSeats = async () => {
@@ -150,8 +163,9 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
                 <Input
                   type="number"
                   min="0"
+                  max={isUnlimitedCompany ? undefined : maxAddable}
                   value={additionalSeats}
-                  onChange={(e) => setAdditionalSeats(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={(e) => handleSeatsInputChange(parseInt(e.target.value) || 0)}
                   className="text-center text-2xl font-bold h-12"
                 />
               </div>
@@ -160,15 +174,27 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
                 variant="outline"
                 size="icon"
                 onClick={handleIncrement}
+                disabled={!isUnlimitedCompany && additionalSeats >= maxAddable}
                 className="h-12 w-12"
               >
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
-
-            <p className="text-sm text-muted-foreground text-center">
-              New total: <span className="font-semibold">{newTotal} seats</span>
-            </p>
+            
+            {!isUnlimitedCompany && maxAddable <= 0 ? (
+              <p className="text-sm text-amber-600 text-center">
+                You've reached the maximum of {MAX_SEATS_ALLOWED.toLocaleString()} seats
+              </p>
+            ) : !isUnlimitedCompany ? (
+              <p className="text-sm text-muted-foreground text-center">
+                New total: <span className="font-semibold">{newTotal} seats</span>
+                <span className="text-xs ml-2">(max {MAX_SEATS_ALLOWED.toLocaleString()})</span>
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">
+                New total: <span className="font-semibold">{newTotal} seats</span>
+              </p>
+            )}
           </div>
 
           <Separator />

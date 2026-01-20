@@ -265,13 +265,20 @@ serve(async (req) => {
       .eq("company_id", company_id)
       .neq("status", "revoked");
 
-    if (activeUsers && activeUsers.length >= company.seats_purchased) {
+    // Special case: RoleColorFinderLLC has unlimited users
+    // All other companies are capped at 20,000 users max
+    const isUnlimitedCompany = company.name === "RoleColorFinderLLC";
+    const maxSeatsAllowed = 20000;
+    const effectiveSeats = isUnlimitedCompany ? Infinity : Math.min(company.seats_purchased, maxSeatsAllowed);
+
+    if (activeUsers && activeUsers.length >= effectiveSeats) {
       return new Response(
         JSON.stringify({
-          error: "No seats available",
+          error: isUnlimitedCompany ? "No seats available" : "No seats available (maximum 20,000 users per company)",
           errorCode: "NO_SEATS",
           seatsUsed: activeUsers.length,
           seatsPurchased: company.seats_purchased,
+          maxAllowed: isUnlimitedCompany ? null : maxSeatsAllowed,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
