@@ -39,34 +39,35 @@ async function sendInviteEmail(
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">Role Color Finder</h1>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+      <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">Role Color Finder</h1>
       </div>
       
-      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 12px 12px;">
-        <h2 style="color: #333; margin-top: 0;">Reminder: Complete your assessment</h2>
+      <div style="background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+        <h2 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">Reminder: Complete your assessment</h2>
         
-        <p>Hi there,</p>
+        <p style="color: #555; margin: 0 0 8px 0;">Hi there,</p>
         
-        <p>This is a reminder that <strong>${companyName}</strong> has invited you to take the Role Color Assessment. Don't miss out on discovering your work style!</p>
+        <p style="color: #555; margin: 0 0 30px 0;">This is a reminder that <strong style="color: #333;">${companyName}</strong> has invited you to take the Role Color Assessment. Don't miss out on discovering your work style!</p>
         
-        <div style="background: white; border: 2px dashed #9b87f5; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
-          <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Your Invite Code</p>
-          <p style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; color: #9b87f5;">${inviteCode}</p>
+        <div style="background: #fafafa; border: 1px solid #e8e8e8; border-radius: 12px; padding: 24px; margin: 0 0 30px 0; text-align: center;">
+          <p style="margin: 0 0 8px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Invite Code</p>
+          <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 5px; color: #9b87f5; font-family: monospace;">${inviteCode}</p>
         </div>
         
-        <p style="text-align: center;">
-          <a href="${portalUrl}" style="display: inline-block; background: #9b87f5; color: white; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600;">Start Assessment</a>
+        <div style="text-align: center; margin: 0 0 30px 0;">
+          <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">Start Assessment</a>
+        </div>
+        
+        <p style="color: #888; font-size: 13px; margin: 0 0 30px 0; text-align: center;">
+          Or go directly to:<br>
+          <a href="${portalUrl}" style="color: #9b87f5; word-break: break-all;">${portalUrl}</a>
         </p>
         
-        <p style="color: #666; font-size: 14px; margin-top: 30px;">
-          Or go directly to: <a href="${portalUrl}" style="color: #9b87f5;">${portalUrl}</a>
-        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 0 0 20px 0;">
         
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        
-        <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+        <p style="color: #aaa; font-size: 12px; text-align: center; margin: 0; line-height: 1.5;">
           This reminder was sent by ${companyName} through Role Color Finder.<br>
           If you didn't expect this email, you can safely ignore it.
         </p>
