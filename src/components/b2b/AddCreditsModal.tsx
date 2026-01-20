@@ -72,6 +72,17 @@ export default function AddCreditsModal({
       return;
     }
 
+    // Validate max amount (database has precision limit of 10^8)
+    const MAX_CREDIT_AMOUNT = 99999999;
+    if (creditAmount > MAX_CREDIT_AMOUNT) {
+      toast({
+        title: "Amount too large",
+        description: `Maximum credit amount is $${MAX_CREDIT_AMOUNT.toLocaleString()}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const promoDescription = promoApplied 
