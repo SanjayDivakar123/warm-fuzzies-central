@@ -74,3 +74,6 @@ verify_jwt = true
 
 [functions.send-scheduled-reminders]
 verify_jwt = false
+
+[functions.fetch-google-workspace-users]
+verify_jwt = true
