@@ -24,12 +24,16 @@ import {
   CreditCard,
   Upload,
   Bell,
+  Shield,
+  ShieldPlus,
 } from "lucide-react";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
 import BulkImportModal from './BulkImportModal';
 import ScheduleReminderModal from './ScheduleReminderModal';
 import GoogleWorkspaceImportModal from './GoogleWorkspaceImportModal';
+import InviteAdminModal from './InviteAdminModal';
+import PromoteToAdminModal from './PromoteToAdminModal';
 
 interface UsersTabProps {
   company: any;
@@ -92,6 +96,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showGoogleImport, setShowGoogleImport] = useState(false);
   const [showGoogleSync, setShowGoogleSync] = useState(false);
+  const [showInviteAdmin, setShowInviteAdmin] = useState(false);
+  const [promoteUser, setPromoteUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [cancelledReminders, setCancelledReminders] = useState<Record<string, number>>({});
   const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
@@ -570,6 +576,15 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                   <Button 
                     type="button" 
                     variant="outline" 
+                    onClick={() => setShowInviteAdmin(true)}
+                    disabled={!isUnlimitedCompany && getAvailableSeats() <= 0}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Invite Admin
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
                     onClick={() => setShowBulkImport(true)}
                   >
                     <Upload className="h-4 w-4 mr-2" />
@@ -841,6 +856,20 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                               </TooltipContent>
                             </Tooltip>
                           )}
+                          {user.role !== "admin" && user.status === "active" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setPromoteUser({ id: user.id, email: user.email, full_name: user.full_name })}
+                                >
+                                  <ShieldPlus className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Promote to Admin</TooltipContent>
+                            </Tooltip>
+                          )}
                           {user.role !== "admin" && user.status !== "revoked" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1105,6 +1134,26 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             if (onCompanyUpdate) onCompanyUpdate();
           }}
           mode="sync"
+        />
+        {/* Invite Admin Modal */}
+        <InviteAdminModal
+          open={showInviteAdmin}
+          onClose={() => setShowInviteAdmin(false)}
+          companyId={company.id}
+          onInviteComplete={() => {
+            fetchUsers();
+            if (onCompanyUpdate) onCompanyUpdate();
+          }}
+        />
+        {/* Promote to Admin Modal */}
+        <PromoteToAdminModal
+          open={!!promoteUser}
+          onClose={() => setPromoteUser(null)}
+          user={promoteUser}
+          onPromoteComplete={() => {
+            fetchUsers();
+            if (onCompanyUpdate) onCompanyUpdate();
+          }}
         />
       </div>
     </TooltipProvider>

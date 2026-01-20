@@ -146,7 +146,16 @@ export default function GoogleWorkspaceImportModal({
       setStep('select');
     } catch (err: any) {
       console.error('Error fetching Google users:', err);
-      setError(err.message || "Failed to fetch users from Google Workspace");
+      // Provide more helpful error messages
+      let errorMessage = err.message || "Failed to fetch users from Google Workspace";
+      if (errorMessage.includes("Admin SDK API has not been used") || errorMessage.includes("SERVICE_DISABLED")) {
+        errorMessage = "The Google Admin SDK API is not enabled. Please enable it in the Google Cloud Console for your project, then try again.";
+      } else if (errorMessage.includes("403") || errorMessage.includes("PERMISSION_DENIED")) {
+        errorMessage = "Permission denied. Make sure you're signed in with a Google Workspace admin account and the Admin SDK API is enabled.";
+      } else if (errorMessage.includes("401") || errorMessage.includes("UNAUTHENTICATED")) {
+        errorMessage = "Authentication expired. Please sign in again with Google.";
+      }
+      setError(errorMessage);
       setStep('auth');
     }
   };
