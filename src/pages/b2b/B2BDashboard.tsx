@@ -15,6 +15,7 @@ import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
 import { useTheme } from 'next-themes';
+import { HelpButton, useAutoStartTour } from '@/components/help';
 
 export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
@@ -113,10 +114,13 @@ export default function B2BDashboard() {
     );
   }
 
+  // Auto-start dashboard tour for first-time admins
+  useAutoStartTour('admin-dashboard-overview', 1500, !!company && isAdmin);
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Clean header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" data-tour="dashboard-header">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {(() => {
@@ -141,7 +145,13 @@ export default function B2BDashboard() {
             })()}
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
+            {/* Help Button */}
+            <HelpButton 
+              tourFilter={(tour) => tour.id.startsWith('admin-')}
+              size="sm"
+              iconOnly
+            />
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50" data-tour="theme-toggle">
               <Button
                 variant={theme === 'light' ? 'secondary' : 'ghost'}
                 size="icon"
@@ -185,7 +195,7 @@ export default function B2BDashboard() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-background border p-1 h-auto inline-flex">
+          <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
             <TabsTrigger 
               value="overview" 
               className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"

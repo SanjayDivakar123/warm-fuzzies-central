@@ -8,6 +8,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import { ThemeProvider } from "next-themes";
+import { HelpTourProvider } from "./contexts/HelpTourContext";
+import { TourTooltip } from "./components/help";
 
 const queryClient = new QueryClient();
 
@@ -18,9 +20,12 @@ const App = () => {
         <AuthProvider>
           <CompanyProvider>
             <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <RouterProvider router={router} />
+              <HelpTourProvider>
+                <Toaster />
+                <Sonner />
+                <TourTooltip />
+                <RouterProvider router={router} />
+              </HelpTourProvider>
             </TooltipProvider>
           </CompanyProvider>
         </AuthProvider>
