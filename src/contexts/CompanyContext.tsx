@@ -70,14 +70,24 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     }
 
     try {
-      // Fetch company user record
-      const { data: companyUserData, error: userError } = await supabase
+      // Fetch company user records (user might be admin of multiple companies)
+      // Prioritize: active admins first, then by most recent activity
+      const { data: companyUserRecords, error: userError } = await supabase
         .from('company_users')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('role', { ascending: true }) // 'admin' comes before 'employee' alphabetically
+        .order('status', { ascending: true }) // 'active' comes first
+        .order('updated_at', { ascending: false });
 
       if (userError) throw userError;
+
+      // Pick the first active admin record, or fall back to first active record
+      const activeAdminRecord = companyUserRecords?.find(
+        (r) => r.role === 'admin' && r.status === 'active'
+      );
+      const activeRecord = companyUserRecords?.find((r) => r.status === 'active');
+      const companyUserData = activeAdminRecord || activeRecord || companyUserRecords?.[0];
 
       if (companyUserData) {
         setCompanyUser(companyUserData);
