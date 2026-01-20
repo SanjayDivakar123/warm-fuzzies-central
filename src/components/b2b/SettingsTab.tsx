@@ -441,7 +441,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           <div className="space-y-2">
             <Label htmlFor="subdomain">Company Identifier</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">rolecolorfinder.lovable.app/company/</span>
+              <span className="text-sm text-muted-foreground">rolecolorfinder.com/company/</span>
               <Input
                 id="subdomain"
                 value={subdomain}

@@ -101,7 +101,7 @@ export default function B2BSignIn() {
                 <Label htmlFor="subdomain">Company Identifier</Label>
                 <div className="flex items-center">
                   <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
-                    rolecolorfinder.lovable.app/company/
+                    rolecolorfinder.com/company/
                   </div>
                   <Input
                     id="subdomain"
