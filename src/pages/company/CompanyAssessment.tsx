@@ -11,6 +11,7 @@ import { shuffleArray } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { professionalQuestions25Q, professionalQuestions50Q } from "@/lib/professionalAssessmentQuestions";
+import { HelpButton } from "@/components/help";
 
 export default function CompanyAssessment() {
   const { company, employee, loading, setEmployee } = useCompanyPortal();
@@ -214,7 +215,7 @@ export default function CompanyAssessment() {
       <div className="py-8 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Progress Header */}
-          <div className="mb-8">
+          <div className="mb-8" data-tour="assessment-progress">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
@@ -239,7 +240,7 @@ export default function CompanyAssessment() {
           </div>
 
           {/* Question Card */}
-          <Card className="rounded-2xl shadow-lg border-2 mb-8" style={{ borderColor: `${primaryColor}20` }}>
+          <Card className="rounded-2xl shadow-lg border-2 mb-8" style={{ borderColor: `${primaryColor}20` }} data-tour="assessment-question">
             <CardHeader className="pb-4">
               <Badge variant="secondary" className="w-fit mb-2">{currentQuestionData.section}</Badge>
               <CardTitle className="text-xl lg:text-2xl">{currentQuestionData.question}</CardTitle>
@@ -271,7 +272,7 @@ export default function CompanyAssessment() {
           </Card>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center" data-tour="assessment-navigation">
             <Button
               variant="outline"
               onClick={handlePrevious}
@@ -303,6 +304,10 @@ export default function CompanyAssessment() {
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className="fixed bottom-6 right-6 z-50">
+        <HelpButton tourFilter={(tour) => tour.id.startsWith('employee-')} size="sm" iconOnly />
       </div>
     </div>
   );

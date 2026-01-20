@@ -7,6 +7,7 @@ import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
 import { Download, Building2, CheckCircle, Loader2, AlertTriangle, Target, Lightbulb, Users } from "lucide-react";
 import { exportCompanyResultsPDF } from "@/lib/companyPdfExport";
 import { useToast } from "@/hooks/use-toast";
+import { HelpButton } from "@/components/help";
 
 const colorDescriptions = {
   yellow: {
@@ -288,7 +289,7 @@ export default function CompanyResults() {
       <div className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Success Message */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-10" data-tour="results-color">
             <div 
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
               style={{ backgroundColor: dominantColorInfo.color }}
@@ -396,7 +397,7 @@ export default function CompanyResults() {
           </Card>
 
           {/* Color Profile */}
-          <Card className="rounded-2xl shadow-lg border mb-6">
+          <Card className="rounded-2xl shadow-lg border mb-6" data-tour="results-scores">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div 
@@ -497,15 +498,21 @@ export default function CompanyResults() {
           </div>
 
           {/* Actions */}
-          <DownloadActions 
-            company={company}
-            dominantColor={assessmentResults.dominantColor}
-            scores={assessmentResults.scores}
-            totalQuestions={assessmentResults.totalQuestions}
-            colorInfo={dominantColorInfo}
-            primaryColor={primaryColor}
-            onNavigateHome={() => navigate(`/company/${company.subdomain}/home`)}
-          />
+          <div data-tour="results-actions">
+            <DownloadActions 
+              company={company}
+              dominantColor={assessmentResults.dominantColor}
+              scores={assessmentResults.scores}
+              totalQuestions={assessmentResults.totalQuestions}
+              colorInfo={dominantColorInfo}
+              primaryColor={primaryColor}
+              onNavigateHome={() => navigate(`/company/${company.subdomain}/home`)}
+            />
+          </div>
+
+          <div className="fixed bottom-6 right-6 z-50">
+            <HelpButton tourFilter={(tour) => tour.id.startsWith('employee-')} size="sm" iconOnly />
+          </div>
         </div>
       </div>
 

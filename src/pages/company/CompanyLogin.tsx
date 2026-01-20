@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2, KeyRound, Mail, ArrowLeft } from 'lucide-react';
 import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
+import { HelpButton } from '@/components/help';
 
 export default function CompanyLogin() {
   const { company, loading, error, setEmployee } = useCompanyPortal();
@@ -246,6 +247,7 @@ export default function CompanyLogin() {
                     placeholder="you@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    data-tour="employee-email"
                   />
                   <p className="text-xs text-muted-foreground">
                     Use the email address registered by your administrator
@@ -264,6 +266,7 @@ export default function CompanyLogin() {
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     maxLength={8}
                     className="text-center text-lg tracking-widest font-mono"
+                    data-tour="employee-code"
                   />
                   <p className="text-xs text-muted-foreground">
                     Check your email for the invite code from your administrator
@@ -357,6 +360,10 @@ export default function CompanyLogin() {
           </Card>
         </div>
       </main>
+
+      <div className="fixed bottom-6 right-6 z-50">
+        <HelpButton tourFilter={(tour) => tour.id.startsWith('employee-')} size="sm" iconOnly />
+      </div>
 
       <footer className="py-8 px-4 text-center">
         <a 
