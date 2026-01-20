@@ -139,7 +139,6 @@ export default function B2BDashboard() {
                 </div>
               );
             })()}
-            <span className="font-semibold text-foreground">{company.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
