@@ -283,7 +283,7 @@ export default function Pricing() {
 
                     <ul className="space-y-2 mb-6">
                       {[
-                        "Private company subdomain (company.rolecolorfinder.com)",
+                        "Private company portal with custom branding",
                         "Admin dashboard with full user management",
                         "25 or 50 question assessments per employee",
                         "Team color distribution analytics",

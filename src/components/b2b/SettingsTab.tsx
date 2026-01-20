@@ -434,38 +434,24 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
 
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">Domain Settings</CardTitle>
-          <CardDescription>Configure your company subdomain and custom domain</CardDescription>
+          <CardTitle className="text-lg font-medium">Portal Settings</CardTitle>
+          <CardDescription>Configure your company portal identifier</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subdomain">Subdomain</Label>
+            <Label htmlFor="subdomain">Company Identifier</Label>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">rolecolorfinder.lovable.app/company/</span>
               <Input
                 id="subdomain"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value)}
+                className="max-w-[200px]"
               />
-              <span className="text-sm text-muted-foreground">.rolecolorfinder.com</span>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="customDomain">Custom Domain</Label>
-            <Input
-              id="customDomain"
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value)}
-              placeholder="portal.yourcompany.com"
-            />
-            <div className="flex items-center space-x-2 mt-2">
-              <Switch
-                id="customDomainEnabled"
-                checked={customDomainEnabled}
-                onCheckedChange={setCustomDomainEnabled}
-              />
-              <Label htmlFor="customDomainEnabled">Enable Custom Domain</Label>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              This is the unique identifier in your company portal URL
+            </p>
           </div>
         </CardContent>
       </Card>
