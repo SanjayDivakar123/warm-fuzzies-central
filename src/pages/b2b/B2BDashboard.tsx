@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -13,7 +13,7 @@ import UsersTab from '@/components/b2b/UsersTab';
 import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
-
+import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
 export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
@@ -165,7 +165,7 @@ export default function B2BDashboard() {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList 
-            className="grid w-full grid-cols-5 p-1.5 h-auto rounded-xl"
+            className="grid w-full grid-cols-6 p-1.5 h-auto rounded-xl"
             style={{ 
               backgroundColor: `${primaryColor}10`,
             }}
@@ -195,6 +195,13 @@ export default function B2BDashboard() {
               Assessments
             </TabsTrigger>
             <TabsTrigger 
+              value="reminders" 
+              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+            >
+              <CalendarClock className="h-4 w-4" />
+              Reminders
+            </TabsTrigger>
+            <TabsTrigger 
               value="matrix" 
               className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
             >
@@ -220,6 +227,10 @@ export default function B2BDashboard() {
 
           <TabsContent value="assessments" className="animate-fade-in">
             <AssessmentsTab company={company} onSettingsSaved={refreshCompany} />
+          </TabsContent>
+
+          <TabsContent value="reminders" className="animate-fade-in">
+            <RemindersHistoryTab company={company} />
           </TabsContent>
 
           <TabsContent value="matrix" className="animate-fade-in">
