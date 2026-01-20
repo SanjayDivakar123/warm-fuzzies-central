@@ -39,30 +39,12 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Fetch credit balance
+  // Fetch credit balance from company record
   useEffect(() => {
-    const fetchCreditBalance = async () => {
-      setLoadingBalance(true);
-      try {
-        const { data, error } = await supabase
-          .from('billing_credits')
-          .select('amount')
-          .eq('company_id', company.id);
-        
-        if (error) throw error;
-        
-        // Sum all credits
-        const totalCredits = data?.reduce((sum, credit) => sum + Number(credit.amount), 0) || 0;
-        setCreditBalance(totalCredits);
-      } catch (error) {
-        console.error('Error fetching credit balance:', error);
-      } finally {
-        setLoadingBalance(false);
-      }
-    };
-
-    fetchCreditBalance();
-  }, [company.id]);
+    // Use the credit_balance from the company prop directly
+    setCreditBalance(company.credit_balance || 0);
+    setLoadingBalance(false);
+  }, [company.id, company.credit_balance]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
