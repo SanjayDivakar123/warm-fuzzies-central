@@ -17,7 +17,29 @@ function isValidUUID(str: string): boolean {
   return typeof str === "string" && uuidRegex.test(str);
 }
 
-async function sendInviteEmail(email: string, inviteCode: string, companyName: string, subdomain: string) {
+interface EmailTemplateSettings {
+  subject?: string | null;
+  greeting?: string | null;
+  body?: string | null;
+  ctaText?: string | null;
+  showLogo?: boolean;
+  logoUrl?: string | null;
+}
+
+function replaceVariables(text: string, vars: { companyName: string; email: string; inviteCode: string }) {
+  return text
+    .replace(/\{\{company_name\}\}/g, vars.companyName)
+    .replace(/\{\{email\}\}/g, vars.email)
+    .replace(/\{\{invite_code\}\}/g, vars.inviteCode);
+}
+
+async function sendInviteEmail(
+  email: string, 
+  inviteCode: string, 
+  companyName: string, 
+  subdomain: string,
+  template?: EmailTemplateSettings
+) {
   const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
   const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
 
@@ -29,8 +51,36 @@ async function sendInviteEmail(email: string, inviteCode: string, companyName: s
   console.log("Sending email via Mailgun domain:", mailgunDomain);
 
   const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
-
   const timestamp = new Date().getTime();
+  
+  // Template defaults
+  const defaultSubject = `You're invited to take the Role Color Assessment for ${companyName}`;
+  const defaultGreeting = "Hi there,";
+  const defaultBody = `<strong style="color: #333;">${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.`;
+  const defaultCta = "Start Assessment";
+  
+  // Apply custom template or defaults
+  const vars = { companyName, email, inviteCode };
+  const subject = template?.subject 
+    ? replaceVariables(template.subject, vars) 
+    : defaultSubject;
+  const greeting = template?.greeting 
+    ? replaceVariables(template.greeting, vars) 
+    : defaultGreeting;
+  const bodyText = template?.body 
+    ? replaceVariables(template.body, vars) 
+    : defaultBody;
+  const ctaText = template?.ctaText || defaultCta;
+  const showLogo = template?.showLogo !== false;
+  const logoUrl = template?.logoUrl;
+
+  // Build company logo section if applicable
+  const logoSection = showLogo && logoUrl ? `
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img src="${logoUrl}" alt="${companyName}" style="max-height: 48px; max-width: 150px; object-fit: contain;">
+    </div>
+  ` : '';
+
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -53,11 +103,12 @@ async function sendInviteEmail(email: string, inviteCode: string, companyName: s
               </tr>
               <tr>
                 <td style="background: #ffffff; padding: 40px 30px;">
+                  ${logoSection}
                   <h2 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">You've been invited!</h2>
                   
-                  <p style="color: #555; margin: 0 0 8px 0;">Hi there,</p>
+                  <p style="color: #555; margin: 0 0 8px 0;">${greeting}</p>
                   
-                  <p style="color: #555; margin: 0 0 30px 0;"><strong style="color: #333;">${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.</p>
+                  <p style="color: #555; margin: 0 0 30px 0;">${bodyText}</p>
                   
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #fafafa; border: 1px solid #e8e8e8; border-radius: 12px; margin: 0 0 30px 0;">
                     <tr>
@@ -73,7 +124,7 @@ async function sendInviteEmail(email: string, inviteCode: string, companyName: s
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr>
                       <td style="text-align: center; padding: 0 0 30px 0;">
-                        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">Start Assessment</a>
+                        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">${ctaText}</a>
                       </td>
                     </tr>
                   </table>
@@ -106,7 +157,7 @@ async function sendInviteEmail(email: string, inviteCode: string, companyName: s
           </td>
         </tr>
       </table>
-    </body80
+    </body>
     </html>
   `;
 
@@ -114,7 +165,7 @@ async function sendInviteEmail(email: string, inviteCode: string, companyName: s
     const formData = new FormData();
     formData.append("from", `Role Color Finder <no-reply@mg.rolecolorfinder.com>`);
     formData.append("to", email);
-    formData.append("subject", `You're invited to take the Role Color Assessment for ${companyName}`);
+    formData.append("subject", subject);
     formData.append("html", htmlContent);
 
     const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
@@ -236,10 +287,10 @@ serve(async (req) => {
       .eq("email", email.toLowerCase().trim())
       .maybeSingle();
 
-    // Get company details
+    // Get company details including email template settings
     const { data: company } = await supabase
       .from("companies")
-      .select("seats_purchased, name, subdomain")
+      .select("seats_purchased, name, subdomain, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo")
       .eq("id", company_id)
       .single();
 
@@ -334,8 +385,16 @@ serve(async (req) => {
       console.log("User invited:", invitedUser.id);
     }
 
-    // Send invitation email
-    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain);
+    // Send invitation email with custom template if available
+    const templateSettings: EmailTemplateSettings = {
+      subject: company.email_template_subject,
+      greeting: company.email_template_greeting,
+      body: company.email_template_body,
+      ctaText: company.email_template_cta_text,
+      showLogo: company.email_show_logo !== false,
+      logoUrl: company.logo_url,
+    };
+    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
 
     return new Response(JSON.stringify({ user: invitedUser, emailSent }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
