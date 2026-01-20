@@ -35,6 +35,11 @@ interface ReminderStats {
   cancelled: number;
 }
 
+interface TrendDataPoint {
+  date: string;
+  count: number;
+}
+
 interface TeamStats {
   totalUsers: number;
   activeUsers: number;
@@ -67,6 +72,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     cancelled: 0,
   });
   const [adminUser, setAdminUser] = useState<any>(null);
+  const [completionTrend, setCompletionTrend] = useState<TrendDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   const primaryColor = company.primary_color || '#22c55e';
@@ -103,6 +109,10 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       if (users) {
         // Calculate color distribution from completed assessments
         const colorDistribution = { yellow: 0, red: 0, green: 0, blue: 0 };
+        
+        // Calculate completion trend by date
+        const trendMap: Record<string, number> = {};
+        
         users.forEach(u => {
           const results = u.assessment_results?.results as { dominantColor?: string } | null;
           if (results?.dominantColor) {
@@ -111,7 +121,23 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               colorDistribution[color as keyof typeof colorDistribution]++;
             }
           }
+          
+          // Track completions by date
+          if (u.assessment_completed_at) {
+            const dateStr = new Date(u.assessment_completed_at).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            });
+            trendMap[dateStr] = (trendMap[dateStr] || 0) + 1;
+          }
         });
+
+        // Convert trend map to sorted array (last 14 days max)
+        const trendData = Object.entries(trendMap)
+          .map(([date, count]) => ({ date, count }))
+          .slice(-14);
+        
+        setCompletionTrend(trendData);
 
         setStats({
           totalUsers: users.length,
@@ -189,6 +215,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         month: 'long', 
         day: 'numeric' 
       }),
+      completionTrend,
     });
     toast({
       title: "Report exported",

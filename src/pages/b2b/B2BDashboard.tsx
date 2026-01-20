@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -133,18 +133,35 @@ export default function B2BDashboard() {
             <span className="font-semibold text-foreground">{company.name}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {theme === 'dark' ? (
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
+              <Button
+                variant={theme === 'light' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTheme('light')}
+                title="Light mode"
+              >
                 <Sun className="h-4 w-4" />
-              ) : (
+              </Button>
+              <Button
+                variant={theme === 'dark' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTheme('dark')}
+                title="Dark mode"
+              >
                 <Moon className="h-4 w-4" />
-              )}
-            </Button>
+              </Button>
+              <Button
+                variant={theme === 'system' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTheme('system')}
+                title="System theme"
+              >
+                <Monitor className="h-4 w-4" />
+              </Button>
+            </div>
             <Button 
               variant="ghost" 
               size="sm"

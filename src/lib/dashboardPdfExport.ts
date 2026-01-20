@@ -1,5 +1,10 @@
 import jsPDF from 'jspdf';
 
+interface TrendDataPoint {
+  date: string;
+  count: number;
+}
+
 interface DashboardStats {
   companyName: string;
   seatsUsed: number;
@@ -20,6 +25,7 @@ interface DashboardStats {
     sent: number;
   };
   exportDate: string;
+  completionTrend?: TrendDataPoint[];
 }
 
 const colorLabels = {
@@ -114,7 +120,90 @@ export const exportDashboardPdf = (stats: DashboardStats) => {
   pdf.setTextColor(100, 100, 100);
   pdf.text(`Completion Rate: ${stats.completionRate}% (${stats.completedAssessments} of ${stats.totalUsers} users)`, margin, y);
 
-  y += 20;
+  y += 15;
+
+  // Section: Completion Trend Chart (if data available)
+  if (stats.completionTrend && stats.completionTrend.length > 0) {
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Assessment Completions Over Time', margin, y);
+    y += 8;
+
+    const chartWidth = pageWidth - margin * 2;
+    const chartHeight = 50;
+    const chartX = margin;
+    const chartY = y;
+
+    // Chart background
+    pdf.setFillColor(248, 250, 252);
+    pdf.roundedRect(chartX, chartY, chartWidth, chartHeight, 3, 3, 'F');
+
+    // Draw grid lines
+    pdf.setDrawColor(229, 231, 235);
+    pdf.setLineWidth(0.3);
+    for (let i = 1; i < 4; i++) {
+      const gridY = chartY + (chartHeight / 4) * i;
+      pdf.line(chartX + 5, gridY, chartX + chartWidth - 5, gridY);
+    }
+
+    // Find max value for scaling
+    const maxCount = Math.max(...stats.completionTrend.map(d => d.count), 1);
+    const dataPoints = stats.completionTrend;
+    
+    if (dataPoints.length > 1) {
+      // Draw area fill
+      const pointSpacing = (chartWidth - 20) / (dataPoints.length - 1);
+      
+      pdf.setFillColor(34, 197, 94, 0.2);
+      
+      // Draw connecting lines
+      pdf.setDrawColor(34, 197, 94);
+      pdf.setLineWidth(1.5);
+      
+      for (let i = 0; i < dataPoints.length - 1; i++) {
+        const x1 = chartX + 10 + i * pointSpacing;
+        const y1 = chartY + chartHeight - 10 - ((dataPoints[i].count / maxCount) * (chartHeight - 20));
+        const x2 = chartX + 10 + (i + 1) * pointSpacing;
+        const y2 = chartY + chartHeight - 10 - ((dataPoints[i + 1].count / maxCount) * (chartHeight - 20));
+        pdf.line(x1, y1, x2, y2);
+      }
+
+      // Draw data points
+      pdf.setFillColor(34, 197, 94);
+      dataPoints.forEach((point, i) => {
+        const x = chartX + 10 + i * pointSpacing;
+        const pointY = chartY + chartHeight - 10 - ((point.count / maxCount) * (chartHeight - 20));
+        pdf.circle(x, pointY, 2, 'F');
+      });
+
+      // Draw x-axis labels (dates)
+      pdf.setFontSize(7);
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFont('helvetica', 'normal');
+      
+      // Only show first, middle, and last dates to avoid crowding
+      const labelIndices = [0, Math.floor(dataPoints.length / 2), dataPoints.length - 1];
+      labelIndices.forEach(i => {
+        if (i < dataPoints.length) {
+          const x = chartX + 10 + i * pointSpacing;
+          pdf.text(dataPoints[i].date, x, chartY + chartHeight - 2, { align: 'center' });
+        }
+      });
+    } else if (dataPoints.length === 1) {
+      // Single data point
+      pdf.setFillColor(34, 197, 94);
+      const x = chartX + chartWidth / 2;
+      const pointY = chartY + chartHeight / 2;
+      pdf.circle(x, pointY, 3, 'F');
+      
+      pdf.setFontSize(8);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`${dataPoints[0].count} on ${dataPoints[0].date}`, x, pointY + 10, { align: 'center' });
+    }
+
+    y += chartHeight + 10;
+  }
 
   // Section: Team Color Distribution
   if (stats.completedAssessments > 0) {

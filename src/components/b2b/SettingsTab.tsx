@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
@@ -20,6 +20,7 @@ interface SettingsTabProps {
 
 export default function SettingsTab({ company, onSettingsSaved }: SettingsTabProps) {
   const [logoUrl, setLogoUrl] = useState(company.logo_url || '');
+  const [logoUrlDark, setLogoUrlDark] = useState(company.logo_url_dark || '');
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
   const [subdomain, setSubdomain] = useState(company.subdomain);
@@ -29,7 +30,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled || false);
   const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || '');
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState<'light' | 'dark' | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
   const [billingOpen, setBillingOpen] = useState(false);
@@ -37,6 +38,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Fetch credit balance from company record
@@ -46,7 +48,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, mode: 'light' | 'dark') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -70,11 +72,11 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       return;
     }
 
-    setUploading(true);
+    setUploading(mode);
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${company.id}/logo-${Date.now()}.${fileExt}`;
+      const fileName = `${company.id}/logo-${mode}-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
@@ -92,19 +94,24 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         .getPublicUrl(fileName);
 
       const newLogoUrl = urlData.publicUrl;
-      setLogoUrl(newLogoUrl);
-
-      // Auto-save the logo URL
-      const { error: updateError } = await supabase
-        .from('companies')
-        .update({ logo_url: newLogoUrl })
-        .eq('id', company.id);
-
-      if (updateError) throw updateError;
+      
+      if (mode === 'light') {
+        setLogoUrl(newLogoUrl);
+        await supabase
+          .from('companies')
+          .update({ logo_url: newLogoUrl })
+          .eq('id', company.id);
+      } else {
+        setLogoUrlDark(newLogoUrl);
+        await supabase
+          .from('companies')
+          .update({ logo_url_dark: newLogoUrl })
+          .eq('id', company.id);
+      }
 
       toast({
         title: 'Logo uploaded',
-        description: 'Your company logo has been updated',
+        description: `Your ${mode} mode logo has been updated`,
       });
 
       if (onSettingsSaved) {
@@ -118,27 +125,33 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         variant: 'destructive',
       });
     } finally {
-      setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setUploading(null);
+      // Reset file inputs
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputDarkRef.current) fileInputDarkRef.current.value = '';
     }
   };
 
-  const handleRemoveLogo = async () => {
-    setLogoUrl('');
-    
-    const { error } = await supabase
-      .from('companies')
-      .update({ logo_url: '' })
-      .eq('id', company.id);
+  const handleRemoveLogo = async (mode: 'light' | 'dark') => {
+    if (mode === 'light') {
+      setLogoUrl('');
+      await supabase
+        .from('companies')
+        .update({ logo_url: '' })
+        .eq('id', company.id);
+    } else {
+      setLogoUrlDark('');
+      await supabase
+        .from('companies')
+        .update({ logo_url_dark: '' })
+        .eq('id', company.id);
+    }
 
-    if (!error && onSettingsSaved) {
+    if (onSettingsSaved) {
       onSettingsSaved();
       toast({
         title: 'Logo removed',
-        description: 'Your company logo has been removed',
+        description: `Your ${mode} mode logo has been removed`,
       });
     }
   };
@@ -150,6 +163,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         .from('companies')
         .update({
           logo_url: logoUrl,
+          logo_url_dark: logoUrlDark,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           subdomain,
@@ -190,22 +204,25 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           <CardTitle className="text-lg font-medium">Branding</CardTitle>
           <CardDescription>Customize your company portal appearance</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Light Mode Logo */}
           <div className="space-y-2">
-            <Label>Company Logo</Label>
+            <Label className="flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              Light Mode Logo
+            </Label>
             
-            {/* Logo Preview */}
             {logoUrl && (
-              <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-background">
                 <img 
                   src={logoUrl} 
-                  alt="Company logo" 
-                  className="h-16 w-auto max-w-[200px] object-contain"
+                  alt="Light mode logo" 
+                  className="h-12 w-auto max-w-[180px] object-contain"
                 />
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={handleRemoveLogo}
+                  onClick={() => handleRemoveLogo('light')}
                   className="text-destructive hover:text-destructive"
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -214,7 +231,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               </div>
             )}
 
-            {/* Upload Button */}
             <div className="flex gap-2">
               <Input
                 value={logoUrl}
@@ -226,16 +242,71 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleFileUpload}
+                onChange={(e) => handleFileUpload(e, 'light')}
                 className="hidden"
               />
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading !== null}
               >
-                {uploading ? (
+                {uploading === 'light' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Dark Mode Logo */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Moon className="h-4 w-4" />
+              Dark Mode Logo
+            </Label>
+            
+            {logoUrlDark && (
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-foreground/5">
+                <img 
+                  src={logoUrlDark} 
+                  alt="Dark mode logo" 
+                  className="h-12 w-auto max-w-[180px] object-contain"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleRemoveLogo('dark')}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                value={logoUrlDark}
+                onChange={(e) => setLogoUrlDark(e.target.value)}
+                placeholder="Enter dark mode logo URL or upload..."
+                className="flex-1"
+              />
+              <input
+                ref={fileInputDarkRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'dark')}
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => fileInputDarkRef.current?.click()}
+                disabled={uploading !== null}
+              >
+                {uploading === 'dark' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="h-4 w-4" />
@@ -243,7 +314,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Upload a PNG or JPG image (max 2MB). Recommended size: 200x50px
+              Upload PNG or JPG images (max 2MB each). Recommended size: 200x50px. Dark mode logo is optional.
             </p>
           </div>
 
