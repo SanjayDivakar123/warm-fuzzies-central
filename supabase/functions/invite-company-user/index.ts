@@ -24,6 +24,8 @@ interface EmailTemplateSettings {
   ctaText?: string | null;
   showLogo?: boolean;
   logoUrl?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
 }
 
 function replaceVariables(text: string, vars: { companyName: string; email: string; inviteCode: string }) {
@@ -73,6 +75,10 @@ async function sendInviteEmail(
   const ctaText = template?.ctaText || defaultCta;
   const showLogo = template?.showLogo !== false;
   const logoUrl = template?.logoUrl;
+  
+  // Company colors with fallbacks
+  const primaryColor = template?.primaryColor || "#9b87f5";
+  const secondaryColor = template?.secondaryColor || "#7E69AB";
 
   // Build company logo section if applicable
   const logoSection = showLogo && logoUrl ? `
@@ -97,10 +103,8 @@ async function sendInviteEmail(
           <td>
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
               <tr>
-                <td style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 40px 30px; text-align: center;">
+                <td style="background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); padding: 40px 30px; text-align: center;">
                   <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;">${companyName}</h1>
-                </td>
-              </tr>
                 </td>
               </tr>
               <tr>
@@ -116,7 +120,7 @@ async function sendInviteEmail(
                     <tr>
                       <td style="padding: 28px; text-align: center;">
                         <p style="margin: 0 0 12px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Invite Code</p>
-                        <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 6px; color: #9b87f5; font-family: 'Courier New', monospace;">${inviteCode}</p>
+                        <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 6px; color: ${primaryColor}; font-family: 'Courier New', monospace;">${inviteCode}</p>
                       </td>
                     </tr>
                   </table>
@@ -126,13 +130,13 @@ async function sendInviteEmail(
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr>
                       <td style="text-align: center; padding: 0 0 30px 0;">
-                        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">${ctaText}</a>
+                        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">${ctaText}</a>
                       </td>
                     </tr>
                   </table>
                   
                   <p style="color: #888; font-size: 13px; margin: 0; text-align: center;">
-                    Or go directly to: <a href="${portalUrl}" style="color: #9b87f5; word-break: break-all;">${portalUrl}</a>
+                    Or go directly to: <a href="${portalUrl}" style="color: ${primaryColor}; word-break: break-all;">${portalUrl}</a>
                   </p>
                 </td>
               </tr>
@@ -146,7 +150,7 @@ async function sendInviteEmail(
                         </a>
                       </td>
                       <td style="vertical-align: middle;">
-                        <span style="color: #666; font-size: 13px;">Powered by <a href="https://rolecolorfinder.com" style="color: #9b87f5; text-decoration: none; font-weight: 600;">RoleColorFinder</a></span>
+                        <span style="color: #666; font-size: 13px;">Powered by <a href="https://rolecolorfinder.com" style="color: ${primaryColor}; text-decoration: none; font-weight: 600;">RoleColorFinder</a></span>
                       </td>
                     </tr>
                   </table>
@@ -292,7 +296,7 @@ serve(async (req) => {
     // Get company details including email template settings
     const { data: company } = await supabase
       .from("companies")
-      .select("seats_purchased, name, subdomain, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo")
+      .select("seats_purchased, name, subdomain, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo, primary_color, secondary_color")
       .eq("id", company_id)
       .single();
 
@@ -395,6 +399,8 @@ serve(async (req) => {
       ctaText: company.email_template_cta_text,
       showLogo: company.email_show_logo !== false,
       logoUrl: company.logo_url,
+      primaryColor: company.primary_color,
+      secondaryColor: company.secondary_color,
     };
     const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
 
