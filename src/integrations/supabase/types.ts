@@ -278,6 +278,7 @@ export type Database = {
           google_workspace_domain: string | null
           id: string
           logo_url: string | null
+          logo_url_dark: string | null
           name: string
           primary_color: string | null
           seats_purchased: number
@@ -302,6 +303,7 @@ export type Database = {
           google_workspace_domain?: string | null
           id?: string
           logo_url?: string | null
+          logo_url_dark?: string | null
           name: string
           primary_color?: string | null
           seats_purchased?: number
@@ -326,6 +328,7 @@ export type Database = {
           google_workspace_domain?: string | null
           id?: string
           logo_url?: string | null
+          logo_url_dark?: string | null
           name?: string
           primary_color?: string | null
           seats_purchased?: number
