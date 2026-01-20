@@ -71,6 +71,8 @@ const PREDEFINED_SKILLS = [
   "Technical Support",
 ];
 
+type UserFilter = 'all' | 'pending_reminders' | 'completed';
+
 export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [cancelledReminders, setCancelledReminders] = useState<Record<string, number>>({});
+  const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
+  const [userFilter, setUserFilter] = useState<UserFilter>('all');
   const { toast } = useToast();
 
   // Combine default and custom job roles
@@ -97,6 +101,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   useEffect(() => {
     fetchUsers();
     fetchCancelledReminders();
+    fetchPendingReminders();
   }, [company.id]);
 
   const fetchUsers = async () => {
@@ -133,6 +138,31 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
       setCancelledReminders(counts);
     }
   };
+
+  const fetchPendingReminders = async () => {
+    const { data } = await supabase
+      .from("scheduled_reminders")
+      .select("company_user_id")
+      .eq("company_id", company.id)
+      .eq("status", "pending");
+
+    if (data) {
+      const userIds = new Set(data.map((r) => r.company_user_id));
+      setPendingReminders(userIds);
+    }
+  };
+
+  // Filter users based on selected filter
+  const filteredUsers = users.filter((user) => {
+    switch (userFilter) {
+      case 'pending_reminders':
+        return pendingReminders.has(user.id);
+      case 'completed':
+        return user.assessment_completed_at !== null;
+      default:
+        return true;
+    }
+  });
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -577,6 +607,17 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">Team Members</CardTitle>
               <div className="flex items-center gap-2">
+                {/* Filter Dropdown */}
+                <Select value={userFilter} onValueChange={(value) => setUserFilter(value as UserFilter)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter users" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="pending_reminders">Pending Reminders</SelectItem>
+                    <SelectItem value="completed">Completed Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
                 {/* Schedule Reminder Button */}
                 {selectedUsers.size > 0 && (
                   <Button
@@ -643,7 +684,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <>
                     <TableRow key={user.id} className="transition-colors hover:bg-muted/50">
                       <TableCell>
