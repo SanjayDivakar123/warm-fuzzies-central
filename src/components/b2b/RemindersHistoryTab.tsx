@@ -309,7 +309,7 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
                 </TableHeader>
                 <TableBody>
                   {filteredReminders.map((reminder) => (
-                    <TableRow key={reminder.id}>
+                    <TableRow key={reminder.id} className="transition-colors hover:bg-muted/50">
                       <TableCell>
                         <div>
                           {reminder.employee_name && (

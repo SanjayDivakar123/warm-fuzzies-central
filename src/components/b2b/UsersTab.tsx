@@ -627,7 +627,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
               <TableBody>
                 {users.map((user) => (
                   <>
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id} className="transition-colors hover:bg-muted/50">
                       <TableCell>
                         {user.status === 'invited' && !user.assessment_completed_at ? (
                           <Checkbox
