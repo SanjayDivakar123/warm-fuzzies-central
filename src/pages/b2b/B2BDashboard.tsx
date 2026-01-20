@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -14,11 +14,13 @@ import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
+import { useTheme } from 'next-themes';
 
 export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleLogout = async () => {
@@ -130,15 +132,29 @@ export default function B2BDashboard() {
             )}
             <span className="font-semibold text-foreground">{company.name}</span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleLogout} 
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleLogout} 
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
