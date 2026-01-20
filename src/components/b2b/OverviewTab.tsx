@@ -86,10 +86,13 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     }
   };
 
+  const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
+  const seatsDisplay = isUnlimitedCompany ? `${stats.seatsUsed} / ∞` : `${stats.seatsUsed} / ${company.seats_purchased}`;
+
   const statCards = [
     {
       title: 'Seats Used',
-      value: `${stats.seatsUsed} / ${company.seats_purchased}`,
+      value: seatsDisplay,
       icon: Users,
       gradient: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
     },
