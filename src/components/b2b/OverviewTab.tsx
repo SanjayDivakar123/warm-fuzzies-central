@@ -18,9 +18,11 @@ import {
   Mail,
   AlertCircle,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { exportDashboardPdf } from '@/lib/dashboardPdfExport';
 
 interface OverviewTabProps {
   company: any;
@@ -167,6 +169,33 @@ export default function OverviewTab({ company }: OverviewTabProps) {
   const completionRate = stats.totalUsers > 0 ? Math.round((stats.completedAssessments / stats.totalUsers) * 100) : 0;
   const companyPortalUrl = `/company/${company.subdomain}`;
 
+  const handleExportPdf = () => {
+    exportDashboardPdf({
+      companyName: company.name,
+      seatsUsed: stats.seatsUsed,
+      seatsPurchased: isUnlimitedCompany ? 999 : company.seats_purchased,
+      totalUsers: stats.totalUsers,
+      completedAssessments: stats.completedAssessments,
+      pendingInvites: stats.pendingInvites,
+      completionRate,
+      colorDistribution: stats.colorDistribution,
+      reminderStats: {
+        total: reminderStats.total,
+        pending: reminderStats.pending,
+        sent: reminderStats.sent,
+      },
+      exportDate: new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
+    });
+    toast({
+      title: "Report exported",
+      description: "Your dashboard report has been downloaded as PDF.",
+    });
+  };
+
   const colorLabels = {
     yellow: { label: 'Executor', color: 'bg-yellow-500' },
     red: { label: 'Motivator', color: 'bg-red-500' },
@@ -176,6 +205,14 @@ export default function OverviewTab({ company }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={handleExportPdf} className="gap-2">
+          <Download className="h-4 w-4" />
+          Export Report
+        </Button>
+      </div>
+
       {/* Quick Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border-0 shadow-sm">

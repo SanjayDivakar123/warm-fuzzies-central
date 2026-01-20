@@ -7,22 +7,25 @@ import { router } from "./router";
 import ScrollToTop from "@/components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
+import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CompanyProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </CompanyProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="rcf-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CompanyProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </CompanyProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 
