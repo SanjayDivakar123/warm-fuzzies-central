@@ -22,7 +22,10 @@ export function FloatingHeader() {
   ];
 
   return (
-    <header className="fixed top-4 left-1/2 z-50 w-[95%] max-w-6xl -translate-x-1/2">
+    <>
+      {/* Spacer to prevent content from going under the fixed header */}
+      <div className="h-20" aria-hidden="true" />
+      <header className="fixed top-4 left-1/2 z-50 w-[95%] max-w-6xl -translate-x-1/2">
       <nav className="flex items-center justify-between gap-2 rounded-2xl border border-border/50 bg-card/80 p-2 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-card/70">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 px-2">
@@ -204,5 +207,6 @@ export function FloatingHeader() {
         </Sheet>
       </nav>
     </header>
+    </>
   );
 }
