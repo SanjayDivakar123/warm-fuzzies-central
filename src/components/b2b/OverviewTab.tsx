@@ -241,7 +241,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       </div>
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-tour="overview-stats">
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
