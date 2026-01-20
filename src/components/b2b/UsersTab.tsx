@@ -79,6 +79,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [newJobRoleInput, setNewJobRoleInput] = useState("");
   const [customJobRoles, setCustomJobRoles] = useState<string[]>([]);
   const [showSeatPrompt, setShowSeatPrompt] = useState(false);
+  const [fullNameInput, setFullNameInput] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Combine default and custom job roles
@@ -280,6 +281,30 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleUpdateFullName = async (userId: string, fullName: string) => {
+    setSavingUserId(userId);
+    try {
+      const { error } = await supabase.from("company_users").update({ full_name: fullName }).eq("id", userId);
+
+      if (error) throw error;
+
+      setUsers(users.map((u) => (u.id === userId ? { ...u, full_name: fullName } : u)));
+
+      toast({
+        title: "Full name updated",
+        description: `Name set to ${fullName}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating full name",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingUserId(null);
     }
   };
 
@@ -547,6 +572,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Full Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Job Role</TableHead>
@@ -561,6 +587,11 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 {users.map((user) => (
                   <>
                     <TableRow key={user.id}>
+                      <TableCell>
+                        <span className="text-sm">
+                          {user.full_name || <span className="text-muted-foreground">Not set</span>}
+                        </span>
+                      </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell className="capitalize">{user.role}</TableCell>
                       <TableCell>
@@ -674,9 +705,44 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     </TableRow>
                     {expandedUserId === user.id && (
                       <TableRow key={`${user.id}-expanded`}>
-                        <TableCell colSpan={8}>
+                        <TableCell colSpan={9}>
                           <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-3 gap-6">
+                              {/* Full Name Section */}
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Full Name</label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    placeholder="Enter full name..."
+                                    value={fullNameInput[user.id] ?? user.full_name ?? ""}
+                                    onChange={(e) => setFullNameInput(prev => ({ ...prev, [user.id]: e.target.value }))}
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        const name = fullNameInput[user.id]?.trim() || "";
+                                        if (name) {
+                                          handleUpdateFullName(user.id, name);
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const name = fullNameInput[user.id]?.trim() || "";
+                                      if (name) {
+                                        handleUpdateFullName(user.id, name);
+                                      }
+                                    }}
+                                    disabled={!(fullNameInput[user.id]?.trim()) || savingUserId === user.id}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
                               {/* Job Role Section */}
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">Job Role</label>
