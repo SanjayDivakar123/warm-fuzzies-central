@@ -11,6 +11,7 @@ import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2 } from 'lucid
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
+import PaymentMethodCard from './PaymentMethodCard';
 
 interface SettingsTabProps {
   company: any;
@@ -397,6 +398,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           </div>
         </CardContent>
       </Card>
+
+      {/* Payment Method */}
+      <PaymentMethodCard company={company} />
 
       {/* Billing */}
       <Card>

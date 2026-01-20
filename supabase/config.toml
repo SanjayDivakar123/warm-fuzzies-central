@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.verify-add-seats-payment]
 verify_jwt = false
+
+[functions.charge-invite]
+verify_jwt = false
+
+[functions.manage-payment-method]
+verify_jwt = false
