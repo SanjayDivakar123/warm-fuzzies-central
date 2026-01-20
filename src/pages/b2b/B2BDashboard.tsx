@@ -14,14 +14,15 @@ import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
-import { useTheme } from 'next-themes';
+import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
 
-export default function B2BDashboard() {
+// Inner component that uses the B2B theme
+function B2BDashboardContent() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useB2BTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleLogout = async () => {
@@ -125,8 +126,8 @@ export default function B2BDashboard() {
           <div className="flex items-center gap-3">
             {(() => {
               // Determine which logo to show based on current theme
-              const isDarkMode = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-              const logoToShow = isDarkMode && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
+              const logoToShow = resolvedTheme === 'dark' && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
+              
               
               if (logoToShow) {
                 return (
@@ -260,5 +261,14 @@ export default function B2BDashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+// Wrapper component that provides the B2B-specific theme
+export default function B2BDashboard() {
+  return (
+    <B2BThemeProvider>
+      <B2BDashboardContent />
+    </B2BThemeProvider>
   );
 }

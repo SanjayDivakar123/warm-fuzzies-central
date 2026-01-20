@@ -536,7 +536,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm" data-tour="invite-section">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">Invite New User</CardTitle>
@@ -580,7 +580,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
               </Alert>
             ) : (
               <>
-                <form onSubmit={handleInviteUser} className="flex gap-4">
+                <form onSubmit={handleInviteUser} className="flex gap-4" data-tour="bulk-actions">
                   <Input
                     type="email"
                     placeholder="user@company.com"
@@ -670,7 +670,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
         {/* Email Template Customizer */}
         <EmailTemplateCustomizer company={company} onUpdate={onCompanyUpdate || (() => {})} />
 
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm" data-tour="users-table">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">Team Members</CardTitle>
