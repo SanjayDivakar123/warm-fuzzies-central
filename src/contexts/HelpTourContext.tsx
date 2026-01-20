@@ -377,10 +377,25 @@ export function HelpTourProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Default context for when hook is used outside provider (e.g., TourTooltip before mount)
+const defaultContext: HelpTourContextType = {
+  activeTour: null,
+  currentStepIndex: 0,
+  isActive: false,
+  startTour: () => {},
+  endTour: () => {},
+  nextStep: () => {},
+  prevStep: () => {},
+  goToStep: () => {},
+  hasCompletedTour: () => false,
+  markTourCompleted: () => {},
+  resetTourProgress: () => {},
+  availableTours: [],
+  registerTour: () => {},
+};
+
 export function useHelpTour() {
   const context = useContext(HelpTourContext);
-  if (!context) {
-    throw new Error('useHelpTour must be used within a HelpTourProvider');
-  }
-  return context;
+  // Return default context if not within provider (prevents crash during SSR/initial mount)
+  return context || defaultContext;
 }
