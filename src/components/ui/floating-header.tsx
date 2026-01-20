@@ -1,10 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MenuIcon, Home, CreditCard, Palette, UserCircle, Users, User, LogOut } from 'lucide-react';
+import { MenuIcon, User, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { SlideTabs } from '@/components/ui/slide-tabs';
+
+const navTabs = [
+  { label: 'Home', href: '/' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Free Assessment', href: '/free-assessment' },
+  { label: 'Our Team', href: '/team' },
+];
 
 export function FloatingHeader() {
   const [open, setOpen] = React.useState(false);
@@ -12,13 +20,6 @@ export function FloatingHeader() {
   const { user, signOut } = useAuth();
   
   const isActive = (path: string) => location.pathname === path;
-
-  const links = [
-    { label: 'Home', href: '/', icon: Home },
-    { label: 'Pricing', href: '/pricing', icon: CreditCard },
-    { label: 'Free Assessment', href: '/free-assessment', icon: Palette },
-    { label: 'Our Team', href: '/team', icon: UserCircle },
-  ];
 
   return (
     <>
@@ -35,23 +36,9 @@ export function FloatingHeader() {
           />
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center gap-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={cn(
-                'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200',
-                isActive(link.href)
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}
-            >
-              <link.icon className="h-4 w-4" />
-              {link.label}
-            </Link>
-          ))}
+        {/* Desktop Navigation - SlideTabs */}
+        <div className="hidden lg:block">
+          <SlideTabs tabs={navTabs} />
         </div>
 
         {/* Desktop Auth Buttons */}
@@ -116,21 +103,20 @@ export function FloatingHeader() {
             <SheetContent side="right" className="w-[300px] p-0">
               <div className="flex flex-col h-full">
                 {/* Mobile Nav Links */}
-                <div className="flex-1 px-4 py-6 space-y-2">
-                  {links.map((link) => (
+              <div className="flex-1 px-4 py-6 space-y-2">
+                  {navTabs.map((tab) => (
                     <Link
-                      key={link.href}
-                      to={link.href}
+                      key={tab.href}
+                      to={tab.href}
                       onClick={() => setOpen(false)}
                       className={cn(
                         'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-all',
-                        isActive(link.href)
+                        isActive(tab.href)
                           ? 'bg-primary text-primary-foreground'
                           : 'text-foreground hover:bg-accent'
                       )}
                     >
-                      <link.icon className="h-5 w-5" />
-                      {link.label}
+                      {tab.label}
                     </Link>
                   ))}
                 </div>
