@@ -91,7 +91,7 @@ async function sendInviteEmail(
 
   try {
     const formData = new FormData();
-    formData.append('from', `Role Color Finder <postmaster@${mailgunDomain}>`);
+    formData.append('from', `Role Color Finder <no-reply@mg.rolecolorfinder.com>`);
     formData.append('to', email);
     formData.append('subject', `You're invited to take the Role Color Assessment for ${companyName}`);
     formData.append('html', htmlContent);
