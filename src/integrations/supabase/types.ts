@@ -345,6 +345,7 @@ export type Database = {
           company_id: string
           created_at: string | null
           email: string
+          full_name: string | null
           id: string
           invite_code: string | null
           invite_count: number
@@ -365,6 +366,7 @@ export type Database = {
           company_id: string
           created_at?: string | null
           email: string
+          full_name?: string | null
           id?: string
           invite_code?: string | null
           invite_count?: number
@@ -385,6 +387,7 @@ export type Database = {
           company_id?: string
           created_at?: string | null
           email?: string
+          full_name?: string | null
           id?: string
           invite_code?: string | null
           invite_count?: number
