@@ -68,3 +68,9 @@ verify_jwt = false
 
 [functions.notify-admin-new-employee]
 verify_jwt = false
+
+[functions.analyze-csv-import]
+verify_jwt = true
+
+[functions.send-scheduled-reminders]
+verify_jwt = false

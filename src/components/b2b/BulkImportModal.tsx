@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -26,6 +27,9 @@ import {
   Sparkles,
   ArrowRight,
   X,
+  Download,
+  RefreshCw,
+  UserPlus,
 } from 'lucide-react';
 
 interface BulkImportModalProps {
@@ -51,6 +55,8 @@ interface ParsedEmployee {
   jobRole: string | null;
   valid: boolean;
   error?: string;
+  existingUser?: { id: string; status: string; full_name: string | null; job_role: string | null } | null;
+  action?: 'invite' | 'update' | 'skip';
 }
 
 type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
@@ -67,9 +73,31 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
   const [parsedEmployees, setParsedEmployees] = useState<ParsedEmployee[]>([]);
   const [importing, setImporting] = useState(false);
-  const [importResults, setImportResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
+  const [importResults, setImportResults] = useState<{ success: number; failed: number; updated: number; errors: string[] }>({ success: 0, failed: 0, updated: 0, errors: [] });
+  const [existingUsers, setExistingUsers] = useState<Map<string, any>>(new Map());
+  const [updateMode, setUpdateMode] = useState(true); // Enable update mode by default
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Fetch existing users when modal opens
+  useEffect(() => {
+    if (open && companyId) {
+      fetchExistingUsers();
+    }
+  }, [open, companyId]);
+
+  const fetchExistingUsers = async () => {
+    const { data, error } = await supabase
+      .from('company_users')
+      .select('id, email, status, full_name, job_role')
+      .eq('company_id', companyId);
+    
+    if (!error && data) {
+      const userMap = new Map<string, any>();
+      data.forEach(user => userMap.set(user.email.toLowerCase(), user));
+      setExistingUsers(userMap);
+    }
+  };
 
   const resetState = () => {
     setStep('upload');
@@ -81,7 +109,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
     setMapping(null);
     setAiAnalyzed(false);
     setParsedEmployees([]);
-    setImportResults({ success: 0, failed: 0, errors: [] });
+    setImportResults({ success: 0, failed: 0, updated: 0, errors: [] });
   };
 
   const handleClose = () => {
@@ -193,7 +221,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isValidEmail = emailRegex.test(email);
       
-      // Check for duplicates
+      // Check for duplicates in CSV
       const isDuplicate = seenEmails.has(email);
       if (!isDuplicate) seenEmails.add(email);
 
@@ -210,17 +238,63 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
       // Get job role
       const jobRole = jobRoleIdx >= 0 ? row[jobRoleIdx]?.trim() || null : null;
 
+      // Check if user already exists
+      const existingUser = existingUsers.get(email);
+      let action: 'invite' | 'update' | 'skip' = 'invite';
+      let error: string | undefined;
+
+      if (existingUser) {
+        if (existingUser.status === 'revoked') {
+          action = 'invite'; // Re-invite revoked users
+        } else if (updateMode) {
+          action = 'update'; // Update existing active/invited users
+        } else {
+          action = 'skip';
+          error = 'Already exists';
+        }
+      }
+
+      if (!isValidEmail) {
+        error = 'Invalid email format';
+      } else if (isDuplicate) {
+        error = 'Duplicate in CSV';
+      }
+
       employees.push({
         email,
         fullName,
         jobRole,
-        valid: isValidEmail && !isDuplicate,
-        error: !isValidEmail ? 'Invalid email format' : isDuplicate ? 'Duplicate email' : undefined,
+        valid: isValidEmail && !isDuplicate && action !== 'skip',
+        error,
+        existingUser: existingUser || null,
+        action,
       });
     }
 
     setParsedEmployees(employees);
     setStep('preview');
+  };
+
+  const downloadTemplate = () => {
+    const template = `email,full_name,job_role
+john.doe@company.com,John Doe,Engineer
+jane.smith@company.com,Jane Smith,Designer
+bob.wilson@company.com,Bob Wilson,PM`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'employee_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Template downloaded',
+      description: 'Fill in the template and upload it to import employees',
+    });
   };
 
   const handleImport = async () => {
@@ -237,23 +311,47 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
     setStep('importing');
     setImporting(true);
     
-    const results = { success: 0, failed: 0, errors: [] as string[] };
+    const results = { success: 0, failed: 0, updated: 0, errors: [] as string[] };
 
     for (const employee of validEmployees) {
       try {
-        const { data, error } = await supabase.functions.invoke('invite-company-user', {
-          body: {
-            company_id: companyId,
-            email: employee.email,
-            full_name: employee.fullName,
-            job_role: employee.jobRole,
-          },
-        });
+        if (employee.action === 'update' && employee.existingUser) {
+          // Update existing user
+          const updateData: Record<string, any> = {};
+          if (employee.fullName && employee.fullName !== employee.existingUser.full_name) {
+            updateData.full_name = employee.fullName;
+          }
+          if (employee.jobRole && employee.jobRole !== employee.existingUser.job_role) {
+            updateData.job_role = employee.jobRole;
+          }
+          
+          if (Object.keys(updateData).length > 0) {
+            const { error } = await supabase
+              .from('company_users')
+              .update(updateData)
+              .eq('id', employee.existingUser.id);
+            
+            if (error) throw error;
+            results.updated++;
+          } else {
+            results.updated++; // Count as updated even if no changes
+          }
+        } else {
+          // Invite new user
+          const { data, error } = await supabase.functions.invoke('invite-company-user', {
+            body: {
+              company_id: companyId,
+              email: employee.email,
+              full_name: employee.fullName,
+              job_role: employee.jobRole,
+            },
+          });
 
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+          if (error) throw error;
+          if (data?.error) throw new Error(data.error);
 
-        results.success++;
+          results.success++;
+        }
       } catch (error: any) {
         results.failed++;
         results.errors.push(`${employee.email}: ${error.message}`);
@@ -264,7 +362,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
     setImporting(false);
     setStep('complete');
     
-    if (results.success > 0) {
+    if (results.success > 0 || results.updated > 0) {
       onImportComplete();
     }
   };
@@ -317,9 +415,15 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <p className="text-sm text-muted-foreground">
-                Supported format: CSV with headers (email required)
-              </p>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Supported format: CSV with headers (email required)
+                </p>
+                <Button variant="outline" size="sm" onClick={downloadTemplate}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template
+                </Button>
+              </div>
             </div>
           )}
 
@@ -442,17 +546,37 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
           {/* Step 3: Preview */}
           {step === 'preview' && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                  {parsedEmployees.filter(e => e.valid).length} valid
-                </Badge>
-                {parsedEmployees.filter(e => !e.valid).length > 0 && (
-                  <Badge variant="destructive" className="gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {parsedEmployees.filter(e => !e.valid).length} invalid
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="gap-1">
+                    <UserPlus className="h-3 w-3 text-blue-500" />
+                    {parsedEmployees.filter(e => e.valid && e.action === 'invite').length} new
                   </Badge>
-                )}
+                  {updateMode && (
+                    <Badge variant="outline" className="gap-1">
+                      <RefreshCw className="h-3 w-3 text-amber-500" />
+                      {parsedEmployees.filter(e => e.valid && e.action === 'update').length} updates
+                    </Badge>
+                  )}
+                  {parsedEmployees.filter(e => !e.valid).length > 0 && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {parsedEmployees.filter(e => !e.valid).length} invalid
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="update-mode" className="text-sm">Update existing</Label>
+                  <Switch
+                    id="update-mode"
+                    checked={updateMode}
+                    onCheckedChange={(checked) => {
+                      setUpdateMode(checked);
+                      // Re-parse to update actions
+                      parseEmployeesFromCSV();
+                    }}
+                  />
+                </div>
               </div>
 
               <ScrollArea className="h-80 border rounded-lg">
@@ -463,25 +587,43 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
                       <TableHead>Email</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>Job Role</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {parsedEmployees.map((emp, idx) => (
-                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : ''}>
+                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : emp.action === 'update' ? 'bg-amber-50 dark:bg-amber-950/20' : ''}>
                         <TableCell>
                           {emp.valid ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            emp.action === 'update' ? (
+                              <RefreshCw className="h-4 w-4 text-amber-500" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            )
                           ) : (
                             <AlertCircle className="h-4 w-4 text-destructive" />
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">{emp.email}</TableCell>
-                        <TableCell>{emp.fullName || <span className="text-muted-foreground">—</span>}</TableCell>
-                        <TableCell>{emp.jobRole || <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell>
+                          {emp.fullName || <span className="text-muted-foreground">—</span>}
+                          {emp.action === 'update' && emp.existingUser?.full_name && emp.fullName !== emp.existingUser.full_name && (
+                            <span className="text-xs text-muted-foreground ml-1">(was: {emp.existingUser.full_name})</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {emp.jobRole || <span className="text-muted-foreground">—</span>}
+                          {emp.action === 'update' && emp.existingUser?.job_role && emp.jobRole !== emp.existingUser.job_role && (
+                            <span className="text-xs text-muted-foreground ml-1">(was: {emp.existingUser.job_role})</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {emp.valid ? (
-                            <Badge variant="outline" className="text-green-600">Ready</Badge>
+                            emp.action === 'update' ? (
+                              <Badge variant="outline" className="text-amber-600">Update</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-blue-600">Invite</Badge>
+                            )
                           ) : (
                             <Badge variant="destructive">{emp.error}</Badge>
                           )}
@@ -517,7 +659,9 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
                 <div className="text-center">
                   <p className="text-xl font-semibold">Import Complete</p>
                   <p className="text-muted-foreground mt-1">
-                    {importResults.success} employee{importResults.success !== 1 ? 's' : ''} imported successfully
+                    {importResults.success > 0 && `${importResults.success} invited`}
+                    {importResults.success > 0 && importResults.updated > 0 && ', '}
+                    {importResults.updated > 0 && `${importResults.updated} updated`}
                     {importResults.failed > 0 && `, ${importResults.failed} failed`}
                   </p>
                 </div>
@@ -562,7 +706,12 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
                 onClick={handleImport} 
                 disabled={parsedEmployees.filter(e => e.valid).length === 0}
               >
-                Import {parsedEmployees.filter(e => e.valid).length} Employees
+                {parsedEmployees.filter(e => e.valid && e.action === 'invite').length > 0 && 
+                  `Invite ${parsedEmployees.filter(e => e.valid && e.action === 'invite').length}`}
+                {parsedEmployees.filter(e => e.valid && e.action === 'invite').length > 0 && 
+                  parsedEmployees.filter(e => e.valid && e.action === 'update').length > 0 && ' & '}
+                {parsedEmployees.filter(e => e.valid && e.action === 'update').length > 0 && 
+                  `Update ${parsedEmployees.filter(e => e.valid && e.action === 'update').length}`}
               </Button>
             </>
           )}
