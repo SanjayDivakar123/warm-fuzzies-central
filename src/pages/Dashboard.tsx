@@ -46,30 +46,61 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [isCompanyAdmin, setIsCompanyAdmin] = useState(false);
+  const [companyAccess, setCompanyAccess] = useState<{
+    isAdmin: boolean;
+    isEmployee: boolean;
+    companyName: string | null;
+    subdomain: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
-      checkCompanyAdmin();
+      checkCompanyAccess();
     }
   }, [user]);
 
-  const checkCompanyAdmin = async () => {
+  const checkCompanyAccess = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all company user records for this email
+      const { data: companyUsers, error } = await supabase
         .from('company_users')
-        .select('id, role')
+        .select(`
+          id, 
+          role, 
+          status,
+          company_id,
+          companies:company_id (
+            id,
+            name,
+            subdomain
+          )
+        `)
         .eq('email', user?.email)
-        .eq('role', 'admin')
-        .eq('status', 'active')
-        .maybeSingle();
+        .eq('status', 'active');
 
-      if (!error && data) {
-        setIsCompanyAdmin(true);
+      if (error || !companyUsers || companyUsers.length === 0) {
+        setCompanyAccess(null);
+        return;
+      }
+
+      // Prioritize admin role over employee
+      const adminRecord = companyUsers.find(cu => cu.role === 'admin');
+      const employeeRecord = companyUsers.find(cu => cu.role === 'employee');
+      
+      const primaryRecord = adminRecord || employeeRecord;
+      
+      if (primaryRecord && primaryRecord.companies) {
+        const company = primaryRecord.companies as { id: string; name: string; subdomain: string };
+        setCompanyAccess({
+          isAdmin: !!adminRecord,
+          isEmployee: !!employeeRecord && !adminRecord,
+          companyName: company.name,
+          subdomain: company.subdomain,
+        });
       }
     } catch (error) {
-      console.error('Error checking company admin status:', error);
+      console.error('Error checking company access:', error);
     }
   };
 
@@ -243,8 +274,8 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* B2B Dashboard Access */}
-              {isCompanyAdmin && (
+              {/* B2B Portal Access */}
+              {companyAccess && (
                 <section>
                   <Card className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
                     <CardContent className="flex items-center justify-between py-4">
@@ -253,14 +284,27 @@ const Dashboard = () => {
                           <Building2 className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold">B2B Company Portal</h3>
-                          <p className="text-sm text-muted-foreground">Manage your company assessments and team</p>
+                          <h3 className="font-semibold">
+                            {companyAccess.companyName || 'Company'} Portal
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {companyAccess.isAdmin 
+                              ? 'Manage your company assessments and team' 
+                              : 'View your company assessment results'}
+                          </p>
                         </div>
                       </div>
-                      <Button onClick={() => navigate('/b2b/company-portal')}>
-                        <Building2 className="w-4 h-4 mr-2" />
-                        B2B Dashboard
-                      </Button>
+                      {companyAccess.isAdmin ? (
+                        <Button onClick={() => navigate('/b2b/company-portal')}>
+                          <Building2 className="w-4 h-4 mr-2" />
+                          Admin Dashboard
+                        </Button>
+                      ) : (
+                        <Button onClick={() => navigate(`/company/${companyAccess.subdomain}`)}>
+                          <User className="w-4 h-4 mr-2" />
+                          Employee Portal
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </section>
