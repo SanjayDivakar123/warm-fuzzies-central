@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { X, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
-import { useHelpTour, TourStep } from '@/contexts/HelpTourContext';
+import { useHelpTour } from '@/contexts/HelpTourContext';
 import { cn } from '@/lib/utils';
 
 interface Position {
@@ -12,7 +12,8 @@ interface Position {
   arrowPosition: 'top' | 'bottom' | 'left' | 'right';
 }
 
-export function TourTooltip() {
+// Inner component that uses hooks - only rendered after mount
+function TourTooltipInner() {
   const { activeTour, currentStepIndex, isActive, nextStep, prevStep, endTour } = useHelpTour();
   const [position, setPosition] = useState<Position | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -240,4 +241,20 @@ export function TourTooltip() {
     </>,
     document.body
   );
+}
+
+// Wrapper component that ensures client-side only rendering
+export function TourTooltip() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render until after mount to avoid SSR/hydration issues with hooks
+  if (!mounted) {
+    return null;
+  }
+
+  return <TourTooltipInner />;
 }
