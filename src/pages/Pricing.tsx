@@ -305,7 +305,7 @@ export default function Pricing() {
                       <p className="text-sm text-muted-foreground mb-2">Starting at</p>
                       <div className="flex items-baseline justify-center gap-1 mb-2">
                         <span className="text-muted-foreground">$</span>
-                        <span className="text-5xl font-bold tracking-tight text-foreground">5</span>
+                        <span className="text-5xl font-bold tracking-tight text-foreground">20</span>
                         <span className="text-muted-foreground">/seat</span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-6">per assessment, billed per use</p>
