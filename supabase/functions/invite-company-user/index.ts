@@ -49,7 +49,7 @@ async function sendInviteEmail(
         <tr>
           <td>
             <div style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">Role Color Finder</h1>
+              <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; font-family: Georgia, 'Times New Roman', serif;">RoleColorFinder</h1>
             </div>
             
             <div style="background: #ffffff; padding: 40px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
@@ -59,19 +59,12 @@ async function sendInviteEmail(
               
               <p style="color: #555; margin: 0 0 30px 0;"><strong style="color: #333;">${companyName}</strong> has invited you to take the Role Color Assessment. This assessment will help identify your work style and how you collaborate best with your team.</p>
               
-              <div style="background: #fafafa; border: 1px solid #e8e8e8; border-radius: 12px; padding: 24px; margin: 0 0 30px 0;">
-                <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; text-align: center; font-weight: 500;">To log in, you'll need:</p>
-                
-                <div style="background: #ffffff; border-radius: 8px; padding: 16px; margin: 0 0 12px 0; border: 1px solid #eee;">
-                  <p style="margin: 0 0 4px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Email</p>
-                  <p style="margin: 0; font-size: 16px; color: #333; word-break: break-all;">${email}</p>
-                </div>
-                
-                <div style="background: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #eee;">
-                  <p style="margin: 0 0 4px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Invite Code</p>
-                  <p style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #9b87f5; font-family: monospace;">${inviteCode}</p>
-                </div>
+              <div style="background: #fafafa; border: 1px solid #e8e8e8; border-radius: 12px; padding: 28px; margin: 0 0 30px 0; text-align: center;">
+                <p style="margin: 0 0 12px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Invite Code</p>
+                <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 6px; color: #9b87f5; font-family: 'Courier New', monospace;">${inviteCode}</p>
               </div>
+              
+              <p style="color: #666; font-size: 14px; margin: 0 0 24px 0; text-align: center;">Log in with your email: <strong>${email}</strong></p>
               
               <div style="text-align: center; margin: 0 0 30px 0;">
                 <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-weight: 600; font-size: 16px;">Start Assessment</a>
@@ -83,9 +76,9 @@ async function sendInviteEmail(
             </div>
             
             <div style="background: #f0f0f0; padding: 24px 30px; border-radius: 0 0 16px 16px; text-align: center;">
-              <a href="https://rolecolorfinder.com" style="text-decoration: none; display: inline-block;">
-                <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">
-                <span style="color: #666; font-size: 13px; vertical-align: middle;">Powered by <strong style="color: #9b87f5;">RoleColorFinder</strong></span>
+              <a href="https://rolecolorfinder.com" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" style="width: 24px; height: auto; margin-right: 8px;">
+                <span style="color: #666; font-size: 13px;">Powered by <strong style="color: #9b87f5;">RoleColorFinder</strong></span>
               </a>
               <p style="color: #aaa; font-size: 11px; margin: 12px 0 0 0;">
                 This invitation was sent by ${companyName}. If you didn't expect this email, you can safely ignore it.
