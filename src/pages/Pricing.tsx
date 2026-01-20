@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button"
-import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check, Building2, Users, BarChart3, Zap } from "lucide-react"
+import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check, Building2, Users, BarChart3, Zap, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { BorderTrail } from "@/components/ui/border-trail"
 import { PaymentButton } from "@/components/payment/PaymentButton"
 import { cn } from "@/lib/utils"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface PlanCardProps {
   name: string
@@ -329,6 +330,111 @@ export default function Pricing() {
           </div>
         </div>
 
+        {/* Comparison Table */}
+        <div className="mb-12 sm:mb-16">
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground mb-2">Compare Plans</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Individual vs Teams
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+              See which option is right for you
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Feature</TableHead>
+                  <TableHead className="text-center">Free</TableHead>
+                  <TableHead className="text-center">Premium ($19)</TableHead>
+                  <TableHead className="text-center">Pro ($49)</TableHead>
+                  <TableHead className="text-center">Teams ($20/user/mo)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium">Questions</TableCell>
+                  <TableCell className="text-center">3</TableCell>
+                  <TableCell className="text-center">25</TableCell>
+                  <TableCell className="text-center">50</TableCell>
+                  <TableCell className="text-center">25 or 50</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Color Profile Analysis</TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Role Recommendations</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">PDF Report</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center">1 page</TableCell>
+                  <TableCell className="text-center">3 pages</TableCell>
+                  <TableCell className="text-center">Full report</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Leadership Assessment</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Career Roadmap</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Team Analytics</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">AI Work Assignment</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Custom Branding</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Admin Dashboard</TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><X className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Check className="w-4 h-4 text-primary mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Billing Type</TableCell>
+                  <TableCell className="text-center text-muted-foreground">—</TableCell>
+                  <TableCell className="text-center">One-time</TableCell>
+                  <TableCell className="text-center">One-time</TableCell>
+                  <TableCell className="text-center">Monthly</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
         {/* Testimonial Section */}
         <div className="mb-12 sm:mb-16">
           <div className="max-w-3xl mx-auto">
