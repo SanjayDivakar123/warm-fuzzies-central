@@ -83,3 +83,9 @@ verify_jwt = true
 
 [functions.add-credits]
 verify_jwt = true
+
+[functions.process-monthly-billing]
+verify_jwt = false
+
+[functions.calculate-user-refund]
+verify_jwt = false
