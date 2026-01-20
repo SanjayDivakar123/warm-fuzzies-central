@@ -20,6 +20,7 @@ interface AssessmentsTabProps {
 interface CompletedAssessment {
   id: string;
   email: string;
+  full_name: string | null;
   job_role: string | null;
   skills: string[] | null;
   assessment_completed_at: string;
@@ -69,7 +70,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       // Fetch all company users with their assessment results
       const { data: users, error: usersError } = await supabase
         .from('company_users')
-        .select('id, email, status, job_role, skills, assessment_completed_at, assessment_result_id')
+        .select('id, email, full_name, status, job_role, skills, assessment_completed_at, assessment_result_id')
         .eq('company_id', company.id)
         .neq('status', 'revoked');
 
@@ -90,6 +91,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         assessmentsWithResults.push({
           id: user.id,
           email: user.email,
+          full_name: user.full_name || null,
           job_role: user.job_role,
           skills: user.skills,
           assessment_completed_at: user.assessment_completed_at,
@@ -471,6 +473,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
           .map(a => ({
             id: a.id,
             email: a.email,
+            full_name: a.full_name || null,
             job_role: a.job_role,
             skills: a.skills,
             dominantColor: a.results!.dominantColor,
