@@ -88,6 +88,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [cancelledReminders, setCancelledReminders] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   // Combine default and custom job roles
@@ -95,6 +96,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
 
   useEffect(() => {
     fetchUsers();
+    fetchCancelledReminders();
   }, [company.id]);
 
   const fetchUsers = async () => {
@@ -114,6 +116,22 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
       setUsers(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchCancelledReminders = async () => {
+    const { data } = await supabase
+      .from("scheduled_reminders")
+      .select("company_user_id")
+      .eq("company_id", company.id)
+      .eq("status", "cancelled");
+
+    if (data) {
+      const counts: Record<string, number> = {};
+      data.forEach((r) => {
+        counts[r.company_user_id] = (counts[r.company_user_id] || 0) + 1;
+      });
+      setCancelledReminders(counts);
+    }
   };
 
   const handleInviteUser = async (e: React.FormEvent) => {
@@ -659,7 +677,24 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                       <TableCell>
                         <span className="text-sm text-muted-foreground">{user.skills?.length || 0} skills</span>
                       </TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(user.status)}
+                          {cancelledReminders[user.id] && user.assessment_completed_at && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
+                                  <Bell className="h-3 w-3" />
+                                  Auto-cancelled
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {cancelledReminders[user.id]} reminder(s) auto-cancelled when assessment was completed
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {user.invite_code ? (
                           <div className="flex items-center gap-2">

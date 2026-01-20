@@ -56,12 +56,6 @@ const roleColorInfo: Record<string, { label: string; color: string; description:
   }
 };
 
-const quadrantInfo: Record<string, { label: string; color: string; description: string }> = {
-  q1: { label: 'Q1: Do First', color: 'text-red-600', description: 'Important + Urgent' },
-  q2: { label: 'Q2: Schedule', color: 'text-blue-600', description: 'Important + Not Urgent' },
-  q3: { label: 'Q3: Delegate', color: 'text-yellow-600', description: 'Urgent + Not Important' },
-  q4: { label: 'Q4: Eliminate', color: 'text-gray-600', description: 'Not Urgent + Not Important' }
-};
 
 export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }: TaskAssignmentOutputProps) {
   const { user } = useAuth();
@@ -164,9 +158,6 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={cn(quadrantInfo[task.quadrant]?.color)}>
-              {quadrantInfo[task.quadrant]?.label}
-            </Badge>
             <Badge variant="secondary">Importance: {task.importance}</Badge>
             <Badge variant="secondary">Urgency: {task.urgency}</Badge>
             {task.required_skills.map(skill => (
@@ -263,19 +254,6 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quadrant Explanation */}
-          {reasoning.quadrantExplanation && (
-            <div className="flex gap-3">
-              <Target className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Quadrant Analysis</p>
-                <p className="text-sm text-muted-foreground">{reasoning.quadrantExplanation}</p>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
           {/* RoleColor Justification */}
           {reasoning.roleColorJustification && (
             <div className="flex gap-3">

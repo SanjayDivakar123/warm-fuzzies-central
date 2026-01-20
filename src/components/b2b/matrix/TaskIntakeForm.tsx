@@ -145,13 +145,6 @@ export function TaskIntakeForm({ companyId, onTaskCreated, isAnalyzing, setIsAna
     }
   };
 
-  const quadrant = calculateQuadrant(importance, urgency);
-  const quadrantLabels = {
-    q1: { label: 'Q1: Do First', color: 'bg-red-500/20 text-red-600 border-red-500/30' },
-    q2: { label: 'Q2: Schedule', color: 'bg-blue-500/20 text-blue-600 border-blue-500/30' },
-    q3: { label: 'Q3: Delegate', color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30' },
-    q4: { label: 'Q4: Eliminate', color: 'bg-gray-500/20 text-gray-600 border-gray-500/30' }
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -278,23 +271,6 @@ export function TaskIntakeForm({ companyId, onTaskCreated, isAnalyzing, setIsAna
               </div>
             )}
           </div>
-
-          <Card className="border-dashed">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Covey Quadrant</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge className={cn('text-sm', quadrantLabels[quadrant].color)}>
-                {quadrantLabels[quadrant].label}
-              </Badge>
-              <p className="text-xs text-muted-foreground mt-2">
-                {quadrant === 'q1' && 'Important & Urgent: Crisis, deadlines, problems'}
-                {quadrant === 'q2' && 'Important & Not Urgent: Planning, development, prevention'}
-                {quadrant === 'q3' && 'Urgent & Not Important: Interruptions, some meetings'}
-                {quadrant === 'q4' && 'Not Important & Not Urgent: Time wasters, busywork'}
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
