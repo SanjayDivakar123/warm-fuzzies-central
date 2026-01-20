@@ -168,6 +168,23 @@ Deno.serve(async (req) => {
 
     console.log('Employee record updated successfully')
 
+    // Auto-cancel any pending scheduled reminders for this employee
+    const { data: cancelledReminders, error: cancelError } = await supabase
+      .from('scheduled_reminders')
+      .update({ 
+        status: 'cancelled',
+        next_occurrence_at: null 
+      })
+      .eq('company_user_id', employeeId)
+      .eq('status', 'pending')
+      .select('id')
+
+    if (cancelError) {
+      console.error('Error cancelling reminders (non-fatal):', cancelError)
+    } else if (cancelledReminders && cancelledReminders.length > 0) {
+      console.log(`Auto-cancelled ${cancelledReminders.length} pending reminder(s) for employee`)
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
