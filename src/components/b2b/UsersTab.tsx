@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,10 +23,12 @@ import {
   AlertCircle,
   CreditCard,
   Upload,
+  Bell,
 } from "lucide-react";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
 import BulkImportModal from './BulkImportModal';
+import ScheduleReminderModal from './ScheduleReminderModal';
 
 interface UsersTabProps {
   company: any;
@@ -83,6 +86,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const [fullNameInput, setFullNameInput] = useState<Record<string, string>>({});
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Combine default and custom job roles
@@ -554,6 +559,17 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             <div className="flex items-center justify-between">
               <CardTitle>Team Members</CardTitle>
               <div className="flex items-center gap-2">
+                {/* Schedule Reminder Button */}
+                {selectedUsers.size > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowReminderModal(true)}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Schedule Reminder ({selectedUsers.size})
+                  </Button>
+                )}
                 <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
                   {window.location.origin}/company/{company.subdomain}
                 </code>
@@ -583,6 +599,20 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={users.filter(u => u.status === 'invited' && !u.assessment_completed_at).length > 0 &&
+                        users.filter(u => u.status === 'invited' && !u.assessment_completed_at).every(u => selectedUsers.has(u.id))}
+                      onCheckedChange={(checked) => {
+                        const incompleteUsers = users.filter(u => u.status === 'invited' && !u.assessment_completed_at);
+                        if (checked) {
+                          setSelectedUsers(new Set(incompleteUsers.map(u => u.id)));
+                        } else {
+                          setSelectedUsers(new Set());
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead>Full Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
@@ -598,6 +628,22 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 {users.map((user) => (
                   <>
                     <TableRow key={user.id}>
+                      <TableCell>
+                        {user.status === 'invited' && !user.assessment_completed_at ? (
+                          <Checkbox
+                            checked={selectedUsers.has(user.id)}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedUsers);
+                              if (checked) {
+                                newSelected.add(user.id);
+                              } else {
+                                newSelected.delete(user.id);
+                              }
+                              setSelectedUsers(newSelected);
+                            }}
+                          />
+                        ) : null}
+                      </TableCell>
                       <TableCell>
                         <span className="text-sm">
                           {user.full_name || <span className="text-muted-foreground">Not set</span>}
@@ -716,7 +762,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     </TableRow>
                     {expandedUserId === user.id && (
                       <TableRow key={`${user.id}-expanded`}>
-                        <TableCell colSpan={9}>
+                      <TableCell colSpan={10}>
                           <div className="bg-muted/50 rounded-lg p-4 space-y-4">
                             <div className="grid grid-cols-3 gap-6">
                               {/* Full Name Section */}
@@ -911,6 +957,18 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
           onImportComplete={() => {
             fetchUsers();
             if (onCompanyUpdate) onCompanyUpdate();
+          }}
+        />
+        {/* Schedule Reminder Modal */}
+        <ScheduleReminderModal
+          open={showReminderModal}
+          onClose={() => setShowReminderModal(false)}
+          companyId={company.id}
+          selectedUsers={users
+            .filter(u => selectedUsers.has(u.id))
+            .map(u => ({ id: u.id, email: u.email, full_name: u.full_name }))}
+          onScheduled={() => {
+            setSelectedUsers(new Set());
           }}
         />
       </div>
