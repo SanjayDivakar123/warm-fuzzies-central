@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Clock, CheckCircle2, XCircle, Search, RefreshCw, CalendarClock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, Clock, CheckCircle2, XCircle, Search, RefreshCw, CalendarClock, Repeat, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -24,6 +25,8 @@ interface Reminder {
   created_at: string;
   sent_at: string | null;
   created_by: string | null;
+  recurrence: string;
+  delivery_status: string | null;
   employee_email?: string;
   employee_name?: string;
 }
@@ -42,7 +45,6 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
   const fetchReminders = async () => {
     setLoading(true);
     try {
-      // Fetch reminders with employee info
       const { data: remindersData, error: remindersError } = await supabase
         .from('scheduled_reminders')
         .select('*')
@@ -51,7 +53,6 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
 
       if (remindersError) throw remindersError;
 
-      // Fetch employee info for all reminders
       if (remindersData && remindersData.length > 0) {
         const userIds = [...new Set(remindersData.map(r => r.company_user_id))];
         const { data: usersData, error: usersError } = await supabase
@@ -118,28 +119,28 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
     switch (status) {
       case 'pending':
         return (
-          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
+          <Badge variant="secondary" className="font-normal">
             <Clock className="h-3 w-3 mr-1" />
             Pending
           </Badge>
         );
       case 'sent':
         return (
-          <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+          <Badge variant="default" className="font-normal bg-primary/80">
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Sent
           </Badge>
         );
       case 'cancelled':
         return (
-          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+          <Badge variant="outline" className="font-normal text-muted-foreground">
             <XCircle className="h-3 w-3 mr-1" />
             Cancelled
           </Badge>
         );
       case 'skipped':
         return (
-          <Badge variant="outline" className="bg-muted text-muted-foreground">
+          <Badge variant="outline" className="font-normal text-muted-foreground">
             Skipped
           </Badge>
         );
@@ -148,6 +149,48 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
           <Badge variant="outline">{status}</Badge>
         );
     }
+  };
+
+  const getDeliveryBadge = (deliveryStatus: string | null) => {
+    if (!deliveryStatus) return null;
+    
+    switch (deliveryStatus) {
+      case 'delivered':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Mail className="h-4 w-4 text-primary" />
+              </TooltipTrigger>
+              <TooltipContent>Email delivered</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case 'failed':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </TooltipTrigger>
+              <TooltipContent>Email delivery failed</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getRecurrenceBadge = (recurrence: string) => {
+    if (recurrence === 'once') return null;
+    
+    return (
+      <Badge variant="outline" className="font-normal text-xs ml-2">
+        <Repeat className="h-3 w-3 mr-1" />
+        {recurrence}
+      </Badge>
+    );
   };
 
   const filteredReminders = reminders.filter(reminder => {
@@ -164,130 +207,104 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
     total: reminders.length,
     pending: reminders.filter(r => r.status === 'pending').length,
     sent: reminders.filter(r => r.status === 'sent').length,
-    cancelled: reminders.filter(r => r.status === 'cancelled').length,
+    recurring: reminders.filter(r => r.recurrence !== 'once' && r.status === 'pending').length,
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Reminders</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <CalendarClock className="h-8 w-8 text-muted-foreground/50" />
-            </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total</p>
+            <p className="text-2xl font-semibold mt-1">{stats.total}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-warning">{stats.pending}</p>
-              </div>
-              <Clock className="h-8 w-8 text-warning/50" />
-            </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending</p>
+            <p className="text-2xl font-semibold mt-1">{stats.pending}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Sent</p>
-                <p className="text-2xl font-bold text-success">{stats.sent}</p>
-              </div>
-              <CheckCircle2 className="h-8 w-8 text-success/50" />
-            </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sent</p>
+            <p className="text-2xl font-semibold mt-1">{stats.sent}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Cancelled</p>
-                <p className="text-2xl font-bold text-destructive">{stats.cancelled}</p>
-              </div>
-              <XCircle className="h-8 w-8 text-destructive/50" />
-            </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recurring</p>
+            <p className="text-2xl font-semibold mt-1">{stats.recurring}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Reminders Table */}
-      <Card>
-        <CardHeader>
+      {/* Table */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Reminders History</CardTitle>
-              <CardDescription>View and manage all scheduled assessment reminders</CardDescription>
+              <CardTitle className="text-lg font-medium">Reminder History</CardTitle>
+              <CardDescription className="text-sm">All scheduled and sent reminders</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchReminders}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+            <Button variant="ghost" size="sm" onClick={fetchReminders}>
+              <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-3 mb-5">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by employee name or email..."
+                placeholder="Search employees..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9 h-9"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by status" />
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="sent">Sent</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="skipped">Skipped</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {filteredReminders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <CalendarClock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No reminders found</p>
+              <CalendarClock className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No reminders found</p>
               {reminders.length === 0 && (
-                <p className="text-sm mt-2">
-                  Schedule reminders from the Users tab to remind employees to complete their assessments.
+                <p className="text-xs mt-1 opacity-70">
+                  Schedule reminders from the Users tab
                 </p>
               )}
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Scheduled For</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Sent At</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="font-medium">Employee</TableHead>
+                    <TableHead className="font-medium">Scheduled</TableHead>
+                    <TableHead className="font-medium">Status</TableHead>
+                    <TableHead className="font-medium">Delivery</TableHead>
+                    <TableHead className="text-right font-medium">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -296,27 +313,36 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
                       <TableCell>
                         <div>
                           {reminder.employee_name && (
-                            <p className="font-medium">{reminder.employee_name}</p>
+                            <p className="font-medium text-sm">{reminder.employee_name}</p>
                           )}
-                          <p className={reminder.employee_name ? 'text-sm text-muted-foreground' : 'font-medium'}>
+                          <p className={reminder.employee_name ? 'text-xs text-muted-foreground' : 'text-sm'}>
                             {reminder.employee_email}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(reminder.scheduled_for), 'MMM d, yyyy h:mm a')}
+                        <div className="flex items-center">
+                          <span className="text-sm">
+                            {format(new Date(reminder.scheduled_for), 'MMM d, h:mm a')}
+                          </span>
+                          {getRecurrenceBadge(reminder.recurrence)}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(reminder.status)}
                       </TableCell>
                       <TableCell>
-                        {reminder.sent_at 
-                          ? format(new Date(reminder.sent_at), 'MMM d, yyyy h:mm a')
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(reminder.created_at), 'MMM d, yyyy')}
+                        <div className="flex items-center gap-2">
+                          {getDeliveryBadge(reminder.delivery_status)}
+                          {reminder.sent_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(reminder.sent_at), 'MMM d, h:mm a')}
+                            </span>
+                          )}
+                          {!reminder.sent_at && reminder.status !== 'pending' && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         {reminder.status === 'pending' && (
@@ -324,7 +350,7 @@ export default function RemindersHistoryTab({ company }: RemindersHistoryTabProp
                             variant="ghost"
                             size="sm"
                             onClick={() => handleCancelReminder(reminder.id)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 text-xs text-muted-foreground hover:text-destructive"
                           >
                             Cancel
                           </Button>
