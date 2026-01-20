@@ -27,9 +27,10 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
   const { toast } = useToast();
 
   const currentSeats = company.seats_purchased || 0;
-  const isUnlimitedCompany = company.name === "RoleColorFinderLLC";
+  const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
   const maxAddable = isUnlimitedCompany ? Infinity : Math.max(0, MAX_SEATS_ALLOWED - currentSeats);
   const newTotal = currentSeats + additionalSeats;
+  const currentSeatsDisplay = isUnlimitedCompany ? '∞' : currentSeats;
   
   const isPromoValid = promoCode.toUpperCase().trim() === PROMO_CODE;
   const additionalCost = isPromoValid ? 0 : additionalSeats * PRICE_PER_SEAT;
@@ -134,7 +135,7 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Current Seats</span>
-              <span className="font-semibold text-lg">{currentSeats}</span>
+              <span className="font-semibold text-lg">{currentSeatsDisplay}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Price per Seat</span>
