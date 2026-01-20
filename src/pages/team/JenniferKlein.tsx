@@ -196,6 +196,18 @@ const JenniferKlein = () => {
                 </li>
               </ul>
             </section>
+
+            <section className="p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500" />
+                Why Blue?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As an <strong>Analytical Strategist</strong>, Jennifer embodies the Blue RoleColor through her deep commitment to research, innovation, and long-term thinking. Blue leaders excel at ideation, strategy, and visionary planning—and Jennifer's decades of work in educational transformation exemplify this. Her authored books and global consulting work demonstrate the Blue strength of synthesizing complex ideas into frameworks that create lasting change. At RoleColorFinder, Jennifer's Blue energy ensures the platform is grounded in evidence-based practices while continuously evolving to meet the future of leadership development.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>

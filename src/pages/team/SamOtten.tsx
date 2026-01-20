@@ -201,6 +201,18 @@ const SamOtten = () => {
                 </Card>
               </div>
             </section>
+
+            <section className="p-6 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-yellow-400" />
+                Why Yellow?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As a <strong>Fast Executor</strong>, Sam exemplifies the Yellow RoleColor through his action-first, builder's mindset. Yellow leaders thrive on speed, initiative, and getting things done—and Sam has consistently demonstrated this by rapidly rising from intern to Head of Application Development. His obsession with translating complex psychological theories into functional code, and his drive to ship features and iterate quickly, are hallmarks of the Yellow energy. At RoleColorFinder, Sam's Yellow strength ensures the platform evolves rapidly, turning ambitious ideas into production-ready features.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>

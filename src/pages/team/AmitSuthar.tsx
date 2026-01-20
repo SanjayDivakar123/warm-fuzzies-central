@@ -176,6 +176,18 @@ const AmitSuthar = () => {
                 </li>
               </ul>
             </section>
+
+            <section className="p-6 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-yellow-400" />
+                Why Yellow?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As a <strong>Fast Executor</strong>, Amit embodies the Yellow RoleColor through his action-oriented, results-driven approach to AI development. Yellow leaders thrive on initiative, speed, and building—and Amit's rapid rise from intern to Head of AI Systems is a testament to this energy. His focus on shipping features, training models, and turning complex AI concepts into production-ready systems reflects the Yellow strength of execution over deliberation. At RoleColorFinder, Amit's Yellow energy powers the relentless pace of AI innovation, ensuring RoleColorAI evolves faster than the industry around it.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>
