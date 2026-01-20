@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2 } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
@@ -34,8 +34,35 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
   const [billingOpen, setBillingOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [loadingBalance, setLoadingBalance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Fetch credit balance
+  useEffect(() => {
+    const fetchCreditBalance = async () => {
+      setLoadingBalance(true);
+      try {
+        const { data, error } = await supabase
+          .from('billing_credits')
+          .select('amount')
+          .eq('company_id', company.id);
+        
+        if (error) throw error;
+        
+        // Sum all credits
+        const totalCredits = data?.reduce((sum, credit) => sum + Number(credit.amount), 0) || 0;
+        setCreditBalance(totalCredits);
+      } catch (error) {
+        console.error('Error fetching credit balance:', error);
+      } finally {
+        setLoadingBalance(false);
+      }
+    };
+
+    fetchCreditBalance();
+  }, [company.id]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -486,6 +513,34 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             <CreditCard className="h-4 w-4" />
             Manage Billing
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Wallet / Credit Balance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Wallet
+          </CardTitle>
+          <CardDescription>Your credit balance for inviting users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border">
+              <span className="text-muted-foreground font-medium">Credit Balance</span>
+              {loadingBalance ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <span className="font-bold text-2xl text-primary">
+                  ${creditBalance.toLocaleString()}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Credits are used when inviting new users. Each invite costs $20. Credits are deducted before charging your card on file.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
