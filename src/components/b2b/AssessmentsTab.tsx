@@ -394,6 +394,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Dominant Color</TableHead>
                   <TableHead>Completed</TableHead>
@@ -404,7 +405,10 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
               <TableBody>
                 {completedAssessments.map((assessment) => (
                   <TableRow key={assessment.id}>
-                    <TableCell className="font-medium">{assessment.email}</TableCell>
+                    <TableCell className="font-medium">
+                      {assessment.full_name || <span className="text-muted-foreground">Not set</span>}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{assessment.email}</TableCell>
                     <TableCell>
                       {assessment.results?.dominantColor 
                         ? getColorBadge(assessment.results.dominantColor)
