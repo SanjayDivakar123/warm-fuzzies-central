@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check } from "lucide-react"
+import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check, Building2, Users, BarChart3, Zap } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { Badge } from "@/components/ui/badge"
@@ -205,6 +205,126 @@ export default function Pricing() {
             <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <ShieldCheckIcon className="size-4" />
               All features included with no hidden fees
+            </div>
+          </div>
+        </div>
+
+        {/* For Teams Section */}
+        <div className="mb-12 sm:mb-16">
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground mb-2">For Teams</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Empower Your Entire Organization
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+              Unlock team dynamics, improve collaboration, and build high-performing teams with our B2B platform.
+            </p>
+          </div>
+
+          <div className="relative max-w-4xl mx-auto">
+            <BorderTrail
+              className={cn(
+                'bg-gradient-to-l from-secondary via-secondary/80 to-secondary/20'
+              )}
+              size={80}
+              transition={{
+                repeat: Infinity,
+                duration: 6,
+                ease: 'linear',
+              }}
+            />
+            <div className="bg-muted/40 rounded-xl p-8 relative overflow-hidden">
+              <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+              <PlusIcon className="absolute -bottom-3 -left-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
+              
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row gap-8">
+                  {/* Left side - Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Building2 className="w-6 h-6 text-primary" />
+                      <h3 className="text-2xl font-bold text-foreground">RoleColor™ for Teams</h3>
+                    </div>
+                    
+                    <p className="text-muted-foreground mb-6">
+                      Get your own branded subdomain with full admin controls, team analytics, and AI-powered work assignment tools.
+                    </p>
+
+                    <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                      <div className="flex items-start gap-3">
+                        <Users className="w-5 h-5 text-primary mt-0.5" />
+                        <div>
+                          <p className="font-medium text-foreground">Team Assessments</p>
+                          <p className="text-sm text-muted-foreground">Invite employees via email or Google SSO</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <BarChart3 className="w-5 h-5 text-primary mt-0.5" />
+                        <div>
+                          <p className="font-medium text-foreground">Team Analytics</p>
+                          <p className="text-sm text-muted-foreground">Color distribution & team insights</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Zap className="w-5 h-5 text-primary mt-0.5" />
+                        <div>
+                          <p className="font-medium text-foreground">AI Work Assignment</p>
+                          <p className="text-sm text-muted-foreground">Match tasks to team members' strengths</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Palette className="w-5 h-5 text-primary mt-0.5" />
+                        <div>
+                          <p className="font-medium text-foreground">Custom Branding</p>
+                          <p className="text-sm text-muted-foreground">Your logo, colors, and subdomain</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2 mb-6">
+                      {[
+                        "Private company subdomain (company.rolecolorfinder.com)",
+                        "Admin dashboard with full user management",
+                        "25 or 50 question assessments per employee",
+                        "Team color distribution analytics",
+                        "AI-powered work assignment matrix",
+                        "Bulk import & Google Workspace sync",
+                        "Email customization & scheduled reminders"
+                      ].map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Right side - Pricing */}
+                  <div className="lg:w-72 flex flex-col justify-center">
+                    <div className="bg-background/50 rounded-lg p-6 text-center border border-primary/20">
+                      <p className="text-sm text-muted-foreground mb-2">Starting at</p>
+                      <div className="flex items-baseline justify-center gap-1 mb-2">
+                        <span className="text-muted-foreground">$</span>
+                        <span className="text-5xl font-bold tracking-tight text-foreground">5</span>
+                        <span className="text-muted-foreground">/seat</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-6">per assessment, billed per use</p>
+                      
+                      <Button className="w-full rounded-full mb-3" asChild>
+                        <Link to="/b2b">Get Started</Link>
+                      </Button>
+                      <Button variant="outline" className="w-full rounded-full" asChild>
+                        <Link to="/contact">Contact Sales</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <ShieldCheckIcon className="size-4" />
+              Volume discounts available for 50+ seats
             </div>
           </div>
         </div>
