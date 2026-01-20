@@ -92,28 +92,28 @@ export default function B2BSignIn() {
           <CardHeader>
             <CardTitle>Find Your Company</CardTitle>
             <CardDescription>
-              Enter the subdomain you chose when creating your company account
+              Enter your company identifier to access the admin dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="subdomain">Company Subdomain</Label>
+                <Label htmlFor="subdomain">Company Identifier</Label>
                 <div className="flex items-center">
+                  <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
+                    rolecolorfinder.lovable.app/company/
+                  </div>
                   <Input
                     id="subdomain"
                     placeholder="your-company"
                     value={subdomain}
                     onChange={(e) => setSubdomain(cleanSubdomain(e.target.value))}
-                    className="rounded-r-none"
+                    className="rounded-l-none"
                     required
                   />
-                  <div className="bg-muted px-3 py-2 border border-l-0 rounded-r-md text-sm text-muted-foreground whitespace-nowrap">
-                    .rolecolorfinder.com
-                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This is the subdomain shown in your company portal URL
+                  This is your company identifier from your portal URL
                 </p>
               </div>
 

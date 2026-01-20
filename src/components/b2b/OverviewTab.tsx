@@ -466,7 +466,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 <Globe className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-medium text-sm">{company.subdomain}.rolecolorfinder.com</p>
+                <p className="font-medium text-sm">rolecolorfinder.lovable.app/company/{company.subdomain}</p>
                 <p className="text-xs text-muted-foreground">Employee portal URL</p>
               </div>
             </div>
