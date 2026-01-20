@@ -172,6 +172,18 @@ const TristanBeley = () => {
                 </li>
               </ul>
             </section>
+
+            <section className="p-6 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-500" />
+                Why Green?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As a <strong>Strategic Architect</strong>, Tristan embodies the Green RoleColor through his methodical, systems-thinking approach to building technology. Green leaders excel at organization, planning, and creating structured frameworks that scale—exactly what's needed when architecting a platform used by thousands. His focus on building systems that "feel personal while scaling globally" reflects the Green strength of balancing precision with purpose. At RoleColorFinder, Tristan's Green energy ensures that every feature is thoughtfully designed, properly documented, and built to last.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>

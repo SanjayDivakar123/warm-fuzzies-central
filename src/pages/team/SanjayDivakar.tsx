@@ -184,6 +184,18 @@ const SanjayDivakar = () => {
                 </li>
               </ul>
             </section>
+
+            <section className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-500" />
+                Why Red?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As a <strong>Creative Motivator</strong>, Sanjay embodies the Red RoleColor through his vision-driven, inspiring approach to leadership. Red leaders excel at communication, persuasion, and creative direction—exactly the qualities needed to found and lead a company redefining how people understand leadership. His obsession with helping people "lead better starting with who they already are" reflects the Red strength of seeing potential in others and motivating them toward it. At RoleColorFinder, Sanjay's Red energy fuels the company's mission, partnerships, and the passionate belief that everyone has a unique leadership style worth discovering.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>

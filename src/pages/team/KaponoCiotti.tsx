@@ -190,6 +190,18 @@ const KaponoCiotti = () => {
                 </li>
               </ul>
             </section>
+
+            <section className="p-6 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-500" />
+                Why Green?
+              </h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  As a <strong>Supportive Collaborator</strong>, Dr. Kapono embodies the Green RoleColor through his emphasis on connection, harmony, and structured community-building. Green leaders excel at creating organized frameworks while nurturing relationships—and Kapono's concept of <em>pilina</em> (deep connections) is the essence of Green leadership. His ability to bridge Indigenous wisdom with global innovation, and to see systems through multiple perspectives (<em>makawalu</em>), reflects the Green strength of thoughtful planning paired with genuine care for people. At RoleColorFinder, Kapono's Green energy ensures the platform honors human connection while scaling its impact.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </main>
