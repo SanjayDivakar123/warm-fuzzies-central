@@ -235,7 +235,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { company_id, email } = body;
+    const { company_id, email, full_name, job_role } = body;
 
     // Input validation
     if (!company_id || !email) {
@@ -422,6 +422,8 @@ serve(async (req) => {
         .insert({
           company_id,
           email: email.toLowerCase().trim(),
+          full_name: full_name || null,
+          job_role: job_role || null,
           role: "employee",
           status: "invited",
           invite_code: inviteCode,
