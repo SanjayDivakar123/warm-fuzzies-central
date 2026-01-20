@@ -112,7 +112,7 @@ export function WorkAssigningMatrixTab() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="create" className="mt-6">
+            <TabsContent value="create" className="mt-6" data-tour="matrix-create">
               <TaskIntakeForm 
                 companyId={company.id} 
                 onTaskCreated={handleTaskCreated}
@@ -121,7 +121,7 @@ export function WorkAssigningMatrixTab() {
               />
             </TabsContent>
 
-            <TabsContent value="assignment" className="mt-6">
+            <TabsContent value="assignment" className="mt-6" data-tour="matrix-assignment">
               {currentTask && currentAssignment ? (
                 <TaskAssignmentOutput
                   task={currentTask}
@@ -136,7 +136,7 @@ export function WorkAssigningMatrixTab() {
               )}
             </TabsContent>
 
-            <TabsContent value="history" className="mt-6">
+            <TabsContent value="history" className="mt-6" data-tour="matrix-history">
               <TaskHistoryPanel 
                 companyId={company.id} 
                 tasks={tasks}

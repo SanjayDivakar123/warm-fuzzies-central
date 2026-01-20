@@ -25,6 +25,9 @@ function B2BDashboardContent() {
   const { theme, setTheme, resolvedTheme } = useB2BTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Auto-start dashboard tour for first-time admins (hook must be called unconditionally)
+  useAutoStartTour('admin-dashboard-overview', 1500, !loading && !!company && isAdmin);
+
   const handleLogout = async () => {
     await signOut();
     window.location.href = '/b2b';
@@ -114,9 +117,6 @@ function B2BDashboardContent() {
       </div>
     );
   }
-
-  // Auto-start dashboard tour for first-time admins
-  useAutoStartTour('admin-dashboard-overview', 1500, !!company && isAdmin);
 
   return (
     <div className="min-h-screen bg-muted/30">
