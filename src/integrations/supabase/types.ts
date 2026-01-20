@@ -115,6 +115,92 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_credits: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_credits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_transactions: {
+        Row: {
+          amount: number
+          company_id: string
+          company_user_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          stripe_payment_intent_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          company_user_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          company_user_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_transactions_company_user_id_fkey"
+            columns: ["company_user_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_id: string
@@ -180,6 +266,7 @@ export type Database = {
           admin_email: string
           assessment_type: Database["public"]["Enums"]["company_assessment_type"]
           created_at: string | null
+          credit_balance: number
           custom_domain: string | null
           custom_domain_enabled: boolean | null
           email_show_logo: boolean | null
@@ -202,6 +289,7 @@ export type Database = {
           admin_email: string
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
+          credit_balance?: number
           custom_domain?: string | null
           custom_domain_enabled?: boolean | null
           email_show_logo?: boolean | null
@@ -224,6 +312,7 @@ export type Database = {
           admin_email?: string
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
+          credit_balance?: number
           custom_domain?: string | null
           custom_domain_enabled?: boolean | null
           email_show_logo?: boolean | null
@@ -248,6 +337,8 @@ export type Database = {
         Row: {
           assessment_completed_at: string | null
           assessment_result_id: string | null
+          charge_amount: number | null
+          charged_at: string | null
           company_id: string
           created_at: string | null
           email: string
@@ -266,6 +357,8 @@ export type Database = {
         Insert: {
           assessment_completed_at?: string | null
           assessment_result_id?: string | null
+          charge_amount?: number | null
+          charged_at?: string | null
           company_id: string
           created_at?: string | null
           email: string
@@ -284,6 +377,8 @@ export type Database = {
         Update: {
           assessment_completed_at?: string | null
           assessment_result_id?: string | null
+          charge_amount?: number | null
+          charged_at?: string | null
           company_id?: string
           created_at?: string | null
           email?: string
