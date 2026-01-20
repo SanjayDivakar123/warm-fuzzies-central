@@ -12,6 +12,8 @@ interface Company {
   secondary_color: string | null;
   seats_purchased: number;
   assessment_type: '25q' | '50q';
+  google_sso_enabled: boolean | null;
+  google_workspace_domain: string | null;
 }
 
 interface AssessmentResults {
