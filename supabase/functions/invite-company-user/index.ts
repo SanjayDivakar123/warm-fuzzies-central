@@ -322,9 +322,9 @@ serve(async (req) => {
       .eq("company_id", company_id)
       .neq("status", "revoked");
 
-    // Special case: RoleColorFinderLLC has unlimited users
+    // Special case: RoleColorFinder LLC has unlimited users
     // All other companies are capped at 20,000 users max
-    const isUnlimitedCompany = company.name === "RoleColorFinderLLC";
+    const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
     const maxSeatsAllowed = 20000;
     const effectiveSeats = isUnlimitedCompany ? Infinity : Math.min(company.seats_purchased, maxSeatsAllowed);
 
