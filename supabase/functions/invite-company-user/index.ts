@@ -235,7 +235,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { company_id, email, full_name, job_role } = body;
+    const { company_id, email, full_name, job_role, role: requestedRole } = body;
 
     // Input validation
     if (!company_id || !email) {
@@ -417,6 +417,9 @@ serve(async (req) => {
       console.log("User re-invited:", invitedUser.id);
     } else {
       // Create new user invite
+      // Validate role - only allow 'admin' or 'employee'
+      const userRole = requestedRole === 'admin' ? 'admin' : 'employee';
+      
       const { data: newUser, error: userError } = await supabase
         .from("company_users")
         .insert({
@@ -424,7 +427,7 @@ serve(async (req) => {
           email: email.toLowerCase().trim(),
           full_name: full_name || null,
           job_role: job_role || null,
-          role: "employee",
+          role: userRole,
           status: "invited",
           invite_code: inviteCode,
           charge_amount: chargeAmount,

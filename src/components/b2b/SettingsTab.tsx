@@ -7,12 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon, Plus } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
 import PaymentMethodCard from './PaymentMethodCard';
 import ThemeExportImport from './ThemeExportImport';
+import AddCreditsModal from './AddCreditsModal';
 
 interface SettingsTabProps {
   company: any;
@@ -36,6 +37,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
   const [billingOpen, setBillingOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -682,6 +684,14 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             <p className="text-xs text-muted-foreground">
               Credits are used when inviting new users. Each invite costs $20. Credits are deducted before charging your card on file.
             </p>
+            <Button 
+              variant="outline" 
+              className="w-full gap-2"
+              onClick={() => setAddCreditsOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Credits
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -739,6 +749,17 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         open={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         company={company}
+      />
+
+      {/* Add Credits Modal */}
+      <AddCreditsModal
+        open={addCreditsOpen}
+        onClose={() => setAddCreditsOpen(false)}
+        companyId={company.id}
+        currentBalance={creditBalance}
+        onCreditsAdded={() => {
+          if (onSettingsSaved) onSettingsSaved();
+        }}
       />
 
     </div>
