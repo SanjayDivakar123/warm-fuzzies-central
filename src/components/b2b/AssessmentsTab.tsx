@@ -275,7 +275,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       />
 
       {/* Team Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3" data-tour="team-summary">
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
@@ -359,7 +359,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       )}
 
       {/* Completed Assessments Table */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm" data-tour="individual-results">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
             <CardTitle className="text-lg font-medium">Completed Assessments</CardTitle>
@@ -370,7 +370,7 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>
+                <span data-tour="team-insights">
                   <Button
                     onClick={() => setShowInsightsModal(true)}
                     disabled={

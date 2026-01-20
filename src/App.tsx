@@ -15,7 +15,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="rcf-theme">
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" storageKey="rcf-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <CompanyProvider>
