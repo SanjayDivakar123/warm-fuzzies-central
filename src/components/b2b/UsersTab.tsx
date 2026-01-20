@@ -26,6 +26,7 @@ import {
   Bell,
   Shield,
   ShieldPlus,
+  Settings,
 } from "lucide-react";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
@@ -34,6 +35,7 @@ import ScheduleReminderModal from './ScheduleReminderModal';
 import GoogleWorkspaceImportModal from './GoogleWorkspaceImportModal';
 import InviteAdminModal from './InviteAdminModal';
 import PromoteToAdminModal from './PromoteToAdminModal';
+import ManageAdminModal from './ManageAdminModal';
 
 interface UsersTabProps {
   company: any;
@@ -98,11 +100,21 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showGoogleSync, setShowGoogleSync] = useState(false);
   const [showInviteAdmin, setShowInviteAdmin] = useState(false);
   const [promoteUser, setPromoteUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
+  const [manageAdmin, setManageAdmin] = useState<{ id: string; email: string; full_name?: string; status: string } | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [cancelledReminders, setCancelledReminders] = useState<Record<string, number>>({});
   const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
   const [userFilter, setUserFilter] = useState<UserFilter>('all');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Identify the super admin (first admin created for the company)
+  const superAdminId = users
+    .filter(u => u.role === 'admin')
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0]?.id;
+
+  // Check if current user is the super admin
+  const isSuperAdmin = currentUserId ? users.some(u => u.id === superAdminId && u.user_id === currentUserId) : false;
 
   // Combine default and custom job roles
   const allJobRoles = [...DEFAULT_JOB_ROLES, ...customJobRoles].sort();
@@ -111,7 +123,15 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
     fetchUsers();
     fetchCancelledReminders();
     fetchPendingReminders();
+    fetchCurrentUser();
   }, [company.id]);
+
+  const fetchCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -757,7 +777,14 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                         </span>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell className="capitalize">{user.role}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{user.role}</span>
+                          {user.role === "admin" && user.id === superAdminId && (
+                            <Badge variant="outline" className="text-xs">Owner</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <span className="text-sm">
                           {user.job_role || <span className="text-muted-foreground">Not set</span>}
@@ -868,6 +895,26 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Promote to Admin</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {/* Super Admin can manage other admins */}
+                          {user.role === "admin" && isSuperAdmin && user.id !== superAdminId && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setManageAdmin({ 
+                                    id: user.id, 
+                                    email: user.email, 
+                                    full_name: user.full_name,
+                                    status: user.status 
+                                  })}
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Manage Admin</TooltipContent>
                             </Tooltip>
                           )}
                           {user.role !== "admin" && user.status !== "revoked" && (
@@ -1151,6 +1198,16 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
           onClose={() => setPromoteUser(null)}
           user={promoteUser}
           onPromoteComplete={() => {
+            fetchUsers();
+            if (onCompanyUpdate) onCompanyUpdate();
+          }}
+        />
+        {/* Manage Admin Modal (Super Admin only) */}
+        <ManageAdminModal
+          open={!!manageAdmin}
+          onClose={() => setManageAdmin(null)}
+          admin={manageAdmin}
+          onActionComplete={() => {
             fetchUsers();
             if (onCompanyUpdate) onCompanyUpdate();
           }}
