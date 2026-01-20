@@ -577,8 +577,18 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleResendInvite(user.id)}
-                                  disabled={!canResend(user) || resendingId === user.id}
+                                  onClick={() => {
+                                    if (!canResend(user)) {
+                                      toast({
+                                        title: "Resend limit reached",
+                                        description: "This invite has already been resent the maximum number of times (3).",
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    handleResendInvite(user.id);
+                                  }}
+                                  disabled={resendingId === user.id}
                                 >
                                   {resendingId === user.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
