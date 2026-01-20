@@ -47,6 +47,16 @@ export function B2BThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handler);
   }, [theme]);
 
+  // Sync the dark class to the document root so Tailwind dark mode works
+  useEffect(() => {
+    const root = document.documentElement;
+    if (resolvedTheme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [resolvedTheme]);
+
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem(STORAGE_KEY, newTheme);
@@ -54,9 +64,7 @@ export function B2BThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <B2BThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
-      <div className={resolvedTheme === 'dark' ? 'dark' : ''}>
-        {children}
-      </div>
+      {children}
     </B2BThemeContext.Provider>
   );
 }
