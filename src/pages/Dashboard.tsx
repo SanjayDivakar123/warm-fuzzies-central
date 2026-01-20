@@ -46,12 +46,12 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [companyAccess, setCompanyAccess] = useState<{
-    isAdmin: boolean;
-    isEmployee: boolean;
-    companyName: string | null;
-    subdomain: string | null;
-  } | null>(null);
+  const [companyAccessList, setCompanyAccessList] = useState<Array<{
+    id: string;
+    role: 'admin' | 'employee';
+    companyName: string;
+    subdomain: string;
+  }>>([]);
 
   useEffect(() => {
     if (user) {
@@ -80,25 +80,31 @@ const Dashboard = () => {
         .eq('status', 'active');
 
       if (error || !companyUsers || companyUsers.length === 0) {
-        setCompanyAccess(null);
+        setCompanyAccessList([]);
         return;
       }
 
-      // Prioritize admin role over employee
-      const adminRecord = companyUsers.find(cu => cu.role === 'admin');
-      const employeeRecord = companyUsers.find(cu => cu.role === 'employee');
-      
-      const primaryRecord = adminRecord || employeeRecord;
-      
-      if (primaryRecord && primaryRecord.companies) {
-        const company = primaryRecord.companies as { id: string; name: string; subdomain: string };
-        setCompanyAccess({
-          isAdmin: !!adminRecord,
-          isEmployee: !!employeeRecord && !adminRecord,
-          companyName: company.name,
-          subdomain: company.subdomain,
+      // Build list of all companies with access
+      const accessList = companyUsers
+        .filter(cu => cu.companies)
+        .map(cu => {
+          const company = cu.companies as { id: string; name: string; subdomain: string };
+          return {
+            id: cu.id,
+            role: cu.role as 'admin' | 'employee',
+            companyName: company.name,
+            subdomain: company.subdomain,
+          };
         });
-      }
+
+      // Sort: admins first, then by company name
+      accessList.sort((a, b) => {
+        if (a.role === 'admin' && b.role !== 'admin') return -1;
+        if (a.role !== 'admin' && b.role === 'admin') return 1;
+        return a.companyName.localeCompare(b.companyName);
+      });
+
+      setCompanyAccessList(accessList);
     } catch (error) {
       console.error('Error checking company access:', error);
     }
@@ -275,38 +281,46 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-8">
               {/* B2B Portal Access */}
-              {companyAccess && (
+              {companyAccessList.length > 0 && (
                 <section>
-                  <Card className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">
-                            {companyAccess.companyName || 'Company'} Portal
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {companyAccess.isAdmin 
-                              ? 'Manage your company assessments and team' 
-                              : 'View your company assessment results'}
-                          </p>
-                        </div>
-                      </div>
-                      {companyAccess.isAdmin ? (
-                        <Button onClick={() => navigate('/b2b/company-portal')}>
-                          <Building2 className="w-4 h-4 mr-2" />
-                          Admin Dashboard
-                        </Button>
-                      ) : (
-                        <Button onClick={() => navigate(`/company/${companyAccess.subdomain}`)}>
-                          <User className="w-4 h-4 mr-2" />
-                          Employee Portal
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                    <Building2 className="w-6 h-6" />
+                    Company Portals
+                  </h2>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {companyAccessList.map((access) => (
+                      <Card key={access.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                        <CardContent className="flex items-center justify-between py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">
+                                {access.companyName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {access.role === 'admin' 
+                                  ? 'Admin access' 
+                                  : 'Employee access'}
+                              </p>
+                            </div>
+                          </div>
+                          {access.role === 'admin' ? (
+                            <Button onClick={() => navigate('/b2b/company-portal')}>
+                              <Building2 className="w-4 h-4 mr-2" />
+                              Admin Dashboard
+                            </Button>
+                          ) : (
+                            <Button onClick={() => navigate(`/company/${access.subdomain}`)}>
+                              <User className="w-4 h-4 mr-2" />
+                              Employee Portal
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </section>
               )}
 
