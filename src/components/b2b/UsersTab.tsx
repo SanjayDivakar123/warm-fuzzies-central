@@ -458,11 +458,11 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
+      <div className="space-y-4">
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>Invite New User</CardTitle>
+              <CardTitle className="text-lg font-medium">Invite New User</CardTitle>
               {isUnlimitedCompany && (
                 <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0">
                   ∞ Unlimited
@@ -554,10 +554,10 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
         {/* Email Template Customizer */}
         <EmailTemplateCustomizer company={company} onUpdate={onCompanyUpdate || (() => {})} />
 
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>Team Members</CardTitle>
+              <CardTitle className="text-lg font-medium">Team Members</CardTitle>
               <div className="flex items-center gap-2">
                 {/* Schedule Reminder Button */}
                 {selectedUsers.size > 0 && (
