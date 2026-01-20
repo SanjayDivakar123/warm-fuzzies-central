@@ -287,7 +287,7 @@ const Dashboard = () => {
                     <Building2 className="w-6 h-6" />
                     Company Portals
                   </h2>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
                     {companyAccessList.map((access) => (
                       <Card key={access.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
                         <CardContent className="flex items-center justify-between py-4">
