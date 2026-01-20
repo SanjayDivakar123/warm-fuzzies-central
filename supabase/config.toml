@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.fetch-google-workspace-users]
 verify_jwt = true
+
+[functions.sync-google-workspace-users]
+verify_jwt = true

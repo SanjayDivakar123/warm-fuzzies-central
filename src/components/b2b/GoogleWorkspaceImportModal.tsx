@@ -30,6 +30,7 @@ interface GoogleWorkspaceImportModalProps {
   companyDomain?: string;
   existingEmails: string[];
   onImportComplete: () => void;
+  mode?: 'import' | 'sync';
 }
 
 export default function GoogleWorkspaceImportModal({
@@ -39,13 +40,15 @@ export default function GoogleWorkspaceImportModal({
   companyDomain,
   existingEmails,
   onImportComplete,
+  mode = 'import',
 }: GoogleWorkspaceImportModalProps) {
-  const [step, setStep] = useState<'auth' | 'loading' | 'select' | 'importing'>('auth');
+  const [step, setStep] = useState<'auth' | 'loading' | 'select' | 'importing' | 'syncing'>('auth');
   const [users, setUsers] = useState<GoogleUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [importResults, setImportResults] = useState<{ success: number; failed: number } | null>(null);
+  const [syncResults, setSyncResults] = useState<{ synced: number; updated: number } | null>(null);
   const { toast } = useToast();
 
   // Reset state when modal opens
@@ -57,6 +60,7 @@ export default function GoogleWorkspaceImportModal({
       setSearchQuery("");
       setError(null);
       setImportResults(null);
+      setSyncResults(null);
     }
   }, [open]);
 
@@ -98,6 +102,29 @@ export default function GoogleWorkspaceImportModal({
 
       if (!providerToken) {
         throw new Error("No Google access token available. Please re-authenticate.");
+      }
+
+      // If sync mode, trigger the sync function instead
+      if (mode === 'sync') {
+        const { data, error } = await supabase.functions.invoke('sync-google-workspace-users', {
+          body: {
+            companyId,
+            accessToken: providerToken,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        setSyncResults({ synced: data.synced || 0, updated: data.updated || 0 });
+        setStep('syncing');
+        
+        toast({
+          title: "Sync complete",
+          description: `Synced ${data.synced} users, updated ${data.updated} records`,
+        });
+        onImportComplete();
+        return;
       }
 
       const { data, error } = await supabase.functions.invoke('fetch-google-workspace-users', {

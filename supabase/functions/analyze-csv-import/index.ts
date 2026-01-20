@@ -68,9 +68,9 @@ serve(async (req) => {
       return obj;
     });
 
-    // Use Perplexity to analyze the CSV structure
-    const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
-    if (!PERPLEXITY_API_KEY) {
+    // Use Gemini to analyze the CSV structure
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
       // Fallback: Try to detect columns without AI
       return new Response(
         JSON.stringify({
@@ -84,7 +84,9 @@ serve(async (req) => {
       );
     }
 
-    const prompt = `Analyze this CSV data and identify which columns contain:
+    const prompt = `You are a data analyst. Analyze CSV column headers and sample data to identify email, name, and job role columns.
+
+Analyze this CSV data and identify which columns contain:
 1. Email addresses (required)
 2. Full names or first name + last name
 3. Job roles/titles
@@ -106,28 +108,28 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no expl
   "notes": "brief explanation of mapping decisions"
 }`;
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'sonar',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content: 'You are a data analyst. Analyze CSV column headers and sample data to identify email, name, and job role columns. Respond ONLY with valid JSON, no markdown formatting.'
-          },
-          { role: 'user', content: prompt }
+            role: "user",
+            parts: [{ text: prompt }]
+          }
         ],
-        temperature: 0.1,
-        max_tokens: 500,
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 500,
+          responseMimeType: "application/json"
+        }
       }),
     });
 
     if (!response.ok) {
-      console.error('Perplexity API error:', await response.text());
+      console.error('Gemini API error:', await response.text());
       // Fallback to manual detection
       return new Response(
         JSON.stringify({
@@ -142,13 +144,23 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no expl
     }
 
     const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content || '';
+    const content = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Parse AI response
     let mapping;
     try {
       // Try to extract JSON from the response (handle potential markdown wrapping)
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith("```json")) {
+        cleanContent = cleanContent.slice(7);
+      } else if (cleanContent.startsWith("```")) {
+        cleanContent = cleanContent.slice(3);
+      }
+      if (cleanContent.endsWith("```")) {
+        cleanContent = cleanContent.slice(0, -3);
+      }
+      
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         mapping = JSON.parse(jsonMatch[0]);
       } else {
