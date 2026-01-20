@@ -7,12 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon, Crop } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
 import PaymentMethodCard from './PaymentMethodCard';
-import LogoCropperModal from './LogoCropperModal';
 import ThemeExportImport from './ThemeExportImport';
 
 interface SettingsTabProps {
@@ -39,9 +38,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropperMode, setCropperMode] = useState<'light' | 'dark'>('light');
-  const [cropperFile, setCropperFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -52,51 +48,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setCreditBalance(company.credit_balance || 0);
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, mode: 'light' | 'dark') => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload an image file (PNG, JPG, etc.)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Please upload an image smaller than 2MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Open cropper modal with the selected file
-    setCropperFile(file);
-    setCropperMode(mode);
-    setCropperOpen(true);
-    
-    // Reset file inputs
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (fileInputDarkRef.current) fileInputDarkRef.current.value = '';
-  };
-
-  const handleCropComplete = (url: string) => {
-    if (cropperMode === 'light') {
-      setLogoUrl(url);
-    } else {
-      setLogoUrlDark(url);
-    }
-    if (onSettingsSaved) {
-      onSettingsSaved();
-    }
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, mode: 'light' | 'dark') => {
     const file = event.target.files?.[0];
@@ -292,16 +243,17 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileSelect(e, 'light')}
+                onChange={(e) => handleFileUpload(e, 'light')}
                 className="hidden"
               />
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                title="Upload & Crop"
+                disabled={uploading === 'light'}
+                title="Upload Logo"
               >
-                <Crop className="h-4 w-4" />
+                {uploading === 'light' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -343,20 +295,21 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 ref={fileInputDarkRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileSelect(e, 'dark')}
+                onChange={(e) => handleFileUpload(e, 'dark')}
                 className="hidden"
               />
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => fileInputDarkRef.current?.click()}
-                title="Upload & Crop"
+                disabled={uploading === 'dark'}
+                title="Upload Logo"
               >
-                <Crop className="h-4 w-4" />
+                {uploading === 'dark' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Click the crop icon to upload and resize your logo. Recommended aspect ratio: 4:1 (200×50px).
+              Click the upload icon to add your logo. Recommended aspect ratio: 4:1 (200×50px).
             </p>
           </div>
 
@@ -788,15 +741,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         company={company}
       />
 
-      {/* Logo Cropper Modal */}
-      <LogoCropperModal
-        open={cropperOpen}
-        onOpenChange={setCropperOpen}
-        imageFile={cropperFile}
-        mode={cropperMode}
-        companyId={company.id}
-        onComplete={handleCropComplete}
-      />
     </div>
   );
 }
