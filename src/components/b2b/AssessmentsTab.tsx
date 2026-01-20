@@ -411,8 +411,8 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {completedAssessments.map((assessment) => (
-                  <TableRow key={assessment.id}>
+              {completedAssessments.map((assessment) => (
+                  <TableRow key={assessment.id} className="transition-colors hover:bg-muted/50">
                     <TableCell className="font-medium">
                       {assessment.full_name || <span className="text-muted-foreground">Not set</span>}
                     </TableCell>

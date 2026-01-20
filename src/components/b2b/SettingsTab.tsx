@@ -184,10 +184,10 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Branding</CardTitle>
+    <div className="space-y-4">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Branding</CardTitle>
           <CardDescription>Customize your company portal appearance</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -270,9 +270,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Domain Settings</CardTitle>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Domain Settings</CardTitle>
           <CardDescription>Configure your company subdomain and custom domain</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -309,9 +309,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Google SSO Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -372,12 +372,12 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
 
 
       {/* Assessment Type Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Assessment Type</CardTitle>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Assessment Type</CardTitle>
           <CardDescription>Choose which assessment your employees will take</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {/* 25 Question Assessment */}
           <div 
             className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
@@ -455,20 +455,20 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Seat Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Seat Management</CardTitle>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Seat Management</CardTitle>
           <CardDescription>View and manage employee seats</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-              <span className="text-muted-foreground">Current Seats</span>
-              <span className="font-semibold text-lg">{company.seats_purchased}</span>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+              <span className="text-sm text-muted-foreground">Current Seats</span>
+              <span className="font-semibold">{company.seats_purchased}</span>
             </div>
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-              <span className="text-muted-foreground">Price per Seat</span>
-              <span className="font-medium">$20 (one-time)</span>
+            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+              <span className="text-sm text-muted-foreground">Price per Seat</span>
+              <span className="font-medium text-sm">$20 (one-time)</span>
             </div>
           </div>
         </CardContent>
@@ -478,9 +478,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       <PaymentMethodCard company={company} />
 
       {/* Billing */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
             <CreditCard className="h-5 w-5" />
             Billing
           </CardTitle>
@@ -499,22 +499,22 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Wallet / Credit Balance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
             <Wallet className="h-5 w-5" />
             Wallet
           </CardTitle>
           <CardDescription>Your credit balance for inviting users</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border">
-              <span className="text-muted-foreground font-medium">Credit Balance</span>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
               {loadingBalance ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
-                <span className="font-bold text-2xl text-primary">
+                <span className="font-semibold text-primary">
                   ${creditBalance.toLocaleString()}
                 </span>
               )}
@@ -532,9 +532,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Button>
 
       {/* Danger Zone - Delete Company */}
-      <Card className="border-destructive/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
+      <Card className="border-destructive/30 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium text-destructive">
             <Trash2 className="h-5 w-5" />
             Danger Zone
           </CardTitle>
