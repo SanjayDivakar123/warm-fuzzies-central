@@ -182,6 +182,11 @@ export type Database = {
           created_at: string | null
           custom_domain: string | null
           custom_domain_enabled: boolean | null
+          email_show_logo: boolean | null
+          email_template_body: string | null
+          email_template_cta_text: string | null
+          email_template_greeting: string | null
+          email_template_subject: string | null
           google_sso_enabled: boolean | null
           google_workspace_domain: string | null
           id: string
@@ -199,6 +204,11 @@ export type Database = {
           created_at?: string | null
           custom_domain?: string | null
           custom_domain_enabled?: boolean | null
+          email_show_logo?: boolean | null
+          email_template_body?: string | null
+          email_template_cta_text?: string | null
+          email_template_greeting?: string | null
+          email_template_subject?: string | null
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
           id?: string
@@ -216,6 +226,11 @@ export type Database = {
           created_at?: string | null
           custom_domain?: string | null
           custom_domain_enabled?: boolean | null
+          email_show_logo?: boolean | null
+          email_template_body?: string | null
+          email_template_cta_text?: string | null
+          email_template_greeting?: string | null
+          email_template_subject?: string | null
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
           id?: string

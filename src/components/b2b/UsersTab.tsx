@@ -23,8 +23,11 @@ import {
   CreditCard,
 } from "lucide-react";
 
+import EmailTemplateCustomizer from './EmailTemplateCustomizer';
+
 interface UsersTabProps {
   company: any;
+  onCompanyUpdate?: () => void;
 }
 
 const MAX_INVITES = 3;
@@ -63,7 +66,7 @@ const PREDEFINED_SKILLS = [
   "Technical Support",
 ];
 
-export default function UsersTab({ company }: UsersTabProps) {
+export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -464,6 +467,9 @@ export default function UsersTab({ company }: UsersTabProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* Email Template Customizer */}
+        <EmailTemplateCustomizer company={company} onUpdate={onCompanyUpdate || (() => {})} />
 
         <Card>
           <CardHeader>
