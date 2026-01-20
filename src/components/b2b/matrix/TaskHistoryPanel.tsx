@@ -40,12 +40,6 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-red-600 bg-red-100' }
 };
 
-const quadrantLabels: Record<string, string> = {
-  q1: 'Q1: Do First',
-  q2: 'Q2: Schedule',
-  q3: 'Q3: Delegate',
-  q4: 'Q4: Eliminate'
-};
 
 export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPanelProps) {
   const { toast } = useToast();
@@ -160,7 +154,7 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
           <TableHeader>
             <TableRow>
               <TableHead>Task</TableHead>
-              <TableHead>Quadrant</TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Outcome</TableHead>
               <TableHead>Created</TableHead>
@@ -183,9 +177,10 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {quadrantLabels[task.quadrant]}
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge variant="outline" className="text-xs capitalize">{task.importance}</Badge>
+                      <Badge variant="outline" className="text-xs capitalize">{task.urgency}</Badge>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={cn('gap-1', statusConfig[task.status]?.color)}>
