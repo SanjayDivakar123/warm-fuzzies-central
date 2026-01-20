@@ -203,11 +203,11 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Assessment Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Assessment Configuration</CardTitle>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Assessment Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
@@ -275,49 +275,57 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       />
 
       {/* Team Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Users className="h-8 w-8 text-muted-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted">
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </div>
               <div>
-                <p className="text-2xl font-bold">{teamStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Team</p>
+                <p className="text-xl font-semibold">{teamStats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Team</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              </div>
               <div>
-                <p className="text-2xl font-bold">{teamStats.completed}</p>
-                <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-xl font-semibold">{teamStats.completed}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Clock className="h-8 w-8 text-yellow-500" />
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/10">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
               <div>
-                <p className="text-2xl font-bold">{teamStats.pending}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-xl font-semibold">{teamStats.pending}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <BarChart3 className="h-8 w-8 text-primary" />
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-semibold">
                   {teamStats.completed > 0 ? Math.round((teamStats.completed / teamStats.total) * 100) : 0}%
                 </p>
-                <p className="text-sm text-muted-foreground">Completion</p>
+                <p className="text-xs text-muted-foreground">Completion</p>
               </div>
             </div>
           </CardContent>
@@ -326,23 +334,23 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
 
       {/* Color Distribution */}
       {teamStats.completed > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Color Distribution</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-medium">Team Color Distribution</CardTitle>
             <CardDescription>Breakdown of dominant colors across your team</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-3">
               {Object.entries(teamStats.colorDistribution).map(([color, count]) => (
-                <div key={color} className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className={`w-12 h-12 mx-auto rounded-full mb-2 ${
+                <div key={color} className="text-center p-3 rounded-lg bg-muted/30">
+                  <div className={`w-10 h-10 mx-auto rounded-full mb-2 ${
                     color === 'yellow' ? 'bg-yellow-400' :
                     color === 'red' ? 'bg-red-400' :
                     color === 'green' ? 'bg-green-400' :
                     'bg-blue-400'
                   }`} />
-                  <p className="text-2xl font-bold">{count}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{colorLabels[color]?.label || color}</p>
+                  <p className="text-xl font-semibold">{count}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{colorLabels[color]?.label || color}</p>
                 </div>
               ))}
             </div>
@@ -351,10 +359,10 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
       )}
 
       {/* Completed Assessments Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
-            <CardTitle>Completed Assessments</CardTitle>
+            <CardTitle className="text-lg font-medium">Completed Assessments</CardTitle>
             <CardDescription>
               {completedAssessments.length} team member{completedAssessments.length !== 1 ? 's' : ''} completed
             </CardDescription>
