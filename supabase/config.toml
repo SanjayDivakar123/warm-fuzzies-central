@@ -89,3 +89,15 @@ verify_jwt = false
 
 [functions.calculate-user-refund]
 verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.create-subscription-checkout]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.invite-family-member]
+verify_jwt = false
