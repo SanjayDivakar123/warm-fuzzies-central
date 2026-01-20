@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
 
 export default function CompanyLogin() {
   const { company, loading, error, setEmployee } = useCompanyPortal();
-  const { signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -22,11 +22,87 @@ export default function CompanyLogin() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
 
-  if (loading) {
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const handleGoogleCallback = async () => {
+      const storedCompany = localStorage.getItem('google_sso_company');
+      
+      // Only process if user just returned from Google OAuth for this company
+      if (!user || !company || storedCompany !== company.subdomain) {
+        return;
+      }
+
+      console.log('Processing Google SSO callback for', user.email);
+      setIsProcessingOAuth(true);
+      localStorage.removeItem('google_sso_company');
+
+      try {
+        // Call verify-google-sso-employee to create/fetch employee
+        const { data, error: fnError } = await supabase.functions.invoke('verify-google-sso-employee', {
+          body: { 
+            companyId: company.id,
+            userEmail: user.email,
+            userId: user.id
+          }
+        });
+
+        if (fnError || !data?.success) {
+          console.error('SSO verification failed:', fnError || data?.message);
+          toast({
+            title: "Access Denied",
+            description: data?.message || "Unable to verify your access. Please contact your administrator.",
+            variant: "destructive"
+          });
+          // Sign out since they couldn't be verified
+          await supabase.auth.signOut();
+          setIsProcessingOAuth(false);
+          return;
+        }
+
+        // Success - set employee and navigate
+        setEmployee(data.employee);
+        
+        toast({
+          title: data.isNewEmployee ? "Welcome!" : "Welcome back!",
+          description: data.isNewEmployee 
+            ? "Your account has been created. Let's start your assessment."
+            : data.employee.assessment_completed_at 
+              ? "Viewing your results."
+              : "Continue your assessment.",
+        });
+
+        if (data.employee.assessment_completed_at) {
+          navigate(`/company/${company.subdomain}/home`);
+        } else {
+          navigate(`/company/${company.subdomain}/assessment`);
+        }
+      } catch (err) {
+        console.error('OAuth callback error:', err);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+        await supabase.auth.signOut();
+      } finally {
+        setIsProcessingOAuth(false);
+      }
+    };
+
+    handleGoogleCallback();
+  }, [user, company, setEmployee, navigate, toast]);
+
+  if (loading || isProcessingOAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          {isProcessingOAuth && (
+            <p className="text-muted-foreground">Verifying your access...</p>
+          )}
+        </div>
       </div>
     );
   }
@@ -230,13 +306,18 @@ export default function CompanyLogin() {
                       // Store company subdomain so we can verify after Google auth
                       localStorage.setItem('google_sso_company', company.subdomain);
                       const redirectUrl = `${window.location.origin}/company/${company.subdomain}/login`;
-                      const { error } = await signInWithGoogle(redirectUrl);
+                      // Pass hosted domain to restrict Google popup to company domain
+                      const { error } = await signInWithGoogle(
+                        redirectUrl, 
+                        company.google_workspace_domain || undefined
+                      );
                       if (error) {
                         toast({
                           title: "Google Sign-In Failed",
                           description: error.message,
                           variant: "destructive"
                         });
+                        localStorage.removeItem('google_sso_company');
                         setIsGoogleLoading(false);
                       }
                     }}

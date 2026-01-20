@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.manage-payment-method]
 verify_jwt = false
+
+[functions.verify-google-sso-employee]
+verify_jwt = false

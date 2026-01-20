@@ -273,7 +273,11 @@ export default function CompanyAdminLogin() {
                     onClick={async () => {
                       setIsGoogleLoading(true);
                       const redirectUrl = `${window.location.origin}/company/${company.subdomain}/admin`;
-                      const { error } = await signInWithGoogle(redirectUrl);
+                      // Pass hosted domain to restrict Google popup to company domain
+                      const { error } = await signInWithGoogle(
+                        redirectUrl,
+                        company.google_workspace_domain || undefined
+                      );
                       if (error) {
                         toast({
                           title: "Google Sign-In Failed",
