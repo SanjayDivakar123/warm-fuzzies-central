@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -14,9 +13,9 @@ serve(async (req) => {
   try {
     const { assessmentType, colorScores, primaryColor, secondaryColor } = await req.json();
     
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not configured');
     }
 
     const isStudent = assessmentType.includes('student');
@@ -55,20 +54,22 @@ JSON fields: executiveSummary (3 sentences), strengths (4 items), blindSpots (2-
 JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), colorProfile (1 paragraph), leadershipStage, stageDescription (2 sentences), condensedCategories (object with keys: "Communication", "Decision-Making", "Conflict", "Team Behavior", "Stress Style", each containing: score (number 0-100 based on color pattern), interpretation (1 paragraph school-context specific)), growthPlan (4 strings school-context specific)`;
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no additional text. Ensure all JSON arrays and objects are properly formatted with no trailing commas.' },
-          { role: 'user', content: userPrompt }
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: systemPrompt + '\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no additional text. Ensure all JSON arrays and objects are properly formatted with no trailing commas.\n\n' + userPrompt }]
+          }
         ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: "application/json"
+        }
       }),
     });
 
@@ -86,12 +87,16 @@ JSON fields: summary (2 sentences), strengths (3 items), watchOuts (3 items), co
         });
       }
       const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      throw new Error('AI Gateway error');
+      console.error('Gemini API error:', response.status, errorText);
+      throw new Error('Gemini API error');
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!content) {
+      throw new Error('No content in Gemini response');
+    }
     
     console.log('Raw AI response:', content);
     
