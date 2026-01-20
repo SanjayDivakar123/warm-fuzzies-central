@@ -5,22 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileSidebar } from "@/components/ui/user-profile-sidebar";
+import { FloatingHeader } from "@/components/ui/floating-header";
 import { 
   Calendar, 
   Download, 
   Eye, 
-  Clock, 
   BarChart3, 
-  FileText,
   ChevronRight,
   User,
   Settings,
   KeyRound,
-  Building2
+  Building2,
+  FileText,
+  LogOut
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -46,6 +47,7 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'company'>('overview');
   const [companyAccessList, setCompanyAccessList] = useState<Array<{
     id: string;
     role: 'admin' | 'employee';
@@ -62,7 +64,6 @@ const Dashboard = () => {
 
   const checkCompanyAccess = async () => {
     try {
-      // Fetch all company user records for this email
       const { data: companyUsers, error } = await supabase
         .from('company_users')
         .select(`
@@ -84,7 +85,6 @@ const Dashboard = () => {
         return;
       }
 
-      // Build list of all companies with access
       const accessList = companyUsers
         .filter(cu => cu.companies)
         .map(cu => {
@@ -97,7 +97,6 @@ const Dashboard = () => {
           };
         });
 
-      // Sort: admins first, then by company name
       accessList.sort((a, b) => {
         if (a.role === 'admin' && b.role !== 'admin') return -1;
         if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -237,10 +236,46 @@ const Dashboard = () => {
     setPasswordLoading(false);
   };
 
+  // Build nav items dynamically
+  const navItems = [
+    {
+      icon: <User className="h-4 w-4" />,
+      label: 'Overview',
+      onClick: () => setActiveSection('overview'),
+    },
+    {
+      icon: <BarChart3 className="h-4 w-4" />,
+      label: 'My Assessments',
+      onClick: () => setActiveSection('assessments'),
+    },
+    ...(companyAccessList.length > 0 ? [{
+      icon: <Building2 className="h-4 w-4" />,
+      label: 'Company Portals',
+      onClick: () => setActiveSection('company'),
+    }] : []),
+    {
+      icon: <Settings className="h-4 w-4" />,
+      label: 'Settings',
+      onClick: () => setActiveSection('settings'),
+      isSeparator: true,
+    },
+  ];
+
+  const logoutItem = {
+    icon: <LogOut className="h-4 w-4" />,
+    label: 'Sign Out',
+    onClick: signOut,
+  };
+
+  const userProfile = {
+    name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+    email: user?.email || '',
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <FloatingHeader />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please sign in to view your dashboard</h1>
@@ -255,94 +290,299 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="bg-gradient-subtle py-8">
-        <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                  Your Dashboard
-                </h1>
-                <p className="text-muted-foreground">Welcome back, {user.email}</p>
-              </div>
-            </div>
+      <FloatingHeader />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <div className="hidden lg:block sticky top-24 h-fit">
+            <UserProfileSidebar
+              user={userProfile}
+              navItems={navItems}
+              logoutItem={logoutItem}
+            />
           </div>
 
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading your assessments...</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {/* B2B Portal Access */}
-              {companyAccessList.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                    <Building2 className="w-6 h-6" />
-                    Company Portals
-                  </h2>
-                  <div className="space-y-3">
-                    {companyAccessList.map((access) => (
-                      <Card key={access.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-                        <CardContent className="flex items-center justify-between py-4">
+          {/* Main Content */}
+          <main className="flex-1 min-w-0">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Loading your dashboard...</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Overview Section */}
+                {activeSection === 'overview' && (
+                  <>
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                        Welcome back, {userProfile.name}
+                      </h1>
+                      <p className="text-muted-foreground mt-1">Here's an overview of your account</p>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <Card className="shadow-elegant border-border/20">
+                        <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-primary" />
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <BarChart3 className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <h3 className="font-semibold">
-                                {access.companyName}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {access.role === 'admin' 
-                                  ? 'Admin access' 
-                                  : 'Employee access'}
-                              </p>
+                              <p className="text-2xl font-bold">{assessments.length}</p>
+                              <p className="text-sm text-muted-foreground">Total Assessments</p>
                             </div>
                           </div>
-                          {access.role === 'admin' ? (
-                            <Button onClick={() => navigate('/b2b/company-portal')}>
-                              <Building2 className="w-4 h-4 mr-2" />
-                              Admin Dashboard
-                            </Button>
-                          ) : (
-                            <Button onClick={() => navigate(`/company/${access.subdomain}`)}>
-                              <User className="w-4 h-4 mr-2" />
-                              Employee Portal
-                            </Button>
-                          )}
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                </section>
-              )}
 
-              {/* Account Settings */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  <Settings className="w-6 h-6" />
-                  Account Settings
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card className="shadow-elegant border-border/20">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <KeyRound className="w-5 h-5" />
-                        Password & Security
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
-                        Manage your account password and security settings
+                      <Card className="shadow-elegant border-border/20">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Building2 className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold">{companyAccessList.length}</p>
+                              <p className="text-sm text-muted-foreground">Company Portals</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="shadow-elegant border-border/20">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold">
+                                {assessments.filter(a => a.results.dominantColor).length}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Completed</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Recent Assessment */}
+                    {assessments.length > 0 && assessments[0].results.dominantColor && (
+                      <Card className="shadow-elegant border-border/20">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5" />
+                            Latest Result
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-lg font-semibold">
+                                {getAssessmentTypeLabel(assessments[0].assessment_type)}
+                              </p>
+                              <Badge className={getColorBadgeStyle(assessments[0].results.dominantColor)}>
+                                {getColorLabel(assessments[0].results.dominantColor)}
+                              </Badge>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setActiveSection('assessments')}
+                            >
+                              View All
+                              <ChevronRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                )}
+
+                {/* Assessments Section */}
+                {activeSection === 'assessments' && (
+                  <>
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold">My Assessments</h1>
+                      <p className="text-muted-foreground mt-1">View and manage your assessment results</p>
+                    </div>
+
+                    {assessments.length > 0 ? (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {assessments.map((assessment) => {
+                          const isCompleted = assessment.results.dominantColor || assessment.results.scores;
+                          const isPurchasedOnly = assessment.results.status === 'payment_completed' && !isCompleted;
+                          
+                          return (
+                            <Card key={assessment.id} className="shadow-elegant border-border/20">
+                              <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <CardTitle className="text-lg">
+                                      {getAssessmentTypeLabel(assessment.assessment_type)}
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                      <Calendar className="w-4 h-4" />
+                                      {format(new Date(assessment.created_at), 'MMM dd, yyyy')}
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="border-primary/30">
+                                    {isPurchasedOnly ? 'Not Started' : assessment.assessment_type}
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-3">
+                                {isPurchasedOnly ? (
+                                  <div className="space-y-3">
+                                    <p className="text-sm text-muted-foreground">
+                                      Assessment purchased but not yet completed
+                                    </p>
+                                    <Button 
+                                      variant="default" 
+                                      size="sm" 
+                                      asChild
+                                      className="w-full"
+                                    >
+                                      <Link to={`/${assessment.assessment_type}-assessment`}>
+                                        <ChevronRight className="w-4 h-4 mr-2" />
+                                        Start Assessment
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {assessment.results.dominantColor && (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-medium">Primary Role:</p>
+                                        <Badge className={getColorBadgeStyle(assessment.results.dominantColor)}>
+                                          {getColorLabel(assessment.results.dominantColor)}
+                                        </Badge>
+                                      </div>
+                                    )}
+                                    <div className="flex gap-2 pt-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => handleDownloadReport(assessment)}
+                                      >
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Download
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => setSelectedAssessment(assessment)}
+                                      >
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        Details
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => {
+                                          const storageKey = `${assessment.assessment_type}AssessmentResults`;
+                                          localStorage.setItem(storageKey, JSON.stringify(assessment.results));
+                                          navigate(`/${assessment.assessment_type}-results`);
+                                        }}
+                                      >
+                                        <ChevronRight className="w-4 h-4 mr-2" />
+                                        View
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
-                      <div className="flex gap-2">
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                          <BarChart3 className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">No assessments yet</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Take your first assessment to discover your leadership color role
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                          <Button asChild>
+                            <Link to="/free-assessment">
+                              Start Free Assessment
+                              <ChevronRight className="w-4 h-4 ml-2" />
+                            </Link>
+                          </Button>
+                          <Button variant="outline" asChild>
+                            <Link to="/pricing">View All Options</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Company Portals Section */}
+                {activeSection === 'company' && (
+                  <>
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold">Company Portals</h1>
+                      <p className="text-muted-foreground mt-1">Access your company assessments and dashboards</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {companyAccessList.map((access) => (
+                        <Card key={access.id} className="shadow-elegant border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                          <CardContent className="flex items-center justify-between py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">{access.companyName}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {access.role === 'admin' ? 'Admin access' : 'Employee access'}
+                                </p>
+                              </div>
+                            </div>
+                            {access.role === 'admin' ? (
+                              <Button onClick={() => navigate('/b2b/company-portal')}>
+                                <Building2 className="w-4 h-4 mr-2" />
+                                Admin Dashboard
+                              </Button>
+                            ) : (
+                              <Button onClick={() => navigate(`/company/${access.subdomain}`)}>
+                                <User className="w-4 h-4 mr-2" />
+                                Employee Portal
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Settings Section */}
+                {activeSection === 'settings' && (
+                  <>
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold">Account Settings</h1>
+                      <p className="text-muted-foreground mt-1">Manage your account preferences</p>
+                    </div>
+
+                    <Card className="shadow-elegant border-border/20">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <KeyRound className="w-5 h-5" />
+                          Password & Security
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          Manage your account password and security settings
+                        </div>
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -351,207 +591,77 @@ const Dashboard = () => {
                           <KeyRound className="w-4 h-4 mr-2" />
                           Change Password
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={signOut}
-                        >
-                          Sign Out
-                        </Button>
-                      </div>
-                      
-                      {showPasswordChange && (
-                        <form onSubmit={handlePasswordChange} className="space-y-3 pt-4 border-t">
-                          <div className="space-y-2">
-                            <Label htmlFor="new-password">New Password</Label>
-                            <Input
-                              id="new-password"
-                              type="password"
-                              placeholder="Enter new password"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="confirm-password">Confirm Password</Label>
-                            <Input
-                              id="confirm-password"
-                              type="password"
-                              placeholder="Confirm new password"
-                              value={confirmPassword}
-                              onChange={(e) => setConfirmPassword(e.target.value)}
-                              required
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button type="submit" size="sm" disabled={passwordLoading}>
-                              {passwordLoading ? "Updating..." : "Update Password"}
-                            </Button>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => {
-                                setShowPasswordChange(false);
-                                setNewPassword("");
-                                setConfirmPassword("");
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </form>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </section>
-              {/* Assessment Results */}
-              {assessments.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                    <BarChart3 className="w-6 h-6" />
-                    Assessment Results
-                  </h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {assessments.map((assessment) => {
-                      // Check if assessment is completed (has actual results vs just payment status)
-                      const isCompleted = assessment.results.dominantColor || assessment.results.scores;
-                      const isPurchasedOnly = assessment.results.status === 'payment_completed' && !isCompleted;
-                      
-                      return (
-                        <Card key={assessment.id} className="shadow-elegant border-border/20">
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <CardTitle className="text-lg">
-                                  {getAssessmentTypeLabel(assessment.assessment_type)}
-                                </CardTitle>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                  <Calendar className="w-4 h-4" />
-                                  {format(new Date(assessment.created_at), 'MMM dd, yyyy')}
-                                </div>
-                              </div>
-                              <Badge variant="outline" className="border-primary/30">
-                                {isPurchasedOnly ? 'Not Started' : assessment.assessment_type}
-                              </Badge>
+                        
+                        {showPasswordChange && (
+                          <form onSubmit={handlePasswordChange} className="space-y-3 pt-4 border-t">
+                            <div className="space-y-2">
+                              <Label htmlFor="new-password">New Password</Label>
+                              <Input
+                                id="new-password"
+                                type="password"
+                                placeholder="Enter new password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                              />
                             </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            {isPurchasedOnly ? (
-                              <div className="space-y-3">
-                                <p className="text-sm text-muted-foreground">
-                                  Assessment purchased but not yet completed
-                                </p>
-                                <Button 
-                                  variant="default" 
-                                  size="sm" 
-                                  asChild
-                                  className="w-full"
-                                >
-                                  <Link to={`/${assessment.assessment_type}-assessment`}>
-                                    <ChevronRight className="w-4 h-4 mr-2" />
-                                    Start Assessment
-                                  </Link>
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                {assessment.results.dominantColor && (
-                                  <div className="space-y-2">
-                                    <p className="text-sm font-medium">Primary Role:</p>
-                                    <Badge className={getColorBadgeStyle(assessment.results.dominantColor)}>
-                                      {getColorLabel(assessment.results.dominantColor)}
-                                    </Badge>
-                                  </div>
-                                )}
-                                <div className="flex gap-2 pt-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => handleDownloadReport(assessment)}
-                                  >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => setSelectedAssessment(assessment)}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    Details
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => {
-                                      // Store the assessment data in localStorage before navigating
-                                      const storageKey = `${assessment.assessment_type}AssessmentResults`;
-                                      localStorage.setItem(storageKey, JSON.stringify(assessment.results));
-                                      navigate(`/${assessment.assessment_type}-results`);
-                                    }}
-                                  >
-                                    <ChevronRight className="w-4 h-4 mr-2" />
-                                    View
-                                  </Button>
-                                </div>
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
+                            <div className="space-y-2">
+                              <Label htmlFor="confirm-password">Confirm Password</Label>
+                              <Input
+                                id="confirm-password"
+                                type="password"
+                                placeholder="Confirm new password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button type="submit" size="sm" disabled={passwordLoading}>
+                                {passwordLoading ? "Updating..." : "Update Password"}
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => {
+                                  setShowPasswordChange(false);
+                                  setNewPassword("");
+                                  setConfirmPassword("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </form>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+            )}
 
-              {/* Empty State */}
-              {assessments.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <BarChart3 className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No assessments yet</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Take your first assessment to discover your leadership color role
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <Button asChild>
-                      <Link to="/free-assessment">
-                        Start Free Assessment
-                        <ChevronRight className="w-4 h-4 ml-2" />
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild>
-                      <Link to="/pricing">View All Options</Link>
+            {/* Assessment Details Modal */}
+            {selectedAssessment && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                  <div className="p-6 border-b flex justify-between items-center">
+                    <h2 className="text-xl font-bold">Assessment Details</h2>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
+                      ✕
                     </Button>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Assessment Details Modal */}
-          {selectedAssessment && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div className="bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="p-6 border-b flex justify-between items-center">
-                  <h2 className="text-xl font-bold">Assessment Details</h2>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
-                    ✕
-                  </Button>
-                </div>
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                  <AssessmentDetails
-                    results={selectedAssessment.results}
-                    type={selectedAssessment.assessment_type}
-                  />
+                  <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                    <AssessmentDetails
+                      results={selectedAssessment.results}
+                      type={selectedAssessment.assessment_type}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </main>
         </div>
       </div>
     </div>
