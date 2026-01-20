@@ -8,15 +8,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, Loader2, Bell } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2, Bell, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScheduleReminderModalProps {
@@ -36,6 +36,7 @@ export default function ScheduleReminderModal({
 }: ScheduleReminderModalProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState('09:00');
+  const [recurrence, setRecurrence] = useState<'once' | 'daily' | 'weekly'>('once');
   const [scheduling, setScheduling] = useState(false);
   const { toast } = useToast();
 
@@ -79,17 +80,22 @@ export default function ScheduleReminderModal({
         scheduled_for: scheduledFor.toISOString(),
         created_by: user.id,
         status: 'pending',
+        recurrence,
       }));
 
       const { error } = await supabase
         .from('scheduled_reminders')
-        .upsert(reminders, { onConflict: 'company_user_id,scheduled_for' });
+        .insert(reminders);
 
       if (error) throw error;
 
+      const recurrenceText = recurrence === 'once' 
+        ? '' 
+        : ` (${recurrence} until assessment completed)`;
+
       toast({
         title: 'Reminders scheduled',
-        description: `${selectedUsers.length} reminder${selectedUsers.length > 1 ? 's' : ''} scheduled for ${format(scheduledFor, 'PPp')}`,
+        description: `${selectedUsers.length} reminder${selectedUsers.length > 1 ? 's' : ''} scheduled for ${format(scheduledFor, 'PPp')}${recurrenceText}`,
       });
 
       onScheduled();
@@ -181,6 +187,36 @@ export default function ScheduleReminderModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Repeat className="h-4 w-4" />
+              Recurrence
+            </Label>
+            <RadioGroup 
+              value={recurrence} 
+              onValueChange={(v) => setRecurrence(v as 'once' | 'daily' | 'weekly')}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="once" id="once" />
+                <Label htmlFor="once" className="font-normal cursor-pointer">Once</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="daily" id="daily" />
+                <Label htmlFor="daily" className="font-normal cursor-pointer">Daily</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="weekly" id="weekly" />
+                <Label htmlFor="weekly" className="font-normal cursor-pointer">Weekly</Label>
+              </div>
+            </RadioGroup>
+            {recurrence !== 'once' && (
+              <p className="text-xs text-muted-foreground">
+                Reminders will repeat {recurrence} until the employee completes their assessment.
+              </p>
+            )}
           </div>
         </div>
 

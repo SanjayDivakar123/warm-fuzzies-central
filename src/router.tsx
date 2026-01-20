@@ -241,31 +241,31 @@ export const router = createBrowserRouter([
   },
   {
     path: "/b2b",
-    element: <Layout><B2B /></Layout>,
+    element: <B2B />,
   },
   {
     path: "/b2b/signin",
-    element: <Layout><B2BSignIn /></Layout>,
+    element: <B2BSignIn />,
   },
   {
     path: "/b2b/payment-success",
-    element: <Layout><B2BPaymentSuccess /></Layout>,
+    element: <B2BPaymentSuccess />,
   },
   {
     path: "/b2b/company-portal",
-    element: <Layout><B2BDashboard /></Layout>,
+    element: <B2BDashboard />,
   },
   {
     path: "/b2b/assessment-25q",
-    element: <Layout><ProfessionalAssessment25Q /></Layout>,
+    element: <ProfessionalAssessment25Q />,
   },
   {
     path: "/b2b/assessment-50q",
-    element: <Layout><ProfessionalAssessment50Q /></Layout>,
+    element: <ProfessionalAssessment50Q />,
   },
   {
     path: "/b2b/results",
-    element: <Layout><ProfessionalResults /></Layout>,
+    element: <ProfessionalResults />,
   },
   {
     path: "/school/teachercustom",

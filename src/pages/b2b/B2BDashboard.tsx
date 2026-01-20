@@ -14,6 +14,7 @@ import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
+
 export default function B2BDashboard() {
   const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
@@ -25,13 +26,11 @@ export default function B2BDashboard() {
     window.location.href = '/b2b';
   };
 
-  // Handle return from Stripe add seats payment
   useEffect(() => {
     const seatsAdded = searchParams.get('seats_added');
     const sessionId = searchParams.get('session_id');
 
     if (seatsAdded === 'true' && sessionId) {
-      // Verify the payment and update seats
       const verifyPayment = async () => {
         try {
           const { data, error } = await supabase.functions.invoke('verify-add-seats-payment', {
@@ -50,35 +49,32 @@ export default function B2BDashboard() {
           console.error('Error verifying seat payment:', err);
         }
 
-        // Clear the URL params and refresh company data
         setSearchParams({});
         refreshCompany();
       };
 
       verifyPayment();
     } else {
-      // Re-fetch company data on mount to ensure we have the latest data
       refreshCompany();
     }
   }, [searchParams]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (!company || !companyUser) {
-    // Redirect to create company page if user doesn't have a company
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>No Company Access</CardTitle>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-sm border-0 shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">No Company Access</CardTitle>
             <CardDescription>
-              You don't have access to any company portal yet. Create one to get started.
+              You don't have access to any company portal yet.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -92,22 +88,21 @@ export default function B2BDashboard() {
   }
 
   if (!isAdmin) {
-    // Employee view - redirect to appropriate assessment
     const assessmentPath = company.assessment_type === '25q' 
       ? '/b2b/assessment-25q' 
       : '/b2b/assessment-50q';
     
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Welcome to {company.name}</CardTitle>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-sm border-0 shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Welcome to {company.name}</CardTitle>
             <CardDescription>
               Complete your professional assessment
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = assessmentPath}>
+            <Button onClick={() => window.location.href = assessmentPath} className="w-full">
               Take Assessment
             </Button>
           </CardContent>
@@ -116,132 +111,103 @@ export default function B2BDashboard() {
     );
   }
 
-  const primaryColor = company.primary_color || '#9b87f5';
-  const secondaryColor = company.secondary_color || '#7E69AB';
-
   return (
-    <div 
-      className="min-h-screen py-8 px-4"
-      style={{
-        background: `linear-gradient(135deg, ${primaryColor}08 0%, ${secondaryColor}05 50%, hsl(var(--background)) 100%)`
-      }}
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Header with company branding */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-muted/30">
+      {/* Clean header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             {company.logo_url ? (
               <img 
                 src={company.logo_url} 
                 alt={`${company.name} logo`}
-                className="h-14 w-auto object-contain"
+                className="h-8 w-auto object-contain"
               />
             ) : (
-              <div 
-                className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{ 
-                  background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` 
-                }}
-              >
-                <Building2 className="h-7 w-7 text-white" />
+              <div className="h-8 w-8 rounded-lg bg-foreground/5 flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-foreground/60" />
               </div>
             )}
-            <div>
-              <h1 className="text-3xl font-bold">{company.name}</h1>
-              <p className="text-muted-foreground text-sm">
-                Admin Dashboard
-              </p>
-            </div>
+            <span className="font-semibold text-foreground">{company.name}</span>
           </div>
           <Button 
-            variant="outline" 
+            variant="ghost" 
+            size="sm"
             onClick={handleLogout} 
-            className="flex items-center gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-colors"
+            className="text-muted-foreground hover:text-foreground"
           >
-            <LogOut className="h-4 w-4" />
-            Log Out
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign out
           </Button>
         </div>
+      </header>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList 
-            className="grid w-full grid-cols-6 p-1.5 h-auto rounded-xl"
-            style={{ 
-              backgroundColor: `${primaryColor}10`,
-            }}
-          >
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <Tabs defaultValue="overview" className="space-y-8">
+          <TabsList className="bg-background border p-1 h-auto inline-flex">
             <TabsTrigger 
               value="overview" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
-              style={{ 
-                '--tw-shadow-color': `${primaryColor}30`,
-              } as React.CSSProperties}
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <Building2 className="h-4 w-4" />
               Overview
             </TabsTrigger>
             <TabsTrigger 
               value="users" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
             <TabsTrigger 
               value="assessments" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <ClipboardList className="h-4 w-4" />
               Assessments
             </TabsTrigger>
             <TabsTrigger 
               value="reminders" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <CalendarClock className="h-4 w-4" />
               Reminders
             </TabsTrigger>
             <TabsTrigger 
               value="matrix" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <Brain className="h-4 w-4" />
               Work Matrix
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:shadow-md transition-all"
+              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
             >
-              <SettingsIcon className="h-4 w-4" />
               Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="animate-fade-in">
+          <TabsContent value="overview" className="mt-0">
             <OverviewTab company={company} />
           </TabsContent>
 
-          <TabsContent value="users" className="animate-fade-in">
+          <TabsContent value="users" className="mt-0">
             <UsersTab company={company} />
           </TabsContent>
 
-          <TabsContent value="assessments" className="animate-fade-in">
+          <TabsContent value="assessments" className="mt-0">
             <AssessmentsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
 
-          <TabsContent value="reminders" className="animate-fade-in">
+          <TabsContent value="reminders" className="mt-0">
             <RemindersHistoryTab company={company} />
           </TabsContent>
 
-          <TabsContent value="matrix" className="animate-fade-in">
+          <TabsContent value="matrix" className="mt-0">
             <WorkAssigningMatrixTab />
           </TabsContent>
 
-          <TabsContent value="settings" className="animate-fade-in">
+          <TabsContent value="settings" className="mt-0">
             <SettingsTab company={company} onSettingsSaved={refreshCompany} />
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 }

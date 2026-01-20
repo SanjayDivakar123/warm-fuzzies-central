@@ -531,7 +531,10 @@ export type Database = {
           company_user_id: string
           created_at: string
           created_by: string | null
+          delivery_status: string | null
           id: string
+          next_occurrence_at: string | null
+          recurrence: string
           scheduled_for: string
           sent_at: string | null
           status: string
@@ -541,7 +544,10 @@ export type Database = {
           company_user_id: string
           created_at?: string
           created_by?: string | null
+          delivery_status?: string | null
           id?: string
+          next_occurrence_at?: string | null
+          recurrence?: string
           scheduled_for: string
           sent_at?: string | null
           status?: string
@@ -551,7 +557,10 @@ export type Database = {
           company_user_id?: string
           created_at?: string
           created_by?: string | null
+          delivery_status?: string | null
           id?: string
+          next_occurrence_at?: string | null
+          recurrence?: string
           scheduled_for?: string
           sent_at?: string | null
           status?: string
