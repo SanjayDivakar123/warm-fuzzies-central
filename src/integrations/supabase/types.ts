@@ -85,6 +85,39 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_progress: {
+        Row: {
+          assessment_type: string
+          attempt_number: number | null
+          created_at: string | null
+          dominant_color: string | null
+          id: string
+          results: Json | null
+          scores: Json | null
+          user_id: string
+        }
+        Insert: {
+          assessment_type: string
+          attempt_number?: number | null
+          created_at?: string | null
+          dominant_color?: string | null
+          id?: string
+          results?: Json | null
+          scores?: Json | null
+          user_id: string
+        }
+        Update: {
+          assessment_type?: string
+          attempt_number?: number | null
+          created_at?: string | null
+          dominant_color?: string | null
+          id?: string
+          results?: Json | null
+          scores?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessment_results: {
         Row: {
           assessment_type: string
@@ -441,6 +474,39 @@ export type Database = {
           id?: string
           metadata?: Json | null
           source?: string
+        }
+        Relationships: []
+      }
+      family_plan_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_at: string | null
+          joined_at: string | null
+          member_email: string
+          member_user_id: string | null
+          owner_user_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          member_email: string
+          member_user_id?: string | null
+          owner_user_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          member_email?: string
+          member_user_id?: string | null
+          owner_user_id?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -895,6 +961,54 @@ export type Database = {
           created_by?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          price_id: string | null
+          product_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id?: string | null
+          product_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          price_id?: string | null
+          product_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
