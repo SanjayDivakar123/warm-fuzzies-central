@@ -79,7 +79,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
 
     const { data } = await supabase
       .from('company_users')
-      .select('id, email, assessment_result_id')
+      .select('id, email, full_name, assessment_result_id')
       .in('id', ids);
 
     if (data) {
@@ -149,6 +149,11 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   const primaryEmployee = assignment.primaryAssignee || (assignment.primary_assignee_id ? employees[assignment.primary_assignee_id] : null);
   const secondaryEmployee = assignment.secondaryAssignee || (assignment.secondary_assignee_id ? employees[assignment.secondary_assignee_id] : null);
 
+  const getDisplayName = (employee: any) => {
+    if (employee?.full_name) return employee.full_name;
+    return employee?.email || 'Unknown';
+  };
+
   return (
     <div className="space-y-6">
       {/* Task Summary */}
@@ -189,11 +194,12 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
                     'text-white',
                     primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor]?.color
                   )}>
-                    {primaryEmployee.email?.charAt(0).toUpperCase()}
+                    {getDisplayName(primaryEmployee).charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{primaryEmployee.email}</p>
+                  <p className="font-medium">{getDisplayName(primaryEmployee)}</p>
+                  <p className="text-xs text-muted-foreground">{primaryEmployee.email}</p>
                   {primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor] && (
                     <p className="text-xs text-muted-foreground">
                       {roleColorInfo[primaryEmployee.dominantColor].label}: {roleColorInfo[primaryEmployee.dominantColor].description}
@@ -223,11 +229,12 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
                     'text-white',
                     secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor]?.color
                   )}>
-                    {secondaryEmployee.email?.charAt(0).toUpperCase()}
+                    {getDisplayName(secondaryEmployee).charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{secondaryEmployee.email}</p>
+                  <p className="font-medium">{getDisplayName(secondaryEmployee)}</p>
+                  <p className="text-xs text-muted-foreground">{secondaryEmployee.email}</p>
                   {secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor] && (
                     <p className="text-xs text-muted-foreground">
                       {roleColorInfo[secondaryEmployee.dominantColor].label}: {roleColorInfo[secondaryEmployee.dominantColor].description}

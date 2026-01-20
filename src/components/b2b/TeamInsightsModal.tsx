@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 interface TeamMember {
   id: string;
   email: string;
+  full_name: string | null;
   job_role: string | null;
   skills: string[] | null;
   dominantColor: string;
@@ -232,6 +233,7 @@ export default function TeamInsightsModal({
           companyId,
           teamMembers: teamMembers.map(m => ({
             email: m.email,
+            fullName: m.full_name,
             jobRole: m.job_role,
             skills: m.skills,
             dominantColor: m.dominantColor,
@@ -262,7 +264,11 @@ export default function TeamInsightsModal({
     }
   };
 
-  const getEmailName = (email: string) => {
+  const getDisplayName = (email: string) => {
+    // First check if we have a full_name from team members
+    const member = teamMembers.find(m => m.email === email);
+    if (member?.full_name) return member.full_name;
+    // Fallback to parsing email
     const name = email.split('@')[0];
     return name.charAt(0).toUpperCase() + name.slice(1).replace(/[._]/g, ' ');
   };
@@ -403,9 +409,10 @@ export default function TeamInsightsModal({
                   
                   <div className="space-y-3">
                     {insights.memberInsights.map((member, i) => {
-                      const memberColor = teamMembers.find(m => m.email === member.email)?.dominantColor?.toLowerCase() || 'blue';
+                      const memberData = teamMembers.find(m => m.email === member.email);
+                      const memberColor = memberData?.dominantColor?.toLowerCase() || 'blue';
                       const colorData = colorInfo[memberColor] || colorInfo.blue;
-                      const displayName = member.name || getEmailName(member.email);
+                      const displayName = member.name || memberData?.full_name || getDisplayName(member.email);
                       const isExpanded = expandedMembers.has(member.email);
 
                       return (
