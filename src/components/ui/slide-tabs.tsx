@@ -104,7 +104,7 @@ const Tab = React.forwardRef<HTMLButtonElement, TabProps>(
             opacity: 1,
           });
         }}
-        className="relative z-10 block cursor-pointer px-4 py-2 text-sm font-medium text-white mix-blend-difference"
+        className="relative z-10 block cursor-pointer px-4 py-2 text-sm font-medium text-rolecolor-blue mix-blend-difference"
       >
         {children}
       </button>
