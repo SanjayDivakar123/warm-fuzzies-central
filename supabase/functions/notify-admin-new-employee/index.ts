@@ -3,12 +3,62 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from 'npm:resend@4.0.0'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { NewEmployeeNotificationEmail } from '../send-email/_templates/new-employee-notification.tsx'
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Text,
+  Section,
+  Hr,
+} from 'npm:@react-email/components@0.0.22'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Inline email template
+const NewEmployeeNotificationEmail = ({
+  adminName,
+  employeeEmail,
+  companyName,
+}: {
+  adminName: string;
+  employeeEmail: string;
+  companyName: string;
+}) => React.createElement(Html, null,
+  React.createElement(Head, null),
+  React.createElement(Preview, null, `New team member joined ${companyName} via Google SSO`),
+  React.createElement(Body, { style: { backgroundColor: '#f6f9fc', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" } },
+    React.createElement(Container, { style: { backgroundColor: '#ffffff', margin: '0 auto', padding: '40px 20px', borderRadius: '8px', maxWidth: '600px' } },
+      React.createElement(Heading, { style: { color: '#1a1a1a', fontSize: '24px', fontWeight: '600', marginBottom: '24px' } }, 'New Team Member Joined'),
+      React.createElement(Text, { style: { color: '#484848', fontSize: '16px', margin: '16px 0' } }, `Hi ${adminName || 'Admin'},`),
+      React.createElement(Text, { style: { color: '#484848', fontSize: '16px', margin: '16px 0' } },
+        'A new team member has joined ',
+        React.createElement('strong', null, companyName),
+        ' via Google SSO:'
+      ),
+      React.createElement(Section, { style: { backgroundColor: '#f0f7ff', borderRadius: '8px', padding: '16px 20px', margin: '24px 0', borderLeft: '4px solid #3b82f6' } },
+        React.createElement(Text, { style: { color: '#1a1a1a', fontSize: '14px', margin: '8px 0' } },
+          React.createElement('strong', null, 'Email: '), employeeEmail
+        ),
+        React.createElement(Text, { style: { color: '#1a1a1a', fontSize: '14px', margin: '8px 0' } },
+          React.createElement('strong', null, 'Joined via: '), 'Google SSO (auto-enrollment)'
+        )
+      ),
+      React.createElement(Text, { style: { color: '#484848', fontSize: '16px', margin: '16px 0' } },
+        'They will now be able to take the Role Color assessment. You can view and manage team members in your admin dashboard.'
+      ),
+      React.createElement(Hr, { style: { borderColor: '#e6e6e6', margin: '32px 0 16px' } }),
+      React.createElement(Text, { style: { color: '#898989', fontSize: '12px' } },
+        `This notification was sent because Google SSO auto-enrollment is enabled for ${companyName}. You can manage SSO settings in your company dashboard.`
+      )
+    )
+  )
+);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,7 +83,6 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if Resend is configured
     if (!resendApiKey) {
       console.log('RESEND_API_KEY not configured, skipping email notification');
       return new Response(
@@ -44,7 +93,6 @@ serve(async (req) => {
 
     const resend = new Resend(resendApiKey);
 
-    // Get company details
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('name, subdomain, admin_email')
@@ -59,7 +107,6 @@ serve(async (req) => {
       );
     }
 
-    // Get all admin users for this company
     const { data: admins, error: adminsError } = await supabase
       .from('company_users')
       .select('email')
@@ -75,11 +122,8 @@ serve(async (req) => {
       );
     }
 
-    // Collect admin emails (including company.admin_email as fallback)
     const adminEmails = new Set<string>();
-    if (company.admin_email) {
-      adminEmails.add(company.admin_email);
-    }
+    if (company.admin_email) adminEmails.add(company.admin_email);
     admins?.forEach(admin => adminEmails.add(admin.email));
 
     if (adminEmails.size === 0) {
@@ -92,22 +136,17 @@ serve(async (req) => {
 
     console.log(`Notifying ${adminEmails.size} admin(s)`);
 
-    // Render email template
-    const dashboardUrl = `https://rolecolorfinder.lovable.app/company/${company.subdomain}/admin`;
-    
     const html = await renderAsync(
       React.createElement(NewEmployeeNotificationEmail, {
         adminName: 'Admin',
         employeeEmail,
         companyName: company.name,
-        dashboardUrl,
       })
     );
 
-    // Send to all admins
     const emailPromises = Array.from(adminEmails).map(adminEmail =>
       resend.emails.send({
-        from: 'Role Color Finder <notifications@rolecolorfinder.com>',
+        from: 'Role Color Finder <onboarding@resend.dev>',
         to: [adminEmail],
         subject: `New team member joined ${company.name}`,
         html,
@@ -123,11 +162,7 @@ serve(async (req) => {
     console.log(`Sent ${successCount}/${adminEmails.size} notifications`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Notified ${successCount} admin(s)`,
-        notifiedCount: successCount 
-      }),
+      JSON.stringify({ success: true, message: `Notified ${successCount} admin(s)`, notifiedCount: successCount }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
