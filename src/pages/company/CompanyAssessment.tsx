@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { professionalQuestions25Q, professionalQuestions50Q } from "@/lib/professionalAssessmentQuestions";
 import { HelpButton } from "@/components/help";
 
+type AssessmentOption = { text: string; color: string };
+type AssessmentQuestion = { section: string; question: string; options: AssessmentOption[] };
 export default function CompanyAssessment() {
   const { company, employee, loading, setEmployee } = useCompanyPortal();
   const navigate = useNavigate();
@@ -51,44 +53,48 @@ export default function CompanyAssessment() {
     }
   }, [loading, company, employee, navigate]);
 
-  if (loading || !company || !employee) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const questions = useMemo<AssessmentQuestion[]>(() => {
+    if (!company) return [];
+    return (company.assessment_type === '50q'
+      ? (professionalQuestions50Q as unknown)
+      : (professionalQuestions25Q as unknown)) as AssessmentQuestion[];
+  }, [company?.assessment_type]);
 
-  const questions = company.assessment_type === '50q' ? professionalQuestions50Q : professionalQuestions25Q;
-  const primaryColor = company.primary_color || '#9b87f5';
+  const primaryColor = company?.primary_color || '#9b87f5';
 
   const handleAnswer = (color: string) => {
     setSelectedAnswer(color);
   };
 
   const saveProgress = (newAnswers: { [key: number]: string }, newQuestion: number) => {
+    if (!company || !employee) return;
     // Save draft progress to localStorage (per employee)
-    localStorage.setItem(`assessment_draft_${company.subdomain}_${employee.id}`, JSON.stringify({
-      currentQuestion: newQuestion,
-      answers: newAnswers
-    }));
+    localStorage.setItem(
+      `assessment_draft_${company.subdomain}_${employee.id}`,
+      JSON.stringify({
+        currentQuestion: newQuestion,
+        answers: newAnswers,
+      })
+    );
   };
 
   const handleNext = async () => {
+    if (!company || !employee || questions.length === 0) return;
+
     if (selectedAnswer) {
       const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
       setAnswers(newAnswers);
-      setSelectedAnswer("");
+      setSelectedAnswer('');
 
       if (currentQuestion < questions.length - 1) {
         const nextQuestion = currentQuestion + 1;
         setCurrentQuestion(nextQuestion);
-        setSelectedAnswer(newAnswers[nextQuestion] || "");
+        setSelectedAnswer(newAnswers[nextQuestion] || '');
         saveProgress(newAnswers, nextQuestion);
       } else {
         // Complete assessment
         setIsSubmitting(true);
-        
+
         const colorCounts = { yellow: 0, red: 0, green: 0, blue: 0 };
         Object.values(newAnswers).forEach((color) => {
           colorCounts[color as keyof typeof colorCounts]++;
@@ -105,7 +111,7 @@ export default function CompanyAssessment() {
           assessmentType: `professional_${company.assessment_type}`,
           companyId: company.id,
           companyName: company.name,
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString(),
         };
 
         // Save to database via edge function
@@ -114,16 +120,16 @@ export default function CompanyAssessment() {
             body: {
               employeeId: employee.id,
               companyId: company.id,
-              results: results
-            }
+              results: results,
+            },
           });
 
           if (fnError || !data?.success) {
             console.error('Error saving assessment:', fnError || data?.message);
             toast({
-              title: "Error",
-              description: "Failed to save your assessment. Please try again.",
-              variant: "destructive"
+              title: 'Error',
+              description: 'Failed to save your assessment. Please try again.',
+              variant: 'destructive',
             });
             setIsSubmitting(false);
             return;
@@ -133,7 +139,7 @@ export default function CompanyAssessment() {
 
           // Clear draft progress
           localStorage.removeItem(`assessment_draft_${company.subdomain}_${employee.id}`);
-          
+
           // Update local employee session immediately (prevents redirect back to login)
           setEmployee({
             ...employee,
@@ -141,19 +147,19 @@ export default function CompanyAssessment() {
             assessment_completed_at: results.completedAt,
             assessment_result_id: data.assessmentResultId,
           });
-          
+
           toast({
-            title: "Assessment Complete!",
-            description: "Your results are ready to view."
+            title: 'Assessment Complete!',
+            description: 'Your results are ready to view.',
           });
-          
+
           navigate(`/company/${company.subdomain}/results`);
         } catch (err) {
           console.error('Error saving assessment:', err);
           toast({
-            title: "Error",
-            description: "An unexpected error occurred. Please try again.",
-            variant: "destructive"
+            title: 'Error',
+            description: 'An unexpected error occurred. Please try again.',
+            variant: 'destructive',
           });
         } finally {
           setIsSubmitting(false);
@@ -166,27 +172,32 @@ export default function CompanyAssessment() {
     if (currentQuestion > 0) {
       const prevQuestion = currentQuestion - 1;
       setCurrentQuestion(prevQuestion);
-      setSelectedAnswer(answers[prevQuestion] || "");
+      setSelectedAnswer(answers[prevQuestion] || '');
     }
   };
 
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
-  const currentQuestionData = questions[currentQuestion];
-  
-  const shuffledOptions = useMemo(() => {
+  const totalQuestions = questions.length;
+  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
+
+  const currentQuestionData: AssessmentQuestion =
+    questions[currentQuestion] ?? { section: '', question: '', options: [] };
+
+  const shuffledOptions = useMemo<AssessmentOption[]>(() => {
     return shuffleArray(currentQuestionData.options);
-  }, [currentQuestion]);
+  }, [currentQuestionData]);
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (loading || !company || !employee || shuffledOptions.length === 0) return;
+
     const handleKeyPress = (e: KeyboardEvent) => {
       const keyMap: { [key: string]: number } = { '1': 0, '2': 1, '3': 2, '4': 3 };
       const index = keyMap[e.key];
-      
+
       if (index !== undefined && shuffledOptions[index]) {
         handleAnswer(shuffledOptions[index].color);
       }
-      
+
       if (e.key === 'Enter' && selectedAnswer) {
         handleNext();
       }
@@ -194,7 +205,15 @@ export default function CompanyAssessment() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentQuestion, shuffledOptions, selectedAnswer]);
+  }, [loading, company, employee, shuffledOptions, selectedAnswer]);
+
+  if (loading || !company || !employee) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
