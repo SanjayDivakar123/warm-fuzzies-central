@@ -92,9 +92,29 @@ serve(async (req) => {
     logStep("Authenticating user with token");
     
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    // If auth fails or session expired, return free tier gracefully instead of 500 error
+    if (userError || !userData?.user?.email) {
+      logStep("Auth failed or session expired, returning free tier", { error: userError?.message });
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        productId: null,
+        tier: 'free',
+        subscriptionEnd: null,
+        features: {
+          unlimitedRetakes: false,
+          progressTracking: false,
+          allAssessments: false,
+          aiJobMatching: false,
+          familyMembers: 0
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
