@@ -1,19 +1,35 @@
-import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon, Plus, Globe, Copy, ExternalLink, Link2 } from 'lucide-react';
-import AssessmentPreviewModal from './AssessmentPreviewModal';
-import BillingModal from './BillingModal';
-import DeleteCompanyModal from './DeleteCompanyModal';
-import PaymentMethodCard from './PaymentMethodCard';
-import ThemeExportImport from './ThemeExportImport';
-import AddCreditsModal from './AddCreditsModal';
+import { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Loader2,
+  Upload,
+  Eye,
+  CheckCircle2,
+  CreditCard,
+  X,
+  Trash2,
+  Wallet,
+  Sun,
+  Moon,
+  Plus,
+  Globe,
+  Copy,
+  ExternalLink,
+  Link2,
+} from "lucide-react";
+import AssessmentPreviewModal from "./AssessmentPreviewModal";
+import BillingModal from "./BillingModal";
+import DeleteCompanyModal from "./DeleteCompanyModal";
+import PaymentMethodCard from "./PaymentMethodCard";
+import ThemeExportImport from "./ThemeExportImport";
+import AddCreditsModal from "./AddCreditsModal";
 
 interface SettingsTabProps {
   company: any;
@@ -21,21 +37,21 @@ interface SettingsTabProps {
 }
 
 export default function SettingsTab({ company, onSettingsSaved }: SettingsTabProps) {
-  const [logoUrl, setLogoUrl] = useState(company.logo_url || '');
-  const [logoUrlDark, setLogoUrlDark] = useState(company.logo_url_dark || '');
+  const [logoUrl, setLogoUrl] = useState(company.logo_url || "");
+  const [logoUrlDark, setLogoUrlDark] = useState(company.logo_url_dark || "");
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
   const [subdomain, setSubdomain] = useState(company.subdomain);
   const [subdomainEnabled, setSubdomainEnabled] = useState(company.subdomain_enabled || false);
-  const [customDomain, setCustomDomain] = useState(company.custom_domain || '');
+  const [customDomain, setCustomDomain] = useState(company.custom_domain || "");
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
-  const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>(company.assessment_type);
+  const [assessmentType, setAssessmentType] = useState<"25q" | "50q">(company.assessment_type);
   const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled || false);
-  const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || '');
+  const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || "");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState<'light' | 'dark' | null>(null);
+  const [uploading, setUploading] = useState<"light" | "dark" | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewType, setPreviewType] = useState<'25q' | '50q'>('25q');
+  const [previewType, setPreviewType] = useState<"25q" | "50q">("25q");
   const [billingOpen, setBillingOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [addCreditsOpen, setAddCreditsOpen] = useState(false);
@@ -52,16 +68,16 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, mode: 'light' | 'dark') => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, mode: "light" | "dark") => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload an image file (PNG, JPG, etc.)',
-        variant: 'destructive',
+        title: "Invalid file type",
+        description: "Please upload an image file (PNG, JPG, etc.)",
+        variant: "destructive",
       });
       return;
     }
@@ -69,9 +85,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: 'File too large',
-        description: 'Please upload an image smaller than 2MB',
-        variant: 'destructive',
+        title: "File too large",
+        description: "Please upload an image smaller than 2MB",
+        variant: "destructive",
       });
       return;
     }
@@ -79,42 +95,32 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setUploading(mode);
 
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${company.id}/logo-${mode}-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
-        .from('company-logos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      const { data, error: uploadError } = await supabase.storage.from("company-logos").upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('company-logos')
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("company-logos").getPublicUrl(fileName);
 
       const newLogoUrl = urlData.publicUrl;
-      
-      if (mode === 'light') {
+
+      if (mode === "light") {
         setLogoUrl(newLogoUrl);
-        await supabase
-          .from('companies')
-          .update({ logo_url: newLogoUrl })
-          .eq('id', company.id);
+        await supabase.from("companies").update({ logo_url: newLogoUrl }).eq("id", company.id);
       } else {
         setLogoUrlDark(newLogoUrl);
-        await supabase
-          .from('companies')
-          .update({ logo_url_dark: newLogoUrl })
-          .eq('id', company.id);
+        await supabase.from("companies").update({ logo_url_dark: newLogoUrl }).eq("id", company.id);
       }
 
       toast({
-        title: 'Logo uploaded',
+        title: "Logo uploaded",
         description: `Your ${mode} mode logo has been updated`,
       });
 
@@ -122,39 +128,33 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         onSettingsSaved();
       }
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       toast({
-        title: 'Upload failed',
-        description: error.message || 'Failed to upload logo',
-        variant: 'destructive',
+        title: "Upload failed",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
       });
     } finally {
       setUploading(null);
       // Reset file inputs
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (fileInputDarkRef.current) fileInputDarkRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileInputDarkRef.current) fileInputDarkRef.current.value = "";
     }
   };
 
-  const handleRemoveLogo = async (mode: 'light' | 'dark') => {
-    if (mode === 'light') {
-      setLogoUrl('');
-      await supabase
-        .from('companies')
-        .update({ logo_url: '' })
-        .eq('id', company.id);
+  const handleRemoveLogo = async (mode: "light" | "dark") => {
+    if (mode === "light") {
+      setLogoUrl("");
+      await supabase.from("companies").update({ logo_url: "" }).eq("id", company.id);
     } else {
-      setLogoUrlDark('');
-      await supabase
-        .from('companies')
-        .update({ logo_url_dark: '' })
-        .eq('id', company.id);
+      setLogoUrlDark("");
+      await supabase.from("companies").update({ logo_url_dark: "" }).eq("id", company.id);
     }
 
     if (onSettingsSaved) {
       onSettingsSaved();
       toast({
-        title: 'Logo removed',
+        title: "Logo removed",
         description: `Your ${mode} mode logo has been removed`,
       });
     }
@@ -164,7 +164,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('companies')
+        .from("companies")
         .update({
           logo_url: logoUrl,
           logo_url_dark: logoUrlDark,
@@ -178,13 +178,13 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           google_sso_enabled: googleSsoEnabled,
           google_workspace_domain: googleWorkspaceDomain || null,
         })
-        .eq('id', company.id);
+        .eq("id", company.id);
 
       if (error) throw error;
 
       toast({
-        title: 'Settings saved',
-        description: 'Your company settings have been updated.',
+        title: "Settings saved",
+        description: "Your company settings have been updated.",
       });
 
       // Refresh company data in parent
@@ -193,9 +193,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       }
     } catch (error: any) {
       toast({
-        title: 'Error saving settings',
+        title: "Error saving settings",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -216,18 +216,14 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <Sun className="h-4 w-4" />
               Light Mode Logo
             </Label>
-            
+
             {logoUrl && (
               <div className="flex items-center gap-4 p-4 border rounded-lg bg-background">
-                <img 
-                  src={logoUrl} 
-                  alt="Light mode logo" 
-                  className="h-12 w-auto max-w-[180px] object-contain"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleRemoveLogo('light')}
+                <img src={logoUrl} alt="Light mode logo" className="h-12 w-auto max-w-[180px] object-contain" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveLogo("light")}
                   className="text-destructive hover:text-destructive"
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -247,17 +243,17 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'light')}
+                onChange={(e) => handleFileUpload(e, "light")}
                 className="hidden"
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading === 'light'}
+                disabled={uploading === "light"}
                 title="Upload Logo"
               >
-                {uploading === 'light' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading === "light" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -268,18 +264,14 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <Moon className="h-4 w-4" />
               Dark Mode Logo
             </Label>
-            
+
             {logoUrlDark && (
               <div className="flex items-center gap-4 p-4 border rounded-lg bg-foreground/5">
-                <img 
-                  src={logoUrlDark} 
-                  alt="Dark mode logo" 
-                  className="h-12 w-auto max-w-[180px] object-contain"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleRemoveLogo('dark')}
+                <img src={logoUrlDark} alt="Dark mode logo" className="h-12 w-auto max-w-[180px] object-contain" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveLogo("dark")}
                   className="text-destructive hover:text-destructive"
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -299,17 +291,17 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 ref={fileInputDarkRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'dark')}
+                onChange={(e) => handleFileUpload(e, "dark")}
                 className="hidden"
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={() => fileInputDarkRef.current?.click()}
-                disabled={uploading === 'dark'}
+                disabled={uploading === "dark"}
                 title="Upload Logo"
               >
-                {uploading === 'dark' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading === "dark" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -327,63 +319,63 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <div className="grid grid-cols-2 gap-4">
                 {/* Light Mode Preview */}
                 <div className="rounded-lg border overflow-hidden">
-                  <div 
+                  <div
                     className="px-4 py-6 flex items-center justify-center min-h-[80px]"
-                    style={{ backgroundColor: '#ffffff' }}
+                    style={{ backgroundColor: "#ffffff" }}
                   >
                     {logoUrl ? (
-                      <img 
-                        src={logoUrl} 
-                        alt="Light mode preview" 
-                        className="h-10 w-auto max-w-full object-contain"
-                      />
+                      <img src={logoUrl} alt="Light mode preview" className="h-10 w-auto max-w-full object-contain" />
                     ) : logoUrlDark ? (
-                      <img 
-                        src={logoUrlDark} 
-                        alt="Fallback to dark logo" 
+                      <img
+                        src={logoUrlDark}
+                        alt="Fallback to dark logo"
                         className="h-10 w-auto max-w-full object-contain opacity-50"
                       />
                     ) : (
                       <span className="text-muted-foreground text-sm">No logo</span>
                     )}
                   </div>
-                  <div 
+                  <div
                     className="px-3 py-1.5 flex items-center justify-center gap-1.5 border-t"
-                    style={{ backgroundColor: '#f3f4f6' }}
+                    style={{ backgroundColor: "#f3f4f6" }}
                   >
-                    <Sun className="h-3.5 w-3.5" style={{ color: '#6b7280' }} />
-                    <span className="text-xs font-medium" style={{ color: '#4b5563' }}>Light Mode</span>
+                    <Sun className="h-3.5 w-3.5" style={{ color: "#6b7280" }} />
+                    <span className="text-xs font-medium" style={{ color: "#4b5563" }}>
+                      Light Mode
+                    </span>
                   </div>
                 </div>
 
                 {/* Dark Mode Preview */}
                 <div className="rounded-lg border overflow-hidden">
-                  <div 
+                  <div
                     className="px-4 py-6 flex items-center justify-center min-h-[80px]"
-                    style={{ backgroundColor: '#111827' }}
+                    style={{ backgroundColor: "#111827" }}
                   >
                     {logoUrlDark ? (
-                      <img 
-                        src={logoUrlDark} 
-                        alt="Dark mode preview" 
+                      <img
+                        src={logoUrlDark}
+                        alt="Dark mode preview"
                         className="h-10 w-auto max-w-full object-contain"
                       />
                     ) : logoUrl ? (
-                      <img 
-                        src={logoUrl} 
-                        alt="Fallback to light logo" 
+                      <img
+                        src={logoUrl}
+                        alt="Fallback to light logo"
                         className="h-10 w-auto max-w-full object-contain opacity-50"
                       />
                     ) : (
                       <span className="text-muted-foreground text-sm">No logo</span>
                     )}
                   </div>
-                  <div 
+                  <div
                     className="px-3 py-1.5 flex items-center justify-center gap-1.5"
-                    style={{ backgroundColor: '#1f2937', borderTop: '1px solid #374151' }}
+                    style={{ backgroundColor: "#1f2937", borderTop: "1px solid #374151" }}
                   >
-                    <Moon className="h-3.5 w-3.5" style={{ color: '#9ca3af' }} />
-                    <span className="text-xs font-medium" style={{ color: '#d1d5db' }}>Dark Mode</span>
+                    <Moon className="h-3.5 w-3.5" style={{ color: "#9ca3af" }} />
+                    <span className="text-xs font-medium" style={{ color: "#d1d5db" }}>
+                      Dark Mode
+                    </span>
                   </div>
                 </div>
               </div>
@@ -460,7 +452,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                   className="h-8 w-8 shrink-0"
                   onClick={() => {
                     navigator.clipboard.writeText(`https://rolecolorfinder.com/company/${subdomain}`);
-                    toast({ title: 'URL copied to clipboard' });
+                    toast({ title: "URL copied to clipboard" });
                   }}
                 >
                   <Copy className="h-4 w-4" />
@@ -469,15 +461,13 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0"
-                  onClick={() => window.open(`/company/${subdomain}`, '_blank')}
+                  onClick={() => window.open(`/company/${subdomain}`, "_blank")}
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This URL is always available for your employees
-            </p>
+            <p className="text-xs text-muted-foreground">This URL is always available for your employees</p>
           </div>
 
           {/* Company Identifier */}
@@ -487,7 +477,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <Input
                 id="subdomain"
                 value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                 className="max-w-[200px]"
                 placeholder="your-company"
               />
@@ -502,19 +492,18 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                Subdomain URL
+                Custom Subdomain URL
                 {subdomainEnabled && (
-                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  >
                     Active
                   </Badge>
                 )}
               </Label>
               <div className="flex items-center gap-2">
-                <Switch
-                  id="subdomainEnabled"
-                  checked={subdomainEnabled}
-                  onCheckedChange={setSubdomainEnabled}
-                />
+                <Switch id="subdomainEnabled" checked={subdomainEnabled} onCheckedChange={setSubdomainEnabled} />
                 <Label htmlFor="subdomainEnabled" className="text-sm font-normal">
                   Enable subdomain
                 </Label>
@@ -533,7 +522,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                     className="h-8 w-8 shrink-0"
                     onClick={() => {
                       navigator.clipboard.writeText(`https://${subdomain}.rolecolorfinder.com`);
-                      toast({ title: 'Subdomain URL copied to clipboard' });
+                      toast({ title: "Subdomain URL copied to clipboard" });
                     }}
                   >
                     <Copy className="h-4 w-4" />
@@ -542,7 +531,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
-                    onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, '_blank')}
+                    onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, "_blank")}
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
@@ -586,17 +575,11 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             </svg>
             Google SSO
           </CardTitle>
-          <CardDescription>
-            Allow employees and admins to sign in with their Google account
-          </CardDescription>
+          <CardDescription>Allow employees and admins to sign in with their Google account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Switch
-              id="googleSsoEnabled"
-              checked={googleSsoEnabled}
-              onCheckedChange={setGoogleSsoEnabled}
-            />
+            <Switch id="googleSsoEnabled" checked={googleSsoEnabled} onCheckedChange={setGoogleSsoEnabled} />
             <Label htmlFor="googleSsoEnabled">Enable Google Sign-In</Label>
           </div>
 
@@ -610,8 +593,8 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 placeholder="yourcompany.com"
               />
               <p className="text-xs text-muted-foreground">
-                If set, only users with this email domain can sign in via Google (e.g., @yourcompany.com).
-                Leave empty to allow any Google account that has been invited.
+                If set, only users with this email domain can sign in via Google (e.g., @yourcompany.com). Leave empty
+                to allow any Google account that has been invited.
               </p>
             </div>
           )}
@@ -624,7 +607,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
-
       {/* Assessment Type Selection */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
@@ -633,31 +615,25 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardHeader>
         <CardContent className="space-y-2">
           {/* 25 Question Assessment */}
-          <div 
+          <div
             className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
-              assessmentType === '25q' 
-                ? 'border-primary bg-primary/5' 
-                : 'border-border hover:border-primary/40'
+              assessmentType === "25q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
             }`}
-            onClick={() => setAssessmentType('25q')}
+            onClick={() => setAssessmentType("25q")}
           >
             <div className="flex items-center gap-3">
-              {assessmentType === '25q' && (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              )}
+              {assessmentType === "25q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
               <div>
                 <p className="font-medium">25 Question Assessment</p>
-                <p className="text-sm text-muted-foreground">
-                  Quick assessment (~10 minutes) • 5 sections
-                </p>
+                <p className="text-sm text-muted-foreground">Quick assessment (~10 minutes) • 5 sections</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                setPreviewType('25q');
+                setPreviewType("25q");
                 setPreviewOpen(true);
               }}
             >
@@ -667,31 +643,25 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           </div>
 
           {/* 50 Question Assessment */}
-          <div 
+          <div
             className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
-              assessmentType === '50q' 
-                ? 'border-primary bg-primary/5' 
-                : 'border-border hover:border-primary/40'
+              assessmentType === "50q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
             }`}
-            onClick={() => setAssessmentType('50q')}
+            onClick={() => setAssessmentType("50q")}
           >
             <div className="flex items-center gap-3">
-              {assessmentType === '50q' && (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              )}
+              {assessmentType === "50q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
               <div>
                 <p className="font-medium">50 Question Assessment</p>
-                <p className="text-sm text-muted-foreground">
-                  Comprehensive assessment (~20 minutes) • 5 sections
-                </p>
+                <p className="text-sm text-muted-foreground">Comprehensive assessment (~20 minutes) • 5 sections</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                setPreviewType('50q');
+                setPreviewType("50q");
                 setPreviewOpen(true);
               }}
             >
@@ -741,11 +711,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           <CardDescription>Manage your billing and add seats</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button 
-            variant="outline" 
-            className="w-full gap-2"
-            onClick={() => setBillingOpen(true)}
-          >
+          <Button variant="outline" className="w-full gap-2" onClick={() => setBillingOpen(true)}>
             <CreditCard className="h-4 w-4" />
             Manage Billing
           </Button>
@@ -768,19 +734,14 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               {loadingBalance ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
-                <span className="font-semibold text-primary">
-                  ${creditBalance.toLocaleString()}
-                </span>
+                <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Credits are used when inviting new users. Each invite costs $20. Credits are deducted before charging your card on file.
+              Credits are used when inviting new users. Each invite costs $20. Credits are deducted before charging your
+              card on file.
             </p>
-            <Button 
-              variant="outline" 
-              className="w-full gap-2"
-              onClick={() => setAddCreditsOpen(true)}
-            >
+            <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
               <Plus className="h-4 w-4" />
               Add Credits
             </Button>
@@ -800,19 +761,14 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             <Trash2 className="h-5 w-5" />
             Danger Zone
           </CardTitle>
-          <CardDescription>
-            Permanently delete this company and all associated data
-          </CardDescription>
+          <CardDescription>Permanently delete this company and all associated data</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Once you delete your company, there is no going back. All users, assessments, tasks, and settings will be permanently removed.
+            Once you delete your company, there is no going back. All users, assessments, tasks, and settings will be
+            permanently removed.
           </p>
-          <Button 
-            variant="destructive" 
-            className="w-full gap-2"
-            onClick={() => setDeleteModalOpen(true)}
-          >
+          <Button variant="destructive" className="w-full gap-2" onClick={() => setDeleteModalOpen(true)}>
             <Trash2 className="h-4 w-4" />
             Delete Company
           </Button>
@@ -820,11 +776,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Assessment Preview Modal */}
-      <AssessmentPreviewModal 
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        assessmentType={previewType}
-      />
+      <AssessmentPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} assessmentType={previewType} />
 
       {/* Billing Modal */}
       <BillingModal
@@ -837,11 +789,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       />
 
       {/* Delete Company Modal */}
-      <DeleteCompanyModal
-        open={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        company={company}
-      />
+      <DeleteCompanyModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} company={company} />
 
       {/* Add Credits Modal */}
       <AddCreditsModal
@@ -853,7 +801,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           if (onSettingsSaved) onSettingsSaved();
         }}
       />
-
     </div>
   );
 }
