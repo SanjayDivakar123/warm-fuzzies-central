@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon, Plus } from 'lucide-react';
+import { Loader2, Upload, Eye, CheckCircle2, CreditCard, X, Trash2, Wallet, Sun, Moon, Plus, Globe, Copy, ExternalLink, Link2 } from 'lucide-react';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import BillingModal from './BillingModal';
 import DeleteCompanyModal from './DeleteCompanyModal';
@@ -26,6 +26,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
   const [subdomain, setSubdomain] = useState(company.subdomain);
+  const [subdomainEnabled, setSubdomainEnabled] = useState(company.subdomain_enabled || false);
   const [customDomain, setCustomDomain] = useState(company.custom_domain || '');
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>(company.assessment_type);
@@ -170,6 +171,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           subdomain,
+          subdomain_enabled: subdomainEnabled,
           custom_domain: customDomain,
           custom_domain_enabled: customDomainEnabled,
           assessment_type: assessmentType,
@@ -434,24 +436,128 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
 
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">Portal Settings</CardTitle>
-          <CardDescription>Configure your company portal identifier</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            <Globe className="h-5 w-5" />
+            Portal Settings
+          </CardTitle>
+          <CardDescription>Configure your company portal URLs</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        <CardContent className="space-y-6">
+          {/* Path-based URL (always available) */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Path-Based URL
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <code className="text-sm font-mono flex-1 truncate">
+                  https://rolecolorfinder.com/company/{subdomain}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://rolecolorfinder.com/company/${subdomain}`);
+                    toast({ title: 'URL copied to clipboard' });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => window.open(`/company/${subdomain}`, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This URL is always available for your employees
+            </p>
+          </div>
+
+          {/* Company Identifier */}
+          <div className="space-y-2 pt-2 border-t">
             <Label htmlFor="subdomain">Company Identifier</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">rolecolorfinder.com/company/</span>
               <Input
                 id="subdomain"
                 value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value)}
+                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 className="max-w-[200px]"
+                placeholder="your-company"
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              This is the unique identifier in your company portal URL
+              Lowercase letters, numbers, and hyphens only (3-63 characters)
             </p>
+          </div>
+
+          {/* Subdomain URL */}
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Subdomain URL
+                {subdomainEnabled && (
+                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    Active
+                  </Badge>
+                )}
+              </Label>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="subdomainEnabled"
+                  checked={subdomainEnabled}
+                  onCheckedChange={setSubdomainEnabled}
+                />
+                <Label htmlFor="subdomainEnabled" className="text-sm font-normal">
+                  Enable subdomain
+                </Label>
+              </div>
+            </div>
+
+            {subdomainEnabled && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <code className="text-sm font-mono flex-1 truncate text-primary">
+                    https://{subdomain}.rolecolorfinder.com
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://${subdomain}.rolecolorfinder.com`);
+                      toast({ title: 'Subdomain URL copied to clipboard' });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Share this custom URL with your employees for easy access
+                </p>
+              </div>
+            )}
+
+            {!subdomainEnabled && (
+              <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
+                Enable subdomain to give employees a memorable URL like <strong>{subdomain}.rolecolorfinder.com</strong>
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

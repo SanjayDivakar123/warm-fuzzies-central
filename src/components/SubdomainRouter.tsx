@@ -1,20 +1,7 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { router as baseRouter } from "./router";
-
-import { AuthProvider } from "./contexts/AuthContext";
-import { CompanyProvider } from "./contexts/CompanyContext";
-import { ThemeProvider } from "next-themes";
-import { HelpTourProvider } from "./contexts/HelpTourContext";
-import { TourTooltip } from "./components/help";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
-
-const queryClient = new QueryClient();
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 // Main production domain
 const MAIN_DOMAIN = 'rolecolorfinder.com';
@@ -25,6 +12,7 @@ const IGNORED_HOSTS = [
   '127.0.0.1',
   'lovable.app',
   'lovable.dev',
+  'preview.lovable.app',
 ];
 
 function extractSubdomain(hostname: string): string | null {
@@ -42,11 +30,17 @@ function extractSubdomain(hostname: string): string | null {
   return null;
 }
 
+interface SubdomainRouterProps {
+  children: React.ReactNode;
+}
+
 /**
- * Root component that handles subdomain detection and redirects
+ * Component that detects subdomain-based company access
+ * and redirects to the appropriate company portal routes
  */
-function RootWithSubdomainDetection() {
+export default function SubdomainRouter({ children }: SubdomainRouterProps) {
   const [checking, setChecking] = useState(true);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -99,15 +93,19 @@ function RootWithSubdomainDetection() {
             targetPath = `/company/${subdomain}/assessment`;
           } else if (currentPath === '/results') {
             targetPath = `/company/${subdomain}/results`;
+          } else {
+            // For any other paths, go to company landing
+            targetPath = `/company/${subdomain}`;
           }
 
           // Include search params if any
           const search = location.search;
+          setShouldRedirect(true);
           navigate(targetPath + search, { replace: true });
-          return;
+        } else {
+          // Company not found or subdomain not enabled - show normal site
+          setChecking(false);
         }
-        
-        setChecking(false);
       } catch (err) {
         console.error('Subdomain check failed:', err);
         setChecking(false);
@@ -118,53 +116,22 @@ function RootWithSubdomainDetection() {
   }, [location.pathname, location.search, navigate]);
 
   // Show loading while checking subdomain
-  if (checking) {
+  if (checking && !shouldRedirect) {
+    // Quick check - if no subdomain detected, don't show loader
     const subdomain = extractSubdomain(window.location.hostname);
-    if (subdomain) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Loading company portal...</p>
-          </div>
-        </div>
-      );
+    if (!subdomain) {
+      return <>{children}</>;
     }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Loading company portal...</p>
+        </div>
+      </div>
+    );
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 }
-
-// Create a wrapped router with subdomain detection at root
-const routesWithSubdomain = [
-  {
-    path: "/",
-    element: <RootWithSubdomainDetection />,
-    children: baseRouter.routes,
-  },
-];
-
-const router = createBrowserRouter(routesWithSubdomain);
-
-const App = () => {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" storageKey="rcf-theme">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <CompanyProvider>
-            <TooltipProvider>
-              <HelpTourProvider>
-                <Toaster />
-                <Sonner />
-                <TourTooltip />
-                <RouterProvider router={router} />
-              </HelpTourProvider>
-            </TooltipProvider>
-          </CompanyProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  );
-};
-
-export default App;

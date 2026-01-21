@@ -461,7 +461,8 @@ export default function OverviewTab({ company }: OverviewTabProps) {
 
       {/* Company Portal Link */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="pt-4 pb-4">
+        <CardContent className="pt-4 pb-4 space-y-4">
+          {/* Path-based URL (always shown) */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-muted">
@@ -469,7 +470,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               </div>
               <div>
                 <p className="font-medium text-sm">rolecolorfinder.com/company/{company.subdomain}</p>
-                <p className="text-xs text-muted-foreground">Employee portal URL</p>
+                <p className="text-xs text-muted-foreground">Path-based portal URL</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -486,7 +487,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 className="gap-2"
               >
                 <Copy className="h-3.5 w-3.5" />
-                Copy URL
+                Copy
               </Button>
               <Button 
                 variant="outline"
@@ -495,10 +496,51 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 className="gap-2"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                View Portal
+                View
               </Button>
             </div>
           </div>
+
+          {/* Subdomain URL (only shown when enabled) */}
+          {company.subdomain_enabled && (
+            <div className="flex items-center justify-between pt-3 border-t">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Globe className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-primary">{company.subdomain}.rolecolorfinder.com</p>
+                  <p className="text-xs text-muted-foreground">Subdomain URL (active)</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://${company.subdomain}.rolecolorfinder.com`);
+                    toast({
+                      title: "Subdomain URL copied",
+                      description: "Subdomain URL copied to clipboard",
+                    });
+                  }}
+                  className="gap-2"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(`https://${company.subdomain}.rolecolorfinder.com`, '_blank')}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

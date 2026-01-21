@@ -6,6 +6,7 @@ interface Company {
   id: string;
   name: string;
   subdomain: string;
+  subdomain_enabled: boolean;
   admin_email: string;
   logo_url: string | null;
   primary_color: string | null;
