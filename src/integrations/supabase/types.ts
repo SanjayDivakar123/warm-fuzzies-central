@@ -318,6 +318,7 @@ export type Database = {
           secondary_color: string | null
           stripe_customer_id: string | null
           subdomain: string
+          subdomain_enabled: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -343,6 +344,7 @@ export type Database = {
           secondary_color?: string | null
           stripe_customer_id?: string | null
           subdomain: string
+          subdomain_enabled?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -368,6 +370,7 @@ export type Database = {
           secondary_color?: string | null
           stripe_customer_id?: string | null
           subdomain?: string
+          subdomain_enabled?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
