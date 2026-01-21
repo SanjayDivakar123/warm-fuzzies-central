@@ -6,6 +6,7 @@ interface Company {
   id: string;
   name: string;
   subdomain: string;
+  subdomain_enabled: boolean;
   admin_email: string;
   seats_purchased: number;
   assessment_type: '25q' | '50q';
