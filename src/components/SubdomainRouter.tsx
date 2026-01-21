@@ -60,6 +60,12 @@ export default function SubdomainRouter({ children }: SubdomainRouterProps) {
         return;
       }
 
+      // B2B routes should work on any domain without redirection
+      if (location.pathname.startsWith('/b2b/') || location.pathname === '/b2b') {
+        setChecking(false);
+        return;
+      }
+
       try {
         // Verify company exists and has subdomain enabled
         const { data: company, error } = await supabase
