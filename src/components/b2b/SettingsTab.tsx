@@ -23,6 +23,7 @@ import {
   Copy,
   ExternalLink,
   Link2,
+  AlertTriangle,
 } from "lucide-react";
 import AssessmentPreviewModal from "./AssessmentPreviewModal";
 import BillingModal from "./BillingModal";
@@ -30,6 +31,23 @@ import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
 import AddCreditsModal from "./AddCreditsModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SettingsTabProps {
   company: any;
@@ -57,6 +75,8 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const [subdomainEnabling, setSubdomainEnabling] = useState(false);
+  const [disableSubdomainConfirmOpen, setDisableSubdomainConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -503,9 +523,31 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 )}
               </Label>
               <div className="flex items-center gap-2">
-                <Switch id="subdomainEnabled" checked={subdomainEnabled} onCheckedChange={setSubdomainEnabled} />
+                <Switch
+                  id="subdomainEnabled"
+                  checked={subdomainEnabled}
+                  disabled={subdomainEnabling}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      // Enable subdomain with loading
+                      setSubdomainEnabling(true);
+                      // Simulate a brief activation process
+                      setTimeout(() => {
+                        setSubdomainEnabled(true);
+                        setSubdomainEnabling(false);
+                        toast({
+                          title: "Subdomain enabled",
+                          description: `Your custom URL is now active at ${subdomain}.rolecolorfinder.com`,
+                        });
+                      }, 1500);
+                    } else {
+                      // Show confirmation dialog before disabling
+                      setDisableSubdomainConfirmOpen(true);
+                    }
+                  }}
+                />
                 <Label htmlFor="subdomainEnabled" className="text-sm font-normal">
-                  Enable subdomain
+                  {subdomainEnabling ? "Enabling..." : "Enable subdomain"}
                 </Label>
               </div>
             </div>
@@ -548,6 +590,71 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               </p>
             )}
           </div>
+
+          {/* Subdomain Enabling Loading Dialog */}
+          <Dialog open={subdomainEnabling} onOpenChange={() => {}}>
+            <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  Enabling Subdomain
+                </DialogTitle>
+                <DialogDescription>
+                  Setting up your custom subdomain URL...
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col items-center py-6 space-y-4">
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div className="bg-primary h-full animate-pulse" style={{ width: "60%" }} />
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  Your subdomain <strong>{subdomain}.rolecolorfinder.com</strong> will be active shortly.
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Disable Subdomain Confirmation Dialog */}
+          <AlertDialog open={disableSubdomainConfirmOpen} onOpenChange={setDisableSubdomainConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Disable Subdomain?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <p>
+                    Are you sure you want to disable the custom subdomain URL?
+                  </p>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg mt-2">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      <strong>{subdomain}.rolecolorfinder.com</strong> will no longer be active. 
+                      Employees using this URL will not be able to access your portal.
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    The path-based URL will remain available as a fallback.
+                  </p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    setSubdomainEnabled(false);
+                    setDisableSubdomainConfirmOpen(false);
+                    toast({
+                      title: "Subdomain disabled",
+                      description: "Your custom subdomain URL is no longer active.",
+                    });
+                  }}
+                >
+                  Disable Subdomain
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 
