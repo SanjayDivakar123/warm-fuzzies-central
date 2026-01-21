@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { router as baseRouter } from "./router";
+import { routeConfig } from "./router";
 
 import { AuthProvider } from "./contexts/AuthContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
@@ -135,16 +135,14 @@ function RootWithSubdomainDetection() {
   return <Outlet />;
 }
 
-// Create a wrapped router with subdomain detection at root
-const routesWithSubdomain = [
+// Create router with subdomain detection wrapper at root
+const router = createBrowserRouter([
   {
     path: "/",
     element: <RootWithSubdomainDetection />,
-    children: baseRouter.routes,
+    children: routeConfig,
   },
-];
-
-const router = createBrowserRouter(routesWithSubdomain);
+]);
 
 const App = () => {
   return (
