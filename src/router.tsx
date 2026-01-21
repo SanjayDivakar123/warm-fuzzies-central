@@ -70,7 +70,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
-export const router = createBrowserRouter([
+// Export route configuration array for use in App.tsx
+export const routeConfig = [
   {
     path: "/",
     element: <Layout><Index /></Layout>,
@@ -276,4 +277,4 @@ export const router = createBrowserRouter([
     path: "*",
     element: <Layout><NotFound /></Layout>,
   },
-]);
+];
