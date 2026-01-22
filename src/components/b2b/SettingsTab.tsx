@@ -513,12 +513,28 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <Label className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 Custom Subdomain URL
-                {subdomainEnabled && (
+                {subdomainEnabled && company.subdomain_status === 'active' && (
                   <Badge
                     variant="secondary"
                     className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   >
                     Active
+                  </Badge>
+                )}
+                {subdomainEnabled && company.subdomain_status === 'pending' && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                  >
+                    Pending Activation
+                  </Badge>
+                )}
+                {subdomainEnabled && company.subdomain_status === 'failed' && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-2"
+                  >
+                    Activation Failed
                   </Badge>
                 )}
               </Label>
@@ -578,6 +594,12 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
+                {company.subdomain_status === 'pending' && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <span>Your subdomain is pending activation. This may take up to 24 hours. Contact support if it's not active after 24 hours.</span>
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Share this custom URL with your employees for easy access
                 </p>
