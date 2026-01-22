@@ -85,7 +85,7 @@ function B2BDashboardContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = '/b2b'} className="w-full">
+            <Button onClick={() => window.location.href = '/b2b'} className="w-full" style={{ backgroundColor: 'var(--b2b-secondary, #16a34a)' }}>
               Create Company
             </Button>
           </CardContent>
@@ -109,7 +109,7 @@ function B2BDashboardContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = assessmentPath} className="w-full">
+            <Button onClick={() => window.location.href = assessmentPath} className="w-full" style={{ backgroundColor: 'var(--b2b-secondary, #16a34a)' }}>
               Take Assessment
             </Button>
           </CardContent>
