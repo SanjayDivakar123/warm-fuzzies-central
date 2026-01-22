@@ -159,8 +159,14 @@ export default function CompanyLanding() {
       </main>
 
       {/* Footer */}
-      <footer className="py-8 px-4 text-center text-muted-foreground text-sm">
-        <p>Powered by RoleColorFinder</p>
+      <footer className="py-8 px-4 text-center space-y-3">
+        <p className="text-muted-foreground text-sm">Powered by RoleColorFinder</p>
+        <button 
+          onClick={() => navigate(`/company/${company.subdomain}/admin`)}
+          className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+        >
+          Admin Login
+        </button>
       </footer>
     </div>
   );

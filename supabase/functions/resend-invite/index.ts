@@ -37,6 +37,7 @@ async function sendInviteEmail(
   inviteCode: string, 
   companyName: string,
   subdomain: string,
+  subdomainEnabled: boolean,
   template?: EmailTemplateSettings
 ) {
   const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
@@ -49,7 +50,10 @@ async function sendInviteEmail(
   
   console.log('Sending email via Mailgun domain:', mailgunDomain);
 
-  const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
+  // Use subdomain URL if enabled, otherwise use path-based URL
+  const portalUrl = subdomainEnabled 
+    ? `https://${subdomain}.rolecolorfinder.com/login`
+    : `https://rolecolorfinder.com/company/${subdomain}/login`;
   const timestamp = new Date().getTime();
   
   // Template defaults for reminder email
@@ -245,7 +249,7 @@ serve(async (req) => {
     // Get user details
     const { data: targetUser, error: userError } = await supabase
       .from('company_users')
-      .select('*, companies(name, subdomain, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo, primary_color, secondary_color)')
+      .select('*, companies(name, subdomain, subdomain_enabled, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo, primary_color, secondary_color)')
       .eq('id', user_id)
       .single();
 
@@ -311,7 +315,7 @@ serve(async (req) => {
     }
 
     // Send email with custom template if available
-    const company = targetUser.companies as { name: string; subdomain: string; logo_url?: string; email_template_subject?: string; email_template_greeting?: string; email_template_body?: string; email_template_cta_text?: string; email_show_logo?: boolean; primary_color?: string; secondary_color?: string } | null;
+    const company = targetUser.companies as { name: string; subdomain: string; subdomain_enabled?: boolean; logo_url?: string; email_template_subject?: string; email_template_greeting?: string; email_template_body?: string; email_template_cta_text?: string; email_show_logo?: boolean; primary_color?: string; secondary_color?: string } | null;
     const templateSettings: EmailTemplateSettings = {
       subject: company?.email_template_subject,
       greeting: company?.email_template_greeting,
@@ -327,6 +331,7 @@ serve(async (req) => {
       inviteCode,
       company?.name || 'Your Company',
       company?.subdomain || '',
+      company?.subdomain_enabled || false,
       templateSettings
     );
 

@@ -40,6 +40,7 @@ async function sendInviteEmail(
   inviteCode: string, 
   companyName: string, 
   subdomain: string,
+  subdomainEnabled: boolean,
   template?: EmailTemplateSettings
 ) {
   const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
@@ -52,7 +53,10 @@ async function sendInviteEmail(
 
   console.log("Sending email via Mailgun domain:", mailgunDomain);
 
-  const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
+  // Use subdomain URL if enabled, otherwise use path-based URL
+  const portalUrl = subdomainEnabled 
+    ? `https://${subdomain}.rolecolorfinder.com/login`
+    : `https://rolecolorfinder.com/company/${subdomain}/login`;
   const timestamp = new Date().getTime();
   
   // Template defaults
@@ -296,7 +300,7 @@ serve(async (req) => {
     // Get company details including email template settings
     const { data: company } = await supabase
       .from("companies")
-      .select("seats_purchased, name, subdomain, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo, primary_color, secondary_color")
+      .select("seats_purchased, name, subdomain, subdomain_enabled, logo_url, email_template_subject, email_template_greeting, email_template_body, email_template_cta_text, email_show_logo, primary_color, secondary_color")
       .eq("id", company_id)
       .single();
 
@@ -455,7 +459,7 @@ serve(async (req) => {
       primaryColor: company.primary_color,
       secondaryColor: company.secondary_color,
     };
-    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
+    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, company.subdomain_enabled || false, templateSettings);
 
     return new Response(JSON.stringify({ 
       user: invitedUser, 

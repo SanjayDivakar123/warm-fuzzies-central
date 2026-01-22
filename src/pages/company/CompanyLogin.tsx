@@ -308,6 +308,7 @@ export default function CompanyLogin() {
                       setIsGoogleLoading(true);
                       // Store company subdomain so we can verify after Google auth
                       localStorage.setItem('google_sso_company', company.subdomain);
+                      // Use current origin to work on subdomains
                       const redirectUrl = `${window.location.origin}/company/${company.subdomain}/login`;
                       // Pass hosted domain to restrict Google popup to company domain
                       const { error } = await signInWithGoogle(
