@@ -249,7 +249,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
             <div className="flex items-center gap-3">
               <div 
                 className="p-2 rounded-lg"
-                style={{ backgroundColor: `${primaryColor}15` }}
+                style={{ backgroundColor: `${secondaryColor}15` }}
               >
                 <Users className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
@@ -267,7 +267,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 className="p-2 rounded-lg"
                 style={{ backgroundColor: `${secondaryColor}15` }}
               >
-                <CheckCircle className="h-4 w-4" style={{ color: secondaryColor }} />
+                <CheckCircle className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{stats.completedAssessments}</p>
@@ -279,8 +279,11 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <Clock className="h-4 w-4 text-yellow-600" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <Clock className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{stats.pendingInvites}</p>
@@ -292,8 +295,11 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Bell className="h-4 w-4 text-blue-600" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <Bell className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{reminderStats.pending}</p>
@@ -323,7 +329,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all"
-                  style={{ width: `${completionRate}%`, backgroundColor: primaryColor }}
+                  style={{ width: `${completionRate}%`, backgroundColor: secondaryColor }}
                 />
               </div>
             </div>
@@ -334,13 +340,16 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               </div>
               <div 
                 className="text-center p-2 rounded-lg"
-                style={{ backgroundColor: `${primaryColor}15` }}
+                style={{ backgroundColor: `${secondaryColor}15` }}
               >
                 <p className="text-lg font-semibold" style={{ color: primaryColor }}>{stats.completedAssessments}</p>
                 <p className="text-xs text-muted-foreground">Done</p>
               </div>
-              <div className="text-center p-2 rounded-lg bg-yellow-500/10">
-                <p className="text-lg font-semibold text-yellow-600">{stats.totalUsers - stats.completedAssessments}</p>
+              <div 
+                className="text-center p-2 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <p className="text-lg font-semibold" style={{ color: primaryColor }}>{stats.totalUsers - stats.completedAssessments}</p>
                 <p className="text-xs text-muted-foreground">Pending</p>
               </div>
             </div>
@@ -361,14 +370,17 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 className="flex items-center gap-3 p-3 rounded-lg"
                 style={{ backgroundColor: `${secondaryColor}15` }}
               >
-                <Mail className="h-4 w-4" style={{ color: secondaryColor }} />
+                <Mail className="h-4 w-4" style={{ color: primaryColor }} />
                 <div>
                   <p className="font-semibold">{reminderStats.sent}</p>
                   <p className="text-xs text-muted-foreground">Sent</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                <Clock className="h-4 w-4 text-yellow-600" />
+              <div 
+                className="flex items-center gap-3 p-3 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <Clock className="h-4 w-4" style={{ color: primaryColor }} />
                 <div>
                   <p className="font-semibold">{reminderStats.pending}</p>
                   <p className="text-xs text-muted-foreground">Scheduled</p>
@@ -427,12 +439,24 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 </CardDescription>
               </div>
               {adminUser.assessment_completed_at ? (
-                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                <Badge 
+                  style={{ 
+                    backgroundColor: `${secondaryColor}15`, 
+                    color: primaryColor,
+                    borderColor: `${secondaryColor}30`
+                  }}
+                >
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Completed
                 </Badge>
               ) : (
-                <Badge variant="outline" className="border-yellow-500/30 text-yellow-600">
+                <Badge 
+                  variant="outline" 
+                  style={{ 
+                    borderColor: `${secondaryColor}30`, 
+                    color: primaryColor 
+                  }}
+                >
                   <Clock className="h-3 w-3 mr-1" />
                   Pending
                 </Badge>
