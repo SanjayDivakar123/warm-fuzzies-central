@@ -878,7 +878,12 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} disabled={saving} className="w-full">
+      <Button 
+        onClick={handleSave} 
+        disabled={saving} 
+        className="w-full text-white hover:opacity-90"
+        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+      >
         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Save All Settings
       </Button>

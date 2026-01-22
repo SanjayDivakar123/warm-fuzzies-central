@@ -203,11 +203,14 @@ function B2BDashboardContent() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Inject dynamic styles for active tabs using company primary color */}
+        {/* Inject dynamic styles for active tabs using company colors */}
         <style>{`
           .b2b-tab[data-state=active] {
-            background-color: var(--b2b-primary, #22c55e) !important;
+            background: linear-gradient(135deg, var(--b2b-primary, #22c55e), var(--b2b-secondary, #16a34a)) !important;
             color: white !important;
+          }
+          .b2b-tab:hover:not([data-state=active]) {
+            background-color: hsl(var(--b2b-secondary-hsl, 142 76% 36%) / 0.1) !important;
           }
         `}</style>
         

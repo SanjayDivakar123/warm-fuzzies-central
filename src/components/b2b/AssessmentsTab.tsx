@@ -60,6 +60,10 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const { toast } = useToast();
 
+  // Get company colors
+  const primaryColor = company.primary_color || '#22c55e';
+  const secondaryColor = company.secondary_color || '#16a34a';
+
   useEffect(() => {
     fetchAssessments();
   }, [company.id]);
@@ -214,9 +218,11 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
             <Label>Assessment Type</Label>
             <div className="space-y-3">
               <div 
-                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  assessmentType === '25q' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'
-                }`}
+                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all`}
+                style={{
+                  borderColor: assessmentType === '25q' ? primaryColor : 'hsl(var(--border))',
+                  backgroundColor: assessmentType === '25q' ? `${primaryColor}08` : 'transparent'
+                }}
                 onClick={() => setAssessmentType('25q')}
               >
                 <div>
@@ -237,9 +243,11 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
               </div>
 
               <div 
-                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  assessmentType === '50q' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'
-                }`}
+                className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all`}
+                style={{
+                  borderColor: assessmentType === '50q' ? secondaryColor : 'hsl(var(--border))',
+                  backgroundColor: assessmentType === '50q' ? `${secondaryColor}08` : 'transparent'
+                }}
                 onClick={() => setAssessmentType('50q')}
               >
                 <div>
@@ -261,7 +269,12 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
             </div>
           </div>
 
-          <Button onClick={handleSaveAssessmentType} disabled={saving}>
+          <Button 
+            onClick={handleSaveAssessmentType} 
+            disabled={saving}
+            style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+            className="text-white hover:opacity-90"
+          >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
@@ -279,8 +292,11 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Users className="h-5 w-5 text-muted-foreground" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <Users className="h-5 w-5" style={{ color: secondaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{teamStats.total}</p>
@@ -318,8 +334,11 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <BarChart3 className="h-5 w-5 text-primary" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <BarChart3 className="h-5 w-5" style={{ color: primaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">
@@ -378,7 +397,10 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
                       completedAssessments.length === 0 ||
                       completedAssessments.some(a => !a.job_role)
                     }
-                    className="gap-2"
+                    className="gap-2 text-white hover:opacity-90 disabled:opacity-50"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                    }}
                   >
                     <Lightbulb className="h-4 w-4" />
                     Insights
