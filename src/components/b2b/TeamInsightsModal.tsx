@@ -86,34 +86,34 @@ const colorInfo: Record<string, { label: string; color: string; bgLight: string;
   yellow: { 
     label: 'Executor', 
     color: '#EAB308', 
-    bgLight: 'bg-yellow-50',
+    bgLight: 'bg-yellow-50 dark:bg-yellow-950/30',
     description: 'Action-oriented, results-driven' 
   },
   red: { 
     label: 'Motivator', 
     color: '#EF4444', 
-    bgLight: 'bg-red-50',
+    bgLight: 'bg-red-50 dark:bg-red-950/30',
     description: 'Inspiring, people-focused' 
   },
   green: { 
     label: 'Organizer', 
     color: '#22C55E', 
-    bgLight: 'bg-green-50',
+    bgLight: 'bg-green-50 dark:bg-green-950/30',
     description: 'Structured, detail-oriented' 
   },
   blue: { 
     label: 'Innovator', 
     color: '#3B82F6', 
-    bgLight: 'bg-blue-50',
+    bgLight: 'bg-blue-50 dark:bg-blue-950/30',
     description: 'Creative, visionary' 
   },
 };
 
 const fitScoreStyles: Record<string, { bg: string; text: string; icon: typeof CheckCircle2 }> = {
-  excellent: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle2 },
-  good: { bg: 'bg-blue-100', text: 'text-blue-800', icon: TrendingUp },
-  moderate: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: AlertCircle },
-  mismatch: { bg: 'bg-red-100', text: 'text-red-800', icon: AlertTriangle },
+  excellent: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-800 dark:text-green-300', icon: CheckCircle2 },
+  good: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-800 dark:text-blue-300', icon: TrendingUp },
+  moderate: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-800 dark:text-yellow-300', icon: AlertCircle },
+  mismatch: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: AlertTriangle },
 };
 
 // Generate a hash of team members to detect changes (includes scores to detect assessment changes)
@@ -424,7 +424,7 @@ export default function TeamInsightsModal({
                           <Card className={`overflow-hidden transition-all ${colorData.bgLight}`}>
                             <CollapsibleTrigger className="w-full text-left">
                               <div 
-                                className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-black/5 transition-colors"
+                                className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                 style={{ borderLeft: `4px solid ${colorData.color}` }}
                               >
                                 <div className="flex items-center gap-3">
@@ -491,11 +491,11 @@ export default function TeamInsightsModal({
                                 {/* Strengths & Development Areas */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                   {member.strengths && member.strengths.length > 0 && (
-                                    <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                                      <p className="font-medium text-sm text-green-800 mb-2">Key Strengths</p>
+                                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800">
+                                      <p className="font-medium text-sm text-green-800 dark:text-green-300 mb-2">Key Strengths</p>
                                       <ul className="space-y-1">
                                         {member.strengths.map((s, j) => (
-                                          <li key={j} className="text-sm text-green-700 flex items-start gap-2">
+                                          <li key={j} className="text-sm text-green-700 dark:text-green-400 flex items-start gap-2">
                                             <span className="mt-1">•</span>
                                             <span>{s}</span>
                                           </li>
@@ -504,11 +504,11 @@ export default function TeamInsightsModal({
                                     </div>
                                   )}
                                   {member.developmentAreas && member.developmentAreas.length > 0 && (
-                                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-                                      <p className="font-medium text-sm text-amber-800 mb-2">Development Areas</p>
+                                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                                      <p className="font-medium text-sm text-amber-800 dark:text-amber-300 mb-2">Development Areas</p>
                                       <ul className="space-y-1">
                                         {member.developmentAreas.map((d, j) => (
-                                          <li key={j} className="text-sm text-amber-700 flex items-start gap-2">
+                                          <li key={j} className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
                                             <span className="mt-1">•</span>
                                             <span>{d}</span>
                                           </li>
@@ -527,21 +527,21 @@ export default function TeamInsightsModal({
                                 )}
                                 {/* Actionable Advice */}
                                 {member.actionableAdvice && (
-                                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                                    <p className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-2">
+                                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                                    <p className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
                                       <Lightbulb className="h-4 w-4" />
                                       Actionable Advice
                                     </p>
-                                    <p className="text-sm text-blue-700">{member.actionableAdvice}</p>
+                                    <p className="text-sm text-blue-700 dark:text-blue-400">{member.actionableAdvice}</p>
                                   </div>
                                 )}
 
                                 {/* Match Section */}
                                 <div className={`p-4 rounded-lg border-2 ${
-                                  member.fitScore === 'excellent' ? 'bg-green-50 border-green-300' :
-                                  member.fitScore === 'good' ? 'bg-blue-50 border-blue-300' :
-                                  member.fitScore === 'moderate' ? 'bg-amber-50 border-amber-300' :
-                                  'bg-red-50 border-red-300'
+                                  member.fitScore === 'excellent' ? 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-700' :
+                                  member.fitScore === 'good' ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700' :
+                                  member.fitScore === 'moderate' ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700' :
+                                  'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-700'
                                 }`}>
                                   <p className="font-semibold text-sm mb-2 flex items-center gap-2">
                                     <Target className="h-4 w-4" />
@@ -549,10 +549,10 @@ export default function TeamInsightsModal({
                                   </p>
                                   <div className="flex items-center gap-2 mb-3">
                                     <div className={`text-2xl font-bold ${
-                                      member.fitScore === 'excellent' ? 'text-green-700' :
-                                      member.fitScore === 'good' ? 'text-blue-700' :
-                                      member.fitScore === 'moderate' ? 'text-amber-700' :
-                                      'text-red-700'
+                                      member.fitScore === 'excellent' ? 'text-green-700 dark:text-green-400' :
+                                      member.fitScore === 'good' ? 'text-blue-700 dark:text-blue-400' :
+                                      member.fitScore === 'moderate' ? 'text-amber-700 dark:text-amber-400' :
+                                      'text-red-700 dark:text-red-400'
                                     }`}>
                                       {member.matchPercentage || (member.fitScore === 'excellent' ? 92 : member.fitScore === 'good' ? 78 : member.fitScore === 'moderate' ? 58 : 35)}% Match
                                     </div>
@@ -575,7 +575,7 @@ export default function TeamInsightsModal({
                                       <p className="font-medium text-sm mb-2">Stronger Matches for This Person:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {member.suggestedRoles.map((role, j) => (
-                                          <Badge key={j} variant="outline" className="bg-white">
+                                          <Badge key={j} variant="outline" className="bg-white dark:bg-background">
                                             {role}
                                           </Badge>
                                         ))}
