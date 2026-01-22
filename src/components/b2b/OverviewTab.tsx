@@ -247,8 +247,11 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-4 w-4 text-primary" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <Users className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{seatsDisplay}</p>
@@ -260,8 +263,11 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <CheckCircle className="h-4 w-4" style={{ color: secondaryColor }} />
               </div>
               <div>
                 <p className="text-xl font-semibold">{stats.completedAssessments}</p>
@@ -314,15 +320,23 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 <span className="text-muted-foreground">Completion Rate</span>
                 <span className="font-medium">{completionRate}%</span>
               </div>
-              <Progress value={completionRate} className="h-2" />
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${completionRate}%`, backgroundColor: primaryColor }}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-3 pt-2">
               <div className="text-center p-2 rounded-lg bg-muted/30">
                 <p className="text-lg font-semibold">{stats.totalUsers}</p>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
-              <div className="text-center p-2 rounded-lg bg-green-500/10">
-                <p className="text-lg font-semibold text-green-600">{stats.completedAssessments}</p>
+              <div 
+                className="text-center p-2 rounded-lg"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <p className="text-lg font-semibold" style={{ color: primaryColor }}>{stats.completedAssessments}</p>
                 <p className="text-xs text-muted-foreground">Done</p>
               </div>
               <div className="text-center p-2 rounded-lg bg-yellow-500/10">
@@ -343,8 +357,11 @@ export default function OverviewTab({ company }: OverviewTabProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                <Mail className="h-4 w-4 text-green-600" />
+              <div 
+                className="flex items-center gap-3 p-3 rounded-lg"
+                style={{ backgroundColor: `${secondaryColor}15` }}
+              >
+                <Mail className="h-4 w-4" style={{ color: secondaryColor }} />
                 <div>
                   <p className="font-semibold">{reminderStats.sent}</p>
                   <p className="text-xs text-muted-foreground">Sent</p>
@@ -449,7 +466,8 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 </div>
                 <Button 
                   onClick={() => window.open(`/company/${company.subdomain}/login`, '_blank')}
-                  className="bg-primary hover:bg-primary/90"
+                  style={{ backgroundColor: primaryColor }}
+                  className="hover:opacity-90 text-white"
                 >
                   Take Assessment
                 </Button>
