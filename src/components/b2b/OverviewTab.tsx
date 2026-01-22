@@ -466,7 +466,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 </div>
                 <Button 
                   onClick={() => window.open(`/company/${company.subdomain}/login`, '_blank')}
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ backgroundColor: secondaryColor }}
                   className="hover:opacity-90 text-white"
                 >
                   Take Assessment
