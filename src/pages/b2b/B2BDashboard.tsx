@@ -118,10 +118,18 @@ function B2BDashboardContent() {
     );
   }
 
+  // Get company colors for styling
+  const primaryColor = company.primary_color || '#22c55e';
+  const secondaryColor = company.secondary_color || '#16a34a';
+
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Clean header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" data-tour="dashboard-header">
+      {/* Clean header with company color accent */}
+      <header 
+        className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" 
+        data-tour="dashboard-header"
+        style={{ borderBottomColor: `${primaryColor}30` }}
+      >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {(() => {
@@ -195,41 +203,49 @@ function B2BDashboardContent() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
+        {/* Inject dynamic styles for active tabs using company primary color */}
+        <style>{`
+          .b2b-tab[data-state=active] {
+            background-color: var(--b2b-primary, #22c55e) !important;
+            color: white !important;
+          }
+        `}</style>
+        
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
             <TabsTrigger 
               value="overview" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger 
               value="users" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Users
             </TabsTrigger>
             <TabsTrigger 
               value="assessments" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Assessments
             </TabsTrigger>
             <TabsTrigger 
               value="reminders" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Reminders
             </TabsTrigger>
             <TabsTrigger 
               value="matrix" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Work Matrix
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="px-4 py-2 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background rounded-md"
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
               Settings
             </TabsTrigger>
