@@ -323,7 +323,10 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all"
-                  style={{ width: `${completionRate}%`, backgroundColor: primaryColor }}
+                  style={{ 
+                    width: `${completionRate}%`, 
+                    background: `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})` 
+                  }}
                 />
               </div>
             </div>
@@ -466,7 +469,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 </div>
                 <Button 
                   onClick={() => window.open(`/company/${company.subdomain}/login`, '_blank')}
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
                   className="hover:opacity-90 text-white"
                 >
                   Take Assessment
@@ -523,11 +526,14 @@ export default function OverviewTab({ company }: OverviewTabProps) {
           {company.subdomain_enabled && (
             <div className="flex items-center justify-between pt-3 border-t">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Globe className="h-4 w-4 text-primary" />
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: `${secondaryColor}15` }}
+                >
+                  <Globe className="h-4 w-4" style={{ color: secondaryColor }} />
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-primary">{company.subdomain}.rolecolorfinder.com</p>
+                  <p className="font-medium text-sm" style={{ color: secondaryColor }}>{company.subdomain}.rolecolorfinder.com</p>
                   <p className="text-xs text-muted-foreground">Subdomain URL (active)</p>
                 </div>
               </div>
