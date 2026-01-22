@@ -128,7 +128,7 @@ function B2BDashboardContent() {
       <header 
         className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" 
         data-tour="dashboard-header"
-        style={{ borderBottomColor: `${primaryColor}30` }}
+        style={{ borderBottomColor: `${secondaryColor}30` }}
       >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -203,10 +203,10 @@ function B2BDashboardContent() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Inject dynamic styles for active tabs using company primary color */}
+        {/* Inject dynamic styles for active tabs using company secondary color */}
         <style>{`
           .b2b-tab[data-state=active] {
-            background-color: var(--b2b-primary, #22c55e) !important;
+            background-color: ${secondaryColor} !important;
             color: white !important;
           }
         `}</style>
