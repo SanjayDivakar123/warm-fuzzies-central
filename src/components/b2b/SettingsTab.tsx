@@ -75,7 +75,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
-  const [subdomainEnabling, setSubdomainEnabling] = useState(false);
   const [disableSubdomainConfirmOpen, setDisableSubdomainConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
@@ -513,7 +512,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
               <Label className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 Custom Subdomain URL
-                {subdomainEnabled && company.subdomain_status === 'active' && (
+                {subdomainEnabled && (
                   <Badge
                     variant="secondary"
                     className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
@@ -521,41 +520,18 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                     Active
                   </Badge>
                 )}
-                {subdomainEnabled && company.subdomain_status === 'pending' && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  >
-                    Pending Activation
-                  </Badge>
-                )}
-                {subdomainEnabled && company.subdomain_status === 'failed' && (
-                  <Badge
-                    variant="destructive"
-                    className="ml-2"
-                  >
-                    Activation Failed
-                  </Badge>
-                )}
               </Label>
               <div className="flex items-center gap-2">
                 <Switch
                   id="subdomainEnabled"
                   checked={subdomainEnabled}
-                  disabled={subdomainEnabling}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      // Enable subdomain with loading
-                      setSubdomainEnabling(true);
-                      // Simulate a brief activation process
-                      setTimeout(() => {
-                        setSubdomainEnabled(true);
-                        setSubdomainEnabling(false);
-                        toast({
-                          title: "Subdomain enabled",
-                          description: `Your custom URL is now active at ${subdomain}.rolecolorfinder.com`,
-                        });
-                      }, 1500);
+                      setSubdomainEnabled(true);
+                      toast({
+                        title: "Subdomain enabled",
+                        description: `Your custom URL is now active at ${subdomain}.rolecolorfinder.com`,
+                      });
                     } else {
                       // Show confirmation dialog before disabling
                       setDisableSubdomainConfirmOpen(true);
@@ -563,7 +539,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                   }}
                 />
                 <Label htmlFor="subdomainEnabled" className="text-sm font-normal">
-                  {subdomainEnabling ? "Enabling..." : "Enable subdomain"}
+                  Enable subdomain
                 </Label>
               </div>
             </div>
@@ -594,12 +570,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
-                {company.subdomain_status === 'pending' && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                    <span>Your subdomain is pending activation. This may take up to 24 hours. Contact support if it's not active after 24 hours.</span>
-                  </p>
-                )}
                 <p className="text-xs text-muted-foreground">
                   Share this custom URL with your employees for easy access
                 </p>
@@ -613,28 +583,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
             )}
           </div>
 
-          {/* Subdomain Enabling Loading Dialog */}
-          <Dialog open={subdomainEnabling} onOpenChange={() => {}}>
-            <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  Enabling Subdomain
-                </DialogTitle>
-                <DialogDescription>
-                  Setting up your custom subdomain URL...
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col items-center py-6 space-y-4">
-                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                  <div className="bg-primary h-full animate-pulse" style={{ width: "60%" }} />
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Your subdomain <strong>{subdomain}.rolecolorfinder.com</strong> will be active shortly.
-                </p>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           {/* Disable Subdomain Confirmation Dialog */}
           <AlertDialog open={disableSubdomainConfirmOpen} onOpenChange={setDisableSubdomainConfirmOpen}>
