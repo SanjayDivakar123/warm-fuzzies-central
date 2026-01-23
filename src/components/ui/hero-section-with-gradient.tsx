@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { Link } from "react-router-dom";
 import { AnimatedGroup } from "@/components/ui/animated-group";
+import dashboardPreview from "@/assets/dashboard-preview.png";
 
 export default function HeroSectionWithGradient() {
   const gradientRef = useRef<HTMLDivElement>(null);
@@ -131,16 +132,14 @@ export default function HeroSectionWithGradient() {
           transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
           className="mt-16 w-full max-w-5xl px-4"
         >
-          <div className="relative overflow-hidden rounded-xl border border-border/50 bg-background/50 shadow-2xl backdrop-blur-sm">
-            <div className="aspect-[16/9] w-full">
-              <img
-                src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80"
-                alt="Dashboard Preview"
-                className="h-full w-full object-cover"
-              />
-            </div>
+          <div className="relative overflow-hidden rounded-xl border border-border/50 bg-white shadow-2xl">
+            <img
+              src={dashboardPreview}
+              alt="RoleColorFinder Dashboard Preview"
+              className="w-full h-auto object-contain"
+            />
             {/* Gradient overlay on image */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
           </div>
         </motion.div>
 
