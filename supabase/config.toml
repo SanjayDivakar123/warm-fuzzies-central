@@ -101,6 +101,3 @@ verify_jwt = false
 
 [functions.invite-family-member]
 verify_jwt = false
-
-[functions.notify-subdomain-request]
-verify_jwt = false
