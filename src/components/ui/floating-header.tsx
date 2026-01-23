@@ -15,15 +15,21 @@ const navTabs = [
   { label: 'Our Team', href: '/team' },
 ];
 
+// Pages where the hero section handles its own spacing (no spacer needed)
+const fullBleedPages = ['/', '/pricing'];
+
 export function FloatingHeader() {
   const [open, setOpen] = React.useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
 
+  // Check if current page needs full-bleed hero (no spacer)
+  const isFullBleedPage = fullBleedPages.includes(location.pathname);
+
   return (
     <>
-      {/* Spacer to prevent content from going under the fixed header */}
-      <div className="h-20" aria-hidden="true" />
+      {/* Spacer to prevent content from going under the fixed header - only on non-hero pages */}
+      {!isFullBleedPage && <div className="h-20" aria-hidden="true" />}
       <header className="fixed top-4 left-1/2 z-50 w-[95%] max-w-6xl -translate-x-1/2">
       <nav className="flex items-center justify-between gap-2 rounded-2xl border border-border/50 bg-card/80 p-2 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-card/70">
         {/* Logo */}
