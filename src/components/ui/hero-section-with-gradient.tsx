@@ -251,6 +251,17 @@ export const RoleColorBadges = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const [selectedRole, setSelectedRole] = useState<RoleColorData | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const handleBadgeClick = (role: RoleColorData, index: number) => {
+    setSelectedRole(role);
+    setSelectedIndex(index);
+  };
+
+  const handleClose = () => {
+    setSelectedRole(null);
+    setSelectedIndex(null);
+  };
 
   return (
     <>
@@ -270,14 +281,19 @@ export const RoleColorBadges = React.forwardRef<
           {roleColors.map((role, index) => (
             <motion.button
               key={role.name}
-              onClick={() => setSelectedRole(role)}
+              layoutId={`badge-${role.name}`}
+              onClick={() => handleBadgeClick(role, index)}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ 
+                opacity: selectedIndex === index ? 0 : 1, 
+                y: 0,
+              }}
               transition={{ 
                 delay: index * 0.1,
                 type: "spring", 
                 stiffness: 300, 
-                damping: 20 
+                damping: 20,
+                layout: { type: "spring", stiffness: 200, damping: 25 }
               }}
               whileHover={{ scale: 1.08, y: -6 }}
               whileTap={{ scale: 0.95 }}
@@ -287,6 +303,9 @@ export const RoleColorBadges = React.forwardRef<
                 role.borderColor,
                 role.bgLight
               )}
+              style={{ 
+                perspective: "1000px",
+              }}
             >
               {/* Glow effect on hover */}
               <div 
@@ -297,27 +316,27 @@ export const RoleColorBadges = React.forwardRef<
               />
               
               {/* Animated dot with pulse */}
-              <div className="relative">
+              <motion.div className="relative" layoutId={`dot-${role.name}`}>
                 <span className={cn(
                   "absolute inline-flex h-5 w-5 animate-ping rounded-full opacity-40",
                   role.pulseColor
                 )} />
                 <div className={cn("relative h-5 w-5 rounded-full shadow-lg", role.color)} />
-              </div>
+              </motion.div>
               
-              <div className="relative text-center">
+              <motion.div className="relative text-center" layoutId={`text-${role.name}`}>
                 <p className={cn("font-bold text-lg", role.textColor)}>{role.name}</p>
                 <p className="text-sm text-muted-foreground font-medium">{role.label}</p>
-              </div>
+              </motion.div>
             </motion.button>
           ))}
         </AnimatedGroup>
       </div>
 
       {/* RoleColor Detail Popup Modal */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedRole && (
-          <RoleColorModal role={selectedRole} onClose={() => setSelectedRole(null)} />
+          <RoleColorModal role={selectedRole} onClose={handleClose} />
         )}
       </AnimatePresence>
     </>
@@ -326,7 +345,7 @@ export const RoleColorBadges = React.forwardRef<
 
 RoleColorBadges.displayName = "RoleColorBadges";
 
-// Popup Modal Component with flip + zoom animation
+// Popup Modal Component with flip + zoom animation from the badge itself
 const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () => void }) => {
   const IconComponent = role.icon;
   
@@ -335,34 +354,31 @@ const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () =>
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.3 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      style={{ perspective: "1200px" }}
     >
+      {/* The badge that flips and zooms into modal */}
       <motion.div
+        layoutId={`badge-${role.name}`}
         initial={{ 
-          opacity: 0, 
-          scale: 0.3, 
-          rotateX: -90,
-          y: 100
+          rotateX: 0,
+          rotateY: 0,
         }}
         animate={{ 
-          opacity: 1, 
-          scale: 1, 
-          rotateX: 0,
-          y: 0
+          rotateX: [0, -90, -180],
+          rotateY: [0, 15, 0],
         }}
         exit={{ 
-          opacity: 0, 
-          scale: 0.3, 
-          rotateX: 90,
-          y: -100
+          rotateX: [-180, -90, 0],
+          rotateY: [0, -15, 0],
         }}
         transition={{ 
           type: "spring", 
-          stiffness: 300, 
-          damping: 25,
-          duration: 0.5
+          stiffness: 150, 
+          damping: 20,
+          duration: 0.6
         }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
@@ -370,55 +386,57 @@ const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () =>
           role.borderColor
         )}
         style={{
-          perspective: "1000px",
           transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
         }}
       >
         {/* Animated glow background */}
-        <div 
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.2 }}
+          transition={{ delay: 0.3 }}
           className={cn(
-            "absolute inset-0 rounded-3xl opacity-20 blur-3xl",
+            "absolute inset-0 rounded-3xl blur-3xl",
             role.color
           )}
         />
         
-        {/* Header */}
+        {/* Header - contains shared layout elements */}
         <div className={cn("relative p-6 sm:p-8 border-b", role.borderColor, role.bgLight)}>
-          <button
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-background/80 hover:bg-background transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-background/80 hover:bg-background transition-colors z-10"
           >
             <X className="w-5 h-5 text-muted-foreground" />
-          </button>
+          </motion.button>
           
           <div className="flex items-center gap-4">
+            {/* Dot that morphs into icon container */}
             <motion.div
-              initial={{ rotate: -180, scale: 0 }}
-              animate={{ rotate: 0, scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              layoutId={`dot-${role.name}`}
               className={cn("w-16 h-16 rounded-2xl flex items-center justify-center", role.color)}
             >
-              <IconComponent className="w-8 h-8 text-white" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+              >
+                <IconComponent className="w-8 h-8 text-white" />
+              </motion.div>
             </motion.div>
             
-            <div>
-              <motion.h2 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className={cn("text-3xl sm:text-4xl font-bold", role.textColor)}
-              >
+            {/* Text that expands */}
+            <motion.div layoutId={`text-${role.name}`} className="flex flex-col">
+              <h2 className={cn("text-3xl sm:text-4xl font-bold", role.textColor)}>
                 {role.name}
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-lg text-muted-foreground font-medium"
-              >
+              </h2>
+              <p className="text-lg text-muted-foreground font-medium">
                 The {role.label}
-              </motion.p>
-            </div>
+              </p>
+            </motion.div>
           </div>
         </div>
 
