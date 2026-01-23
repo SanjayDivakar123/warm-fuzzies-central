@@ -168,7 +168,7 @@ const Index = () => {
           </div>
 
           {/* Color Roles - Enhanced */}
-          <div className="mb-20">
+          <div id="rolecolor-profiles" className="mb-20 scroll-mt-24">
             <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
               Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor™ Profiles</span>:
             </h4>

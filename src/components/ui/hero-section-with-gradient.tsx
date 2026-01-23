@@ -222,8 +222,13 @@ export const RoleColorBadges = React.forwardRef<
         className="grid grid-cols-2 gap-4 md:grid-cols-4"
       >
         {roleColors.map((role, index) => (
-          <motion.div
+          <motion.a
             key={role.name}
+            href="#rolecolor-profiles"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('rolecolor-profiles')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ 
@@ -234,7 +239,7 @@ export const RoleColorBadges = React.forwardRef<
             }}
             whileHover={{ scale: 1.08, y: -6 }}
             className={cn(
-              "group relative flex flex-col items-center gap-3 rounded-xl border p-5 backdrop-blur-sm transition-all duration-300",
+              "group relative flex flex-col items-center gap-3 rounded-xl border p-5 backdrop-blur-sm transition-all duration-300 cursor-pointer",
               "hover:shadow-xl",
               role.borderColor,
               role.bgLight,
@@ -265,7 +270,7 @@ export const RoleColorBadges = React.forwardRef<
               <p className={cn("font-bold text-lg", role.textColor)}>{role.name}</p>
               <p className="text-sm text-muted-foreground font-medium">{role.label}</p>
             </div>
-          </motion.div>
+          </motion.a>
         ))}
       </AnimatedGroup>
     </div>
