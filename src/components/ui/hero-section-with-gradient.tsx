@@ -99,8 +99,11 @@ export default function HeroSectionWithGradient() {
             {/* Heading */}
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
               Discover Your{" "}
-              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <span className="relative inline-block bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
                 Leadership Style
+                <span className="absolute inset-0 bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent blur-lg opacity-50" aria-hidden="true">
+                  Leadership Style
+                </span>
               </span>
             </h1>
 
@@ -158,8 +161,10 @@ const roleColors = [
     description: "Vision-driven leaders who inspire and persuade",
     color: "bg-red-500",
     textColor: "text-red-500",
-    borderColor: "border-red-500/30",
+    borderColor: "border-red-500/40",
     bgLight: "bg-red-500/10",
+    glowColor: "shadow-red-500/40",
+    pulseColor: "bg-red-400",
   },
   {
     name: "Yellow",
@@ -167,8 +172,10 @@ const roleColors = [
     description: "Action-first builders who get things done",
     color: "bg-yellow-500",
     textColor: "text-yellow-500",
-    borderColor: "border-yellow-500/30",
+    borderColor: "border-yellow-500/40",
     bgLight: "bg-yellow-500/10",
+    glowColor: "shadow-yellow-500/40",
+    pulseColor: "bg-yellow-400",
   },
   {
     name: "Green",
@@ -176,8 +183,10 @@ const roleColors = [
     description: "Logic-based thinkers with precision focus",
     color: "bg-green-500",
     textColor: "text-green-500",
-    borderColor: "border-green-500/30",
+    borderColor: "border-green-500/40",
     bgLight: "bg-green-500/10",
+    glowColor: "shadow-green-500/40",
+    pulseColor: "bg-green-400",
   },
   {
     name: "Blue",
@@ -185,8 +194,10 @@ const roleColors = [
     description: "Innovation-focused strategists and researchers",
     color: "bg-blue-500",
     textColor: "text-blue-500",
-    borderColor: "border-blue-500/30",
+    borderColor: "border-blue-500/40",
     bgLight: "bg-blue-500/10",
+    glowColor: "shadow-blue-500/40",
+    pulseColor: "bg-blue-400",
   },
 ];
 
@@ -208,21 +219,49 @@ export const RoleColorBadges = React.forwardRef<
         preset="blur-slide"
         className="grid grid-cols-2 gap-4 md:grid-cols-4"
       >
-        {roleColors.map((role) => (
+        {roleColors.map((role, index) => (
           <motion.div
             key={role.name}
-            whileHover={{ scale: 1.05, y: -4 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              delay: index * 0.1,
+              type: "spring", 
+              stiffness: 300, 
+              damping: 20 
+            }}
+            whileHover={{ scale: 1.08, y: -6 }}
             className={cn(
-              "flex flex-col items-center gap-2 rounded-xl border p-4 backdrop-blur-sm transition-shadow hover:shadow-lg",
+              "group relative flex flex-col items-center gap-3 rounded-xl border p-5 backdrop-blur-sm transition-all duration-300",
+              "hover:shadow-xl",
               role.borderColor,
-              role.bgLight
+              role.bgLight,
+              `hover:${role.glowColor}`
             )}
+            style={{
+              boxShadow: 'none',
+            }}
           >
-            <div className={cn("h-4 w-4 rounded-full", role.color)} />
-            <div className="text-center">
-              <p className={cn("font-semibold", role.textColor)}>{role.name}</p>
-              <p className="text-xs text-muted-foreground">{role.label}</p>
+            {/* Glow effect on hover */}
+            <div 
+              className={cn(
+                "absolute inset-0 rounded-xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30",
+                role.color
+              )}
+            />
+            
+            {/* Animated dot with pulse */}
+            <div className="relative">
+              <span className={cn(
+                "absolute inline-flex h-5 w-5 animate-ping rounded-full opacity-40",
+                role.pulseColor
+              )} />
+              <div className={cn("relative h-5 w-5 rounded-full shadow-lg", role.color)} />
+            </div>
+            
+            <div className="relative text-center">
+              <p className={cn("font-bold text-lg", role.textColor)}>{role.name}</p>
+              <p className="text-sm text-muted-foreground font-medium">{role.label}</p>
             </div>
           </motion.div>
         ))}
