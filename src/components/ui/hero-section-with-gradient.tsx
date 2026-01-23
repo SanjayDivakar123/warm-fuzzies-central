@@ -11,6 +11,76 @@ import { X, Target, Heart, Brain, Lightbulb, Users, Zap, CheckCircle, TrendingUp
 // NOTE: Use a versioned filename to avoid CDN/browser caching issues when swapping images.
 import dashboardPreview from "@/assets/dashboard-preview-v4.png";
 
+// Floating Particles Background Component
+const ParticleBackground = () => {
+  const particles = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 4 + 1,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 5,
+    opacity: Math.random() * 0.5 + 0.1,
+    color: ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--red-500))', 'hsl(var(--yellow-500))', 'hsl(var(--green-500))', 'hsl(var(--blue-500))'][Math.floor(Math.random() * 6)]
+  }));
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: particle.size,
+            height: particle.size,
+            backgroundColor: particle.color,
+            opacity: particle.opacity,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            scale: [1, 1.2, 1],
+            opacity: [particle.opacity, particle.opacity * 1.5, particle.opacity],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+      {/* Larger glowing orbs */}
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={`orb-${i}`}
+          className="absolute rounded-full blur-xl"
+          style={{
+            left: `${10 + i * 12}%`,
+            top: `${20 + (i % 3) * 25}%`,
+            width: 60 + i * 10,
+            height: 60 + i * 10,
+            background: `radial-gradient(circle, ${['hsl(var(--red-500) / 0.15)', 'hsl(var(--yellow-500) / 0.15)', 'hsl(var(--green-500) / 0.15)', 'hsl(var(--blue-500) / 0.15)'][i % 4]} 0%, transparent 70%)`,
+          }}
+          animate={{
+            y: [0, -20, 0],
+            x: [0, 15, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 12 + i * 2,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 // 3D Tilt Card Component for Hero Image
 const TiltCard = ({ className }: { className?: string }) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -133,6 +203,9 @@ export default function HeroSectionWithGradient() {
     });
   }, []);
   return <section className="relative min-h-screen w-full overflow-hidden bg-background">
+      {/* Floating Particle Background */}
+      <ParticleBackground />
+
       {/* Gradient Background */}
       <div ref={gradientRef} className="absolute inset-0 z-0" style={{
       background: `
