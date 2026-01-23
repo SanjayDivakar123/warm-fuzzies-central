@@ -359,35 +359,20 @@ const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () =>
       onClick={onClose}
       style={{ perspective: "1200px" }}
     >
-      {/* The badge that flips and zooms into modal */}
+      {/* The badge that expands into modal */}
       <motion.div
         layoutId={`badge-${role.name}`}
-        initial={{ 
-          rotateY: 0,
-          scale: 1,
-        }}
-        animate={{ 
-          rotateY: 180,
-          scale: 1,
-        }}
-        exit={{ 
-          rotateY: 0,
-          scale: 1,
-        }}
         transition={{ 
-          type: "tween",
-          ease: [0.4, 0, 0.2, 1],
-          duration: 0.5,
-          layout: { type: "spring", stiffness: 200, damping: 25 }
+          type: "spring",
+          stiffness: 200,
+          damping: 25,
+          duration: 0.5
         }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
           "relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 bg-background shadow-2xl",
           role.borderColor
         )}
-        style={{
-          transformStyle: "preserve-3d",
-        }}
       >
         {/* Animated glow background */}
         <motion.div 
