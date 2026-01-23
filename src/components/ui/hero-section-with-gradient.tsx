@@ -10,6 +10,95 @@ import { AnimatedGroup } from "@/components/ui/animated-group";
 import { X, Target, Heart, Brain, Lightbulb, Users, Zap, CheckCircle, TrendingUp } from "lucide-react";
 // NOTE: Use a versioned filename to avoid CDN/browser caching issues when swapping images.
 import dashboardPreview from "@/assets/dashboard-preview-v4.png";
+
+// 3D Tilt Card Component for Hero Image
+const TiltCard = ({ className }: { className?: string }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Calculate rotation based on mouse position relative to center
+    const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -8;
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 8;
+    
+    setTransform({ rotateX, rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setTransform({ rotateX: 0, rotateY: 0 });
+  };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+      className={cn(className)}
+      style={{ perspective: "1500px" }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <motion.div
+        animate={{
+          rotateX: transform.rotateX,
+          rotateY: transform.rotateY,
+          scale: isHovering ? 1.02 : 1,
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ transformStyle: "preserve-3d" }}
+        className="relative"
+      >
+        {/* Glowing shadow underneath */}
+        <div 
+          className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 blur-2xl opacity-50 transition-opacity duration-500"
+          style={{ 
+            transform: "translateZ(-50px)",
+            opacity: isHovering ? 0.7 : 0.3 
+          }} 
+        />
+        
+        {/* Main card */}
+        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-white shadow-2xl">
+          <img 
+            src={dashboardPreview} 
+            alt="RoleColorFinder Dashboard Preview" 
+            className="w-full h-auto object-contain" 
+          />
+          
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
+          
+          {/* Shine effect on hover */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"
+            initial={{ opacity: 0, x: "-100%" }}
+            animate={{ 
+              opacity: isHovering ? 1 : 0,
+              x: isHovering ? "100%" : "-100%"
+            }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
+        
+        {/* Floating reflection */}
+        <div 
+          className="absolute -bottom-8 left-4 right-4 h-20 rounded-xl bg-gradient-to-b from-foreground/5 to-transparent blur-sm opacity-50"
+          style={{ transform: "translateZ(-30px) rotateX(180deg)" }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+};
 export default function HeroSectionWithGradient() {
   const gradientRef = useRef<HTMLDivElement>(null);
   const transitionVariants = {
@@ -121,24 +210,8 @@ export default function HeroSectionWithGradient() {
           </AnimatedGroup>
         </div>
 
-        {/* Hero Image */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 40
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.5,
-        duration: 0.8,
-        ease: "easeOut"
-      }} className="mt-16 w-full max-w-5xl px-4">
-          <div className="relative overflow-hidden rounded-xl border border-border/50 bg-white shadow-2xl">
-            <img src={dashboardPreview} alt="RoleColorFinder Dashboard Preview" className="w-full h-auto object-contain" />
-            {/* Gradient overlay on image */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
-          </div>
-        </motion.div>
+        {/* Hero Image with 3D Tilt Effect */}
+        <TiltCard className="mt-16 w-full max-w-5xl px-4" />
 
         {/* RoleColor Badges */}
         <RoleColorBadges className="mt-16" />
