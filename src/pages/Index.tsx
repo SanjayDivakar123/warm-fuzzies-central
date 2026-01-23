@@ -1,18 +1,16 @@
 import { useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/ui/faq-accordion";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import { Palette, Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CreditCard, CheckCircle, TrendingUp, User, FileText, ArrowRight, Sparkles, Shield, Clock, HelpCircle, Phone } from "lucide-react";
+import { Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CheckCircle, TrendingUp, ArrowRight, Sparkles, HelpCircle } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
-import InfiniteGrid from "@/components/ui/infinite-grid-integration";
-import ScrollExpansionHero from "@/components/ui/scroll-expansion-hero";
+import HeroSectionWithGradient from "@/components/ui/hero-section-with-gradient";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -34,11 +32,8 @@ const Index = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Scroll Expansion Hero Transition */}
-      <ScrollExpansionHero
-        heroContent={<InfiniteGrid />}
-        scrollToExpand="↓ Scroll to explore"
-      >
+      {/* Hero Section with Gradient */}
+      <HeroSectionWithGradient />
 
       {/* Philosophy Section - Enhanced */}
       <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
@@ -428,7 +423,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-      </ScrollExpansionHero>
     </div>;
 };
+
 export default Index;
