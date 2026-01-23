@@ -144,57 +144,93 @@ export default function HeroSectionWithGradient() {
           </div>
         </motion.div>
 
-        {/* Brands Grid */}
-        <BrandsGrid className="mt-20" />
+        {/* RoleColor Badges */}
+        <RoleColorBadges className="mt-16" />
       </div>
     </section>
   );
 }
 
-export const BrandsGrid = React.forwardRef<
+const roleColors = [
+  {
+    name: "Red",
+    label: "Motivator",
+    description: "Vision-driven leaders who inspire and persuade",
+    color: "bg-red-500",
+    textColor: "text-red-500",
+    borderColor: "border-red-500/30",
+    bgLight: "bg-red-500/10",
+  },
+  {
+    name: "Yellow",
+    label: "Executor",
+    description: "Action-first builders who get things done",
+    color: "bg-yellow-500",
+    textColor: "text-yellow-500",
+    borderColor: "border-yellow-500/30",
+    bgLight: "bg-yellow-500/10",
+  },
+  {
+    name: "Green",
+    label: "Architect",
+    description: "Logic-based thinkers with precision focus",
+    color: "bg-green-500",
+    textColor: "text-green-500",
+    borderColor: "border-green-500/30",
+    bgLight: "bg-green-500/10",
+  },
+  {
+    name: "Blue",
+    label: "Visionary",
+    description: "Innovation-focused strategists and researchers",
+    color: "bg-blue-500",
+    textColor: "text-blue-500",
+    borderColor: "border-blue-500/30",
+    bgLight: "bg-blue-500/10",
+  },
+];
+
+export const RoleColorBadges = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const brands = [
-    { name: "Vercel", logo: "https://assets.rapidui.dev/brands/loops.svg" },
-    { name: "PWC", logo: "https://assets.rapidui.dev/brands/pwc.svg" },
-    { name: "Resend", logo: "https://assets.rapidui.dev/brands/resend.svg" },
-    { name: "Udio", logo: "https://assets.rapidui.dev/brands/udio.svg" },
-    { name: "Krea", logo: "https://assets.rapidui.dev/brands/krea.svg" },
-    { name: "GoPuff", logo: "https://assets.rapidui.dev/brands/gopuff.svg" },
-  ];
-
   return (
     <div
       ref={ref}
       className={cn("w-full max-w-4xl px-4", className)}
       {...props}
     >
-      <p className="mb-8 text-center text-sm text-muted-foreground">
-        Trusted by innovative teams worldwide
+      <p className="mb-6 text-center text-sm text-muted-foreground">
+        Discover which behavioral style defines you
       </p>
 
       <AnimatedGroup
         preset="blur-slide"
-        className="grid grid-cols-3 gap-8 md:grid-cols-6"
+        className="grid grid-cols-2 gap-4 md:grid-cols-4"
       >
-        {brands.map((brand) => (
-          <div
-            key={brand.name}
-            className="flex items-center justify-center opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+        {roleColors.map((role) => (
+          <motion.div
+            key={role.name}
+            whileHover={{ scale: 1.05, y: -4 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className={cn(
+              "flex flex-col items-center gap-2 rounded-xl border p-4 backdrop-blur-sm transition-shadow hover:shadow-lg",
+              role.borderColor,
+              role.bgLight
+            )}
           >
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="h-8 w-auto object-contain"
-            />
-          </div>
+            <div className={cn("h-4 w-4 rounded-full", role.color)} />
+            <div className="text-center">
+              <p className={cn("font-semibold", role.textColor)}>{role.name}</p>
+              <p className="text-xs text-muted-foreground">{role.label}</p>
+            </div>
+          </motion.div>
         ))}
       </AnimatedGroup>
     </div>
   );
 });
 
-BrandsGrid.displayName = "BrandsGrid";
+RoleColorBadges.displayName = "RoleColorBadges";
 
 export { HeroSectionWithGradient };
