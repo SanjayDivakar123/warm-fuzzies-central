@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 import { Link } from "react-router-dom";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import dashboardPreview from "@/assets/dashboard-preview.png";
+// NOTE: Use a versioned filename to avoid CDN/browser caching issues when swapping images.
+import dashboardPreview from "@/assets/dashboard-preview-v2.png";
 
 export default function HeroSectionWithGradient() {
   const gradientRef = useRef<HTMLDivElement>(null);
