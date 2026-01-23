@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import HeroSectionWithGradient from "@/components/ui/hero-section-with-gradient";
+import { ScrollReveal, ScrollRevealGroup } from "@/components/ui/scroll-reveal";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const Index = () => {
         <h2 className="sr-only">Our Philosophy on Contextual Leadership</h2>
         
         <div className="container-wide relative">
-          <div className="text-center mb-20 animate-fade-in">
+          <ScrollReveal preset="fade-up" className="text-center mb-20">
             <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
               Our Philosophy
             </Badge>
@@ -57,11 +58,11 @@ const Index = () => {
               </blockquote>
               <cite className="text-primary font-bold text-base sm:text-lg md:text-xl">— Bruce Tuckman, developer of the team development model</cite>
             </div>
-          </div>
+          </ScrollReveal>
 
           <div className="max-w-7xl mx-auto mb-12 sm:mb-16 md:mb-24">
             <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 lg:gap-20 items-center">
-              <div className="space-y-6 sm:space-y-8 md:space-y-12 animate-fade-in delay-200">
+              <ScrollReveal preset="fade-right" delay={0.1} className="space-y-6 sm:space-y-8 md:space-y-12">
                 <div className="relative rounded-3xl border border-border p-1">
                   <GlowingEffect
                     spread={40}
@@ -95,20 +96,20 @@ const Index = () => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
               
-              <div className="relative animate-fade-in delay-400">
+              <ScrollReveal preset="fade-left" delay={0.2}>
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-colorful rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
                   <img src={professionalTeamImage} alt="Professional team collaboration" width="800" height="600" className="rounded-3xl shadow-xl w-full h-auto hover-lift relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent rounded-3xl z-20"></div>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
           </div>
 
           {/* How Our Idea Works - Enhanced */}
-          <div className="mb-20">
+          <ScrollReveal preset="fade-up" className="mb-20">
             <div className="text-center mb-16">
               <h4 className="text-3xl md:text-5xl font-bold text-foreground mb-8">
                 Here's how our <span className="gradient-text-primary">patent pending</span> idea works:
@@ -165,15 +166,16 @@ const Index = () => {
                 <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4 sm:mt-6">Contextual Leadership means knowing when to lead, when to support, and how to adapt your style to what the team needs.</strong>
               </p>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Color Roles - Enhanced */}
-          <div id="rolecolor-profiles" className="mb-20 scroll-mt-24">
+          <div id="rolecolor-profiles">
+          <ScrollReveal preset="zoom-in" className="mb-20 scroll-mt-24">
             <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
               Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor™ Profiles</span>:
             </h4>
             
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
+            <ScrollRevealGroup preset="fade-up" staggerDelay={0.1} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
               {[{
               icon: Target,
               color: 'yellow',
@@ -205,7 +207,7 @@ const Index = () => {
                   <h4 className={`font-bold text-${role.color} mb-3 sm:mb-4 text-lg sm:text-xl group-hover:text-${role.color}/80 transition-colors duration-300`}>{role.name}</h4>
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{role.desc}</p>
                 </div>)}
-            </div>
+            </ScrollRevealGroup>
 
             <div className="text-center">
               <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
@@ -213,6 +215,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
+          </ScrollReveal>
           </div>
         </div>
       </section>
@@ -222,7 +225,7 @@ const Index = () => {
       <section className="section-padding bg-background" aria-label="RoleColorFinder and RoleColorAI">
         <div className="container-wide">
           {/* Section Header */}
-          <div className="text-center mb-16 animate-fade-in">
+          <ScrollReveal preset="fade-up" className="text-center mb-16">
             <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
               <Sparkles className="w-5 h-5 mr-2" />
               The Complete System
@@ -232,10 +235,10 @@ const Index = () => {
               <br />
               <span className="gradient-text-primary">Knowing If They Can Execute</span>
             </h3>
-          </div>
+          </ScrollReveal>
 
           {/* Narrative */}
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollReveal preset="blur-in" delay={0.1} className="max-w-4xl mx-auto text-center mb-16">
             <p className="text-xl md:text-2xl text-foreground leading-relaxed mb-6">
               RoleColorFinder reveals how people are built — how they think, lead, decide, and respond under pressure.
             </p>
@@ -248,10 +251,10 @@ const Index = () => {
             <p className="text-2xl font-semibold text-foreground">
               Together, they form a complete decision system.
             </p>
-          </div>
+          </ScrollReveal>
 
           {/* Two Column Comparison */}
-          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
+          <ScrollRevealGroup preset="fade-up" staggerDelay={0.15} className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
             {/* Left: RoleColorFinder */}
             <div className="glass-card-strong rounded-3xl p-8 md:p-10 border border-primary/20 shadow-elegant hover-lift">
               <div className="flex items-center gap-4 mb-6">
@@ -311,10 +314,10 @@ const Index = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </ScrollRevealGroup>
 
           {/* Emphasis Statement */}
-          <div className="text-center mb-16">
+          <ScrollReveal preset="zoom-in" delay={0.2} className="text-center mb-16">
             <div className="inline-block glass-card-strong rounded-2xl px-8 py-6 border border-primary/30">
               <p className="text-xl md:text-2xl font-semibold text-foreground">
                 RoleColorFinder explains <span className="text-primary">structure</span>.
@@ -322,15 +325,15 @@ const Index = () => {
                 RoleColorAI explains <span className="gradient-text-primary">outcomes</span>.
               </p>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Use Cases */}
-          <div className="max-w-4xl mx-auto mb-16">
+          <ScrollReveal preset="fade-up" delay={0.1} className="max-w-4xl mx-auto mb-16">
             <h4 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
               What this unlocks for RCF users:
             </h4>
             
-            <div className="grid sm:grid-cols-2 gap-4">
+            <ScrollRevealGroup preset="fade-right" staggerDelay={0.1} className="grid sm:grid-cols-2 gap-4">
               {[
                 "Hiring decisions with real context",
                 "Team design that holds under pressure",
@@ -342,16 +345,16 @@ const Index = () => {
                   <span className="text-lg text-foreground">{item}</span>
                 </div>
               ))}
-            </div>
+            </ScrollRevealGroup>
             
             <p className="text-center text-lg text-muted-foreground mt-8">
               RoleColorAI doesn't replace RoleColorFinder.<br />
               <strong className="text-foreground">It activates it.</strong>
             </p>
-          </div>
+          </ScrollReveal>
 
           {/* CTA Block */}
-          <div className="max-w-3xl mx-auto text-center glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20">
+          <ScrollReveal preset="fade-up" delay={0.2} className="max-w-3xl mx-auto text-center glass-card-strong rounded-3xl p-8 md:p-12 border border-primary/20">
             <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
               Want to go deeper than self-awareness?
             </h4>
@@ -364,7 +367,7 @@ const Index = () => {
                 <span className="flex items-center">RoleColorAI <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" /></span>
               </a>
             </Button>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -372,7 +375,7 @@ const Index = () => {
       {/* FAQ Section */}
       <section className="section-padding bg-gradient-soft" aria-label="Frequently Asked Questions">
         <div className="container-wide">
-          <div className="text-center mb-16">
+          <ScrollReveal preset="fade-up" className="text-center mb-16">
             <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
               <HelpCircle className="w-5 h-5 mr-2" />
               Frequently Asked Questions
@@ -383,9 +386,9 @@ const Index = () => {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Everything you need to know about our leadership assessment and team development approach.
             </p>
-          </div>
+          </ScrollReveal>
 
-          <div className="max-w-4xl mx-auto">
+          <ScrollReveal preset="fade-up" delay={0.15} className="max-w-4xl mx-auto">
             <FAQAccordion
               items={[
                 {
@@ -420,7 +423,7 @@ const Index = () => {
                 },
               ]}
             />
-          </div>
+          </ScrollReveal>
         </div>
       </section>
     </div>;
