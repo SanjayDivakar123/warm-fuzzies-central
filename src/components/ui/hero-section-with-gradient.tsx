@@ -99,9 +99,11 @@ export default function HeroSectionWithGradient() {
             {/* Heading */}
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
               Discover Your{" "}
-              <span className="relative inline-block bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
-                Leadership Style
-                <span className="absolute inset-0 bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent blur-lg opacity-50" aria-hidden="true">
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent">
+                  Leadership Style
+                </span>
+                <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent blur-lg opacity-60" aria-hidden="true">
                   Leadership Style
                 </span>
               </span>
