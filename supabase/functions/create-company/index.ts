@@ -138,7 +138,7 @@ serve(async (req) => {
       );
     }
 
-    // Create company
+    // Create company with subdomain enabled and active by default (Cloudflare wildcard handles DNS/SSL)
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -147,6 +147,8 @@ serve(async (req) => {
         admin_email,
         seats_purchased,
         assessment_type,
+        subdomain_enabled: true,
+        subdomain_status: 'active',
       })
       .select()
       .single();

@@ -16,7 +16,8 @@ async function sendReminderEmail(
   fullName: string | null,
   inviteCode: string,
   companyName: string,
-  subdomain: string
+  subdomain: string,
+  subdomainEnabled: boolean
 ): Promise<{ sent: boolean; delivered: boolean }> {
   const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
   const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
@@ -26,7 +27,10 @@ async function sendReminderEmail(
     return { sent: false, delivered: false };
   }
 
-  const portalUrl = `https://rolecolorfinder.lovable.app/company/${subdomain}/login`;
+  // Use subdomain URL if enabled, otherwise use path-based URL
+  const portalUrl = subdomainEnabled 
+    ? `https://${subdomain}.rolecolorfinder.com/login`
+    : `https://rolecolorfinder.com/company/${subdomain}/login`;
   const greeting = fullName ? `Hi ${fullName},` : "Hi there,";
   const timestamp = Date.now();
 
@@ -169,7 +173,8 @@ serve(async (req) => {
         ),
         companies!inner (
           name,
-          subdomain
+          subdomain,
+          subdomain_enabled
         )
       `)
       .eq("status", "pending")
@@ -208,7 +213,8 @@ serve(async (req) => {
         user.full_name,
         user.invite_code,
         company.name,
-        company.subdomain
+        company.subdomain,
+        company.subdomain_enabled || false
       );
 
       if (sent) {
