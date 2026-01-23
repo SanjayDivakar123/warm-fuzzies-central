@@ -182,6 +182,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Check if subdomain is being enabled for the first time or changed
+      const isEnablingSubdomain = subdomainEnabled && (!company.subdomain_enabled || subdomain !== company.subdomain);
+
       const { error } = await supabase
         .from("companies")
         .update({
@@ -191,6 +194,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           secondary_color: secondaryColor,
           subdomain,
           subdomain_enabled: subdomainEnabled,
+          subdomain_status: subdomainEnabled ? 'active' : null,
           custom_domain: customDomain,
           custom_domain_enabled: customDomainEnabled,
           assessment_type: assessmentType,
@@ -201,9 +205,39 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
 
       if (error) throw error;
 
+      // Send notification email if subdomain is being enabled/changed
+      if (isEnablingSubdomain && subdomain) {
+        try {
+          const { error: notifyError } = await supabase.functions.invoke('notify-subdomain-request', {
+            body: {
+              companyName: company.name,
+              companyId: company.id,
+              subdomain: subdomain,
+              adminEmail: company.admin_email,
+              requestedAt: new Date().toLocaleString('en-US', { 
+                dateStyle: 'full', 
+                timeStyle: 'short',
+                timeZone: 'America/Los_Angeles'
+              }),
+            },
+          });
+          
+          if (notifyError) {
+            console.error('Failed to send subdomain notification:', notifyError);
+          } else {
+            console.log('Subdomain notification sent successfully');
+          }
+        } catch (notifyErr) {
+          console.error('Error invoking subdomain notification:', notifyErr);
+          // Don't fail the save operation if notification fails
+        }
+      }
+
       toast({
         title: "Settings saved",
-        description: "Your company settings have been updated.",
+        description: subdomainEnabled && isEnablingSubdomain 
+          ? "Your settings have been saved. We've been notified to activate your subdomain shortly."
+          : "Your company settings have been updated.",
       });
 
       // Refresh company data in parent
