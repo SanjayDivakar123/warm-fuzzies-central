@@ -27,6 +27,7 @@ import {
   Shield,
   ShieldPlus,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
@@ -357,6 +358,47 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
     } catch (error: any) {
       toast({
         title: "Error revoking access",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreAccess = async (userId: string) => {
+    try {
+      // Check if there are available seats before restoring
+      if (!isUnlimitedCompany && getAvailableSeats() <= 0) {
+        toast({
+          title: "No available seats",
+          description: "Please add more seats before restoring this user's access.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get the user being restored
+      const userToRestore = users.find(u => u.id === userId);
+      
+      // Determine the appropriate status based on whether they completed assessment
+      const newStatus = userToRestore?.assessment_completed_at ? 'active' : 'invited';
+
+      const { error } = await supabase
+        .from("company_users")
+        .update({ status: newStatus })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Access restored",
+        description: `User access has been restored (status: ${newStatus})`,
+      });
+
+      fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Error restoring access",
         description: error.message,
         variant: "destructive",
       });
@@ -963,19 +1005,34 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                             </Tooltip>
                           )}
                           {user.role !== "admin" && user.status === "revoked" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Delete permanently</TooltipContent>
-                            </Tooltip>
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-green-600 hover:bg-green-600 hover:text-white"
+                                    onClick={() => handleRestoreAccess(user.id)}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Restore access</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete permanently</TooltipContent>
+                              </Tooltip>
+                            </>
                           )}
                         </div>
                       </TableCell>
