@@ -238,39 +238,69 @@ export const RoleColorBadges = React.forwardRef<HTMLDivElement, React.HTMLAttrib
           Discover which behavioral style defines you
         </p>
 
-        <AnimatedGroup preset="blur-slide" className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {roleColors.map((role, index) => <motion.button key={role.name} onClick={() => setSelectedRole(role)} initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: index * 0.1,
-          type: "spring",
-          stiffness: 300,
-          damping: 20
-        }} whileHover={{
-          scale: 1.08,
-          y: -6
-        }} whileTap={{
-          scale: 0.95
-        }} className={cn("group relative flex flex-col items-center gap-3 rounded-xl border p-5 backdrop-blur-sm transition-all duration-300 cursor-pointer", "hover:shadow-xl", role.borderColor, role.bgLight)}>
-              {/* Glow effect on hover */}
-              <div className={cn("absolute inset-0 rounded-xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30", role.color)} />
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4" style={{ perspective: "1000px" }}>
+          {roleColors.map((role, index) => (
+            <motion.button
+              key={role.name}
+              onClick={() => setSelectedRole(role)}
+              initial={{ opacity: 0, y: 30, rotateX: -15 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              transition={{
+                delay: index * 0.1,
+                type: "spring",
+                stiffness: 200,
+                damping: 20
+              }}
+              whileHover={{
+                scale: 1.05,
+                y: -8,
+                rotateX: 5,
+                rotateY: index < 2 ? 3 : -3,
+                z: 50
+              }}
+              whileTap={{ scale: 0.97 }}
+              style={{ transformStyle: "preserve-3d" }}
+              className={cn(
+                "group relative flex flex-col items-center gap-4 rounded-2xl border-2 p-6 backdrop-blur-md transition-all duration-300 cursor-pointer",
+                "bg-gradient-to-b from-background/80 to-background/40",
+                "shadow-[0_10px_40px_-15px] hover:shadow-[0_20px_50px_-15px]",
+                role.borderColor,
+                role.glowColor
+              )}
+            >
+              {/* 3D Glow layer behind */}
+              <div 
+                className={cn(
+                  "absolute inset-0 rounded-2xl opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-40 -z-10",
+                  role.color
+                )} 
+                style={{ transform: "translateZ(-20px)" }}
+              />
               
-              {/* Animated dot with pulse */}
-              <div className="relative">
-                <span className={cn("absolute inline-flex h-5 w-5 animate-ping rounded-full opacity-40", role.pulseColor)} />
-                <div className={cn("relative h-5 w-5 rounded-full shadow-lg", role.color)} />
+              {/* Inner highlight for 3D depth */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+              
+              {/* Animated orb with 3D effect */}
+              <div className="relative" style={{ transform: "translateZ(20px)" }}>
+                <span className={cn("absolute inline-flex h-6 w-6 animate-ping rounded-full opacity-30", role.pulseColor)} />
+                <div className={cn(
+                  "relative h-6 w-6 rounded-full shadow-lg",
+                  "ring-2 ring-white/20 ring-offset-2 ring-offset-transparent",
+                  role.color
+                )} />
               </div>
               
-              <div className="relative text-center">
-                <p className={cn("font-bold text-lg", role.textColor)}>{role.name}</p>
-                <p className="text-sm text-muted-foreground font-medium">{role.label}</p>
+              {/* Text with 3D pop */}
+              <div className="relative text-center" style={{ transform: "translateZ(15px)" }}>
+                <p className={cn("font-bold text-xl tracking-tight", role.textColor)}>{role.name}</p>
+                <p className="text-sm text-muted-foreground font-medium mt-0.5">{role.label}</p>
               </div>
-            </motion.button>)}
-        </AnimatedGroup>
+              
+              {/* Bottom edge shadow for depth */}
+              <div className="absolute -bottom-1 left-2 right-2 h-4 rounded-2xl bg-black/5 blur-md -z-10" />
+            </motion.button>
+          ))}
+        </div>
       </div>
 
       {/* RoleColor Detail Popup Modal */}
