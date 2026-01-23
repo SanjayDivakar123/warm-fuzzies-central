@@ -92,33 +92,33 @@ export default function HeroSectionWithGradient() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
-              <span className="text-muted-foreground">New release available</span>
+              <span className="text-muted-foreground">Built on Tuckman's Team Development Model</span>
             </div>
 
             {/* Heading */}
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-              Design Systems for the{" "}
+              Discover Your{" "}
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Visionary Web
+                Leadership Style
               </span>
             </h1>
 
             {/* Description */}
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Whether you're designing interfaces or building full-scale apps, our tools empower creators to move fast, stay consistent, and ship beautiful products — every time.
+              Unlock your team's potential with RoleColorFinder. Our behavioral assessment reveals how each person leads, decides, and collaborates — so you can build stronger teams that thrive at every stage.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button asChild size="lg" className="min-w-[160px]">
-                <Link to="/pricing">
-                  Start Building
+                <Link to="/free-assessment">
+                  Take Free Assessment
                 </Link>
               </Button>
 
               <Button asChild variant="outline" size="lg" className="min-w-[160px]">
-                <Link to="/contact">
-                  Request a demo
+                <Link to="/b2b">
+                  For Teams & Businesses
                 </Link>
               </Button>
             </div>
