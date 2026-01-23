@@ -363,22 +363,22 @@ const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () =>
       <motion.div
         layoutId={`badge-${role.name}`}
         initial={{ 
-          rotateX: 0,
           rotateY: 0,
+          scale: 1,
         }}
         animate={{ 
-          rotateX: [0, -90, -180],
-          rotateY: [0, 15, 0],
+          rotateY: 180,
+          scale: 1,
         }}
         exit={{ 
-          rotateX: [-180, -90, 0],
-          rotateY: [0, -15, 0],
+          rotateY: 0,
+          scale: 1,
         }}
         transition={{ 
-          type: "spring", 
-          stiffness: 150, 
-          damping: 20,
-          duration: 0.6
+          type: "tween",
+          ease: [0.4, 0, 0.2, 1],
+          duration: 0.5,
+          layout: { type: "spring", stiffness: 200, damping: 25 }
         }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
@@ -387,7 +387,6 @@ const RoleColorModal = ({ role, onClose }: { role: RoleColorData; onClose: () =>
         )}
         style={{
           transformStyle: "preserve-3d",
-          backfaceVisibility: "hidden",
         }}
       >
         {/* Animated glow background */}
