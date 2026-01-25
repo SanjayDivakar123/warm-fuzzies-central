@@ -297,6 +297,7 @@ export type Database = {
       companies: {
         Row: {
           admin_email: string
+          assessment_category: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type: Database["public"]["Enums"]["company_assessment_type"]
           created_at: string | null
           credit_balance: number
@@ -324,6 +325,7 @@ export type Database = {
         }
         Insert: {
           admin_email: string
+          assessment_category?: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
           credit_balance?: number
@@ -351,6 +353,7 @@ export type Database = {
         }
         Update: {
           admin_email?: string
+          assessment_category?: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
           credit_balance?: number
@@ -1173,6 +1176,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "blogger" | "user"
+      company_assessment_category:
+        | "professional"
+        | "entrepreneur"
+        | "executive"
+        | "manager"
       company_assessment_type: "25q" | "50q"
       company_user_role: "admin" | "employee"
       company_user_status: "invited" | "active" | "revoked"
@@ -1312,6 +1320,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "blogger", "user"],
+      company_assessment_category: [
+        "professional",
+        "entrepreneur",
+        "executive",
+        "manager",
+      ],
       company_assessment_type: ["25q", "50q"],
       company_user_role: ["admin", "employee"],
       company_user_status: ["invited", "active", "revoked"],

@@ -64,6 +64,9 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
   const [customDomain, setCustomDomain] = useState(company.custom_domain || "");
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [assessmentType, setAssessmentType] = useState<"25q" | "50q">(company.assessment_type);
+  const [assessmentCategory, setAssessmentCategory] = useState<"professional" | "entrepreneur" | "executive" | "manager">(
+    company.assessment_category || "professional"
+  );
   const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled || false);
   const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || "");
   const [saving, setSaving] = useState(false);
@@ -194,6 +197,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
           custom_domain: customDomain,
           custom_domain_enabled: customDomainEnabled,
           assessment_type: assessmentType,
+          assessment_category: assessmentCategory,
           google_sso_enabled: googleSsoEnabled,
           google_workspace_domain: googleWorkspaceDomain || null,
         })
@@ -684,70 +688,118 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
         </CardContent>
       </Card>
 
-      {/* Assessment Type Selection */}
+      {/* Assessment Configuration */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">Assessment Type</CardTitle>
-          <CardDescription>Choose which assessment your employees will take</CardDescription>
+          <CardTitle className="text-lg font-medium">Assessment Configuration</CardTitle>
+          <CardDescription>Choose the assessment category and length for your employees</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {/* 25 Question Assessment */}
-          <div
-            className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
-              assessmentType === "25q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-            }`}
-            onClick={() => setAssessmentType("25q")}
-          >
-            <div className="flex items-center gap-3">
-              {assessmentType === "25q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
-              <div>
-                <p className="font-medium">25 Question Assessment</p>
-                <p className="text-sm text-muted-foreground">Quick assessment (~10 minutes) • 5 sections</p>
-              </div>
+        <CardContent className="space-y-6">
+          {/* Assessment Category Selection */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Assessment Category</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { value: "professional", label: "Professional", description: "General workplace assessment" },
+                { value: "entrepreneur", label: "Entrepreneur", description: "Startup & founder focus" },
+                { value: "executive", label: "Executive / Senior Leader", description: "C-suite & VP level" },
+                { value: "manager", label: "Manager / Mid-Level Leader", description: "Team lead & manager focus" },
+              ].map((category) => (
+                <div
+                  key={category.value}
+                  className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                    assessmentCategory === category.value
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40"
+                  }`}
+                  onClick={() => setAssessmentCategory(category.value as typeof assessmentCategory)}
+                >
+                  <div className="mt-0.5">
+                    {assessmentCategory === category.value ? (
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{category.label}</p>
+                    <p className="text-xs text-muted-foreground">{category.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPreviewType("25q");
-                setPreviewOpen(true);
-              }}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
+            {assessmentCategory !== "professional" && (
+              <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2 rounded">
+                {assessmentCategory === "entrepreneur" || assessmentCategory === "executive" || assessmentCategory === "manager"
+                  ? "Questions for this category will be available soon. Currently using Professional questions."
+                  : null}
+              </p>
+            )}
           </div>
 
-          {/* 50 Question Assessment */}
-          <div
-            className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
-              assessmentType === "50q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-            }`}
-            onClick={() => setAssessmentType("50q")}
-          >
-            <div className="flex items-center gap-3">
-              {assessmentType === "50q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
-              <div>
-                <p className="font-medium">50 Question Assessment</p>
-                <p className="text-sm text-muted-foreground">Comprehensive assessment (~20 minutes) • 5 sections</p>
+          {/* Assessment Length Selection */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Assessment Type</Label>
+            <div className="space-y-2">
+              {/* 25 Question Assessment */}
+              <div
+                className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  assessmentType === "25q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                }`}
+                onClick={() => setAssessmentType("25q")}
+              >
+                <div className="flex items-center gap-3">
+                  {assessmentType === "25q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
+                  <div>
+                    <p className="font-medium">25 Question Assessment</p>
+                    <p className="text-sm text-muted-foreground">Quick assessment (~10 minutes)</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewType("25q");
+                    setPreviewOpen(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+              </div>
+
+              {/* 50 Question Assessment */}
+              <div
+                className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  assessmentType === "50q" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                }`}
+                onClick={() => setAssessmentType("50q")}
+              >
+                <div className="flex items-center gap-3">
+                  {assessmentType === "50q" && <CheckCircle2 className="h-5 w-5 text-primary" />}
+                  <div>
+                    <p className="font-medium">50 Question Assessment</p>
+                    <p className="text-sm text-muted-foreground">Comprehensive assessment (~20 minutes)</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewType("50q");
+                    setPreviewOpen(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPreviewType("50q");
-                setPreviewOpen(true);
-              }}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
           </div>
 
-          {assessmentType !== company.assessment_type && (
+          {(assessmentType !== company.assessment_type || assessmentCategory !== (company.assessment_category || "professional")) && (
             <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
               Assessment type will be updated when you save settings. This affects new assessments only.
             </p>
