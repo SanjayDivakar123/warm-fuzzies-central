@@ -1004,7 +1004,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                               <TooltipContent>Revoke access</TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== "admin" && user.status === "revoked" && (
+                          {user.status === "revoked" && (
                             <>
                               <Tooltip>
                                 <TooltipTrigger asChild>
