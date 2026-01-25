@@ -85,6 +85,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
     // Create client with user's JWT to verify authentication
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
@@ -177,7 +178,7 @@ serve(async (req) => {
     // Fetch all employees with completed assessments
     const { data: employees, error: empError } = await supabase
       .from('company_users')
-      .select('id, email, role, status, assessment_result_id, job_role, skills')
+      .select('id, email, role, status, assessment_result_id, job_role, skills, full_name')
       .eq('company_id', companyId)
       .eq('status', 'active')
       .not('assessment_result_id', 'is', null);
@@ -253,7 +254,7 @@ serve(async (req) => {
     const taskText = `${title} ${description} ${skills.join(' ')} ${department}`.toLowerCase();
     const taskSkillsArray = skills.map((s: string) => s.toLowerCase());
 
-    // Score each employee
+    // Score each employee using algorithmic approach first
     const scoredEmployees = employeesWithResults.map(emp => {
       const results = emp.assessmentResults as Record<string, unknown>;
       const dominantColor = (results?.dominantColor as string)?.toLowerCase() || 'unknown';
@@ -359,45 +360,152 @@ serve(async (req) => {
     // Sort by total score
     scoredEmployees.sort((a, b) => b.totalScore - a.totalScore);
 
-    const primaryAssignee = scoredEmployees[0] || null;
-    const secondaryAssignee = scoredEmployees[1] || null;
+    let primaryAssignee = scoredEmployees[0] || null;
+    let secondaryAssignee = scoredEmployees[1] || null;
 
-    // Generate reasoning
-    const reasoning = {
-      quadrantExplanation: `This task falls into ${quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions] || 'unknown quadrant'}. ${
-        quadrant === 'q1' ? 'It requires someone who can execute quickly under pressure.' :
-        quadrant === 'q2' ? 'This allows for thoughtful planning and strategic approach.' :
-        quadrant === 'q3' ? 'This can be delegated to free up time for more important work.' :
-        'Consider whether this task is necessary or can be eliminated.'
-      }`,
-      roleColorJustification: primaryAssignee ? 
-        `${primaryAssignee.email} has a ${primaryAssignee.dominantColor} profile, which ${
-          preferredColors.includes(primaryAssignee.dominantColor) 
-            ? `aligns well with the task requirements. ${roleColorDefinitions[primaryAssignee.dominantColor as keyof typeof roleColorDefinitions]?.traits.join(', ')} are key strengths.`
-            : `provides a different perspective. While ${recommendedColor} might be ideal, ${primaryAssignee.dominantColor} brings ${roleColorDefinitions[primaryAssignee.dominantColor as keyof typeof roleColorDefinitions]?.traits.slice(0, 2).join(' and ')}.`
-        }` : 'No suitable candidate found based on RoleColor alignment.',
-      skillMatchNotes: primaryAssignee ?
-        `${primaryAssignee.email}${primaryAssignee.job_role ? ` (${primaryAssignee.job_role})` : ''} shows a ${Math.round(primaryAssignee.skillMatch * 100)}% skill alignment.${
-          primaryAssignee.skills?.length ? ` Their skills include: ${primaryAssignee.skills.slice(0, 3).join(', ')}${primaryAssignee.skills.length > 3 ? '...' : ''}.` : ''
-        }${skills?.length ? ` Task requires: ${skills.join(', ')}.` : ''}` :
-        'Unable to determine skill match without candidates.',
-      workloadConsiderations: primaryAssignee ?
-        `Current workload: ${Math.round((1 - primaryAssignee.workloadMargin) * 100)}% capacity (${taskCountByEmployee[primaryAssignee.id] || 0} active tasks). ${
-          primaryAssignee.workloadMargin > 0.7 ? 'This employee has good capacity for new tasks.' :
-          primaryAssignee.workloadMargin > 0.4 ? 'Moderate workload - can handle additional tasks with proper prioritization.' :
-          'High current workload - consider secondary candidate or task scheduling.'
-        }` : 'No workload data available.',
-      behavioralReasoning: primaryAssignee ?
-        `${primaryAssignee.dominantColor.charAt(0).toUpperCase() + primaryAssignee.dominantColor.slice(1)} personalities tend to ${
-          primaryAssignee.dominantColor === 'yellow' ? 'drive results and execute quickly, ideal for action-oriented tasks.' :
-          primaryAssignee.dominantColor === 'red' ? 'communicate effectively and inspire others, great for collaborative or client-facing work.' :
-          primaryAssignee.dominantColor === 'green' ? 'analyze thoroughly and maintain precision, perfect for detail-oriented tasks.' :
-          'think strategically and innovate, excellent for planning and research tasks.'
-        }` : 'Cannot assess behavioral fit without completed assessments.',
-      recommendedColor
-    };
+    // Use OpenAI to generate enhanced reasoning if API key is available
+    let reasoning: Record<string, string>;
+    let aiEnhanced = false;
 
-    console.log('Assignment complete. Primary:', primaryAssignee?.email, 'Score:', primaryAssignee?.totalScore);
+    if (OPENAI_API_KEY && primaryAssignee) {
+      try {
+        console.log('Using OpenAI to generate enhanced assignment reasoning...');
+        
+        const candidateSummary = scoredEmployees.slice(0, 5).map((emp, i) => {
+          const totalColorScore = Object.values(emp.colorScores).reduce((a, b) => a + b, 0);
+          const colorPercentages = {
+            yellow: Math.round((emp.colorScores.yellow / totalColorScore) * 100),
+            red: Math.round((emp.colorScores.red / totalColorScore) * 100),
+            green: Math.round((emp.colorScores.green / totalColorScore) * 100),
+            blue: Math.round((emp.colorScores.blue / totalColorScore) * 100),
+          };
+          return `${i + 1}. ${emp.full_name || emp.email}
+   - Job Role: ${emp.job_role || 'Not specified'}
+   - Skills: ${emp.skills?.join(', ') || 'None listed'}
+   - Dominant Color: ${emp.dominantColor}
+   - Color Distribution: Yellow:${colorPercentages.yellow}%, Red:${colorPercentages.red}%, Green:${colorPercentages.green}%, Blue:${colorPercentages.blue}%
+   - Current Workload: ${taskCountByEmployee[emp.id] || 0} active tasks
+   - Algorithm Score: ${(emp.totalScore * 100).toFixed(0)}%`;
+        }).join('\n\n');
+
+        const aiPrompt = `You are an expert at task assignment and team management. Analyze this task assignment decision and provide insightful reasoning.
+
+TASK DETAILS:
+- Title: ${title}
+- Description: ${description || 'No description provided'}
+- Priority: Importance=${importance}, Urgency=${urgency}
+- Quadrant: ${quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions] || quadrant}
+- Required Skills: ${skills.join(', ') || 'None specified'}
+- Department: ${department || 'Not specified'}
+
+TOP CANDIDATES (ranked by algorithm):
+${candidateSummary}
+
+Based on the RoleColor framework:
+- Yellow (Executor): Action-oriented, results-driven, decisive - best for urgent execution tasks
+- Red (Motivator): People-focused, inspiring, communicative - best for client-facing and team coordination
+- Green (Organizer): Systematic, detail-oriented, reliable - best for analytical and process tasks
+- Blue (Innovator): Strategic, visionary, creative - best for planning and innovation tasks
+
+The algorithm recommends "${primaryAssignee.full_name || primaryAssignee.email}" as primary and "${secondaryAssignee?.full_name || secondaryAssignee?.email || 'none'}" as backup.
+
+Provide your analysis in this exact JSON format:
+{
+  "quadrantExplanation": "1-2 sentences explaining why this task priority level affects who should handle it",
+  "roleColorJustification": "2-3 sentences explaining why the primary assignee's RoleColor profile makes them ideal for this task. Be specific about their color traits.",
+  "skillMatchNotes": "1-2 sentences about how the candidate's skills align with the task requirements",
+  "workloadConsiderations": "1 sentence about the candidate's current capacity",
+  "behavioralReasoning": "2 sentences about how the candidate's behavioral style will help them succeed with this task"
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+        const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "user", content: aiPrompt }
+            ],
+            temperature: 0.3,
+            max_tokens: 1000,
+          }),
+        });
+
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          const content = aiData.choices?.[0]?.message?.content;
+          
+          if (content) {
+            let cleanContent = content.trim();
+            if (cleanContent.startsWith("```json")) {
+              cleanContent = cleanContent.slice(7);
+            } else if (cleanContent.startsWith("```")) {
+              cleanContent = cleanContent.slice(3);
+            }
+            if (cleanContent.endsWith("```")) {
+              cleanContent = cleanContent.slice(0, -3);
+            }
+            cleanContent = cleanContent.trim();
+
+            const aiReasoning = JSON.parse(cleanContent);
+            reasoning = {
+              ...aiReasoning,
+              recommendedColor
+            };
+            aiEnhanced = true;
+            console.log('Successfully generated AI-enhanced reasoning');
+          }
+        } else {
+          console.log('OpenAI API error, falling back to algorithmic reasoning:', aiResponse.status);
+        }
+      } catch (aiError) {
+        console.error('Error with OpenAI reasoning, using fallback:', aiError);
+      }
+    }
+
+    // Fallback to algorithmic reasoning if AI not available or failed
+    if (!aiEnhanced) {
+      reasoning = {
+        quadrantExplanation: `This task falls into ${quadrantDescriptions[quadrant as keyof typeof quadrantDescriptions] || 'unknown quadrant'}. ${
+          quadrant === 'q1' ? 'It requires someone who can execute quickly under pressure.' :
+          quadrant === 'q2' ? 'This allows for thoughtful planning and strategic approach.' :
+          quadrant === 'q3' ? 'This can be delegated to free up time for more important work.' :
+          'Consider whether this task is necessary or can be eliminated.'
+        }`,
+        roleColorJustification: primaryAssignee ? 
+          `${primaryAssignee.email} has a ${primaryAssignee.dominantColor} profile, which ${
+            preferredColors.includes(primaryAssignee.dominantColor) 
+              ? `aligns well with the task requirements. ${roleColorDefinitions[primaryAssignee.dominantColor as keyof typeof roleColorDefinitions]?.traits.join(', ')} are key strengths.`
+              : `provides a different perspective. While ${recommendedColor} might be ideal, ${primaryAssignee.dominantColor} brings ${roleColorDefinitions[primaryAssignee.dominantColor as keyof typeof roleColorDefinitions]?.traits.slice(0, 2).join(' and ')}.`
+          }` : 'No suitable candidate found based on RoleColor alignment.',
+        skillMatchNotes: primaryAssignee ?
+          `${primaryAssignee.email}${primaryAssignee.job_role ? ` (${primaryAssignee.job_role})` : ''} shows a ${Math.round(primaryAssignee.skillMatch * 100)}% skill alignment.${
+            primaryAssignee.skills?.length ? ` Their skills include: ${primaryAssignee.skills.slice(0, 3).join(', ')}${primaryAssignee.skills.length > 3 ? '...' : ''}.` : ''
+          }${skills?.length ? ` Task requires: ${skills.join(', ')}.` : ''}` :
+          'Unable to determine skill match without candidates.',
+        workloadConsiderations: primaryAssignee ?
+          `Current workload: ${Math.round((1 - primaryAssignee.workloadMargin) * 100)}% capacity (${taskCountByEmployee[primaryAssignee.id] || 0} active tasks). ${
+            primaryAssignee.workloadMargin > 0.7 ? 'This employee has good capacity for new tasks.' :
+            primaryAssignee.workloadMargin > 0.4 ? 'Moderate workload - can handle additional tasks with proper prioritization.' :
+            'High current workload - consider secondary candidate or task scheduling.'
+          }` : 'No workload data available.',
+        behavioralReasoning: primaryAssignee ?
+          `${primaryAssignee.dominantColor.charAt(0).toUpperCase() + primaryAssignee.dominantColor.slice(1)} personalities tend to ${
+            primaryAssignee.dominantColor === 'yellow' ? 'drive results and execute quickly, ideal for action-oriented tasks.' :
+            primaryAssignee.dominantColor === 'red' ? 'communicate effectively and inspire others, great for collaborative or client-facing work.' :
+            primaryAssignee.dominantColor === 'green' ? 'analyze thoroughly and maintain precision, perfect for detail-oriented tasks.' :
+            'think strategically and innovate, excellent for planning and research tasks.'
+          }` : 'Cannot assess behavioral fit without completed assessments.',
+        recommendedColor
+      };
+    }
+
+    console.log('Assignment complete. Primary:', primaryAssignee?.email, 'Score:', primaryAssignee?.totalScore, 'AI Enhanced:', aiEnhanced);
 
     return new Response(JSON.stringify({
       primaryAssignee: primaryAssignee ? { 
@@ -405,23 +513,27 @@ serve(async (req) => {
         email: primaryAssignee.email, 
         dominantColor: primaryAssignee.dominantColor,
         job_role: primaryAssignee.job_role,
-        skills: primaryAssignee.skills
+        skills: primaryAssignee.skills,
+        full_name: primaryAssignee.full_name
       } : null,
       secondaryAssignee: secondaryAssignee ? { 
         id: secondaryAssignee.id, 
         email: secondaryAssignee.email, 
         dominantColor: secondaryAssignee.dominantColor,
         job_role: secondaryAssignee.job_role,
-        skills: secondaryAssignee.skills
+        skills: secondaryAssignee.skills,
+        full_name: secondaryAssignee.full_name
       } : null,
       reasoning,
       score: primaryAssignee?.totalScore || 0,
+      aiEnhanced,
       allCandidates: scoredEmployees.map(e => ({
         id: e.id,
         email: e.email,
         dominantColor: e.dominantColor,
         job_role: e.job_role,
         skills: e.skills,
+        full_name: e.full_name,
         totalScore: e.totalScore,
         scores: {
           roleColor: e.roleColorScore,
