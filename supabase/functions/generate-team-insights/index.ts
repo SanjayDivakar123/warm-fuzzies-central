@@ -34,11 +34,11 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: "Lovable API key not configured" }),
+        JSON.stringify({ error: "OpenAI API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -122,16 +122,16 @@ Role-leadership style alignment guidelines:
 
 Return ONLY the JSON object, no additional text.`;
 
-    console.log("Calling Lovable AI Gateway for detailed team insights...");
+    console.log("Calling OpenAI API for detailed team insights...");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -143,7 +143,7 @@ Return ONLY the JSON object, no additional text.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Lovable AI Gateway error:", response.status, errorText);
+      console.error("OpenAI API error:", response.status, errorText);
       
       if (response.status === 429) {
         return new Response(
@@ -152,10 +152,10 @@ Return ONLY the JSON object, no additional text.`;
         );
       }
 
-      if (response.status === 402) {
+      if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits to your Lovable workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Invalid OpenAI API key. Please check your configuration." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
@@ -169,7 +169,7 @@ Return ONLY the JSON object, no additional text.`;
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      console.error("No content in Lovable AI response:", data);
+      console.error("No content in OpenAI response:", data);
       return new Response(
         JSON.stringify({ error: "No insights generated" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -200,7 +200,7 @@ Return ONLY the JSON object, no additional text.`;
       );
     }
 
-    console.log("Successfully generated detailed team insights");
+    console.log("Successfully generated detailed team insights with OpenAI");
 
     return new Response(
       JSON.stringify({ insights }),
