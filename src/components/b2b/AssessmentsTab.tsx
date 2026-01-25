@@ -16,6 +16,7 @@ import TeamInsightsModal from './TeamInsightsModal';
 interface AssessmentsTabProps {
   company: any;
   onSettingsSaved?: () => void;
+  onNavigateToSettings?: () => void;
 }
 
 interface CompletedAssessment {
@@ -45,7 +46,7 @@ const colorLabels: Record<string, { label: string; bg: string; text: string }> =
   blue: { label: 'Innovator', bg: 'bg-blue-100', text: 'text-blue-800' },
 };
 
-export default function AssessmentsTab({ company, onSettingsSaved }: AssessmentsTabProps) {
+export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToSettings }: AssessmentsTabProps) {
   const [assessmentType, setAssessmentType] = useState(company.assessment_type);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -225,10 +226,15 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1.5">
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-1.5"
+          onClick={onNavigateToSettings}
+        >
           <Settings className="h-3 w-3" />
           Change in Settings
-        </Badge>
+        </Button>
       </div>
 
       {/* Assessment Configuration */}
