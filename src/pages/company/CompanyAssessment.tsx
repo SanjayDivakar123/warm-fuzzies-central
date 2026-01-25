@@ -10,11 +10,8 @@ import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
 import { shuffleArray } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { professionalQuestions25Q, professionalQuestions50Q } from "@/lib/professionalAssessmentQuestions";
+import { getAssessmentQuestions, getCategoryDisplayName, type AssessmentQuestion, type AssessmentCategory, type AssessmentType } from "@/lib/assessmentQuestionLoader";
 import { HelpButton } from "@/components/help";
-
-type AssessmentOption = { text: string; color: string };
-type AssessmentQuestion = { section: string; question: string; options: AssessmentOption[] };
 export default function CompanyAssessment() {
   const { company, employee, loading, setEmployee } = useCompanyPortal();
   const navigate = useNavigate();
@@ -55,10 +52,16 @@ export default function CompanyAssessment() {
 
   const questions = useMemo<AssessmentQuestion[]>(() => {
     if (!company) return [];
-    return (company.assessment_type === '50q'
-      ? (professionalQuestions50Q as unknown)
-      : (professionalQuestions25Q as unknown)) as AssessmentQuestion[];
-  }, [company?.assessment_type]);
+    const category = (company.assessment_category || 'professional') as AssessmentCategory;
+    const type = (company.assessment_type || '25q') as AssessmentType;
+    return getAssessmentQuestions(category, type);
+  }, [company?.assessment_category, company?.assessment_type]);
+
+  const assessmentTitle = useMemo(() => {
+    if (!company) return 'Assessment';
+    const category = (company.assessment_category || 'professional') as AssessmentCategory;
+    return `${getCategoryDisplayName(category)} Assessment`;
+  }, [company?.assessment_category]);
 
   const primaryColor = company?.primary_color || '#9b87f5';
 
@@ -179,10 +182,9 @@ export default function CompanyAssessment() {
   const totalQuestions = questions.length;
   const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
 
-  const currentQuestionData: AssessmentQuestion =
-    questions[currentQuestion] ?? { section: '', question: '', options: [] };
+  const currentQuestionData = questions[currentQuestion] ?? { id: 0, section: '', question: '', options: [] };
 
-  const shuffledOptions = useMemo<AssessmentOption[]>(() => {
+  const shuffledOptions = useMemo(() => {
     return shuffleArray(currentQuestionData.options);
   }, [currentQuestionData]);
 
@@ -241,7 +243,7 @@ export default function CompanyAssessment() {
                   <span className="text-white font-bold text-lg">{currentQuestion + 1}</span>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Professional Assessment</h2>
+                  <h2 className="text-xl font-bold">{assessmentTitle}</h2>
                   <p className="text-muted-foreground">Question {currentQuestion + 1} of {questions.length}</p>
                 </div>
               </div>

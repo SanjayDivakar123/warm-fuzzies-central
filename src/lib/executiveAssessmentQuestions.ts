@@ -1,4 +1,5 @@
 export interface ExecutiveQuestion {
+  id?: number;
   section: string;
   question: string;
   options: {
