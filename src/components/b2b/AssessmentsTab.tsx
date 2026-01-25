@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3, Lightbulb } from 'lucide-react';
+import { Loader2, Eye, Users, CheckCircle2, Clock, BarChart3, Lightbulb, Info, Settings } from 'lucide-react';
+import { getCategoryDisplayName, type AssessmentCategory, type AssessmentType } from '@/lib/assessmentQuestionLoader';
 import AssessmentPreviewModal from './AssessmentPreviewModal';
 import EmployeeResultsModal from './EmployeeResultsModal';
 import TeamInsightsModal from './TeamInsightsModal';
@@ -206,8 +207,30 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
     );
   }
 
+  const categoryName = getCategoryDisplayName(company.assessment_category as AssessmentCategory || 'professional');
+  const questionCount = (company.assessment_type as AssessmentType) === '50q' ? '50' : '25';
+
   return (
     <div className="space-y-4">
+      {/* Current Assessment Info Banner */}
+      <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex items-center gap-3">
+          <Info className="h-5 w-5 text-primary" />
+          <div>
+            <p className="font-medium">
+              Current Assessment: <span className="text-primary">{categoryName} • {questionCount}Q</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              All new invitations will use this assessment configuration
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="flex items-center gap-1.5">
+          <Settings className="h-3 w-3" />
+          Change in Settings
+        </Badge>
+      </div>
+
       {/* Assessment Configuration */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
