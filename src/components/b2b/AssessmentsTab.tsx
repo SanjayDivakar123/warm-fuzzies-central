@@ -495,6 +495,8 @@ export default function AssessmentsTab({ company, onSettingsSaved }: Assessments
         email={selectedEmployee?.email || ''}
         results={selectedEmployee?.results || null}
         completedAt={selectedEmployee?.assessment_completed_at || ''}
+        assessmentType={company.assessment_type}
+        assessmentCategory={company.assessment_category}
       />
 
       {/* Team Insights Modal */}

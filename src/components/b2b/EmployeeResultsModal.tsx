@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CheckCircle2, AlertTriangle, Lightbulb } from 'lucide-react';
+import { getCategoryDisplayName, type AssessmentCategory, type AssessmentType } from '@/lib/assessmentQuestionLoader';
 
 interface EmployeeResultsModalProps {
   open: boolean;
@@ -18,6 +19,8 @@ interface EmployeeResultsModalProps {
     dominantColor: string;
   } | null;
   completedAt: string;
+  assessmentType?: AssessmentType;
+  assessmentCategory?: AssessmentCategory;
 }
 
 const colorDescriptions: Record<string, {
@@ -108,7 +111,15 @@ const colorDescriptions: Record<string, {
   }
 };
 
-export default function EmployeeResultsModal({ open, onClose, email, results, completedAt }: EmployeeResultsModalProps) {
+export default function EmployeeResultsModal({ 
+  open, 
+  onClose, 
+  email, 
+  results, 
+  completedAt,
+  assessmentType = '25q',
+  assessmentCategory = 'professional'
+}: EmployeeResultsModalProps) {
   if (!results) return null;
 
   const dominantColor = results.dominantColor.toLowerCase();
@@ -139,10 +150,18 @@ export default function EmployeeResultsModal({ open, onClose, email, results, co
     blue: 'bg-blue-500'
   };
 
+  const categoryName = getCategoryDisplayName(assessmentCategory);
+  const questionCount = assessmentType === '50q' ? '50' : '25';
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="secondary" className="text-xs font-normal">
+              {categoryName} Assessment • {questionCount}Q
+            </Badge>
+          </div>
           <DialogTitle className="text-xl">
             Assessment Results for {email}
           </DialogTitle>
