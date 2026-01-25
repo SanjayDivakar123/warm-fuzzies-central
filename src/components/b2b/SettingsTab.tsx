@@ -910,7 +910,12 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Assessment Preview Modal */}
-      <AssessmentPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} assessmentType={previewType} />
+      <AssessmentPreviewModal 
+        open={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        assessmentType={previewType}
+        assessmentCategory={assessmentCategory}
+      />
 
       {/* Billing Modal */}
       <BillingModal

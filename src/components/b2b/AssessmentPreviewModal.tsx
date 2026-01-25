@@ -4,19 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { professionalQuestions25Q, professionalQuestions50Q } from '@/lib/professionalAssessmentQuestions';
+import { getAssessmentQuestions, getCategoryDisplayName, type AssessmentCategory, type AssessmentType } from '@/lib/assessmentQuestionLoader';
 
 interface AssessmentPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  assessmentType: '25q' | '50q';
+  assessmentType: AssessmentType;
+  assessmentCategory?: AssessmentCategory;
 }
 
-export default function AssessmentPreviewModal({ open, onClose, assessmentType }: AssessmentPreviewModalProps) {
+export default function AssessmentPreviewModal({ 
+  open, 
+  onClose, 
+  assessmentType,
+  assessmentCategory = 'professional'
+}: AssessmentPreviewModalProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   
-  const questions = assessmentType === '50q' ? professionalQuestions50Q : professionalQuestions25Q;
+  const questions = getAssessmentQuestions(assessmentCategory, assessmentType);
   const currentQuestionData = questions[currentQuestion];
+  const categoryName = getCategoryDisplayName(assessmentCategory);
 
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
@@ -52,7 +59,7 @@ export default function AssessmentPreviewModal({ open, onClose, assessmentType }
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">
-              Preview: {assessmentType === '25q' ? '25' : '50'} Question Assessment
+              Preview: {categoryName} ({assessmentType === '25q' ? '25' : '50'}Q)
             </DialogTitle>
             <Button variant="ghost" size="icon" onClick={handleClose}>
               <X className="h-4 w-4" />

@@ -13,6 +13,7 @@ interface Company {
   secondary_color: string | null;
   seats_purchased: number;
   assessment_type: '25q' | '50q';
+  assessment_category: 'professional' | 'entrepreneur' | 'executive' | 'manager';
   google_sso_enabled: boolean | null;
   google_workspace_domain: string | null;
 }
