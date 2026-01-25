@@ -52,9 +52,11 @@ import {
 interface SettingsTabProps {
   company: any;
   onSettingsSaved?: () => void;
+  scrollToSection?: string | null;
+  onScrollComplete?: () => void;
 }
 
-export default function SettingsTab({ company, onSettingsSaved }: SettingsTabProps) {
+export default function SettingsTab({ company, onSettingsSaved, scrollToSection, onScrollComplete }: SettingsTabProps) {
   const [logoUrl, setLogoUrl] = useState(company.logo_url || "");
   const [logoUrlDark, setLogoUrlDark] = useState(company.logo_url_dark || "");
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
@@ -89,6 +91,26 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
     setCreditBalance(company.credit_balance || 0);
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
+
+  // Handle scroll to section
+  useEffect(() => {
+    if (scrollToSection) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const element = document.getElementById(scrollToSection);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Add a highlight effect
+          element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+          }, 2000);
+        }
+        onScrollComplete?.();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [scrollToSection, onScrollComplete]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, mode: "light" | "dark") => {
     const file = event.target.files?.[0];
@@ -689,7 +711,7 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
       </Card>
 
       {/* Assessment Configuration */}
-      <Card className="border-0 shadow-sm">
+      <Card id="assessment-config" className="border-0 shadow-sm transition-all duration-300">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-medium">Assessment Configuration</CardTitle>
           <CardDescription>Choose the assessment category and length for your employees</CardDescription>

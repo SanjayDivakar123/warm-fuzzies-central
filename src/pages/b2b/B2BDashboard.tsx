@@ -24,6 +24,8 @@ function B2BDashboardContent() {
   const { toast } = useToast();
   const { theme, setTheme, resolvedTheme } = useB2BTheme();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [scrollToSection, setScrollToSection] = useState<string | null>(null);
 
   // Auto-start dashboard tour for first-time admins (hook must be called unconditionally)
   useAutoStartTour('admin-dashboard-overview', 1500, !loading && !!company && isAdmin);
@@ -214,7 +216,7 @@ function B2BDashboardContent() {
           }
         `}</style>
         
-        <Tabs defaultValue="overview" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
             <TabsTrigger 
               value="overview" 
@@ -263,7 +265,14 @@ function B2BDashboardContent() {
           </TabsContent>
 
           <TabsContent value="assessments" className="mt-0">
-            <AssessmentsTab company={company} onSettingsSaved={refreshCompany} />
+            <AssessmentsTab 
+              company={company} 
+              onSettingsSaved={refreshCompany}
+              onNavigateToSettings={() => {
+                setActiveTab('settings');
+                setScrollToSection('assessment-config');
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="reminders" className="mt-0">
@@ -275,7 +284,12 @@ function B2BDashboardContent() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
-            <SettingsTab company={company} onSettingsSaved={refreshCompany} />
+            <SettingsTab 
+              company={company} 
+              onSettingsSaved={refreshCompany}
+              scrollToSection={scrollToSection}
+              onScrollComplete={() => setScrollToSection(null)}
+            />
           </TabsContent>
         </Tabs>
       </main>
