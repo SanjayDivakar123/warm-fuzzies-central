@@ -728,13 +728,6 @@ export default function SettingsTab({ company, onSettingsSaved }: SettingsTabPro
                 </div>
               ))}
             </div>
-            {assessmentCategory !== "professional" && (
-              <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2 rounded">
-                {assessmentCategory === "entrepreneur" || assessmentCategory === "executive" || assessmentCategory === "manager"
-                  ? "Questions for this category will be available soon. Currently using Professional questions."
-                  : null}
-              </p>
-            )}
           </div>
 
           {/* Assessment Length Selection */}
