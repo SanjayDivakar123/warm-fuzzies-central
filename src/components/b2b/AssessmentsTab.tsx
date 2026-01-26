@@ -27,6 +27,8 @@ interface CompletedAssessment {
   skills: string[] | null;
   assessment_completed_at: string;
   assessment_result_id: string;
+  assessment_category?: AssessmentCategory;
+  assessment_type?: AssessmentType;
   shareable_code?: string;
   results?: {
     scores: {
@@ -76,7 +78,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
       // Fetch all company users with their assessment results
       const { data: users, error: usersError } = await supabase
         .from('company_users')
-        .select('id, email, full_name, status, job_role, skills, assessment_completed_at, assessment_result_id')
+        .select('id, email, full_name, status, job_role, skills, assessment_completed_at, assessment_result_id, assessment_category, assessment_type')
         .eq('company_id', company.id)
         .neq('status', 'revoked');
 
@@ -102,6 +104,8 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
           skills: user.skills,
           assessment_completed_at: user.assessment_completed_at,
           assessment_result_id: user.assessment_result_id,
+          assessment_category: user.assessment_category as AssessmentCategory,
+          assessment_type: user.assessment_type as AssessmentType,
           shareable_code: result?.shareable_code,
           results: result?.results as any,
         });
@@ -208,33 +212,21 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
     );
   }
 
-  const categoryName = getCategoryDisplayName(company.assessment_category as AssessmentCategory || 'professional');
-  const questionCount = (company.assessment_type as AssessmentType) === '50q' ? '50' : '25';
-
   return (
     <div className="space-y-4">
-      {/* Current Assessment Info Banner */}
+      {/* Per-Employee Assessment Info Banner */}
       <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border border-primary/20">
         <div className="flex items-center gap-3">
           <Info className="h-5 w-5 text-primary" />
           <div>
             <p className="font-medium">
-              Current Assessment: <span className="text-primary">{categoryName} • {questionCount}Q</span>
+              Individual Assessment Assignments
             </p>
             <p className="text-sm text-muted-foreground">
-              All new invitations will use this assessment configuration
+              Each employee must be assigned an assessment type in the Users tab before they can take the assessment
             </p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="flex items-center gap-1.5"
-          onClick={onNavigateToSettings}
-        >
-          <Settings className="h-3 w-3" />
-          Change in Settings
-        </Button>
       </div>
 
       {/* Assessment Configuration */}
@@ -524,8 +516,8 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
         email={selectedEmployee?.email || ''}
         results={selectedEmployee?.results || null}
         completedAt={selectedEmployee?.assessment_completed_at || ''}
-        assessmentType={company.assessment_type}
-        assessmentCategory={company.assessment_category}
+        assessmentType={selectedEmployee?.assessment_type || '25q'}
+        assessmentCategory={selectedEmployee?.assessment_category || 'professional'}
       />
 
       {/* Team Insights Modal */}

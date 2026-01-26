@@ -533,6 +533,36 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
     }
   };
 
+  const handleUpdateAssessmentConfig = async (userId: string, field: 'category' | 'type', value: string) => {
+    setSavingUserId(userId);
+    try {
+      const updateData = field === 'category' 
+        ? { assessment_category: value }
+        : { assessment_type: value };
+      
+      const { error } = await supabase.from("company_users").update(updateData).eq("id", userId);
+
+      if (error) throw error;
+
+      setUsers(users.map((u) => (u.id === userId ? { ...u, ...updateData } : u)));
+
+      toast({
+        title: "Assessment configuration updated",
+        description: field === 'category' 
+          ? `Category set to ${value}` 
+          : `Length set to ${value === '25q' ? '25' : '50'} questions`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating assessment config",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
   const handleRemoveSkill = async (userId: string, skillToRemove: string) => {
     const user = users.find((u) => u.id === userId);
     const newSkills = (user?.skills || []).filter((s: string) => s !== skillToRemove);
@@ -1135,6 +1165,47 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                                     <Plus className="h-4 w-4" />
                                   </Button>
                                 </div>
+                              </div>
+
+                              {/* Assessment Type Section */}
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Assessment Type</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Select
+                                    value={user.assessment_category || ""}
+                                    onValueChange={(value) => handleUpdateAssessmentConfig(user.id, 'category', value)}
+                                    disabled={savingUserId === user.id || user.assessment_completed_at}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="professional">Professional</SelectItem>
+                                      <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
+                                      <SelectItem value="executive">Executive</SelectItem>
+                                      <SelectItem value="manager">Manager</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Select
+                                    value={user.assessment_type || ""}
+                                    onValueChange={(value) => handleUpdateAssessmentConfig(user.id, 'type', value)}
+                                    disabled={savingUserId === user.id || user.assessment_completed_at}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select length" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="25q">25 Questions</SelectItem>
+                                      <SelectItem value="50q">50 Questions</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {user.assessment_completed_at && (
+                                  <p className="text-xs text-muted-foreground">Assessment already completed - cannot change type</p>
+                                )}
+                                {!user.assessment_category && !user.assessment_type && !user.assessment_completed_at && (
+                                  <p className="text-xs text-amber-600">⚠️ No assessment assigned - user cannot take assessment</p>
+                                )}
                               </div>
 
                               {/* Skills Section */}

@@ -383,8 +383,10 @@ export type Database = {
       }
       company_users: {
         Row: {
+          assessment_category: string | null
           assessment_completed_at: string | null
           assessment_result_id: string | null
+          assessment_type: string | null
           charge_amount: number | null
           charged_at: string | null
           company_id: string
@@ -404,8 +406,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          assessment_category?: string | null
           assessment_completed_at?: string | null
           assessment_result_id?: string | null
+          assessment_type?: string | null
           charge_amount?: number | null
           charged_at?: string | null
           company_id: string
@@ -425,8 +429,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          assessment_category?: string | null
           assessment_completed_at?: string | null
           assessment_result_id?: string | null
+          assessment_type?: string | null
           charge_amount?: number | null
           charged_at?: string | null
           company_id?: string
