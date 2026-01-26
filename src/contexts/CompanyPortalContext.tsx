@@ -42,6 +42,8 @@ interface CompanyEmployee {
   user_id: string | null;
   assessment_completed_at: string | null;
   assessment_result_id: string | null;
+  assessment_category: 'professional' | 'entrepreneur' | 'executive' | 'manager' | null;
+  assessment_type: '25q' | '50q' | null;
 }
 
 interface CompanyPortalContextType {

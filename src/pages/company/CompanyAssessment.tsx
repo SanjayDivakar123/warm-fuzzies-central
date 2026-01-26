@@ -51,17 +51,25 @@ export default function CompanyAssessment() {
   }, [loading, company, employee, navigate]);
 
   const questions = useMemo<AssessmentQuestion[]>(() => {
-    if (!company) return [];
-    const category = (company.assessment_category || 'professional') as AssessmentCategory;
-    const type = (company.assessment_type || '25q') as AssessmentType;
+    if (!company || !employee) return [];
+    // Use employee's individual assessment config (required - fully individual)
+    const category = (employee.assessment_category) as AssessmentCategory;
+    const type = (employee.assessment_type) as AssessmentType;
+    
+    // If employee doesn't have assessment assigned, return empty
+    if (!category || !type) return [];
+    
     return getAssessmentQuestions(category, type);
-  }, [company?.assessment_category, company?.assessment_type]);
+  }, [company, employee?.assessment_category, employee?.assessment_type]);
 
   const assessmentTitle = useMemo(() => {
-    if (!company) return 'Assessment';
-    const category = (company.assessment_category || 'professional') as AssessmentCategory;
+    if (!employee?.assessment_category) return 'Assessment';
+    const category = employee.assessment_category as AssessmentCategory;
     return `${getCategoryDisplayName(category)} Assessment`;
-  }, [company?.assessment_category]);
+  }, [employee?.assessment_category]);
+
+  // Check if employee has assessment assigned
+  const hasAssessmentAssigned = employee?.assessment_category && employee?.assessment_type;
 
   const primaryColor = company?.primary_color || '#9b87f5';
 
@@ -213,6 +221,43 @@ export default function CompanyAssessment() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show message if no assessment assigned
+  if (!hasAssessmentAssigned) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
+            ) : (
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+            )}
+            <span className="font-semibold">{company.name}</span>
+          </div>
+        </header>
+        <div className="py-16 px-4">
+          <div className="max-w-md mx-auto text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-amber-600" />
+            </div>
+            <h1 className="text-2xl font-bold mb-4">Assessment Not Assigned</h1>
+            <p className="text-muted-foreground mb-6">
+              Your administrator hasn't assigned an assessment type for you yet. Please contact your company administrator to get your assessment configured.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/company/${company.subdomain}/home`)}
+            >
+              Return to Home
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

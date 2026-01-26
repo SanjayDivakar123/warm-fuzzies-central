@@ -106,6 +106,8 @@ Deno.serve(async (req) => {
           user_id: employee.user_id,
           assessment_completed_at: employee.assessment_completed_at,
           assessment_result_id: employee.assessment_result_id,
+          assessment_category: employee.assessment_category,
+          assessment_type: employee.assessment_type,
         },
         assessmentResults,
       }),
