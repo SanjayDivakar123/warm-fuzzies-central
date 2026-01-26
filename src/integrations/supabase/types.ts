@@ -576,6 +576,277 @@ export type Database = {
         }
         Relationships: []
       }
+      rcaimobile_candidate_profiles: {
+        Row: {
+          growth_signals: Json
+          headline: string | null
+          id: string
+          last_updated: string | null
+          overall_confidence: string
+          risks: Json
+          role_color_primary: string
+          role_color_scores: Json
+          role_color_secondary: string | null
+          strengths: Json
+          user_id: string
+        }
+        Insert: {
+          growth_signals?: Json
+          headline?: string | null
+          id?: string
+          last_updated?: string | null
+          overall_confidence?: string
+          risks?: Json
+          role_color_primary: string
+          role_color_scores?: Json
+          role_color_secondary?: string | null
+          strengths?: Json
+          user_id: string
+        }
+        Update: {
+          growth_signals?: Json
+          headline?: string | null
+          id?: string
+          last_updated?: string | null
+          overall_confidence?: string
+          risks?: Json
+          role_color_primary?: string
+          role_color_scores?: Json
+          role_color_secondary?: string | null
+          strengths?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rcaimobile_candidate_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "rcaimobile_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rcaimobile_candidate_reviews: {
+        Row: {
+          candidate_id: string
+          created_at: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rcaimobile_candidate_reviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_candidate_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rcaimobile_candidate_reviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rcaimobile_candidate_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rcaimobile_jobs: {
+        Row: {
+          company: string
+          created_by: string | null
+          department: string | null
+          description: string
+          id: string
+          ideal_role_color: string
+          location: string
+          posted_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          company: string
+          created_by?: string | null
+          department?: string | null
+          description: string
+          id?: string
+          ideal_role_color: string
+          location: string
+          posted_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          company?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string
+          id?: string
+          ideal_role_color?: string
+          location?: string
+          posted_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rcaimobile_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rcaimobile_notifications: {
+        Row: {
+          body: string
+          created_at: string | null
+          data: Json | null
+          id: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rcaimobile_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rcaimobile_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          role: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          id: string
+          role: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      rcaimobile_role_fit_insights: {
+        Row: {
+          alignments: Json
+          candidate_id: string
+          fit_score: string
+          fit_summary: string
+          frictions: Json
+          generated_at: string | null
+          id: string
+          job_id: string
+          recommendation: string | null
+        }
+        Insert: {
+          alignments?: Json
+          candidate_id: string
+          fit_score: string
+          fit_summary: string
+          frictions?: Json
+          generated_at?: string | null
+          id?: string
+          job_id: string
+          recommendation?: string | null
+        }
+        Update: {
+          alignments?: Json
+          candidate_id?: string
+          fit_score?: string
+          fit_summary?: string
+          frictions?: Json
+          generated_at?: string | null
+          id?: string
+          job_id?: string
+          recommendation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rcaimobile_role_fit_insights_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_candidate_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rcaimobile_role_fit_insights_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "rcaimobile_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registrants_hg: {
         Row: {
           created_at: string | null
