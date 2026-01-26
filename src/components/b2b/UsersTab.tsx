@@ -852,6 +852,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                   <TableHead>Role</TableHead>
                   <TableHead>Job Role</TableHead>
                   <TableHead>Skills</TableHead>
+                  <TableHead>Assessment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Invite Code</TableHead>
                   <TableHead>Invited</TableHead>
@@ -899,6 +900,15 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">{user.skills?.length || 0} skills</span>
+                      </TableCell>
+                      <TableCell>
+                        {user.assessment_category && user.assessment_type ? (
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {user.assessment_category} • {user.assessment_type.toUpperCase()}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Not assigned</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -1069,7 +1079,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     </TableRow>
                     {expandedUserId === user.id && (
                       <TableRow key={`${user.id}-expanded`}>
-                      <TableCell colSpan={10}>
+                      <TableCell colSpan={11}>
                           <div className="bg-muted/50 rounded-lg p-4 space-y-4">
                             <div className="grid grid-cols-3 gap-6">
                               {/* Full Name Section */}
