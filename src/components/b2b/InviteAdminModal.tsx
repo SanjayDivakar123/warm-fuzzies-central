@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield, Users, Briefcase } from "lucide-react";
+import type { CompanyUserRole } from "@/contexts/CompanyContext";
 
 interface InviteAdminModalProps {
   open: boolean;
@@ -13,6 +15,26 @@ interface InviteAdminModalProps {
   companyId: string;
   onInviteComplete: () => void;
 }
+
+type AdminRole = Exclude<CompanyUserRole, 'employee'>;
+
+const ROLE_INFO: Record<AdminRole, { label: string; icon: typeof Shield; description: string }> = {
+  admin: {
+    label: 'Admin',
+    icon: Shield,
+    description: 'Full access to all features including settings and billing',
+  },
+  hr: {
+    label: 'HR',
+    icon: Users,
+    description: 'Manage users, candidates, assessments, and reminders',
+  },
+  partner: {
+    label: 'Partner',
+    icon: Briefcase,
+    description: 'View assessments and use the Work Matrix',
+  },
+};
 
 export default function InviteAdminModal({
   open,
@@ -22,6 +44,7 @@ export default function InviteAdminModal({
 }: InviteAdminModalProps) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [selectedRole, setSelectedRole] = useState<AdminRole>("admin");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -42,7 +65,7 @@ export default function InviteAdminModal({
           company_id: companyId,
           email: email.trim().toLowerCase(),
           full_name: fullName.trim() || null,
-          role: "admin",
+          role: selectedRole,
         },
       });
 
@@ -50,17 +73,18 @@ export default function InviteAdminModal({
       if (data?.error) throw new Error(data.error);
 
       toast({
-        title: "Admin invited!",
+        title: `${ROLE_INFO[selectedRole].label} invited!`,
         description: `Invitation sent to ${email}`,
       });
 
       setEmail("");
       setFullName("");
+      setSelectedRole("admin");
       onInviteComplete();
       onClose();
     } catch (error: any) {
       toast({
-        title: "Error inviting admin",
+        title: "Error inviting user",
         description: error.message,
         variant: "destructive",
       });
@@ -69,25 +93,51 @@ export default function InviteAdminModal({
     }
   };
 
+  const RoleIcon = ROLE_INFO[selectedRole].icon;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            Invite New Admin
+            <RoleIcon className="h-5 w-5 text-primary" />
+            Invite Team Member
           </DialogTitle>
           <DialogDescription>
-            Invite a new administrator to help manage this company portal. Admins have full access to manage users, view assessments, and configure settings.
+            Invite a new team member with specific permissions to help manage this company portal.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="role">Role *</Label>
+            <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as AdminRole)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(ROLE_INFO) as [AdminRole, typeof ROLE_INFO[AdminRole]][]).map(([role, info]) => {
+                  const Icon = info.icon;
+                  return (
+                    <SelectItem key={role} value={role}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{info.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {ROLE_INFO[selectedRole].description}
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address *</Label>
             <Input
               id="email"
               type="email"
-              placeholder="admin@company.com"
+              placeholder="user@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -107,8 +157,8 @@ export default function InviteAdminModal({
             Cancel
           </Button>
           <Button onClick={handleInvite} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Shield className="h-4 w-4 mr-2" />}
-            Invite Admin
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RoleIcon className="h-4 w-4 mr-2" />}
+            Invite {ROLE_INFO[selectedRole].label}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -14,6 +14,7 @@ interface ManageAdminModalProps {
     email: string;
     full_name?: string;
     status: string;
+    role: string;
   } | null;
   onActionComplete: () => void;
 }
@@ -101,6 +102,7 @@ export default function ManageAdminModal({
   if (!admin) return null;
 
   const isRevoked = admin.status === 'revoked';
+  const roleLabel = admin.role === 'admin' ? 'Admin' : admin.role === 'hr' ? 'HR' : admin.role === 'partner' ? 'Partner' : admin.role;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -108,17 +110,17 @@ export default function ManageAdminModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Manage Administrator
+            Manage {roleLabel}
           </DialogTitle>
           <DialogDescription>
-            Choose an action for this administrator.
+            Choose an action for this team member.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <div className="p-4 bg-muted rounded-lg">
             <p className="font-medium">{admin.full_name || "No name set"}</p>
             <p className="text-sm text-muted-foreground">{admin.email}</p>
-            <p className="text-xs text-muted-foreground mt-1">Status: {admin.status}</p>
+            <p className="text-xs text-muted-foreground mt-1">Role: {roleLabel} • Status: {admin.status}</p>
           </div>
 
           <Alert variant="destructive">
