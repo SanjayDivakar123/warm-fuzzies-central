@@ -125,3 +125,18 @@ verify_jwt = false
 
 [functions.suggest-assessment-category]
 verify_jwt = true
+
+[functions.generate-interview-questions]
+verify_jwt = true
+
+[functions.create-audit-log]
+verify_jwt = false
+
+[functions.send-slack-notification]
+verify_jwt = true
+
+[functions.send-teams-notification]
+verify_jwt = true
+
+[functions.send-scheduled-report]
+verify_jwt = false

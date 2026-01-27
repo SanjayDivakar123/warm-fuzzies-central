@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -15,6 +15,9 @@ import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
 import CandidatesTab from '@/components/b2b/CandidatesTab';
+import AdvancedAnalyticsDashboard from '@/components/b2b/analytics/AdvancedAnalyticsDashboard';
+import KeyboardShortcutsModal from '@/components/b2b/KeyboardShortcutsModal';
+import { useKeyboardShortcuts, B2B_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
 
@@ -27,6 +30,23 @@ function B2BDashboardContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    enabled: true,
+    shortcuts: [
+      { ...B2B_SHORTCUTS.NAVIGATE_OVERVIEW, action: () => setActiveTab('overview') },
+      { ...B2B_SHORTCUTS.NAVIGATE_USERS, action: () => setActiveTab('users') },
+      { ...B2B_SHORTCUTS.NAVIGATE_CANDIDATES, action: () => setActiveTab('candidates') },
+      { ...B2B_SHORTCUTS.NAVIGATE_ASSESSMENTS, action: () => setActiveTab('assessments') },
+      { ...B2B_SHORTCUTS.NAVIGATE_REMINDERS, action: () => setActiveTab('reminders') },
+      { ...B2B_SHORTCUTS.NAVIGATE_MATRIX, action: () => setActiveTab('matrix') },
+      { ...B2B_SHORTCUTS.NAVIGATE_SETTINGS, action: () => setActiveTab('settings') },
+      { ...B2B_SHORTCUTS.HELP, action: () => setShowShortcuts(prev => !prev) },
+      { ...B2B_SHORTCUTS.TOGGLE_THEME, action: () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark') },
+    ],
+  });
 
   // Auto-start dashboard tour for first-time admins (hook must be called unconditionally)
   useAutoStartTour('admin-dashboard-overview', 1500, !loading && !!company && isAdmin);
@@ -278,6 +298,14 @@ function B2BDashboardContent() {
                   Work Matrix
                 </TabsTrigger>
               )}
+              {permissions.canViewOverview && (
+                <TabsTrigger 
+                  value="analytics" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Analytics
+                </TabsTrigger>
+              )}
               {permissions.canManageSettings && (
                 <TabsTrigger 
                   value="settings" 
@@ -334,8 +362,15 @@ function B2BDashboardContent() {
               onScrollComplete={() => setScrollToSection(null)}
             />
           </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
+            <AdvancedAnalyticsDashboard companyId={company.id} />
+          </TabsContent>
         </Tabs>
       </main>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
     </div>
   );
 }
