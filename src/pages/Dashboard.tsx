@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UserProfileSidebar } from "@/components/ui/user-profile-sidebar";
-import { MobileSidebar } from "@/components/dashboard/MobileSidebar";
+import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/aceternity-sidebar";
 import { FloatingHeader } from "@/components/ui/floating-header";
 import { ChangeEmailModal } from "@/components/dashboard/ChangeEmailModal";
+import { motion } from "framer-motion";
 import { 
   Calendar, 
   Download, 
@@ -28,11 +28,14 @@ import {
   Mail,
   Plus,
   Play,
-  Clock
+  Clock,
+  Camera,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
 import AssessmentDetails from "@/components/AssessmentDetails";
+import { cn } from "@/lib/utils";
 
 interface AssessmentResult {
   id: string;
@@ -308,38 +311,38 @@ const Dashboard = () => {
   const adminCompanies = activeCompanies.filter(c => c.role === 'admin');
   const employeeCompanies = activeCompanies.filter(c => c.role === 'employee');
 
-  // Build nav items
-  const navItems = [
+  // Build sidebar links for Aceternity sidebar
+  const sidebarLinks = [
     {
-      icon: <User className="h-4 w-4" />,
       label: 'Overview',
+      href: '#',
+      icon: <User className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
       onClick: () => setActiveSection('overview'),
-      isActive: activeSection === 'overview',
     },
     {
-      icon: <BarChart3 className="h-4 w-4" />,
       label: 'My Assessments',
+      href: '#',
+      icon: <BarChart3 className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
       onClick: () => setActiveSection('assessments'),
-      isActive: activeSection === 'assessments',
     },
     {
-      icon: <Briefcase className="h-4 w-4" />,
       label: 'Business',
+      href: '#',
+      icon: <Briefcase className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
       onClick: () => setActiveSection('business'),
-      isActive: activeSection === 'business',
     },
     {
-      icon: <Settings className="h-4 w-4" />,
       label: 'Settings',
+      href: '#',
+      icon: <Settings className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
       onClick: () => setActiveSection('settings'),
-      isActive: activeSection === 'settings',
-      isSeparator: true,
     },
   ];
 
-  const logoutItem = {
-    icon: <LogOut className="h-4 w-4" />,
+  const logoutLink = {
     label: 'Sign Out',
+    href: '#',
+    icon: <LogOut className="h-5 w-5 flex-shrink-0 text-destructive" />,
     onClick: signOut,
   };
 
@@ -349,6 +352,8 @@ const Dashboard = () => {
     avatarUrl: avatarUrl,
     userId: user?.id,
   };
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!user) {
     return (
@@ -367,37 +372,58 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col w-full">
       <FloatingHeader />
-      <div className="container mx-auto px-4 py-8">
-        {/* Mobile Header with Sidebar Toggle */}
-        <div className="lg:hidden flex items-center gap-4 mb-6">
-          <MobileSidebar
-            user={userProfile}
-            navItems={navItems}
-            logoutItem={logoutItem}
-            onAvatarChange={setAvatarUrl}
-          />
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-        </div>
+      
+      <div className="flex flex-1 w-full">
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
+          <SidebarBody className="justify-between gap-10">
+            <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              {/* User Profile */}
+              <div className="flex items-center gap-3 mb-6">
+                {userProfile.avatarUrl ? (
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold flex-shrink-0">
+                    {userProfile.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <motion.div
+                  animate={{
+                    display: sidebarOpen ? "block" : "none",
+                    opacity: sidebarOpen ? 1 : 0,
+                  }}
+                  className="overflow-hidden"
+                >
+                  <p className="font-medium text-sm text-foreground truncate">{userProfile.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userProfile.email}</p>
+                </motion.div>
+              </div>
 
-        <div className="flex gap-6">
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block sticky top-24 h-fit">
-            <UserProfileSidebar
-              user={userProfile}
-              navItems={navItems}
-              logoutItem={logoutItem}
-              activeSection={activeSection}
-              onAvatarChange={setAvatarUrl}
-            />
-          </div>
+              {/* Navigation Links */}
+              <div className="flex flex-col gap-2">
+                {sidebarLinks.map((link, idx) => (
+                  <SidebarLink key={idx} link={link} />
+                ))}
+              </div>
+            </div>
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            {/* Logout at bottom */}
+            <div className="border-t border-border pt-4">
+              <SidebarLink link={logoutLink} />
+            </div>
+          </SidebarBody>
+        </Sidebar>
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 p-4 md:p-8 overflow-auto">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="text-muted-foreground mt-2">Loading your dashboard...</p>
               </div>
             ) : (
@@ -955,8 +981,7 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default Dashboard;
