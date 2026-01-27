@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,10 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAssessmentProgress } from "@/hooks/useAssessmentProgress";
+import { ResumeProgressModal } from "@/components/assessment/ResumeProgressModal";
+import { AutoSaveIndicator } from "@/components/assessment/AutoSaveIndicator";
+import { PauseButton } from "@/components/assessment/PauseButton";
 
 // Utility function to shuffle array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -317,6 +321,23 @@ const PremiumAssessment = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [shuffledQuestions, setShuffledQuestions] = useState(premiumQuestions);
   const [shuffledOptions, setShuffledOptions] = useState<{ [key: number]: any[] }>({});
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Auto-save hook
+  const {
+    isLoading: progressLoading,
+    savedProgress,
+    lastSaved,
+    isSaving,
+    saveProgress,
+    clearProgress,
+    markComplete,
+    hasProgress,
+  } = useAssessmentProgress({
+    assessmentType: 'premium',
+    totalQuestions: premiumQuestions.length,
+  });
 
   // Initialize with shuffled questions and options
   useEffect(() => {
@@ -331,11 +352,47 @@ const PremiumAssessment = () => {
     setShuffledOptions(optionsMap);
   }, []);
 
+  // Show resume modal if there's saved progress
+  useEffect(() => {
+    if (!progressLoading && hasProgress && !initialized) {
+      setShowResumeModal(true);
+    } else if (!progressLoading && !hasProgress) {
+      setInitialized(true);
+    }
+  }, [progressLoading, hasProgress, initialized]);
+
+  // Auto-save on answer changes
+  useEffect(() => {
+    if (initialized && Object.keys(answers).length > 0) {
+      saveProgress(currentQuestion, answers);
+    }
+  }, [answers, currentQuestion, initialized]);
+
+  const handleResume = useCallback(() => {
+    if (savedProgress) {
+      setAnswers(savedProgress.answers);
+      setCurrentQuestion(savedProgress.currentQuestion);
+      setSelectedAnswer(savedProgress.answers[savedProgress.currentQuestion] || "");
+    }
+    setShowResumeModal(false);
+    setInitialized(true);
+  }, [savedProgress]);
+
+  const handleStartFresh = useCallback(async () => {
+    await clearProgress();
+    setShowResumeModal(false);
+    setInitialized(true);
+  }, [clearProgress]);
+
+  const handleSaveAndExit = useCallback(async () => {
+    await saveProgress(currentQuestion, answers);
+  }, [saveProgress, currentQuestion, answers]);
+
   const handleAnswer = (color: string) => {
     setSelectedAnswer(color);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selectedAnswer) {
       const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
       setAnswers(newAnswers);
@@ -371,6 +428,9 @@ const PremiumAssessment = () => {
             percentages[a[0] as keyof typeof percentages] > percentages[b[0] as keyof typeof percentages] ? a : b
           )[0];
 
+        // Mark assessment as complete
+        await markComplete(dominantColor, colorCounts);
+
         // Store premium results
         localStorage.setItem('premiumAssessmentResults', JSON.stringify({
           dominantColor,
@@ -401,10 +461,35 @@ const PremiumAssessment = () => {
     return currentQuestionData?.options ? shuffleArray(currentQuestionData.options) : [];
   }, [currentQuestion, currentQuestionData?.options]);
 
+  // Show loading while checking for saved progress
+  if (progressLoading) {
+    return (
+      <ProtectedRoute requiresPayment={true} assessmentType="premium">
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute requiresPayment={true} assessmentType="premium">
       <div className="min-h-screen bg-background">
         <Navbar />
+        
+        {/* Resume Progress Modal */}
+        <ResumeProgressModal
+          open={showResumeModal}
+          onResume={handleResume}
+          onStartFresh={handleStartFresh}
+          answeredCount={Object.keys(savedProgress?.answers || {}).length}
+          totalQuestions={premiumQuestions.length}
+          lastSavedAt={lastSaved}
+        />
+
         <div className="bg-gradient-subtle py-8 px-4">
           <div className="max-w-3xl mx-auto">
             {/* Header with Progress */}
@@ -418,13 +503,11 @@ const PremiumAssessment = () => {
                     Premium Leadership Assessment
                   </h1>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end gap-1">
                   <div className="text-sm text-muted-foreground">
                     Question {currentQuestion + 1} of {shuffledQuestions.length}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round(progress)}% Complete
-                  </div>
+                  <AutoSaveIndicator isSaving={isSaving} lastSaved={lastSaved} />
                 </div>
               </div>
               <div className="relative">
@@ -504,10 +587,8 @@ const PremiumAssessment = () => {
                 Previous
               </Button>
 
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">
-                  Your answers are not saved if you don't finish the quiz
-                </p>
+              <div className="text-center flex items-center gap-4">
+                <PauseButton onSave={handleSaveAndExit} disabled={Object.keys(answers).length === 0} />
               </div>
 
               <Button
