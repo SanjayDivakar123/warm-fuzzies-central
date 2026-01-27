@@ -730,9 +730,15 @@ const Dashboard = () => {
                 {/* Settings Section */}
                 {activeSection === 'settings' && (
                   <>
-                    <div className="mb-6">
-                      <h1 className="text-3xl font-bold">Account Settings</h1>
-                      <p className="text-muted-foreground mt-1">Manage your account preferences</p>
+                    <div className="mb-6 flex items-center justify-between">
+                      <div>
+                        <h1 className="text-3xl font-bold">Account Settings</h1>
+                        <p className="text-muted-foreground mt-1">Manage your account preferences</p>
+                      </div>
+                      <Button onClick={() => setShowEmailChange(true)}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Change Email
+                      </Button>
                     </div>
 
                     {/* Email Settings Card */}
