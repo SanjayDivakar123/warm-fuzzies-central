@@ -61,6 +61,13 @@ import CompanyAssessment from "@/pages/company/CompanyAssessment";
 import CompanyResults from "@/pages/company/CompanyResults";
 import CompanyHome from "@/pages/company/CompanyHome";
 
+// Candidate portal pages
+import CandidatePortalLayout from "@/pages/candidate/CandidatePortalLayout";
+import CandidateLanding from "@/pages/candidate/CandidateLanding";
+import CandidateLogin from "@/pages/candidate/CandidateLogin";
+import CandidateAssessment from "@/pages/candidate/CandidateAssessment";
+import CandidateResults from "@/pages/candidate/CandidateResults";
+
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
@@ -271,6 +278,17 @@ export const routeConfig = [
       { path: "home", element: <CompanyHome /> },
       { path: "assessment", element: <CompanyAssessment /> },
       { path: "results", element: <CompanyResults /> },
+      // Candidate routes nested under company
+      { 
+        path: "candidate/:code", 
+        element: <CandidatePortalLayout />,
+        children: [
+          { index: true, element: <CandidateLanding /> },
+          { path: "login", element: <CandidateLogin /> },
+          { path: "assessment", element: <CandidateAssessment /> },
+          { path: "results", element: <CandidateResults /> },
+        ]
+      },
     ],
   },
   {
