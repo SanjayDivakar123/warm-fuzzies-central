@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Link2, Copy, Check } from 'lucide-react';
+import { useRoleColorSuggestion } from '@/hooks/useRoleColorSuggestion';
+import { Loader2, Link2, Copy, Check, Sparkles } from 'lucide-react';
 import { AssessmentCategory } from '@/lib/assessmentQuestionLoader';
 
 interface CreateApplicationLinkModalProps {
@@ -56,6 +57,7 @@ export default function CreateApplicationLinkModal({
   const [createdLink, setCreatedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { suggestColor, suggesting } = useRoleColorSuggestion();
 
   const handleCreate = async () => {
     if (!positionTitle.trim()) {
@@ -169,7 +171,24 @@ export default function CreateApplicationLinkModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Ideal Role Color</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Ideal Role Color</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                    onClick={() => suggestColor(positionTitle, setIdealRoleColor)}
+                    disabled={loading || suggesting || !positionTitle.trim()}
+                  >
+                    {suggesting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3" />
+                    )}
+                    Auto-select
+                  </Button>
+                </div>
                 <Select
                   value={idealRoleColor}
                   onValueChange={setIdealRoleColor}

@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus } from 'lucide-react';
+import { useRoleColorSuggestion } from '@/hooks/useRoleColorSuggestion';
+import { Loader2, UserPlus, Sparkles } from 'lucide-react';
 import { AssessmentCategory } from '@/lib/assessmentQuestionLoader';
 
 interface InviteCandidateModalProps {
@@ -55,6 +56,7 @@ export default function InviteCandidateModal({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { suggestColor, suggesting } = useRoleColorSuggestion();
 
   const handleInvite = async () => {
     if (!email.trim()) {
@@ -188,7 +190,24 @@ export default function InviteCandidateModal({
               />
             </div>
             <div className="space-y-2">
-              <Label>Ideal Role Color</Label>
+              <div className="flex items-center justify-between">
+                <Label>Ideal Role Color</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                  onClick={() => suggestColor(positionTitle, setIdealRoleColor)}
+                  disabled={loading || suggesting || !positionTitle.trim()}
+                >
+                  {suggesting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  Auto-select
+                </Button>
+              </div>
               <Select
                 value={idealRoleColor}
                 onValueChange={setIdealRoleColor}
