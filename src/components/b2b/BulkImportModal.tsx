@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -45,6 +46,7 @@ interface ColumnMapping {
   firstNameColumn: string | null;
   lastNameColumn: string | null;
   jobRoleColumn: string | null;
+  skillsColumn: string | null;
   confidence: string;
   notes: string;
 }
@@ -53,10 +55,14 @@ interface ParsedEmployee {
   email: string;
   fullName: string | null;
   jobRole: string | null;
+  skills: string[] | null;
+  assessmentCategory: 'professional' | 'entrepreneur' | 'executive' | 'manager' | null;
+  assessmentType: '25q' | '50q' | null;
   valid: boolean;
   error?: string;
   existingUser?: { id: string; status: string; full_name: string | null; job_role: string | null } | null;
   action?: 'invite' | 'update' | 'skip';
+  selected?: boolean;
 }
 
 type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
@@ -76,6 +82,8 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   const [importResults, setImportResults] = useState<{ success: number; failed: number; updated: number; errors: string[] }>({ success: 0, failed: 0, updated: 0, errors: [] });
   const [existingUsers, setExistingUsers] = useState<Map<string, any>>(new Map());
   const [updateMode, setUpdateMode] = useState(true); // Enable update mode by default
+  const [bulkAssessmentCategory, setBulkAssessmentCategory] = useState<'professional' | 'entrepreneur' | 'executive' | 'manager' | ''>('');
+  const [bulkAssessmentType, setBulkAssessmentType] = useState<'25q' | '50q' | ''>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -207,6 +215,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
     const firstNameIdx = mapping.firstNameColumn ? headerRow.indexOf(mapping.firstNameColumn) : -1;
     const lastNameIdx = mapping.lastNameColumn ? headerRow.indexOf(mapping.lastNameColumn) : -1;
     const jobRoleIdx = mapping.jobRoleColumn ? headerRow.indexOf(mapping.jobRoleColumn) : -1;
+    const skillsIdx = mapping.skillsColumn ? headerRow.indexOf(mapping.skillsColumn) : -1;
 
     const employees: ParsedEmployee[] = [];
     const seenEmails = new Set<string>();
@@ -238,6 +247,12 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
       // Get job role
       const jobRole = jobRoleIdx >= 0 ? row[jobRoleIdx]?.trim() || null : null;
 
+      // Get skills (comma separated in the cell)
+      let skills: string[] | null = null;
+      if (skillsIdx >= 0 && row[skillsIdx]) {
+        skills = row[skillsIdx].split(',').map(s => s.trim()).filter(Boolean);
+      }
+
       // Check if user already exists
       const existingUser = existingUsers.get(email);
       let action: 'invite' | 'update' | 'skip' = 'invite';
@@ -264,10 +279,14 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
         email,
         fullName,
         jobRole,
+        skills,
+        assessmentCategory: null,
+        assessmentType: null,
         valid: isValidEmail && !isDuplicate && action !== 'skip',
         error,
         existingUser: existingUser || null,
         action,
+        selected: true,
       });
     }
 
@@ -276,10 +295,10 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   };
 
   const downloadTemplate = () => {
-    const template = `email,full_name,job_role
-john.doe@company.com,John Doe,Engineer
-jane.smith@company.com,Jane Smith,Designer
-bob.wilson@company.com,Bob Wilson,PM`;
+    const template = `email,full_name,job_role,skills
+john.doe@company.com,John Doe,Engineer,"UI Design, Coding, Data Analysis"
+jane.smith@company.com,Jane Smith,Designer,"UI Design, Branding, Content Creation"
+bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Communication"`;
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -324,6 +343,15 @@ bob.wilson@company.com,Bob Wilson,PM`;
           if (employee.jobRole && employee.jobRole !== employee.existingUser.job_role) {
             updateData.job_role = employee.jobRole;
           }
+          if (employee.skills && employee.skills.length > 0) {
+            updateData.skills = employee.skills;
+          }
+          if (employee.assessmentCategory) {
+            updateData.assessment_category = employee.assessmentCategory;
+          }
+          if (employee.assessmentType) {
+            updateData.assessment_type = employee.assessmentType;
+          }
           
           if (Object.keys(updateData).length > 0) {
             const { error } = await supabase
@@ -344,6 +372,9 @@ bob.wilson@company.com,Bob Wilson,PM`;
               email: employee.email,
               full_name: employee.fullName,
               job_role: employee.jobRole,
+              skills: employee.skills,
+              assessment_category: employee.assessmentCategory,
+              assessment_type: employee.assessmentType,
             },
           });
 
@@ -515,6 +546,22 @@ bob.wilson@company.com,Bob Wilson,PM`;
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Skills Column</Label>
+                  <Select value={mapping.skillsColumn || 'none'} onValueChange={(v) => updateMapping('skillsColumn', v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select skills column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Not mapped --</SelectItem>
+                      {headers.map(h => (
+                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Skills should be comma-separated</p>
+                </div>
               </div>
 
               <div className="border rounded-lg p-4">
@@ -549,12 +596,12 @@ bob.wilson@company.com,Bob Wilson,PM`;
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Badge variant="outline" className="gap-1">
-                    <UserPlus className="h-3 w-3 text-blue-500" />
+                    <UserPlus className="h-3 w-3 text-primary" />
                     {parsedEmployees.filter(e => e.valid && e.action === 'invite').length} new
                   </Badge>
                   {updateMode && (
                     <Badge variant="outline" className="gap-1">
-                      <RefreshCw className="h-3 w-3 text-amber-500" />
+                      <RefreshCw className="h-3 w-3 text-primary" />
                       {parsedEmployees.filter(e => e.valid && e.action === 'update').length} updates
                     </Badge>
                   )}
@@ -579,53 +626,146 @@ bob.wilson@company.com,Bob Wilson,PM`;
                 </div>
               </div>
 
-              <ScrollArea className="h-80 border rounded-lg">
+              {/* Bulk Assessment Assignment */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-sm">Bulk Assessment Assignment</p>
+                    <p className="text-xs text-muted-foreground">Assign the same assessment to selected users</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="select-all"
+                      checked={parsedEmployees.filter(e => e.valid).every(e => e.selected)}
+                      onCheckedChange={(checked) => {
+                        setParsedEmployees(prev => prev.map(e => ({ ...e, selected: e.valid ? !!checked : e.selected })));
+                      }}
+                    />
+                    <Label htmlFor="select-all" className="text-xs">Select all</Label>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Category</Label>
+                    <Select value={bulkAssessmentCategory} onValueChange={(v) => setBulkAssessmentCategory(v as any)}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
+                        <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Length</Label>
+                    <Select value={bulkAssessmentType} onValueChange={(v) => setBulkAssessmentType(v as any)}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select length" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="25q">25 Questions</SelectItem>
+                        <SelectItem value="50q">50 Questions</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (!bulkAssessmentCategory || !bulkAssessmentType) {
+                        toast({
+                          title: 'Select both category and length',
+                          description: 'Please select an assessment category and length to apply',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+                      const selectedCount = parsedEmployees.filter(e => e.valid && e.selected).length;
+                      if (selectedCount === 0) {
+                        toast({
+                          title: 'No users selected',
+                          description: 'Please select at least one user to apply the assessment',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+                      setParsedEmployees(prev => prev.map(e => ({
+                        ...e,
+                        assessmentCategory: e.selected ? bulkAssessmentCategory as any : e.assessmentCategory,
+                        assessmentType: e.selected ? bulkAssessmentType as any : e.assessmentType,
+                      })));
+                      toast({
+                        title: 'Assessment applied',
+                        description: `Applied ${bulkAssessmentCategory} • ${bulkAssessmentType.toUpperCase()} to ${selectedCount} users`,
+                      });
+                    }}
+                    disabled={!bulkAssessmentCategory || !bulkAssessmentType}
+                  >
+                    Apply to Selected
+                  </Button>
+                </div>
+              </div>
+
+              <ScrollArea className="h-64 border rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"></TableHead>
+                      <TableHead className="w-10"></TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Full Name</TableHead>
-                      <TableHead>Job Role</TableHead>
+                      <TableHead>Assessment</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {parsedEmployees.map((emp, idx) => (
-                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : emp.action === 'update' ? 'bg-amber-50 dark:bg-amber-950/20' : ''}>
+                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : emp.action === 'update' ? 'bg-muted/30' : ''}>
+                        <TableCell>
+                          {emp.valid && (
+                            <Checkbox
+                              checked={emp.selected}
+                              onCheckedChange={(checked) => {
+                                setParsedEmployees(prev => prev.map((e, i) => i === idx ? { ...e, selected: !!checked } : e));
+                              }}
+                            />
+                          )}
+                        </TableCell>
                         <TableCell>
                           {emp.valid ? (
                             emp.action === 'update' ? (
-                              <RefreshCw className="h-4 w-4 text-amber-500" />
+                              <RefreshCw className="h-4 w-4 text-primary" />
                             ) : (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
                             )
                           ) : (
                             <AlertCircle className="h-4 w-4 text-destructive" />
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{emp.email}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-mono text-xs">{emp.email}</TableCell>
+                        <TableCell className="text-sm">
                           {emp.fullName || <span className="text-muted-foreground">—</span>}
-                          {emp.action === 'update' && emp.existingUser?.full_name && emp.fullName !== emp.existingUser.full_name && (
-                            <span className="text-xs text-muted-foreground ml-1">(was: {emp.existingUser.full_name})</span>
-                          )}
                         </TableCell>
                         <TableCell>
-                          {emp.jobRole || <span className="text-muted-foreground">—</span>}
-                          {emp.action === 'update' && emp.existingUser?.job_role && emp.jobRole !== emp.existingUser.job_role && (
-                            <span className="text-xs text-muted-foreground ml-1">(was: {emp.existingUser.job_role})</span>
+                          {emp.assessmentCategory && emp.assessmentType ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {emp.assessmentCategory} • {emp.assessmentType.toUpperCase()}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Not assigned</span>
                           )}
                         </TableCell>
                         <TableCell>
                           {emp.valid ? (
                             emp.action === 'update' ? (
-                              <Badge variant="outline" className="text-amber-600">Update</Badge>
+                              <Badge variant="outline" className="text-xs">Update</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-blue-600">Invite</Badge>
+                              <Badge variant="outline" className="text-xs">Invite</Badge>
                             )
                           ) : (
-                            <Badge variant="destructive">{emp.error}</Badge>
+                            <Badge variant="destructive" className="text-xs">{emp.error}</Badge>
                           )}
                         </TableCell>
                       </TableRow>

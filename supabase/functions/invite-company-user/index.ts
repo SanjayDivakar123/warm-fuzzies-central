@@ -239,7 +239,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { company_id, email, full_name, job_role, role: requestedRole } = body;
+    const { company_id, email, full_name, job_role, role: requestedRole, assessment_category, assessment_type, skills } = body;
 
     // Input validation
     if (!company_id || !email) {
@@ -436,6 +436,9 @@ serve(async (req) => {
           invite_code: inviteCode,
           charge_amount: chargeAmount,
           charged_at: chargedAt,
+          assessment_category: assessment_category || null,
+          assessment_type: assessment_type || null,
+          skills: skills || [],
         })
         .select()
         .single();
