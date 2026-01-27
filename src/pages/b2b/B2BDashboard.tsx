@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -14,6 +14,7 @@ import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
+import CandidatesTab from '@/components/b2b/CandidatesTab';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
 
@@ -231,6 +232,12 @@ function B2BDashboardContent() {
               Users
             </TabsTrigger>
             <TabsTrigger 
+              value="candidates" 
+              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+            >
+              Candidates
+            </TabsTrigger>
+            <TabsTrigger 
               value="assessments" 
               className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
             >
@@ -262,6 +269,10 @@ function B2BDashboardContent() {
 
           <TabsContent value="users" className="mt-0">
             <UsersTab company={company} />
+          </TabsContent>
+
+          <TabsContent value="candidates" className="mt-0">
+            <CandidatesTab company={company} />
           </TabsContent>
 
           <TabsContent value="assessments" className="mt-0">

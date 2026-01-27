@@ -294,6 +294,174 @@ export type Database = {
         }
         Relationships: []
       }
+      candidate_application_links: {
+        Row: {
+          applications_count: number | null
+          assessment_category: string | null
+          assessment_type: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          ideal_role_color: string | null
+          is_active: boolean | null
+          link_code: string | null
+          max_applications: number | null
+          position_title: string
+          required_skills: string[] | null
+        }
+        Insert: {
+          applications_count?: number | null
+          assessment_category?: string | null
+          assessment_type?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          ideal_role_color?: string | null
+          is_active?: boolean | null
+          link_code?: string | null
+          max_applications?: number | null
+          position_title: string
+          required_skills?: string[] | null
+        }
+        Update: {
+          applications_count?: number | null
+          assessment_category?: string | null
+          assessment_type?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          ideal_role_color?: string | null
+          is_active?: boolean | null
+          link_code?: string | null
+          max_applications?: number | null
+          position_title?: string
+          required_skills?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_application_links_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          archived_at: string | null
+          archived_reason: string | null
+          assessment_category: string | null
+          assessment_completed_at: string | null
+          assessment_result_id: string | null
+          assessment_type: string | null
+          company_id: string
+          converted_to_employee_id: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string
+          fit_analysis: Json | null
+          fit_analyzed_at: string | null
+          fit_score: number | null
+          full_name: string | null
+          id: string
+          ideal_role_color: string | null
+          invite_code: string | null
+          notes: string | null
+          phone: string | null
+          position_title: string | null
+          public_token: string | null
+          required_skills: string[] | null
+          source: string | null
+          status: Database["public"]["Enums"]["candidate_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_reason?: string | null
+          assessment_category?: string | null
+          assessment_completed_at?: string | null
+          assessment_result_id?: string | null
+          assessment_type?: string | null
+          company_id: string
+          converted_to_employee_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          fit_analysis?: Json | null
+          fit_analyzed_at?: string | null
+          fit_score?: number | null
+          full_name?: string | null
+          id?: string
+          ideal_role_color?: string | null
+          invite_code?: string | null
+          notes?: string | null
+          phone?: string | null
+          position_title?: string | null
+          public_token?: string | null
+          required_skills?: string[] | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          archived_reason?: string | null
+          assessment_category?: string | null
+          assessment_completed_at?: string | null
+          assessment_result_id?: string | null
+          assessment_type?: string | null
+          company_id?: string
+          converted_to_employee_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          fit_analysis?: Json | null
+          fit_analyzed_at?: string | null
+          fit_score?: number | null
+          full_name?: string | null
+          id?: string
+          ideal_role_color?: string | null
+          invite_code?: string | null
+          notes?: string | null
+          phone?: string | null
+          position_title?: string | null
+          public_token?: string | null
+          required_skills?: string[] | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_assessment_result_id_fkey"
+            columns: ["assessment_result_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_converted_to_employee_id_fkey"
+            columns: ["converted_to_employee_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           admin_email: string
@@ -1453,6 +1621,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "blogger" | "user"
+      candidate_status:
+        | "invited"
+        | "applied"
+        | "assessment_pending"
+        | "assessment_completed"
+        | "hired"
+        | "archived"
+        | "rejected"
       company_assessment_category:
         | "professional"
         | "entrepreneur"
@@ -1597,6 +1773,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "blogger", "user"],
+      candidate_status: [
+        "invited",
+        "applied",
+        "assessment_pending",
+        "assessment_completed",
+        "hired",
+        "archived",
+        "rejected",
+      ],
       company_assessment_category: [
         "professional",
         "entrepreneur",
