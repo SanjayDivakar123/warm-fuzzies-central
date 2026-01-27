@@ -296,10 +296,10 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   };
 
   const downloadTemplate = () => {
-    const template = `email,full_name,job_role,skills
-john.doe@company.com,John Doe,Engineer,"UI Design, Coding, Data Analysis"
-jane.smith@company.com,Jane Smith,Designer,"UI Design, Branding, Content Creation"
-bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Communication"`;
+    const template = `email,first_name,last_name,job_role,skills
+john.doe@company.com,John,Doe,Senior Engineer,"UI Design, Coding, Data Analysis"
+jane.smith@company.com,Jane,Smith,Product Designer,"UI Design, Branding, Content Creation"
+bob.wilson@company.com,Bob,Wilson,Project Manager,"Project Management, Strategy, Client Communication"`;
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
