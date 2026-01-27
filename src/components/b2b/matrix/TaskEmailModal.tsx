@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Sparkles, Send, Edit3, Palette, Eye } from 'lucide-react';
+import { Loader2, Mail, Sparkles, Send, Edit3, Palette, Eye, Code, Type } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 
 interface TaskEmailModalProps {
@@ -50,6 +50,8 @@ const TONE_OPTIONS = [
   { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' },
 ];
 
+type EditMode = 'text' | 'html';
+
 export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: TaskEmailModalProps) {
   const { toast } = useToast();
   const { company } = useCompany();
@@ -60,6 +62,8 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
   const [isSending, setIsSending] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  const [editMode, setEditMode] = useState<EditMode>('text');
+  const [customHtml, setCustomHtml] = useState('');
   
   // Email design state
   const [design, setDesign] = useState<EmailDesign>({
@@ -125,7 +129,8 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
         body: {
           to: assignee.email,
           subject: emailSubject,
-          body: emailBody,
+          body: editMode === 'html' ? null : emailBody,
+          customHtml: editMode === 'html' ? customHtml : null,
           taskId: task.id,
           assigneeId: assignee.id,
           companyName: company?.name || 'Role Color Finder',
@@ -161,7 +166,34 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
     setAdditionalDetails('');
     setEmailSubject('');
     setEmailBody('');
+    setEditMode('text');
+    setCustomHtml('');
     onClose();
+  };
+
+  // Generate default HTML template for custom editing
+  const generateDefaultHtml = () => {
+    return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: ${design.headerColor};">Task Assignment: ${task.title}</h2>
+  
+  <p>Hi ${assignee.full_name || assignee.email.split('@')[0]},</p>
+  
+  <p>${emailBody}</p>
+  
+  <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <strong>Task Details:</strong>
+    <p style="margin: 8px 0 0 0;">${task.description}</p>
+  </div>
+  
+  <p>${design.signOff},<br/>${design.senderName || 'The Team'}</p>
+</div>`;
+  };
+
+  const switchToHtmlMode = () => {
+    if (!customHtml) {
+      setCustomHtml(generateDefaultHtml());
+    }
+    setEditMode('html');
   };
 
   // Email preview component
@@ -412,21 +444,87 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="body">Email Body</Label>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Edit3 className="h-3 w-3" /> Editable
-                </span>
+            {/* Edit Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <Label>Edit Mode</Label>
+              <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+                <Button
+                  variant={editMode === 'text' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setEditMode('text')}
+                  className="h-7 px-3"
+                >
+                  <Type className="h-3 w-3 mr-1" />
+                  Text
+                </Button>
+                <Button
+                  variant={editMode === 'html' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={switchToHtmlMode}
+                  className="h-7 px-3"
+                >
+                  <Code className="h-3 w-3 mr-1" />
+                  HTML
+                </Button>
               </div>
-              <Textarea
-                id="body"
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={12}
-                className="font-mono text-sm"
-              />
             </div>
+
+            {editMode === 'text' ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="body">Email Body</Label>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Edit3 className="h-3 w-3" /> Editable
+                  </span>
+                </div>
+                <Textarea
+                  id="body"
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="htmlBody">Custom HTML</Label>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Code className="h-3 w-3" /> Advanced
+                  </span>
+                </div>
+                <Textarea
+                  id="htmlBody"
+                  value={customHtml}
+                  onChange={(e) => setCustomHtml(e.target.value)}
+                  rows={12}
+                  className="font-mono text-xs"
+                  placeholder="Enter custom HTML for your email body..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Note: The RoleColorFinder logo will always be included in the footer.
+                </p>
+              </div>
+            )}
+
+            {/* Live HTML Preview */}
+            {editMode === 'html' && customHtml && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  HTML Preview
+                </Label>
+                <div className="border rounded-lg p-4 bg-white text-gray-800 max-h-48 overflow-y-auto">
+                  <div dangerouslySetInnerHTML={{ __html: customHtml }} />
+                  {/* RCF Footer Preview */}
+                  <div className="mt-4 pt-4 border-t text-center">
+                    <p className="text-xs text-gray-500">
+                      Powered by <span className="text-primary font-medium">RoleColorFinder</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="p-3 bg-muted rounded-lg text-sm">
               <p><strong>To:</strong> {assignee.email}</p>
