@@ -48,6 +48,8 @@ RoleColor Framework:
 - Green (Organizer): Structured, detail-oriented, reliable, systematic
 - Blue (Innovator): Creative, visionary, strategic, big-picture thinkers
 
+IMPORTANT LEADERSHIP INSIGHT: The best leaders have Red and/or Yellow as their PRIMARY or SECONDARY colors. Candidates with Red+Yellow combinations or Red/Yellow as their secondary color have HIGH leadership potential. If neither Red nor Yellow is in their top two colors, their leadership potential is LIMITED - this is critical for management/leadership roles.
+
 Answer the user's follow-up questions about this candidate concisely and helpfully. Provide actionable insights for hiring decisions. Use markdown formatting for clarity.`;
     } else if (contextType === "team-insights") {
       systemPrompt = `You are an expert organizational psychologist and leadership consultant. You have access to a team's RoleColor assessment results and AI-generated team insights.
@@ -60,6 +62,8 @@ RoleColor Framework:
 - Red (Motivator): Inspiring, people-focused, enthusiastic, relationship-builders
 - Green (Organizer): Structured, detail-oriented, reliable, systematic
 - Blue (Innovator): Creative, visionary, strategic, big-picture thinkers
+
+IMPORTANT LEADERSHIP INSIGHT: The best leaders have Red and/or Yellow as their PRIMARY or SECONDARY colors. Team members with Red+Yellow combinations or Red/Yellow as their secondary color have HIGH leadership potential. Those without Red or Yellow in their top two colors have LIMITED leadership potential and may not be suited for leadership roles.
 
 Answer the user's follow-up questions about this team concisely and helpfully. Provide strategic recommendations for team optimization. Use markdown formatting for clarity.`;
     } else {
