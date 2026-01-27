@@ -406,7 +406,7 @@ const Dashboard = () => {
                 {activeSection === 'overview' && (
                   <>
                     <div className="mb-6">
-                      <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                      <h1 className="text-3xl font-bold text-foreground">
                         Welcome back, {userProfile.name}
                       </h1>
                       <p className="text-muted-foreground mt-1">Here's an overview of your account</p>
