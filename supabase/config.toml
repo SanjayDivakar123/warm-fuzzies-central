@@ -119,3 +119,6 @@ verify_jwt = true
 
 [functions.suggest-skills]
 verify_jwt = true
+
+[functions.notify-task-completion]
+verify_jwt = false

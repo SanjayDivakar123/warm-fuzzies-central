@@ -1267,9 +1267,14 @@ export type Database = {
           ai_score: number | null
           approved_at: string | null
           approved_by: string | null
+          assigner_email: string | null
           company_id: string
           created_at: string
+          employee_completed_at: string | null
+          employee_notes: string | null
+          employee_status: string | null
           id: string
+          notification_sent_at: string | null
           outcome_notes: string | null
           outcome_status: string | null
           primary_assignee_id: string | null
@@ -1282,9 +1287,14 @@ export type Database = {
           ai_score?: number | null
           approved_at?: string | null
           approved_by?: string | null
+          assigner_email?: string | null
           company_id: string
           created_at?: string
+          employee_completed_at?: string | null
+          employee_notes?: string | null
+          employee_status?: string | null
           id?: string
+          notification_sent_at?: string | null
           outcome_notes?: string | null
           outcome_status?: string | null
           primary_assignee_id?: string | null
@@ -1297,9 +1307,14 @@ export type Database = {
           ai_score?: number | null
           approved_at?: string | null
           approved_by?: string | null
+          assigner_email?: string | null
           company_id?: string
           created_at?: string
+          employee_completed_at?: string | null
+          employee_notes?: string | null
+          employee_status?: string | null
           id?: string
+          notification_sent_at?: string | null
           outcome_notes?: string | null
           outcome_status?: string | null
           primary_assignee_id?: string | null
