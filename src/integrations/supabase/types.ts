@@ -567,6 +567,7 @@ export type Database = {
           invited_at: string | null
           job_role: string | null
           joined_at: string | null
+          notify_task_completion: boolean | null
           role: Database["public"]["Enums"]["company_user_role"]
           skills: string[] | null
           status: Database["public"]["Enums"]["company_user_status"]
@@ -590,6 +591,7 @@ export type Database = {
           invited_at?: string | null
           job_role?: string | null
           joined_at?: string | null
+          notify_task_completion?: boolean | null
           role?: Database["public"]["Enums"]["company_user_role"]
           skills?: string[] | null
           status?: Database["public"]["Enums"]["company_user_status"]
@@ -613,6 +615,7 @@ export type Database = {
           invited_at?: string | null
           job_role?: string | null
           joined_at?: string | null
+          notify_task_completion?: boolean | null
           role?: Database["public"]["Enums"]["company_user_role"]
           skills?: string[] | null
           status?: Database["public"]["Enums"]["company_user_status"]

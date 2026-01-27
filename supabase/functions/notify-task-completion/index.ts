@@ -64,17 +64,34 @@ serve(async (req) => {
     const task = assignment.task as any;
     const assignee = assignment.assignee as any;
 
-    if (!assignment.assigner_email) {
-      console.log("No assigner email found, skipping notification");
-      return new Response(
-        JSON.stringify({ success: true, message: "No assigner email configured" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+  if (!assignment.assigner_email) {
+    console.log("No assigner email found, skipping notification");
+    return new Response(
+      JSON.stringify({ success: true, message: "No assigner email configured" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
-    // Get company info
-    const { data: company } = await supabase
-      .from("companies")
+  // Check if the assigner has opted in to completion notifications
+  const { data: assignerUser } = await supabase
+    .from("company_users")
+    .select("notify_task_completion")
+    .eq("email", assignment.assigner_email)
+    .eq("company_id", (assignment.task as any).company_id)
+    .single();
+
+  // Default to true if not set, but respect explicit opt-out
+  if (assignerUser && assignerUser.notify_task_completion === false) {
+    console.log("Assigner has opted out of completion notifications");
+    return new Response(
+      JSON.stringify({ success: true, message: "Assigner opted out of notifications" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Get company info
+  const { data: company } = await supabase
+    .from("companies")
       .select("name, primary_color, secondary_color")
       .eq("id", task.company_id)
       .single();
