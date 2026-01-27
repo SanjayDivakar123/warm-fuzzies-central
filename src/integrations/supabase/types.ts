@@ -148,6 +148,56 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_credits: {
         Row: {
           amount: number
@@ -481,10 +531,14 @@ export type Database = {
           id: string
           logo_url: string | null
           logo_url_dark: string | null
+          ms_teams_notifications_enabled: boolean | null
+          ms_teams_webhook_url: string | null
           name: string
           primary_color: string | null
           seats_purchased: number
           secondary_color: string | null
+          slack_channel_id: string | null
+          slack_notifications_enabled: boolean | null
           stripe_customer_id: string | null
           subdomain: string
           subdomain_enabled: boolean | null
@@ -509,10 +563,14 @@ export type Database = {
           id?: string
           logo_url?: string | null
           logo_url_dark?: string | null
+          ms_teams_notifications_enabled?: boolean | null
+          ms_teams_webhook_url?: string | null
           name: string
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          slack_channel_id?: string | null
+          slack_notifications_enabled?: boolean | null
           stripe_customer_id?: string | null
           subdomain: string
           subdomain_enabled?: boolean | null
@@ -537,10 +595,14 @@ export type Database = {
           id?: string
           logo_url?: string | null
           logo_url_dark?: string | null
+          ms_teams_notifications_enabled?: boolean | null
+          ms_teams_webhook_url?: string | null
           name?: string
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          slack_channel_id?: string | null
+          slack_notifications_enabled?: boolean | null
           stripe_customer_id?: string | null
           subdomain?: string
           subdomain_enabled?: boolean | null
@@ -549,10 +611,64 @@ export type Database = {
         }
         Relationships: []
       }
+      company_api_keys: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          permissions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          permissions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          permissions?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_api_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_users: {
         Row: {
           assessment_category: string | null
           assessment_completed_at: string | null
+          assessment_history: Json | null
           assessment_result_id: string | null
           assessment_type: string | null
           charge_amount: number | null
@@ -567,6 +683,8 @@ export type Database = {
           invited_at: string | null
           job_role: string | null
           joined_at: string | null
+          keyboard_shortcuts_enabled: boolean | null
+          last_reassessed_at: string | null
           notify_task_completion: boolean | null
           role: Database["public"]["Enums"]["company_user_role"]
           skills: string[] | null
@@ -577,6 +695,7 @@ export type Database = {
         Insert: {
           assessment_category?: string | null
           assessment_completed_at?: string | null
+          assessment_history?: Json | null
           assessment_result_id?: string | null
           assessment_type?: string | null
           charge_amount?: number | null
@@ -591,6 +710,8 @@ export type Database = {
           invited_at?: string | null
           job_role?: string | null
           joined_at?: string | null
+          keyboard_shortcuts_enabled?: boolean | null
+          last_reassessed_at?: string | null
           notify_task_completion?: boolean | null
           role?: Database["public"]["Enums"]["company_user_role"]
           skills?: string[] | null
@@ -601,6 +722,7 @@ export type Database = {
         Update: {
           assessment_category?: string | null
           assessment_completed_at?: string | null
+          assessment_history?: Json | null
           assessment_result_id?: string | null
           assessment_type?: string | null
           charge_amount?: number | null
@@ -615,6 +737,8 @@ export type Database = {
           invited_at?: string | null
           job_role?: string | null
           joined_at?: string | null
+          keyboard_shortcuts_enabled?: boolean | null
+          last_reassessed_at?: string | null
           notify_task_completion?: boolean | null
           role?: Database["public"]["Enums"]["company_user_role"]
           skills?: string[] | null
@@ -723,6 +847,51 @@ export type Database = {
           used?: boolean | null
           used_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      job_templates: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          ideal_primary_color: string
+          ideal_secondary_color: string | null
+          is_global: boolean | null
+          name: string
+          required_skills: string[] | null
+          suggested_interview_questions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ideal_primary_color: string
+          ideal_secondary_color?: string | null
+          is_global?: boolean | null
+          name: string
+          required_skills?: string[] | null
+          suggested_interview_questions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ideal_primary_color?: string
+          ideal_secondary_color?: string | null
+          is_global?: boolean | null
+          name?: string
+          required_skills?: string[] | null
+          suggested_interview_questions?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1135,6 +1304,62 @@ export type Database = {
           },
         ]
       }
+      scheduled_reports: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          frequency: string
+          id: string
+          include_sections: Json | null
+          is_active: boolean
+          last_sent_at: string | null
+          name: string
+          next_send_at: string | null
+          recipients: string[]
+          report_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          frequency?: string
+          id?: string
+          include_sections?: Json | null
+          is_active?: boolean
+          last_sent_at?: string | null
+          name: string
+          next_send_at?: string | null
+          recipients?: string[]
+          report_type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          frequency?: string
+          id?: string
+          include_sections?: Json | null
+          is_active?: boolean
+          last_sent_at?: string | null
+          name?: string
+          next_send_at?: string | null
+          recipients?: string[]
+          report_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_classes: {
         Row: {
           admin_id: string
@@ -1356,6 +1581,58 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "work_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_compatibility_scores: {
+        Row: {
+          analysis: Json | null
+          calculated_at: string
+          company_id: string
+          compatibility_score: number
+          id: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Insert: {
+          analysis?: Json | null
+          calculated_at?: string
+          company_id: string
+          compatibility_score: number
+          id?: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Update: {
+          analysis?: Json | null
+          calculated_at?: string
+          company_id?: string
+          compatibility_score?: number
+          id?: string
+          user_a_id?: string
+          user_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_compatibility_scores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_compatibility_scores_user_a_id_fkey"
+            columns: ["user_a_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_compatibility_scores_user_b_id_fkey"
+            columns: ["user_b_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
