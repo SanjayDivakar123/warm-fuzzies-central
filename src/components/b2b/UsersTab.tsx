@@ -28,7 +28,18 @@ import {
   ShieldPlus,
   Settings,
   RotateCcw,
+  RefreshCw,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
 import BulkImportModal from './BulkImportModal';
@@ -109,6 +120,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
   const [userFilter, setUserFilter] = useState<UserFilter>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [retakeRequestUser, setRetakeRequestUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
+  const [requestingRetake, setRequestingRetake] = useState(false);
   const { toast } = useToast();
 
   // Identify the super admin (first admin created for the company)
@@ -404,6 +417,52 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRequestRetake = async (userId: string) => {
+    setRequestingRetake(true);
+    try {
+      // Reset the assessment fields to allow retake
+      const { error } = await supabase
+        .from("company_users")
+        .update({ 
+          assessment_completed_at: null,
+          assessment_result_id: null,
+          status: 'invited'
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      // Send a notification email to the employee
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        try {
+          await supabase.functions.invoke("resend-invite", {
+            body: { user_id: userId }
+          });
+        } catch (emailError) {
+          console.error("Error sending retake email:", emailError);
+          // Continue even if email fails - the reset was still successful
+        }
+      }
+
+      toast({
+        title: "Retake requested",
+        description: `${user?.email || 'User'} has been notified to retake the assessment.`,
+      });
+
+      setRetakeRequestUser(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error requesting retake",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setRequestingRetake(false);
     }
   };
 
@@ -1045,6 +1104,22 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                               <TooltipContent>Manage {user.role === 'admin' ? 'Admin' : user.role === 'hr' ? 'HR' : 'Partner'}</TooltipContent>
                             </Tooltip>
                           )}
+                          {/* Request Retake - only for employees with completed assessments */}
+                          {user.role === "employee" && user.status === "active" && user.assessment_completed_at && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="text-amber-600 hover:bg-amber-600 hover:text-white"
+                                  onClick={() => setRetakeRequestUser({ id: user.id, email: user.email, full_name: user.full_name })}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Request retake</TooltipContent>
+                            </Tooltip>
+                          )}
                           {user.role === "employee" && user.status !== "revoked" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1406,6 +1481,36 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
           availableSeats={getAvailableSeats()}
           isUnlimitedCompany={isUnlimitedCompany}
         />
+        {/* Request Retake Confirmation Dialog */}
+        <AlertDialog open={!!retakeRequestUser} onOpenChange={(open) => !open && setRetakeRequestUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Request Assessment Retake</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to request <span className="font-medium">{retakeRequestUser?.full_name || retakeRequestUser?.email}</span> to retake their assessment? 
+                <br /><br />
+                This will clear their existing results and send them a new invitation email.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={requestingRetake}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => retakeRequestUser && handleRequestRetake(retakeRequestUser.id)}
+                disabled={requestingRetake}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {requestingRetake ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Requesting...
+                  </>
+                ) : (
+                  "Request Retake"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );
