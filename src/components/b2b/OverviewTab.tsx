@@ -192,8 +192,6 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     }
   };
 
-  const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
-  const seatsDisplay = isUnlimitedCompany ? `${stats.seatsUsed} / ∞` : `${stats.seatsUsed} / ${company.seats_purchased}`;
   const completionRate = stats.totalUsers > 0 ? Math.round((stats.completedAssessments / stats.totalUsers) * 100) : 0;
   const companyPortalUrl = `/company/${company.subdomain}`;
 
@@ -201,7 +199,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
     exportDashboardPdf({
       companyName: company.name,
       seatsUsed: stats.seatsUsed,
-      seatsPurchased: isUnlimitedCompany ? 999 : company.seats_purchased,
+      seatsPurchased: 0,
       totalUsers: stats.totalUsers,
       completedAssessments: stats.completedAssessments,
       pendingInvites: stats.pendingInvites,
@@ -243,7 +241,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       </div>
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-tour="overview-stats">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3" data-tour="overview-stats">
         <Card className="border-0 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
@@ -254,8 +252,8 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 <Users className="h-4 w-4" style={{ color: primaryColor }} />
               </div>
               <div>
-                <p className="text-xl font-semibold">{seatsDisplay}</p>
-                <p className="text-xs text-muted-foreground">Seats Used</p>
+                <p className="text-xl font-semibold">{stats.totalUsers}</p>
+                <p className="text-xs text-muted-foreground">Total Users</p>
               </div>
             </div>
           </CardContent>

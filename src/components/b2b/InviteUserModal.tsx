@@ -22,8 +22,8 @@ interface InviteUserModalProps {
   companyId: string;
   onInviteComplete: () => void;
   onCompanyUpdate?: () => void;
-  availableSeats: number;
-  isUnlimitedCompany: boolean;
+  availableSeats?: number; // deprecated - no longer used
+  isUnlimitedCompany?: boolean; // deprecated - no longer used
 }
 
 type AssessmentType = '25q' | '50q';
@@ -46,15 +46,12 @@ export default function InviteUserModal({
   companyId,
   onInviteComplete,
   onCompanyUpdate,
-  availableSeats,
-  isUnlimitedCompany,
 }: InviteUserModalProps) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [assessmentCategory, setAssessmentCategory] = useState<AssessmentCategory>('professional');
   const [assessmentType, setAssessmentType] = useState<AssessmentType>('25q');
   const [loading, setLoading] = useState(false);
-  const [showSeatPrompt, setShowSeatPrompt] = useState(false);
   const { toast } = useToast();
 
   const handleInvite = async () => {
@@ -68,7 +65,6 @@ export default function InviteUserModal({
     }
 
     setLoading(true);
-    setShowSeatPrompt(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('invite-company-user', {
@@ -84,11 +80,6 @@ export default function InviteUserModal({
       if (error) throw error;
 
       if (data?.error) {
-        if (data.error.toLowerCase().includes('no seats') || data.errorCode === 'NO_SEATS') {
-          setShowSeatPrompt(true);
-          setLoading(false);
-          return;
-        }
         if (data.errorCode === 'NEEDS_PAYMENT_METHOD' || data.needsPaymentMethod) {
           toast({
             title: 'Payment method required',
@@ -136,15 +127,11 @@ export default function InviteUserModal({
       onClose();
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred';
-      if (errorMessage.toLowerCase().includes('no seats')) {
-        setShowSeatPrompt(true);
-      } else {
-        toast({
-          title: 'Error inviting user',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Error inviting user',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -155,7 +142,6 @@ export default function InviteUserModal({
     setFullName('');
     setAssessmentCategory('professional');
     setAssessmentType('25q');
-    setShowSeatPrompt(false);
     onClose();
   };
 
@@ -236,15 +222,6 @@ export default function InviteUserModal({
               </SelectContent>
             </Select>
           </div>
-
-          {showSeatPrompt && (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm">
-              <p className="font-medium text-destructive">No seats available</p>
-              <p className="text-muted-foreground mt-1">
-                You've used all available seats. Please add more seats in the Billing section or contact support.
-              </p>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
@@ -253,7 +230,7 @@ export default function InviteUserModal({
           </Button>
           <Button
             onClick={handleInvite}
-            disabled={loading || !email.trim() || (!isUnlimitedCompany && availableSeats <= 0)}
+            disabled={loading || !email.trim()}
           >
             {loading ? (
               <>
