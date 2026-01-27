@@ -464,9 +464,49 @@ serve(async (req) => {
     };
     const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, company.subdomain_enabled || false, templateSettings);
 
+    // === SLACK DM INVITE ===
+    // Send Slack DM invite if Slack is enabled for this company
+    let slackDmSent = false;
+    try {
+      // Check if company has Slack enabled
+      const { data: companySlack } = await supabase
+        .from('companies')
+        .select('slack_notifications_enabled, slack_bot_token')
+        .eq('id', company_id)
+        .single();
+
+      if (companySlack?.slack_notifications_enabled && companySlack?.slack_bot_token) {
+        console.log('Attempting to send Slack DM invite...');
+        
+        const slackResponse = await fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            company_id: company_id,
+            event_type: 'dm_invite',
+            data: {
+              email: email.toLowerCase().trim(),
+              invite_code: inviteCode,
+              full_name: full_name || null,
+            }
+          })
+        });
+
+        const slackResult = await slackResponse.json();
+        slackDmSent = slackResult.success === true;
+        console.log('Slack DM result:', slackResult);
+      }
+    } catch (slackError) {
+      console.error('Slack DM error (non-fatal):', slackError);
+    }
+
     return new Response(JSON.stringify({ 
       user: invitedUser, 
       emailSent,
+      slackDmSent,
       billing: {
         charged: chargeResult.charged || false,
         usedCredits: chargeResult.usedCredits || false,
