@@ -1278,6 +1278,7 @@ export type Database = {
           employee_status: string | null
           id: string
           notification_sent_at: string | null
+          notify_on_completion: boolean | null
           outcome_notes: string | null
           outcome_status: string | null
           primary_assignee_id: string | null
@@ -1298,6 +1299,7 @@ export type Database = {
           employee_status?: string | null
           id?: string
           notification_sent_at?: string | null
+          notify_on_completion?: boolean | null
           outcome_notes?: string | null
           outcome_status?: string | null
           primary_assignee_id?: string | null
@@ -1318,6 +1320,7 @@ export type Database = {
           employee_status?: string | null
           id?: string
           notification_sent_at?: string | null
+          notify_on_completion?: boolean | null
           outcome_notes?: string | null
           outcome_status?: string | null
           primary_assignee_id?: string | null

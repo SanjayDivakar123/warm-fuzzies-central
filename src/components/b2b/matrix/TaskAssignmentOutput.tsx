@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail } from 'lucide-react';
+import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail, Bell, BellOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { TaskEmailModal } from './TaskEmailModal';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface TaskAssignmentOutputProps {
   task: {
@@ -65,6 +67,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   const [employees, setEmployees] = useState<Record<string, any>>({});
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState<{ id: string; email: string; full_name?: string } | null>(null);
+  const [notifyOnCompletion, setNotifyOnCompletion] = useState(true);
 
   useEffect(() => {
     fetchEmployeeDetails();
@@ -112,7 +115,8 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
         .from('task_assignments')
         .update({
           approved_at: new Date().toISOString(),
-          approved_by: user.id
+          approved_by: user.id,
+          notify_on_completion: notifyOnCompletion
         })
         .eq('id', assignment.id);
 
@@ -311,6 +315,30 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
           )}
         </CardContent>
       </Card>
+
+      {/* Notification Preference for this assignment */}
+      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
+        <div className="flex items-center gap-3">
+          {notifyOnCompletion ? (
+            <Bell className="h-5 w-5 text-primary" />
+          ) : (
+            <BellOff className="h-5 w-5 text-muted-foreground" />
+          )}
+          <div>
+            <Label htmlFor="notifyOnCompletion" className="font-medium cursor-pointer">
+              Email me when completed
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Receive a notification when the assignee marks this task as done
+            </p>
+          </div>
+        </div>
+        <Switch
+          id="notifyOnCompletion"
+          checked={notifyOnCompletion}
+          onCheckedChange={setNotifyOnCompletion}
+        />
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-3">
