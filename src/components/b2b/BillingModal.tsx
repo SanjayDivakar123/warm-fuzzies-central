@@ -139,8 +139,8 @@ export default function BillingModal({ open, onClose, company, onSeatsUpdated }:
             </div>
             {!isUnlimitedCompany && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Price per Seat</span>
-                <span className="font-medium">${PRICE_PER_SEAT} (one-time)</span>
+                <span className="text-muted-foreground">Price per User</span>
+                <span className="font-medium">${PRICE_PER_SEAT}/month</span>
               </div>
             )}
           </div>

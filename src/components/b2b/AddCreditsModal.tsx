@@ -144,7 +144,7 @@ export default function AddCreditsModal({
             Add Credits
           </DialogTitle>
           <DialogDescription>
-            Add credits to the company wallet. Credits are used when inviting new users ($20 per invite).
+            Add credits to the company wallet. Credits are used for monthly user billing ($20/user/month).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
