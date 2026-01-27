@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserProfileSidebar } from "@/components/ui/user-profile-sidebar";
 import { MobileSidebar } from "@/components/dashboard/MobileSidebar";
 import { FloatingHeader } from "@/components/ui/floating-header";
+import { ChangeEmailModal } from "@/components/dashboard/ChangeEmailModal";
 import { 
   Calendar, 
   Download, 
@@ -56,13 +57,13 @@ const Dashboard = () => {
   const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [showEmailChange, setShowEmailChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business'>('overview');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
-
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
@@ -734,6 +735,33 @@ const Dashboard = () => {
                       <p className="text-muted-foreground mt-1">Manage your account preferences</p>
                     </div>
 
+                    {/* Email Settings Card */}
+                    <Card className="shadow-elegant border-border/20">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Mail className="w-5 h-5" />
+                          Email Address
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{user?.email}</p>
+                            <p className="text-sm text-muted-foreground">Your current email address</p>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setShowEmailChange(true)}
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Change Email
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Password & Security Card */}
                     <Card className="shadow-elegant border-border/20">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex items-center gap-2">
@@ -799,6 +827,13 @@ const Dashboard = () => {
                         )}
                       </CardContent>
                     </Card>
+
+                    {/* Change Email Modal */}
+                    <ChangeEmailModal
+                      open={showEmailChange}
+                      onOpenChange={setShowEmailChange}
+                      currentEmail={user?.email || ''}
+                    />
                   </>
                 )}
               </div>
