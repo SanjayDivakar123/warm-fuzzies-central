@@ -70,11 +70,14 @@ You analyze teams using a color-based leadership assessment framework:
 - Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers, process-focused
 - Blue (Innovator): Creative, visionary, strategic, big-picture thinkers, future-focused
 
+IMPORTANT LEADERSHIP INSIGHT: The best leaders typically have Red and/or Yellow as their PRIMARY or SECONDARY colors. These colors represent the action-taking (Yellow) and people-inspiring (Red) qualities essential for effective leadership. When evaluating leadership potential, prioritize candidates with Red+Yellow combinations or those with Red or Yellow as their secondary color.
+
 Your task is to provide DEEP, PERSONALIZED analysis for each team member, examining:
 1. How their leadership style matches or conflicts with their job role
 2. Their specific strengths in their current position
 3. Areas where their style might create friction with their responsibilities
 4. Concrete, actionable advice for improvement
+5. Their leadership potential based on their Red/Yellow color presence
 
 Be specific and reference their actual scores and role. Avoid generic advice.`;
 
@@ -99,6 +102,7 @@ Provide a comprehensive analysis in the following JSON format. For memberInsight
       "fitScore": "excellent|good|moderate|mismatch",
       "matchPercentage": "A number between 0-100 representing how well the person's leadership style matches their job role. Be precise - Excellent=85-100, Good=70-84, Moderate=50-69, Mismatch=0-49. Calculate based on how well their color profile aligns with role requirements.",
       "matchAnalysis": "4-5 sentences deeply analyzing whether this person is a MATCH for their role. Explain specifically WHY their dominant color and score distribution makes them suited or unsuited for this position. If they're not a great match, explain what role would be a STRONGER match for them and why. Be direct about fit quality.",
+      "leadershipPotential": "Rate as 'High', 'Moderate', or 'Limited' based on Red/Yellow presence. If Red or Yellow is their primary or secondary color, leadership potential is High. Otherwise assess based on their specific color mix.",
       "leadershipStyle": "2-3 sentences describing their leadership approach based on their score distribution",
       "workplaceContribution": "2 sentences about what unique value they bring to the team",
       "strengths": ["3-4 specific strengths this person brings based on their color profile and role"],

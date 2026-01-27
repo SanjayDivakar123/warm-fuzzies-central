@@ -82,6 +82,7 @@ Candidate Information:
 
 Assessment Results:
 - Dominant Color: ${assessmentResult.dominantColor}
+- Secondary Color: ${assessmentResult.secondaryColor || "Not determined"}
 - Color Scores: ${JSON.stringify(assessmentResult.scores)}
 - Key Strengths: ${JSON.stringify(assessmentResult.strengths || [])}
 
@@ -91,12 +92,15 @@ RoleColor Meanings:
 - Green: Organized, planners, systematic, analytical
 - Blue: Innovators, visionaries, strategists, researchers
 
+IMPORTANT LEADERSHIP INSIGHT: The best leaders have Red and/or Yellow as their PRIMARY or SECONDARY colors. If the candidate has Red or Yellow as their second color (or both Red and Yellow in their top two), they have HIGH leadership potential. If neither Red nor Yellow appears in their top two colors, their leadership potential is LIMITED and this should be factored into the fit assessment, especially for leadership/management positions.
+
 Provide a JSON response with:
-1. "summary": A 2-3 sentence overall assessment
+1. "summary": A 2-3 sentence overall assessment (include leadership potential assessment)
 2. "strengths": Array of 3-4 specific strengths for this role
 3. "concerns": Array of 2-3 potential areas of concern or gaps
 4. "recommendations": Array of 2-3 hiring recommendations
 5. "fitScore": A number 0-100 representing overall fit
+6. "leadershipPotential": "High" if Red/Yellow is primary or secondary, otherwise "Limited"
 
 Return ONLY valid JSON, no markdown.`;
 

@@ -407,6 +407,8 @@ Based on the RoleColor framework:
 - Green (Organizer): Systematic, detail-oriented, reliable - best for analytical and process tasks
 - Blue (Innovator): Strategic, visionary, creative - best for planning and innovation tasks
 
+IMPORTANT LEADERSHIP INSIGHT: The best leaders have Red and/or Yellow as their PRIMARY or SECONDARY colors. For tasks requiring leadership, delegation, or team coordination, prioritize candidates with Red+Yellow combinations or those with Red/Yellow as their secondary color. Candidates without Red or Yellow in their top two colors have LIMITED leadership potential.
+
 The algorithm recommends "${primaryAssignee.full_name || primaryAssignee.email}" as primary and "${secondaryAssignee?.full_name || secondaryAssignee?.email || 'none'}" as backup.
 
 Provide your analysis in this exact JSON format:
