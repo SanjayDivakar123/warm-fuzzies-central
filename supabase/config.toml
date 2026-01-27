@@ -101,3 +101,12 @@ verify_jwt = false
 
 [functions.invite-family-member]
 verify_jwt = false
+
+[functions.invite-candidate]
+verify_jwt = true
+
+[functions.analyze-candidate-fit]
+verify_jwt = true
+
+[functions.convert-candidate-to-employee]
+verify_jwt = true
