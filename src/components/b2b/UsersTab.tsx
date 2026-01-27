@@ -37,6 +37,7 @@ import GoogleWorkspaceImportModal from './GoogleWorkspaceImportModal';
 import InviteAdminModal from './InviteAdminModal';
 import PromoteToAdminModal from './PromoteToAdminModal';
 import ManageAdminModal from './ManageAdminModal';
+import InviteUserModal from './InviteUserModal';
 
 interface UsersTabProps {
   company: any;
@@ -100,6 +101,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showGoogleImport, setShowGoogleImport] = useState(false);
   const [showGoogleSync, setShowGoogleSync] = useState(false);
   const [showInviteAdmin, setShowInviteAdmin] = useState(false);
+  const [showInviteUser, setShowInviteUser] = useState(false);
   const [promoteUser, setPromoteUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [manageAdmin, setManageAdmin] = useState<{ id: string; email: string; full_name?: string; status: string } | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -687,18 +689,13 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
               </Alert>
             ) : (
               <>
-                <form onSubmit={handleInviteUser} className="flex gap-4" data-tour="bulk-actions">
-                  <Input
-                    type="email"
-                    placeholder="user@company.com"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    required
+                <div className="flex gap-4" data-tour="bulk-actions">
+                  <Button 
+                    onClick={() => setShowInviteUser(true)} 
                     disabled={!isUnlimitedCompany && getAvailableSeats() <= 0}
-                  />
-                  <Button type="submit" disabled={inviting || (!isUnlimitedCompany && getAvailableSeats() <= 0)}>
-                    {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                    Invite
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Invite User
                   </Button>
                   <Button 
                     type="button" 
@@ -747,7 +744,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                       </Button>
                     </>
                   )}
-                </form>
+                </div>
                 {isUnlimitedCompany ? (
                   <p className="text-sm text-muted-foreground">
                     Active users: {users.filter((u: any) => u.status !== "revoked").length} (unlimited seats)
@@ -1384,6 +1381,16 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             fetchUsers();
             if (onCompanyUpdate) onCompanyUpdate();
           }}
+        />
+        {/* Invite User Modal */}
+        <InviteUserModal
+          open={showInviteUser}
+          onClose={() => setShowInviteUser(false)}
+          companyId={company.id}
+          onInviteComplete={fetchUsers}
+          onCompanyUpdate={onCompanyUpdate}
+          availableSeats={getAvailableSeats()}
+          isUnlimitedCompany={isUnlimitedCompany}
         />
       </div>
     </TooltipProvider>
