@@ -562,9 +562,15 @@ const Dashboard = () => {
                                           variant="ghost" 
                                           size="sm" 
                                           onClick={() => {
-                                            const storageKey = `${assessment.assessment_type}AssessmentResults`;
-                                            localStorage.setItem(storageKey, JSON.stringify(assessment.results));
-                                            navigate(`/${assessment.assessment_type}-results`);
+                                            // Handle B2B/professional assessment types
+                                            if (assessment.assessment_type.startsWith('professional_')) {
+                                              localStorage.setItem('professionalAssessmentResults', JSON.stringify(assessment.results));
+                                              navigate('/b2b/results');
+                                            } else {
+                                              const storageKey = `${assessment.assessment_type}AssessmentResults`;
+                                              localStorage.setItem(storageKey, JSON.stringify(assessment.results));
+                                              navigate(`/${assessment.assessment_type}-results`);
+                                            }
                                           }}
                                         >
                                           <ChevronRight className="w-4 h-4 mr-2" />
