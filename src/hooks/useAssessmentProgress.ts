@@ -87,8 +87,6 @@ export function useAssessmentProgress({
     currentQuestion: number,
     answers: { [key: number]: string }
   ) => {
-    if (isSaving) return;
-    
     // Don't save if no answers yet
     if (Object.keys(answers).length === 0) return;
 
@@ -96,8 +94,10 @@ export function useAssessmentProgress({
     const now = new Date();
     
     try {
+      const currentId = savedProgress?.id;
+      
       const progressData: SavedProgress = {
-        id: savedProgress?.id,
+        id: currentId,
         currentQuestion,
         answers,
         assessmentType,
@@ -114,14 +114,14 @@ export function useAssessmentProgress({
           status: 'in_progress',
         };
 
-        if (savedProgress?.id) {
+        if (currentId) {
           // Update existing record
           const { error } = await supabase
             .from('assessment_progress')
             .update({
               results,
             })
-            .eq('id', savedProgress.id);
+            .eq('id', currentId);
 
           if (error) throw error;
         } else {
@@ -155,7 +155,7 @@ export function useAssessmentProgress({
     } finally {
       setIsSaving(false);
     }
-  }, [user, assessmentType, totalQuestions, savedProgress?.id, isSaving, localStorageKey]);
+  }, [user, assessmentType, totalQuestions, savedProgress?.id, localStorageKey]);
 
   const clearProgress = useCallback(async () => {
     try {

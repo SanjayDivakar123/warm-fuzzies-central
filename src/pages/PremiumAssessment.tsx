@@ -361,12 +361,16 @@ const PremiumAssessment = () => {
     }
   }, [progressLoading, hasProgress, initialized]);
 
-  // Auto-save on answer changes
+  // Auto-save on answer changes (debounced)
   useEffect(() => {
-    if (initialized && Object.keys(answers).length > 0) {
+    if (!initialized || Object.keys(answers).length === 0) return;
+    
+    const timer = setTimeout(() => {
       saveProgress(currentQuestion, answers);
-    }
-  }, [answers, currentQuestion, initialized]);
+    }, 1000); // Debounce 1 second
+    
+    return () => clearTimeout(timer);
+  }, [answers, currentQuestion, initialized, saveProgress]);
 
   const handleResume = useCallback(() => {
     if (savedProgress) {
