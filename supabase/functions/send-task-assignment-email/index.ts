@@ -16,6 +16,10 @@ interface SendEmailRequest {
   taskId: string;
   assigneeId: string;
   companyName: string;
+  design?: {
+    headerColor: string;
+    accentColor: string;
+  };
 }
 
 serve(async (req) => {
@@ -24,11 +28,14 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, body, taskId, assigneeId, companyName } = await req.json() as SendEmailRequest;
+    const { to, subject, body, taskId, assigneeId, companyName, design } = await req.json() as SendEmailRequest;
 
     if (!to || !subject || !body) {
       throw new Error("Missing required fields: to, subject, or body");
     }
+
+    const headerColor = design?.headerColor || '#6366f1';
+    const accentColor = design?.accentColor || '#8b5cf6';
 
     // Create HTML email with proper formatting
     const htmlBody = `
@@ -40,7 +47,7 @@ serve(async (req) => {
           <title>${subject}</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px 8px 0 0;">
+          <div style="background: linear-gradient(135deg, ${headerColor} 0%, ${accentColor} 100%); padding: 20px; border-radius: 8px 8px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 24px;">${companyName}</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 14px;">Task Assignment</p>
           </div>

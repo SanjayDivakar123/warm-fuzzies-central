@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Sparkles, Send, Edit3 } from 'lucide-react';
+import { Loader2, Mail, Sparkles, Send, Edit3, Palette, Eye } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 
 interface TaskEmailModalProps {
@@ -29,15 +32,46 @@ interface TaskEmailModalProps {
   reasoning?: any;
 }
 
+interface EmailDesign {
+  headerColor: string;
+  accentColor: string;
+  tone: 'professional' | 'friendly' | 'urgent' | 'casual';
+  includeTaskDetails: boolean;
+  includeDeadline: boolean;
+  includeSkills: boolean;
+  signOff: string;
+  senderName: string;
+}
+
+const TONE_OPTIONS = [
+  { value: 'professional', label: 'Professional', description: 'Formal and business-like' },
+  { value: 'friendly', label: 'Friendly', description: 'Warm and approachable' },
+  { value: 'urgent', label: 'Urgent', description: 'Direct and action-oriented' },
+  { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' },
+];
+
 export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: TaskEmailModalProps) {
   const { toast } = useToast();
   const { company } = useCompany();
-  const [step, setStep] = useState<'details' | 'draft' | 'sending'>('details');
+  
+  const [step, setStep] = useState<'design' | 'details' | 'draft' | 'preview'>('design');
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  
+  // Email design state
+  const [design, setDesign] = useState<EmailDesign>({
+    headerColor: company?.primary_color || '#6366f1',
+    accentColor: company?.secondary_color || '#8b5cf6',
+    tone: 'professional',
+    includeTaskDetails: true,
+    includeDeadline: true,
+    includeSkills: false,
+    signOff: 'Best regards',
+    senderName: '',
+  });
 
   const handleGenerateDraft = async () => {
     setIsGenerating(true);
@@ -56,6 +90,14 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
           assigneeName: assignee.full_name || assignee.email.split('@')[0],
           companyName: company?.name || 'the company',
           reasoning: reasoning?.behavioralReasoning || '',
+          design: {
+            tone: design.tone,
+            includeTaskDetails: design.includeTaskDetails,
+            includeDeadline: design.includeDeadline,
+            includeSkills: design.includeSkills,
+            signOff: design.signOff,
+            senderName: design.senderName,
+          },
         },
       });
 
@@ -87,6 +129,10 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
           taskId: task.id,
           assigneeId: assignee.id,
           companyName: company?.name || 'Role Color Finder',
+          design: {
+            headerColor: design.headerColor,
+            accentColor: design.accentColor,
+          },
         },
       });
 
@@ -111,30 +157,209 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
   };
 
   const handleClose = () => {
-    setStep('details');
+    setStep('design');
     setAdditionalDetails('');
     setEmailSubject('');
     setEmailBody('');
     onClose();
   };
 
+  // Email preview component
+  const EmailPreview = () => (
+    <div className="border rounded-lg overflow-hidden bg-white text-gray-800">
+      {/* Header */}
+      <div 
+        className="p-4"
+        style={{ background: `linear-gradient(135deg, ${design.headerColor} 0%, ${design.accentColor} 100%)` }}
+      >
+        <h3 className="text-white font-semibold text-lg">{company?.name || 'Company'}</h3>
+        <p className="text-white/80 text-sm">Task Assignment</p>
+      </div>
+      
+      {/* Body */}
+      <div className="p-4 space-y-3">
+        <p className="text-sm">Hi {assignee.full_name || assignee.email.split('@')[0]},</p>
+        
+        {design.includeTaskDetails && (
+          <div className="bg-gray-50 p-3 rounded border-l-4" style={{ borderColor: design.headerColor }}>
+            <p className="font-medium text-sm">{task.title}</p>
+            <p className="text-xs text-gray-600 mt-1">{task.description.slice(0, 100)}...</p>
+          </div>
+        )}
+        
+        {design.includeDeadline && task.due_date && (
+          <p className="text-sm">
+            <strong>Due:</strong> {new Date(task.due_date).toLocaleDateString()}
+          </p>
+        )}
+        
+        {design.includeSkills && task.required_skills.length > 0 && (
+          <p className="text-sm">
+            <strong>Skills:</strong> {task.required_skills.join(', ')}
+          </p>
+        )}
+        
+        <p className="text-sm text-gray-600 italic">
+          [Your additional details will appear here]
+        </p>
+        
+        <p className="text-sm mt-4">
+          {design.signOff},<br />
+          {design.senderName || 'The Team'}
+        </p>
+      </div>
+      
+      {/* Footer */}
+      <div className="bg-gray-50 px-4 py-2 text-center text-xs text-gray-500">
+        Sent via {company?.name || 'Role Color Finder'}
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            {step === 'details' ? 'Compose Task Email' : 'Review & Send Email'}
+            {step === 'design' ? 'Design Your Email' : 
+             step === 'details' ? 'Add Details' : 
+             step === 'preview' ? 'Preview Email' : 'Review & Edit'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'details' 
-              ? `Add details for ${assignee.full_name || assignee.email} about their new task`
-              : 'Review the AI-drafted email and make any edits before sending'
-            }
+            {step === 'design' ? 'Customize the look and tone of your task assignment email' :
+             step === 'details' ? `Add context for ${assignee.full_name || assignee.email}` :
+             step === 'preview' ? 'See how your email will look' :
+             'Review the AI-drafted email and make any edits'}
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'details' ? (
+        {step === 'design' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            {/* Design Controls */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Email Tone</Label>
+                <Select 
+                  value={design.tone} 
+                  onValueChange={(v) => setDesign({ ...design, tone: v as EmailDesign['tone'] })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TONE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div>
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="headerColor">Header Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="headerColor"
+                      type="color"
+                      value={design.headerColor}
+                      onChange={(e) => setDesign({ ...design, headerColor: e.target.value })}
+                      className="w-12 h-9 p-1 cursor-pointer"
+                    />
+                    <Input
+                      value={design.headerColor}
+                      onChange={(e) => setDesign({ ...design, headerColor: e.target.value })}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accentColor">Accent Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="accentColor"
+                      type="color"
+                      value={design.accentColor}
+                      onChange={(e) => setDesign({ ...design, accentColor: e.target.value })}
+                      className="w-12 h-9 p-1 cursor-pointer"
+                    />
+                    <Input
+                      value={design.accentColor}
+                      onChange={(e) => setDesign({ ...design, accentColor: e.target.value })}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-medium">Include in Email</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="includeTask" className="text-sm font-normal">Task details box</Label>
+                    <Switch
+                      id="includeTask"
+                      checked={design.includeTaskDetails}
+                      onCheckedChange={(v) => setDesign({ ...design, includeTaskDetails: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="includeDeadline" className="text-sm font-normal">Due date</Label>
+                    <Switch
+                      id="includeDeadline"
+                      checked={design.includeDeadline}
+                      onCheckedChange={(v) => setDesign({ ...design, includeDeadline: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="includeSkills" className="text-sm font-normal">Required skills</Label>
+                    <Switch
+                      id="includeSkills"
+                      checked={design.includeSkills}
+                      onCheckedChange={(v) => setDesign({ ...design, includeSkills: v })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signOff">Sign Off</Label>
+                <Input
+                  id="signOff"
+                  value={design.signOff}
+                  onChange={(e) => setDesign({ ...design, signOff: e.target.value })}
+                  placeholder="Best regards"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="senderName">Your Name (optional)</Label>
+                <Input
+                  id="senderName"
+                  value={design.senderName}
+                  onChange={(e) => setDesign({ ...design, senderName: e.target.value })}
+                  placeholder="Leave blank for 'The Team'"
+                />
+              </div>
+            </div>
+
+            {/* Live Preview */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Live Preview
+              </Label>
+              <EmailPreview />
+            </div>
+          </div>
+        )}
+
+        {step === 'details' && (
           <div className="space-y-4 py-4">
             {/* Task summary */}
             <div className="p-4 bg-muted rounded-lg space-y-2">
@@ -166,17 +391,18 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
                 id="details"
                 value={additionalDetails}
                 onChange={(e) => setAdditionalDetails(e.target.value)}
-                placeholder="Add any specific instructions, context, deadlines, or expectations you want to communicate to the assignee..."
+                placeholder="Add any specific instructions, context, deadlines, or expectations you want to communicate..."
                 rows={5}
               />
               <p className="text-xs text-muted-foreground">
-                The AI will use this information along with the task details to draft a professional email.
+                The AI will use this along with your design choices to craft the perfect email.
               </p>
             </div>
           </div>
-        ) : (
+        )}
+
+        {step === 'draft' && (
           <div className="space-y-4 py-4">
-            {/* Email preview/edit */}
             <div className="space-y-2">
               <Label htmlFor="subject">Subject</Label>
               <Input
@@ -209,11 +435,23 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
           </div>
         )}
 
-        <DialogFooter>
-          {step === 'details' ? (
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {step === 'design' && (
             <>
               <Button variant="outline" onClick={handleClose}>
                 Cancel
+              </Button>
+              <Button onClick={() => setStep('details')}>
+                <Palette className="mr-2 h-4 w-4" />
+                Continue to Details
+              </Button>
+            </>
+          )}
+          
+          {step === 'details' && (
+            <>
+              <Button variant="outline" onClick={() => setStep('design')}>
+                Back to Design
               </Button>
               <Button onClick={handleGenerateDraft} disabled={isGenerating}>
                 {isGenerating ? (
@@ -229,7 +467,9 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
                 )}
               </Button>
             </>
-          ) : (
+          )}
+          
+          {step === 'draft' && (
             <>
               <Button variant="outline" onClick={() => setStep('details')}>
                 Back to Details

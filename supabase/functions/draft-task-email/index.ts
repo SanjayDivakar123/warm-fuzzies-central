@@ -5,6 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface EmailDesign {
+  tone: 'professional' | 'friendly' | 'urgent' | 'casual';
+  includeTaskDetails: boolean;
+  includeDeadline: boolean;
+  includeSkills: boolean;
+  signOff: string;
+  senderName: string;
+}
+
 interface TaskEmailRequest {
   task: {
     title: string;
@@ -17,6 +26,7 @@ interface TaskEmailRequest {
   additionalDetails: string;
   assigneeName: string;
   companyName: string;
+  design?: EmailDesign;
   reasoning?: string;
 }
 
@@ -26,42 +36,63 @@ serve(async (req) => {
   }
 
   try {
-    const { task, additionalDetails, assigneeName, companyName, reasoning } = await req.json() as TaskEmailRequest;
+    const { task, additionalDetails, assigneeName, companyName, reasoning, design } = await req.json() as TaskEmailRequest;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a professional email composer for workplace task assignments. 
-Write clear, friendly, and professional emails that:
+    // Tone-specific instructions
+    const toneInstructions = {
+      professional: 'Use formal business language. Be clear, concise, and respectful. Maintain a structured format.',
+      friendly: 'Be warm and personable while staying professional. Use a conversational tone. Show enthusiasm.',
+      urgent: 'Be direct and action-oriented. Emphasize priority and timeline. Use short sentences. Create a sense of importance.',
+      casual: 'Be relaxed and conversational. Feel free to be brief. Keep it light but clear.',
+    };
+
+    const selectedTone = design?.tone || 'professional';
+    const signOff = design?.signOff || 'Best regards';
+    const senderName = design?.senderName || 'The Team';
+
+    const systemPrompt = `You are an email composer for workplace task assignments.
+Write emails with the following style: ${toneInstructions[selectedTone]}
+
+Guidelines:
 - Get straight to the point
-- Clearly explain the task and expectations
-- Are encouraging and supportive in tone
-- Include any deadlines or priority information
-- Are formatted for easy reading
+- Be encouraging and supportive
+- Format for easy reading with short paragraphs
+- End with: "${signOff},\\n${senderName}"
 
-Do NOT include placeholder text like [Your Name] - the email should be ready to send.`;
+Do NOT include placeholder text - the email should be ready to send.`;
 
-    const userPrompt = `Draft a professional email to assign the following task to ${assigneeName} at ${companyName}.
-
-TASK DETAILS:
+    // Build content sections based on design choices
+    const sections: string[] = [];
+    
+    if (design?.includeTaskDetails !== false) {
+      sections.push(`TASK TO INCLUDE:
 - Title: ${task.title}
-- Description: ${task.description}
-- Importance: ${task.importance}
-- Urgency: ${task.urgency}
-${task.dueDate ? `- Due Date: ${task.dueDate}` : ''}
-${task.requiredSkills.length > 0 ? `- Required Skills: ${task.requiredSkills.join(', ')}` : ''}
+- Description: ${task.description}`);
+    }
+    
+    if (design?.includeDeadline !== false && task.dueDate) {
+      sections.push(`DEADLINE: ${task.dueDate}`);
+    }
+    
+    if (design?.includeSkills && task.requiredSkills.length > 0) {
+      sections.push(`REQUIRED SKILLS: ${task.requiredSkills.join(', ')}`);
+    }
+
+    const userPrompt = `Draft an email to assign a task to ${assigneeName} at ${companyName}.
+
+${sections.join('\n\n')}
+Priority: ${task.importance} importance, ${task.urgency} urgency
 
 ${additionalDetails ? `ADDITIONAL CONTEXT FROM MANAGER:\n${additionalDetails}` : ''}
 
-${reasoning ? `WHY THIS PERSON WAS SELECTED:\n${reasoning}` : ''}
+${reasoning ? `WHY THIS PERSON WAS SELECTED (for context, don't include verbatim):\n${reasoning}` : ''}
 
-Please provide:
-1. A concise email subject line (without "Subject:" prefix)
-2. The email body (professional but friendly tone, ready to send)
-
-Format your response as JSON with "subject" and "body" keys.`;
+Provide a JSON response with "subject" and "body" keys. Subject should be concise.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
