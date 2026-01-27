@@ -122,3 +122,6 @@ verify_jwt = true
 
 [functions.notify-task-completion]
 verify_jwt = false
+
+[functions.suggest-assessment-category]
+verify_jwt = true
