@@ -1,0 +1,355 @@
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, Building2, Loader2 } from "lucide-react";
+import { useCandidatePortal } from "@/contexts/CandidatePortalContext";
+import { shuffleArray } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { getAssessmentQuestions, getCategoryDisplayName, type AssessmentQuestion, type AssessmentCategory, type AssessmentType } from "@/lib/assessmentQuestionLoader";
+
+export default function CandidateAssessment() {
+  const { company, candidate, applicationLink, loading, portalMode, setCandidate } = useCandidatePortal();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get assessment config from candidate or application link
+  const assessmentCategory = candidate?.assessment_category || applicationLink?.assessment_category || 'professional';
+  const assessmentType = candidate?.assessment_type || applicationLink?.assessment_type || '25q';
+
+  // Load saved progress from localStorage
+  useEffect(() => {
+    if (company && candidate) {
+      const savedProgress = localStorage.getItem(`candidate_assessment_draft_${candidate.id}`);
+      if (savedProgress) {
+        const { currentQuestion: savedQ, answers: savedA } = JSON.parse(savedProgress);
+        setCurrentQuestion(savedQ);
+        setAnswers(savedA);
+        setSelectedAnswer(savedA[savedQ] || "");
+      }
+    }
+  }, [company, candidate]);
+
+  // Redirect if no candidate or if already completed
+  useEffect(() => {
+    if (!loading && company) {
+      if (!candidate) {
+        navigate(-1);
+        return;
+      }
+      
+      if (candidate.assessment_completed_at) {
+        navigate('../results');
+      }
+    }
+  }, [loading, company, candidate, navigate]);
+
+  const questions = useMemo<AssessmentQuestion[]>(() => {
+    if (!assessmentCategory || !assessmentType) return [];
+    return getAssessmentQuestions(assessmentCategory as AssessmentCategory, assessmentType as AssessmentType);
+  }, [assessmentCategory, assessmentType]);
+
+  const assessmentTitle = useMemo(() => {
+    return `${getCategoryDisplayName(assessmentCategory as AssessmentCategory)} Assessment`;
+  }, [assessmentCategory]);
+
+  const primaryColor = company?.primary_color || '#9b87f5';
+
+  const handleAnswer = (color: string) => {
+    setSelectedAnswer(color);
+  };
+
+  const saveProgress = (newAnswers: { [key: number]: string }, newQuestion: number) => {
+    if (!candidate) return;
+    localStorage.setItem(
+      `candidate_assessment_draft_${candidate.id}`,
+      JSON.stringify({
+        currentQuestion: newQuestion,
+        answers: newAnswers,
+      })
+    );
+  };
+
+  const handleNext = async () => {
+    if (!company || !candidate || questions.length === 0) return;
+
+    if (selectedAnswer) {
+      const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
+      setAnswers(newAnswers);
+      setSelectedAnswer('');
+
+      if (currentQuestion < questions.length - 1) {
+        const nextQuestion = currentQuestion + 1;
+        setCurrentQuestion(nextQuestion);
+        setSelectedAnswer(newAnswers[nextQuestion] || '');
+        saveProgress(newAnswers, nextQuestion);
+      } else {
+        // Complete assessment
+        setIsSubmitting(true);
+
+        const colorCounts = { yellow: 0, red: 0, green: 0, blue: 0 };
+        Object.values(newAnswers).forEach((color) => {
+          colorCounts[color as keyof typeof colorCounts]++;
+        });
+
+        const dominantColor = Object.entries(colorCounts).reduce((a, b) =>
+          colorCounts[a[0] as keyof typeof colorCounts] > colorCounts[b[0] as keyof typeof colorCounts] ? a : b
+        )[0];
+
+        const results = {
+          dominantColor,
+          scores: colorCounts,
+          totalQuestions: questions.length,
+          assessmentType: `${assessmentCategory}_${assessmentType}`,
+          companyId: company.id,
+          companyName: company.name,
+          completedAt: new Date().toISOString(),
+        };
+
+        try {
+          // Save assessment results
+          const { data: resultData, error: resultError } = await supabase
+            .from('assessment_results')
+            .insert({
+              user_id: candidate.id,
+              assessment_type: `candidate_${assessmentCategory}_${assessmentType}`,
+              results: results,
+            })
+            .select('id')
+            .single();
+
+          if (resultError) throw resultError;
+
+          // Update candidate record
+          const { error: updateError } = await supabase
+            .from('candidates')
+            .update({
+              status: 'assessment_completed',
+              assessment_completed_at: results.completedAt,
+              assessment_result_id: resultData.id,
+            })
+            .eq('id', candidate.id);
+
+          if (updateError) throw updateError;
+
+          // Clear draft progress
+          localStorage.removeItem(`candidate_assessment_draft_${candidate.id}`);
+
+          // Update local candidate state
+          setCandidate({
+            ...candidate,
+            status: 'assessment_completed',
+            assessment_completed_at: results.completedAt,
+            assessment_result_id: resultData.id,
+          });
+
+          toast({
+            title: 'Assessment Complete!',
+            description: 'Your results are ready to view.',
+          });
+
+          navigate('../results');
+        } catch (err) {
+          console.error('Error saving assessment:', err);
+          toast({
+            title: 'Error',
+            description: 'Failed to save your assessment. Please try again.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      const prevQuestion = currentQuestion - 1;
+      setCurrentQuestion(prevQuestion);
+      setSelectedAnswer(answers[prevQuestion] || '');
+    }
+  };
+
+  const totalQuestions = questions.length;
+  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
+
+  const currentQuestionData = questions[currentQuestion] ?? { id: 0, section: '', question: '', options: [] };
+
+  const shuffledOptions = useMemo(() => {
+    return shuffleArray(currentQuestionData.options);
+  }, [currentQuestionData]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (loading || !company || !candidate || shuffledOptions.length === 0) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const keyMap: { [key: string]: number } = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      const index = keyMap[e.key];
+
+      if (index !== undefined && shuffledOptions[index]) {
+        handleAnswer(shuffledOptions[index].color);
+      }
+
+      if (e.key === 'Enter' && selectedAnswer) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [loading, company, candidate, shuffledOptions, selectedAnswer]);
+
+  if (loading || !company || !candidate) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
+            ) : (
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+            )}
+            <span className="font-semibold">{company.name}</span>
+          </div>
+        </header>
+        <div className="py-16 px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Assessment Not Available</h1>
+          <p className="text-muted-foreground">Unable to load assessment questions.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="py-4 px-4 border-b" style={{ borderColor: `${primaryColor}20` }}>
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          {company.logo_url ? (
+            <img src={company.logo_url} alt={company.name} className="h-8 w-auto" />
+          ) : (
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+              <Building2 className="h-4 w-4 text-white" />
+            </div>
+          )}
+          <span className="font-semibold">{company.name}</span>
+        </div>
+      </header>
+
+      <div className="py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Progress Header */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                  <span className="text-white font-bold text-lg">{currentQuestion + 1}</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">{assessmentTitle}</h2>
+                  <p className="text-muted-foreground">Question {currentQuestion + 1} of {questions.length}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-base px-4 py-2">
+                {Math.round(progress)}% Complete
+              </Badge>
+            </div>
+            
+            <div className="h-3 bg-muted/40 rounded-full overflow-hidden">
+              <div 
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progress}%`, backgroundColor: primaryColor }}
+              />
+            </div>
+          </div>
+
+          {/* Question Card */}
+          <Card className="rounded-2xl shadow-lg border-2 mb-8" style={{ borderColor: `${primaryColor}20` }}>
+            <CardHeader className="pb-4">
+              <Badge variant="secondary" className="w-fit mb-2">{currentQuestionData.section}</Badge>
+              <CardTitle className="text-xl lg:text-2xl">{currentQuestionData.question}</CardTitle>
+            </CardHeader>
+            
+            <CardContent className="pb-6">
+              <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
+                {shuffledOptions.map((option, index) => (
+                  <div 
+                    key={index} 
+                    className={`group relative p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      selectedAnswer === option.color 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border/50 hover:border-primary/40'
+                    }`}
+                    onClick={() => handleAnswer(option.color)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <RadioGroupItem value={option.color} id={`option-${index}`} />
+                      <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                        <span className="text-xs text-muted-foreground mr-2">[{index + 1}]</span>
+                        {option.text}
+                      </Label>
+                    </div>
+                  </div>
+                ))}
+              </RadioGroup>
+            </CardContent>
+          </Card>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+
+            <p className="text-sm text-muted-foreground">
+              Press 1-4 to select, Enter to continue
+            </p>
+
+            <Button
+              onClick={handleNext}
+              disabled={!selectedAnswer || isSubmitting}
+              style={{ backgroundColor: selectedAnswer ? primaryColor : undefined }}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : currentQuestion === questions.length - 1 ? (
+                'Complete'
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
