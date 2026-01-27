@@ -26,7 +26,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import AssessmentPreviewModal from "./AssessmentPreviewModal";
-import BillingModal from "./BillingModal";
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
@@ -75,7 +74,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const [uploading, setUploading] = useState<"light" | "dark" | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState<"25q" | "50q">("25q");
-  const [billingOpen, setBillingOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
@@ -822,45 +820,9 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
         </CardContent>
       </Card>
 
-      {/* Seat Management */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-medium">Seat Management</CardTitle>
-          <CardDescription>View and manage employee seats</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-              <span className="text-sm text-muted-foreground">Current Seats</span>
-              <span className="font-semibold">{company.seats_purchased}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-              <span className="text-sm text-muted-foreground">Price per Seat</span>
-              <span className="font-medium text-sm">$20 (one-time)</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Payment Method */}
       <PaymentMethodCard company={company} />
-
-      {/* Billing */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-medium">
-            <CreditCard className="h-5 w-5" />
-            Billing
-          </CardTitle>
-          <CardDescription>Manage your billing and add seats</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" className="w-full gap-2" onClick={() => setBillingOpen(true)}>
-            <CreditCard className="h-4 w-4" />
-            Manage Billing
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Wallet / Credit Balance */}
       <Card className="border-0 shadow-sm">
@@ -932,15 +894,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
         assessmentCategory={assessmentCategory}
       />
 
-      {/* Billing Modal */}
-      <BillingModal
-        open={billingOpen}
-        onClose={() => setBillingOpen(false)}
-        company={company}
-        onSeatsUpdated={() => {
-          if (onSettingsSaved) onSettingsSaved();
-        }}
-      />
 
       {/* Delete Company Modal */}
       <DeleteCompanyModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} company={company} />
