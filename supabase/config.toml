@@ -110,3 +110,9 @@ verify_jwt = true
 
 [functions.convert-candidate-to-employee]
 verify_jwt = true
+
+[functions.draft-task-email]
+verify_jwt = true
+
+[functions.send-task-assignment-email]
+verify_jwt = true
