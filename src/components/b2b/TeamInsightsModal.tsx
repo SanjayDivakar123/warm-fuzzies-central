@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import AIFollowUpChat from './AIFollowUpChat';
 
 interface TeamMember {
   id: string;
@@ -613,6 +614,42 @@ export default function TeamInsightsModal({
                     </ol>
                   </CardContent>
                 </Card>
+
+                {/* Follow-up Chat */}
+                <AIFollowUpChat
+                  contextType="team-insights"
+                  contextData={{ insights, teamMembers }}
+                  initialContext={insights.overallAnalysis}
+                  onSendMessage={async (messages, question) => {
+                    const context = {
+                      overallAnalysis: insights.overallAnalysis,
+                      teamDynamics: insights.teamDynamics,
+                      teamStrengths: insights.teamStrengths,
+                      teamChallenges: insights.teamChallenges,
+                      recommendations: insights.recommendations,
+                      memberSummaries: insights.memberInsights.map(m => ({
+                        name: m.name || m.email,
+                        role: m.currentRole,
+                        dominantColor: m.dominantColor,
+                        fitScore: m.fitScore,
+                        matchPercentage: m.matchPercentage,
+                      })),
+                    };
+
+                    const { data, error } = await supabase.functions.invoke('ai-follow-up', {
+                      body: {
+                        contextType: 'team-insights',
+                        context,
+                        messages,
+                        question,
+                      },
+                    });
+
+                    if (error) throw error;
+                    if (data?.error) throw new Error(data.error);
+                    return data.answer;
+                  }}
+                />
 
               </div>
             )}
