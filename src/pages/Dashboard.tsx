@@ -26,7 +26,9 @@ import {
   LogOut,
   Briefcase,
   Mail,
-  Plus
+  Plus,
+  Play,
+  Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -39,6 +41,15 @@ interface AssessmentResult {
   created_at: string;
   updated_at: string;
   user_id: string;
+}
+
+interface InProgressAssessment {
+  id: string;
+  assessment_type: string;
+  currentQuestion: number;
+  answeredCount: number;
+  totalQuestions: number;
+  created_at: string;
 }
 
 interface CompanyAccess {
@@ -54,6 +65,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
+  const [inProgressAssessments, setInProgressAssessments] = useState<InProgressAssessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -64,9 +76,11 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business'>('overview');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
+
   useEffect(() => {
     if (user) {
       fetchUserAssessments();
+      fetchInProgressAssessments();
       checkCompanyAccess();
       fetchUserProfile();
     }
@@ -154,6 +168,32 @@ const Dashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInProgressAssessments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('assessment_progress')
+        .select('*')
+        .eq('user_id', user?.id)
+        .is('dominant_color', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const inProgress: InProgressAssessment[] = (data || []).map(item => ({
+        id: item.id,
+        assessment_type: item.assessment_type,
+        currentQuestion: (item.results as any)?.currentQuestion ?? 0,
+        answeredCount: Object.keys((item.results as any)?.answers || {}).length,
+        totalQuestions: (item.results as any)?.totalQuestions ?? 25,
+        created_at: item.created_at || '',
+      })).filter(item => item.answeredCount > 0);
+      
+      setInProgressAssessments(inProgress);
+    } catch (error) {
+      console.error('Error fetching in-progress assessments:', error);
     }
   };
 
@@ -487,6 +527,48 @@ const Dashboard = () => {
                       <h1 className="text-3xl font-bold">My Assessments</h1>
                       <p className="text-muted-foreground mt-1">View and manage your assessment results</p>
                     </div>
+
+                    {/* In-Progress Assessments */}
+                    {inProgressAssessments.length > 0 && (
+                      <div className="mb-8">
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-primary" />
+                          Continue Where You Left Off
+                        </h2>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {inProgressAssessments.map((progress) => (
+                            <Card key={progress.id} className="shadow-elegant border-primary/30 bg-primary/5">
+                              <CardContent className="pt-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div>
+                                    <h3 className="font-semibold">{getAssessmentTypeLabel(progress.assessment_type)}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                      {progress.answeredCount} of {progress.totalQuestions} questions answered
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className="border-primary/50 text-primary">
+                                    {Math.round((progress.answeredCount / progress.totalQuestions) * 100)}%
+                                  </Badge>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2 mb-4">
+                                  <div
+                                    className="bg-primary h-2 rounded-full transition-all"
+                                    style={{ width: `${(progress.answeredCount / progress.totalQuestions) * 100}%` }}
+                                  />
+                                </div>
+                                <Button 
+                                  className="w-full flex items-center gap-2"
+                                  onClick={() => navigate(`/${progress.assessment_type}-assessment`)}
+                                >
+                                  <Play className="w-4 h-4" />
+                                  Resume Assessment
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {assessments.length > 0 ? (
                       <div className="grid gap-4 md:grid-cols-2">
