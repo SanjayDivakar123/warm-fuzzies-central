@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, Sparkles } from 'lucide-react';
 import { AssessmentCategory, getCategoryDisplayName } from '@/lib/assessmentQuestionLoader';
 
 interface InviteUserModalProps {
@@ -49,10 +49,47 @@ export default function InviteUserModal({
 }: InviteUserModalProps) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [assessmentCategory, setAssessmentCategory] = useState<AssessmentCategory>('professional');
   const [assessmentType, setAssessmentType] = useState<AssessmentType>('25q');
   const [loading, setLoading] = useState(false);
+  const [suggestingCategory, setSuggestingCategory] = useState(false);
   const { toast } = useToast();
+
+  const handleSuggestCategory = async () => {
+    if (!jobRole.trim()) {
+      toast({
+        title: 'Job role required',
+        description: 'Please enter a job role to get AI suggestion',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSuggestingCategory(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-assessment-category', {
+        body: { jobRole: jobRole.trim() },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setAssessmentCategory(data.category);
+      toast({
+        title: data.aiAnalyzed ? 'AI Suggestion Applied' : 'Suggestion Applied',
+        description: `${data.reason} (${data.confidence} confidence)`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error getting suggestion',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSuggestingCategory(false);
+    }
+  };
 
   const handleInvite = async () => {
     if (!email.trim()) {
@@ -72,6 +109,7 @@ export default function InviteUserModal({
           company_id: companyId,
           email: email.trim().toLowerCase(),
           full_name: fullName.trim() || null,
+          job_role: jobRole.trim() || null,
           assessment_category: assessmentCategory,
           assessment_type: assessmentType,
         },
@@ -140,6 +178,7 @@ export default function InviteUserModal({
   const handleClose = () => {
     setEmail('');
     setFullName('');
+    setJobRole('');
     setAssessmentCategory('professional');
     setAssessmentType('25q');
     onClose();
@@ -184,7 +223,35 @@ export default function InviteUserModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Assessment Category *</Label>
+            <Label htmlFor="jobRole">Job Role (optional)</Label>
+            <Input
+              id="jobRole"
+              type="text"
+              placeholder="e.g., Senior Engineer, Sales Manager"
+              value={jobRole}
+              onChange={(e) => setJobRole(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Assessment Category *</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSuggestCategory}
+                disabled={loading || suggestingCategory || !jobRole.trim()}
+                className="h-7 text-xs gap-1 text-primary hover:text-primary"
+              >
+                {suggestingCategory ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                Use AI to find category
+              </Button>
+            </div>
             <Select
               value={assessmentCategory}
               onValueChange={(v) => setAssessmentCategory(v as AssessmentCategory)}

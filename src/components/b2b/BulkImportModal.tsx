@@ -84,6 +84,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   const [updateMode, setUpdateMode] = useState(true); // Enable update mode by default
   const [bulkAssessmentCategory, setBulkAssessmentCategory] = useState<'professional' | 'entrepreneur' | 'executive' | 'manager' | ''>('');
   const [bulkAssessmentType, setBulkAssessmentType] = useState<'25q' | '50q' | ''>('');
+  const [aiSuggestingCategories, setAiSuggestingCategories] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -314,6 +315,62 @@ bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Commu
       title: 'Template downloaded',
       description: 'Fill in the template and upload it to import employees',
     });
+  };
+
+  const handleAiSuggestCategories = async () => {
+    const employeesWithJobRoles = parsedEmployees.filter(e => e.valid && e.selected && e.jobRole);
+    
+    if (employeesWithJobRoles.length === 0) {
+      toast({
+        title: 'No job roles found',
+        description: 'Select users with job roles in the CSV to use AI suggestion',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiSuggestingCategories(true);
+    try {
+      const jobRoles = employeesWithJobRoles.map(e => e.jobRole!);
+      const uniqueJobRoles = [...new Set(jobRoles)];
+
+      const { data, error } = await supabase.functions.invoke('suggest-assessment-category', {
+        body: { jobRoles: uniqueJobRoles },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Create a map of job role -> category
+      const categoryMap = new Map<string, 'professional' | 'entrepreneur' | 'executive' | 'manager'>();
+      for (const suggestion of data.suggestions) {
+        categoryMap.set(suggestion.jobRole.toLowerCase(), suggestion.category);
+      }
+
+      // Apply categories to employees
+      setParsedEmployees(prev => prev.map(e => {
+        if (e.valid && e.selected && e.jobRole) {
+          const suggestedCategory = categoryMap.get(e.jobRole.toLowerCase());
+          if (suggestedCategory) {
+            return { ...e, assessmentCategory: suggestedCategory };
+          }
+        }
+        return e;
+      }));
+
+      toast({
+        title: data.aiAnalyzed ? 'AI Suggestions Applied' : 'Suggestions Applied',
+        description: `Applied categories to ${employeesWithJobRoles.length} users based on job roles`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error getting AI suggestions',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setAiSuggestingCategories(false);
+    }
   };
 
   const handleImport = async () => {
@@ -644,8 +701,8 @@ bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Commu
                     <Label htmlFor="select-all" className="text-xs">Select all</Label>
                   </div>
                 </div>
-                <div className="flex gap-3 items-end">
-                  <div className="flex-1 space-y-1">
+                <div className="flex gap-3 items-end flex-wrap">
+                  <div className="flex-1 min-w-[140px] space-y-1">
                     <Label className="text-xs">Category</Label>
                     <Select value={bulkAssessmentCategory} onValueChange={(v) => setBulkAssessmentCategory(v as any)}>
                       <SelectTrigger className="h-9">
@@ -659,7 +716,7 @@ bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Commu
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex-1 space-y-1">
+                  <div className="flex-1 min-w-[120px] space-y-1">
                     <Label className="text-xs">Length</Label>
                     <Select value={bulkAssessmentType} onValueChange={(v) => setBulkAssessmentType(v as any)}>
                       <SelectTrigger className="h-9">
@@ -704,6 +761,20 @@ bob.wilson@company.com,Bob Wilson,PM,"Project Management, Strategy, Client Commu
                     disabled={!bulkAssessmentCategory || !bulkAssessmentType}
                   >
                     Apply to Selected
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAiSuggestCategories}
+                    disabled={aiSuggestingCategories}
+                    className="gap-1"
+                  >
+                    {aiSuggestingCategories ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3" />
+                    )}
+                    AI Suggest from Job Roles
                   </Button>
                 </div>
               </div>
