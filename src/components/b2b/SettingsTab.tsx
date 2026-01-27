@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Link2,
   AlertTriangle,
+  Bell,
 } from "lucide-react";
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
@@ -65,6 +66,9 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled || false);
   const [googleWorkspaceDomain, setGoogleWorkspaceDomain] = useState(company.google_workspace_domain || "");
+  const [notifyTaskCompletion, setNotifyTaskCompletion] = useState(true);
+  const [loadingNotifyPref, setLoadingNotifyPref] = useState(true);
+  const [savingNotifyPref, setSavingNotifyPref] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"light" | "dark" | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -82,6 +86,59 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
     setCreditBalance(company.credit_balance || 0);
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
+
+  // Fetch current admin's notification preference
+  useEffect(() => {
+    const fetchNotifyPref = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("company_users")
+        .select("notify_task_completion")
+        .eq("company_id", company.id)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (data) {
+        setNotifyTaskCompletion(data.notify_task_completion ?? true);
+      }
+      setLoadingNotifyPref(false);
+    };
+    fetchNotifyPref();
+  }, [company.id]);
+
+  const handleNotifyPrefChange = async (checked: boolean) => {
+    setSavingNotifyPref(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSavingNotifyPref(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("company_users")
+      .update({ notify_task_completion: checked })
+      .eq("company_id", company.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update notification preference",
+        variant: "destructive",
+      });
+    } else {
+      setNotifyTaskCompletion(checked);
+      toast({
+        title: checked ? "Notifications enabled" : "Notifications disabled",
+        description: checked 
+          ? "You'll receive emails when tasks are completed" 
+          : "You won't receive completion emails",
+      });
+    }
+    setSavingNotifyPref(false);
+  };
 
   // Handle scroll to section
   useEffect(() => {
@@ -699,7 +756,37 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
         </CardContent>
       </Card>
 
-
+      {/* Notification Preferences */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            <Bell className="h-5 w-5" />
+            Notification Preferences
+          </CardTitle>
+          <CardDescription>Control which email notifications you receive</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="space-y-0.5">
+              <Label htmlFor="notifyTaskCompletion" className="font-medium">Task Completion Emails</Label>
+              <p className="text-xs text-muted-foreground">
+                Receive an email when an employee completes a task you assigned
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {(loadingNotifyPref || savingNotifyPref) && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+              <Switch
+                id="notifyTaskCompletion"
+                checked={notifyTaskCompletion}
+                onCheckedChange={handleNotifyPrefChange}
+                disabled={loadingNotifyPref || savingNotifyPref}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Payment Method */}
       <PaymentMethodCard company={company} />
