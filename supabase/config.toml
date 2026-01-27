@@ -116,3 +116,6 @@ verify_jwt = true
 
 [functions.send-task-assignment-email]
 verify_jwt = true
+
+[functions.suggest-skills]
+verify_jwt = true

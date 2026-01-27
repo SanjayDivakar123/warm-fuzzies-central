@@ -29,6 +29,7 @@ import {
   Settings,
   RotateCcw,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -122,6 +123,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [retakeRequestUser, setRetakeRequestUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [requestingRetake, setRequestingRetake] = useState(false);
+  const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
+  const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
 
   // Identify the super admin (first admin created for the company)
@@ -566,6 +569,68 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
     } finally {
       setSavingUserId(null);
     }
+  };
+
+  const handleSuggestSkills = async (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user?.job_role) {
+      toast({
+        title: "Job role required",
+        description: "Please set a job role first to get AI skill suggestions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSuggestingSkillsFor(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-skills", {
+        body: {
+          jobRole: user.job_role,
+          existingSkills: user.skills || [],
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.skills?.length > 0) {
+        setSuggestedSkills((prev) => ({ ...prev, [userId]: data.skills }));
+        toast({
+          title: "Skills suggested",
+          description: `AI suggested ${data.skills.length} skills based on the job role`,
+        });
+      } else {
+        toast({
+          title: "No suggestions",
+          description: "AI couldn't generate skill suggestions for this role",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error suggesting skills:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to get AI skill suggestions",
+        variant: "destructive",
+      });
+    } finally {
+      setSuggestingSkillsFor(null);
+    }
+  };
+
+  const handleAddSuggestedSkill = async (userId: string, skill: string) => {
+    await handleAddSkill(userId, skill);
+    // Remove the added skill from suggestions
+    setSuggestedSkills((prev) => ({
+      ...prev,
+      [userId]: (prev[userId] || []).filter((s) => s !== skill),
+    }));
+  };
+
+  const handleDismissSuggestedSkill = (userId: string, skill: string) => {
+    setSuggestedSkills((prev) => ({
+      ...prev,
+      [userId]: (prev[userId] || []).filter((s) => s !== skill),
+    }));
   };
 
   const handleUpdateAssessmentConfig = async (userId: string, field: 'category' | 'type', value: string) => {
@@ -1224,7 +1289,23 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
 
                               {/* Skills Section */}
                               <div className="space-y-2">
-                                <label className="text-sm font-medium">Skills</label>
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium">Skills</label>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                                    onClick={() => handleSuggestSkills(user.id)}
+                                    disabled={!user.job_role || suggestingSkillsFor === user.id || savingUserId === user.id}
+                                  >
+                                    {suggestingSkillsFor === user.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="h-3 w-3" />
+                                    )}
+                                    AI Suggest
+                                  </Button>
+                                </div>
                                 <div className="flex gap-2">
                                   <Select
                                     value=""
@@ -1271,6 +1352,41 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                                     <Plus className="h-4 w-4" />
                                   </Button>
                                 </div>
+
+                                {/* AI Suggested Skills */}
+                                {suggestedSkills[user.id]?.length > 0 && (
+                                  <div className="space-y-2 mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                    <label className="text-sm font-medium text-primary flex items-center gap-1">
+                                      <Sparkles className="h-3 w-3" />
+                                      AI Suggested Skills
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                      {suggestedSkills[user.id].map((skill: string) => (
+                                        <Badge 
+                                          key={skill} 
+                                          variant="outline" 
+                                          className="flex items-center gap-1 pr-1 border-primary/30 bg-background cursor-pointer hover:bg-primary/10"
+                                        >
+                                          <button
+                                            onClick={() => handleAddSuggestedSkill(user.id, skill)}
+                                            className="flex items-center gap-1"
+                                            disabled={savingUserId === user.id}
+                                          >
+                                            <Plus className="h-3 w-3 text-primary" />
+                                            {skill}
+                                          </button>
+                                          <button
+                                            onClick={() => handleDismissSuggestedSkill(user.id, skill)}
+                                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Click + to add or × to dismiss</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
