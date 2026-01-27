@@ -52,9 +52,25 @@ const TONE_OPTIONS = [
 
 type EditMode = 'text' | 'html';
 
+// Helper to parse first and last name from full_name
+const parseNames = (fullName?: string, email?: string) => {
+  if (fullName) {
+    const parts = fullName.trim().split(/\s+/);
+    return {
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' ') || '',
+    };
+  }
+  // Fallback to email prefix
+  const emailPrefix = email?.split('@')[0] || '';
+  return { firstName: emailPrefix, lastName: '' };
+};
+
 export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: TaskEmailModalProps) {
   const { toast } = useToast();
   const { company } = useCompany();
+  
+  const { firstName, lastName } = parseNames(assignee.full_name, assignee.email);
   
   const [step, setStep] = useState<'design' | 'details' | 'draft' | 'preview'>('design');
   const [additionalDetails, setAdditionalDetails] = useState('');
@@ -76,6 +92,13 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
     signOff: 'Best regards',
     senderName: '',
   });
+
+  // Replace template variables in content
+  const replaceVariables = (content: string) => {
+    return content
+      .replace(/\{\{first_name\}\}/gi, firstName)
+      .replace(/\{\{last_name\}\}/gi, lastName);
+  };
 
   const handleGenerateDraft = async () => {
     setIsGenerating(true);
@@ -125,12 +148,17 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
   const handleSendEmail = async () => {
     setIsSending(true);
     try {
+      // Replace variables before sending
+      const processedSubject = replaceVariables(emailSubject);
+      const processedBody = editMode === 'html' ? null : replaceVariables(emailBody);
+      const processedHtml = editMode === 'html' ? replaceVariables(customHtml) : null;
+
       const { data, error } = await supabase.functions.invoke('send-task-assignment-email', {
         body: {
           to: assignee.email,
-          subject: emailSubject,
-          body: editMode === 'html' ? null : emailBody,
-          customHtml: editMode === 'html' ? customHtml : null,
+          subject: processedSubject,
+          body: processedBody,
+          customHtml: processedHtml,
           taskId: task.id,
           assigneeId: assignee.id,
           companyName: company?.name || 'Role Color Finder',
@@ -171,12 +199,12 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
     onClose();
   };
 
-  // Generate default HTML template for custom editing
+  // Generate default HTML template for custom editing (uses {{first_name}} by default)
   const generateDefaultHtml = () => {
     return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
   <h2 style="color: ${design.headerColor};">Task Assignment: ${task.title}</h2>
   
-  <p>Hi ${assignee.full_name || assignee.email.split('@')[0]},</p>
+  <p>Hi {{first_name}},</p>
   
   <p>${emailBody}</p>
   
@@ -210,7 +238,7 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
       
       {/* Body */}
       <div className="p-4 space-y-3">
-        <p className="text-sm">Hi {assignee.full_name || assignee.email.split('@')[0]},</p>
+        <p className="text-sm">Hi {firstName || assignee.email.split('@')[0]},</p>
         
         {design.includeTaskDetails && (
           <div className="bg-gray-50 p-3 rounded border-l-4" style={{ borderColor: design.headerColor }}>
@@ -484,6 +512,9 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
                   rows={10}
                   className="font-mono text-sm"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Use <code className="bg-muted px-1 rounded">{"{{first_name}}"}</code> and <code className="bg-muted px-1 rounded">{"{{last_name}}"}</code> as variables.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -502,7 +533,7 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
                   placeholder="Enter custom HTML for your email body..."
                 />
                 <p className="text-xs text-muted-foreground">
-                  Note: The RoleColorFinder logo will always be included in the footer.
+                  Use <code className="bg-muted px-1 rounded">{"{{first_name}}"}</code> and <code className="bg-muted px-1 rounded">{"{{last_name}}"}</code> as variables. The RCF logo will always appear in the footer.
                 </p>
               </div>
             )}
