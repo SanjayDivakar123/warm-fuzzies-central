@@ -34,6 +34,7 @@ serve(async (req) => {
         notification_sent_at,
         employee_completed_at,
         primary_assignee_id,
+        notify_on_completion,
         task:work_tasks (
           id,
           title,
@@ -64,13 +65,22 @@ serve(async (req) => {
     const task = assignment.task as any;
     const assignee = assignment.assignee as any;
 
-  if (!assignment.assigner_email) {
-    console.log("No assigner email found, skipping notification");
-    return new Response(
-      JSON.stringify({ success: true, message: "No assigner email configured" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+    // Check per-assignment notification preference first
+    if (assignment.notify_on_completion === false) {
+      console.log("Per-assignment notifications disabled for this task");
+      return new Response(
+        JSON.stringify({ success: true, message: "Per-assignment notifications disabled" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!assignment.assigner_email) {
+      console.log("No assigner email found, skipping notification");
+      return new Response(
+        JSON.stringify({ success: true, message: "No assigner email configured" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
   // Check if the assigner has opted in to completion notifications
   const { data: assignerUser } = await supabase
