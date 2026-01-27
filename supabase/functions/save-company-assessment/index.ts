@@ -185,6 +185,47 @@ Deno.serve(async (req) => {
       console.log(`Auto-cancelled ${cancelledReminders.length} pending reminder(s) for employee`)
     }
 
+    // === SLACK NOTIFICATION ===
+    // Send Slack notification for assessment completion
+    try {
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('slack_notifications_enabled, slack_bot_token')
+        .eq('id', companyId)
+        .single()
+
+      if (companyData?.slack_notifications_enabled && companyData?.slack_bot_token) {
+        console.log('Sending Slack notification for assessment completion')
+        
+        // Extract scores from results
+        const scores = results.scores || results.colorScores || {}
+        const dominantColor = results.dominantColor || results.primaryColor || 'blue'
+        const secondaryColor = results.secondaryColor || null
+
+        // Fire and forget - don't wait for response
+        fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            company_id: companyId,
+            event_type: 'assessment_completed',
+            data: {
+              employee_name: employee.full_name,
+              email: employee.email,
+              dominant_color: dominantColor,
+              secondary_color: secondaryColor,
+              scores: scores,
+            }
+          })
+        }).catch(err => console.error('Slack notification error (non-fatal):', err))
+      }
+    } catch (slackError) {
+      console.error('Error checking Slack settings (non-fatal):', slackError)
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

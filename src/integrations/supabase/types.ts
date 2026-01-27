@@ -537,6 +537,7 @@ export type Database = {
           primary_color: string | null
           seats_purchased: number
           secondary_color: string | null
+          slack_bot_token: string | null
           slack_channel_id: string | null
           slack_notifications_enabled: boolean | null
           stripe_customer_id: string | null
@@ -569,6 +570,7 @@ export type Database = {
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          slack_bot_token?: string | null
           slack_channel_id?: string | null
           slack_notifications_enabled?: boolean | null
           stripe_customer_id?: string | null
@@ -601,6 +603,7 @@ export type Database = {
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
+          slack_bot_token?: string | null
           slack_channel_id?: string | null
           slack_notifications_enabled?: boolean | null
           stripe_customer_id?: string | null
