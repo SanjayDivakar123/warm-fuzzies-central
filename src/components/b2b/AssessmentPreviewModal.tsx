@@ -1,29 +1,58 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getAssessmentQuestions, getCategoryDisplayName, type AssessmentCategory, type AssessmentType } from '@/lib/assessmentQuestionLoader';
+
+const ASSESSMENT_CATEGORIES: { value: AssessmentCategory; label: string }[] = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'entrepreneur', label: 'Entrepreneur' },
+  { value: 'executive', label: 'Executive / Senior Leader' },
+  { value: 'manager', label: 'Manager / Mid-Level Leader' },
+];
+
+const ASSESSMENT_TYPES: { value: AssessmentType; label: string }[] = [
+  { value: '25q', label: '25 Questions' },
+  { value: '50q', label: '50 Questions' },
+];
 
 interface AssessmentPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  assessmentType: AssessmentType;
+  assessmentType?: AssessmentType;
   assessmentCategory?: AssessmentCategory;
 }
 
 export default function AssessmentPreviewModal({ 
   open, 
   onClose, 
-  assessmentType,
-  assessmentCategory = 'professional'
+  assessmentType: initialType = '25q',
+  assessmentCategory: initialCategory = 'professional'
 }: AssessmentPreviewModalProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<AssessmentCategory>(initialCategory);
+  const [selectedType, setSelectedType] = useState<AssessmentType>(initialType);
   
-  const questions = getAssessmentQuestions(assessmentCategory, assessmentType);
+  const questions = useMemo(() => 
+    getAssessmentQuestions(selectedCategory, selectedType),
+    [selectedCategory, selectedType]
+  );
   const currentQuestionData = questions[currentQuestion];
-  const categoryName = getCategoryDisplayName(assessmentCategory);
+  const categoryName = getCategoryDisplayName(selectedCategory);
+
+  const handleCategoryChange = (value: AssessmentCategory) => {
+    setSelectedCategory(value);
+    setCurrentQuestion(0);
+  };
+
+  const handleTypeChange = (value: AssessmentType) => {
+    setSelectedType(value);
+    setCurrentQuestion(0);
+  };
 
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
@@ -59,16 +88,50 @@ export default function AssessmentPreviewModal({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">
-              Preview: {categoryName} ({assessmentType === '25q' ? '25' : '50'}Q)
+              Preview Assessment
             </DialogTitle>
             <Button variant="ghost" size="icon" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            This is a preview only. No results will be saved.
+            Select a category and length to preview the assessment questions.
           </p>
         </DialogHeader>
+
+        {/* Category and Type Selectors */}
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSESSMENT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Length</Label>
+            <Select value={selectedType} onValueChange={handleTypeChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSESSMENT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Progress bar */}
         <div className="space-y-2">
