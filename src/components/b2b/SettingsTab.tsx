@@ -811,8 +811,7 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Credits are used when inviting new users. Each invite costs $20. Credits are deducted before charging your
-              card on file.
+              Credits are applied to your account and deducted before charging your card on file.
             </p>
             <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
               <Plus className="h-4 w-4" />
