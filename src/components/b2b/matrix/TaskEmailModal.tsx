@@ -153,6 +153,9 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
       const processedBody = editMode === 'html' ? null : replaceVariables(emailBody);
       const processedHtml = editMode === 'html' ? replaceVariables(customHtml) : null;
 
+      // Get the current user's email for reply-to
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke('send-task-assignment-email', {
         body: {
           to: assignee.email,
@@ -162,6 +165,8 @@ export function TaskEmailModal({ open, onClose, task, assignee, reasoning }: Tas
           taskId: task.id,
           assigneeId: assignee.id,
           companyName: company?.name || 'Role Color Finder',
+          senderEmail: user?.email || null, // For reply-to header
+          senderName: design.senderName || null,
           design: {
             headerColor: design.headerColor,
             accentColor: design.accentColor,

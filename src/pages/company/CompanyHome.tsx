@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
+import { EmployeeTasksKanban } from "@/components/company/EmployeeTasksKanban";
 import { 
   Building2, 
   LogOut, 
@@ -12,7 +14,8 @@ import {
   Loader2,
   User,
   Sparkles,
-  Calendar
+  Calendar,
+  ClipboardList
 } from "lucide-react";
 
 const colorData = {
@@ -69,6 +72,7 @@ const colorData = {
 export default function CompanyHome() {
   const { company, employee, assessmentResults, loading, setEmployee, fetchAssessmentResults } = useCompanyPortal();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'profile' | 'tasks'>('profile');
 
   // Fetch results when employee changes
   useEffect(() => {
@@ -226,76 +230,101 @@ export default function CompanyHome() {
         </div>
       </header>
 
-      {/* Hero Section with Large Color Circle */}
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Floating Orb Container */}
-          <div className="relative mb-8">
-            {/* Shadow element that animates separately */}
-            <div 
-              className="absolute left-1/2 -translate-x-1/2 bottom-0 w-40 sm:w-52 h-6 rounded-full blur-xl animate-float-shadow"
-              style={{ backgroundColor: leaderData.color }}
-            />
-            
-            {/* Large Color Circle with Float Animation */}
-            <div 
-              className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl relative overflow-hidden animate-float"
-              style={{ 
-                backgroundColor: leaderData.color,
-                boxShadow: `0 25px 50px -12px ${leaderData.color}60`
-              }}
-            >
-              {/* Subtle inner glow */}
-              <div 
-                className="absolute inset-4 rounded-full opacity-30"
-                style={{ 
-                  background: `radial-gradient(circle, white 0%, transparent 70%)`
-                }}
-              />
-              {/* Shimmer effect */}
-              <div 
-                className="absolute inset-0 rounded-full opacity-20"
-                style={{ 
-                  background: `linear-gradient(135deg, transparent 30%, white 50%, transparent 70%)`
-                }}
-              />
-              <div className="relative z-10 text-white text-center px-4">
-                <p className="text-sm sm:text-base font-medium opacity-90 mb-1">You are</p>
-                <h2 className="text-xl sm:text-2xl font-bold leading-tight">{leaderData.subtitle}</h2>
+      {/* Tab Navigation */}
+      <div className="max-w-4xl mx-auto px-4 pt-8">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'tasks')}>
+          <TabsList className="grid w-full grid-cols-2 max-w-xs mx-auto mb-8">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              My Tasks
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile">
+            {/* Hero Section with Large Color Circle */}
+            <section className="py-8">
+              <div className="text-center">
+                {/* Floating Orb Container */}
+                <div className="relative mb-8">
+                  {/* Shadow element that animates separately */}
+                  <div 
+                    className="absolute left-1/2 -translate-x-1/2 bottom-0 w-40 sm:w-52 h-6 rounded-full blur-xl animate-float-shadow"
+                    style={{ backgroundColor: leaderData.color }}
+                  />
+                  
+                  {/* Large Color Circle with Float Animation */}
+                  <div 
+                    className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl relative overflow-hidden animate-float"
+                    style={{ 
+                      backgroundColor: leaderData.color,
+                      boxShadow: `0 25px 50px -12px ${leaderData.color}60`
+                    }}
+                  >
+                    {/* Subtle inner glow */}
+                    <div 
+                      className="absolute inset-4 rounded-full opacity-30"
+                      style={{ 
+                        background: `radial-gradient(circle, white 0%, transparent 70%)`
+                      }}
+                    />
+                    {/* Shimmer effect */}
+                    <div 
+                      className="absolute inset-0 rounded-full opacity-20"
+                      style={{ 
+                        background: `linear-gradient(135deg, transparent 30%, white 50%, transparent 70%)`
+                      }}
+                    />
+                    <div className="relative z-10 text-white text-center px-4">
+                      <p className="text-sm sm:text-base font-medium opacity-90 mb-1">You are</p>
+                      <h2 className="text-xl sm:text-2xl font-bold leading-tight">{leaderData.subtitle}</h2>
+                    </div>
+                  </div>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+                  {leaderData.title}
+                </h1>
+                <p className="text-muted-foreground mb-8">
+                  Discover what makes you a unique leader
+                </p>
+
+                {/* Quick Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button 
+                    size="lg"
+                    onClick={() => navigate(`/company/${company.subdomain}/results`)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Eye className="w-5 h-5" />
+                    View Full Report
+                  </Button>
+                  <Button 
+                    size="lg"
+                    onClick={() => window.print()}
+                    className="gap-2"
+                    style={{ backgroundColor: leaderData.color }}
+                  >
+                    <Download className="w-5 h-5" />
+                    Download Report
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </section>
+          </TabsContent>
 
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-            {leaderData.title}
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            Discover what makes you a unique leader
-          </p>
-
-          {/* Quick Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button 
-              size="lg"
-              onClick={() => navigate(`/company/${company.subdomain}/results`)}
-              variant="outline"
-              className="gap-2"
-            >
-              <Eye className="w-5 h-5" />
-              View Full Report
-            </Button>
-            <Button 
-              size="lg"
-              onClick={() => window.print()}
-              className="gap-2"
-              style={{ backgroundColor: leaderData.color }}
-            >
-              <Download className="w-5 h-5" />
-              Download Report
-            </Button>
-          </div>
-        </div>
-      </section>
+          <TabsContent value="tasks">
+            <EmployeeTasksKanban 
+              primaryColor={primaryColor} 
+              secondaryColor={secondaryColor} 
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Assessment History */}
       <section className="py-12 px-4" style={{ background: `linear-gradient(180deg, transparent, ${secondaryColor}08, transparent)` }}>

@@ -17,6 +17,8 @@ interface SendEmailRequest {
   taskId: string;
   assigneeId: string;
   companyName: string;
+  senderEmail?: string; // Admin's email for reply-to
+  senderName?: string;  // Admin's name
   design?: {
     headerColor: string;
     accentColor: string;
@@ -43,7 +45,7 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, body, customHtml, taskId, assigneeId, companyName, design } = await req.json() as SendEmailRequest;
+    const { to, subject, body, customHtml, taskId, assigneeId, companyName, senderEmail, senderName, design } = await req.json() as SendEmailRequest;
 
     if (!to || !subject) {
       throw new Error("Missing required fields: to or subject");
@@ -106,13 +108,20 @@ serve(async (req) => {
       `;
     }
 
-    // Send the email
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    // Send the email with reply-to if sender email provided
+    const emailOptions: any = {
       from: `${companyName} <onboarding@resend.dev>`,
       to: [to],
       subject: subject,
       html: emailContent,
-    });
+    };
+
+    // Add reply-to header so employee can reply to the admin
+    if (senderEmail) {
+      emailOptions.reply_to = senderEmail;
+    }
+
+    const { data: emailData, error: emailError } = await resend.emails.send(emailOptions);
 
     if (emailError) {
       console.error("Resend error:", emailError);
@@ -127,11 +136,12 @@ serve(async (req) => {
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Update the task_assignments table to note that email was sent
+      // Update the task_assignments table to note that email was sent and store assigner email
       await supabase
         .from("task_assignments")
         .update({ 
-          outcome_notes: `Email sent to assignee at ${new Date().toISOString()}` 
+          outcome_notes: `Email sent to assignee at ${new Date().toISOString()}`,
+          assigner_email: senderEmail || null,
         })
         .eq("task_id", taskId)
         .eq("primary_assignee_id", assigneeId);
