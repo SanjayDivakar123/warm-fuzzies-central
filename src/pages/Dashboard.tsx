@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/aceternity-sidebar";
 import { FloatingHeader } from "@/components/ui/floating-header";
-import { ChangeEmailModal } from "@/components/dashboard/ChangeEmailModal";
+
 import { motion } from "framer-motion";
 import { 
   Calendar, 
@@ -72,7 +72,6 @@ const Dashboard = () => {
   const [selectedAssessment, setSelectedAssessment] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const [showEmailChange, setShowEmailChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -912,15 +911,9 @@ const Dashboard = () => {
                 {/* Settings Section */}
                 {activeSection === 'settings' && (
                   <>
-                    <div className="mb-6 flex items-center justify-between">
-                      <div>
-                        <h1 className="text-3xl font-bold">Account Settings</h1>
-                        <p className="text-muted-foreground mt-1">Manage your account preferences</p>
-                      </div>
-                      <Button onClick={() => setShowEmailChange(true)}>
-                        <Mail className="w-4 h-4 mr-2" />
-                        Change Email
-                      </Button>
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold">Account Settings</h1>
+                      <p className="text-muted-foreground mt-1">Manage your account preferences</p>
                     </div>
 
                     {/* Email Settings Card */}
@@ -931,21 +924,9 @@ const Dashboard = () => {
                           Email Address
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium">{user?.email}</p>
-                            <p className="text-sm text-muted-foreground">Your current email address</p>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setShowEmailChange(true)}
-                          >
-                            <Mail className="w-4 h-4 mr-2" />
-                            Change Email
-                          </Button>
-                        </div>
+                      <CardContent>
+                        <p className="text-sm font-medium">{user?.email}</p>
+                        <p className="text-sm text-muted-foreground">Your current email address</p>
                       </CardContent>
                     </Card>
 
@@ -1016,12 +997,6 @@ const Dashboard = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Change Email Modal */}
-                    <ChangeEmailModal
-                      open={showEmailChange}
-                      onOpenChange={setShowEmailChange}
-                      currentEmail={user?.email || ''}
-                    />
                   </>
                 )}
               </div>
