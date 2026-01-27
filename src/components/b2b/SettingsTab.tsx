@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -25,11 +26,18 @@ import {
   Link2,
   AlertTriangle,
   Bell,
+  Palette,
+  Key,
+  Calendar,
+  MessageSquare,
 } from "lucide-react";
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
 import AddCreditsModal from "./AddCreditsModal";
+import IntegrationsSettings from "./admin/IntegrationsSettings";
+import ApiKeyManagement from "./admin/ApiKeyManagement";
+import ScheduledReportsManager from "./admin/ScheduledReportsManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,6 +303,27 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
 
   return (
     <div className="space-y-4">
+      <Tabs defaultValue="branding" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsTrigger value="branding" className="gap-2">
+            <Palette className="h-4 w-4 hidden sm:inline" />
+            Branding
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="gap-2">
+            <MessageSquare className="h-4 w-4 hidden sm:inline" />
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger value="api" className="gap-2">
+            <Key className="h-4 w-4 hidden sm:inline" />
+            API
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="gap-2">
+            <Calendar className="h-4 w-4 hidden sm:inline" />
+            Reports
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="branding" className="space-y-4">
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-medium">Branding</CardTitle>
@@ -851,8 +880,20 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
 
+        <TabsContent value="integrations" className="space-y-4">
+          <IntegrationsSettings company={company} onSettingsSaved={onSettingsSaved} />
+        </TabsContent>
 
+        <TabsContent value="api" className="space-y-4">
+          <ApiKeyManagement companyId={company.id} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+          <ScheduledReportsManager companyId={company.id} />
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Company Modal */}
       <DeleteCompanyModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} company={company} />
