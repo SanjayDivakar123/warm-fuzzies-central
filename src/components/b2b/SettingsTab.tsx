@@ -30,6 +30,7 @@ import {
   Key,
   Calendar,
   MessageSquare,
+  Mail,
 } from "lucide-react";
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
@@ -38,6 +39,7 @@ import AddCreditsModal from "./AddCreditsModal";
 import IntegrationsSettings from "./admin/IntegrationsSettings";
 import ApiKeyManagement from "./admin/ApiKeyManagement";
 import ScheduledReportsManager from "./admin/ScheduledReportsManager";
+import { ChangeEmailModal } from "@/components/dashboard/ChangeEmailModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,9 +86,22 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [disableSubdomainConfirmOpen, setDisableSubdomainConfirmOpen] = useState(false);
+  const [showEmailChange, setShowEmailChange] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Fetch current user's email
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setCurrentUserEmail(user.email);
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   // Fetch credit balance from company record
   useEffect(() => {
@@ -303,6 +318,25 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
 
   return (
     <div className="space-y-4">
+      {/* Header with Change Email button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Settings</h2>
+          <p className="text-muted-foreground text-sm">Manage your company and account settings</p>
+        </div>
+        <Button onClick={() => setShowEmailChange(true)}>
+          <Mail className="w-4 h-4 mr-2" />
+          Change Email
+        </Button>
+      </div>
+
+      {/* Change Email Modal */}
+      <ChangeEmailModal
+        open={showEmailChange}
+        onOpenChange={setShowEmailChange}
+        currentEmail={currentUserEmail}
+      />
+
       <Tabs defaultValue="branding" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="branding" className="gap-2">
