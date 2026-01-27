@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 
+export type CompanyUserRole = 'admin' | 'hr' | 'partner' | 'employee';
+
 interface Company {
   id: string;
   name: string;
@@ -25,7 +27,7 @@ interface CompanyUser {
   company_id: string;
   user_id?: string;
   email: string;
-  role: 'admin' | 'employee';
+  role: CompanyUserRole;
   status: 'invited' | 'active' | 'revoked';
   invite_code?: string;
   invited_at: string;
@@ -34,11 +36,67 @@ interface CompanyUser {
   assessment_result_id?: string;
 }
 
+// Role-based permissions
+interface RolePermissions {
+  canViewOverview: boolean;
+  canManageUsers: boolean;
+  canManageCandidates: boolean;
+  canViewAssessments: boolean;
+  canManageReminders: boolean;
+  canUseWorkMatrix: boolean;
+  canManageSettings: boolean;
+  canInviteAdmins: boolean;
+}
+
+const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
+  admin: {
+    canViewOverview: true,
+    canManageUsers: true,
+    canManageCandidates: true,
+    canViewAssessments: true,
+    canManageReminders: true,
+    canUseWorkMatrix: true,
+    canManageSettings: true,
+    canInviteAdmins: true,
+  },
+  hr: {
+    canViewOverview: true,
+    canManageUsers: true,
+    canManageCandidates: true,
+    canViewAssessments: true,
+    canManageReminders: true,
+    canUseWorkMatrix: false,
+    canManageSettings: false,
+    canInviteAdmins: false,
+  },
+  partner: {
+    canViewOverview: true,
+    canManageUsers: false,
+    canManageCandidates: false,
+    canViewAssessments: true,
+    canManageReminders: false,
+    canUseWorkMatrix: true,
+    canManageSettings: false,
+    canInviteAdmins: false,
+  },
+  employee: {
+    canViewOverview: false,
+    canManageUsers: false,
+    canManageCandidates: false,
+    canViewAssessments: false,
+    canManageReminders: false,
+    canUseWorkMatrix: false,
+    canManageSettings: false,
+    canInviteAdmins: false,
+  },
+};
+
 interface CompanyContextType {
   company: Company | null;
   companyUser: CompanyUser | null;
   loading: boolean;
   isAdmin: boolean;
+  permissions: RolePermissions;
   refreshCompany: () => Promise<void>;
 }
 
@@ -91,7 +149,21 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
       const companyUserData = activeAdminRecord || activeRecord || companyUserRecords?.[0];
 
       if (companyUserData) {
-        setCompanyUser(companyUserData);
+        // Map database role to our type
+        const mappedUser: CompanyUser = {
+          id: companyUserData.id,
+          company_id: companyUserData.company_id,
+          user_id: companyUserData.user_id ?? undefined,
+          email: companyUserData.email,
+          role: companyUserData.role as CompanyUserRole,
+          status: companyUserData.status,
+          invite_code: companyUserData.invite_code ?? undefined,
+          invited_at: companyUserData.invited_at ?? '',
+          joined_at: companyUserData.joined_at ?? undefined,
+          assessment_completed_at: companyUserData.assessment_completed_at ?? undefined,
+          assessment_result_id: companyUserData.assessment_result_id ?? undefined,
+        };
+        setCompanyUser(mappedUser);
 
         // Fetch company details
         const { data: companyData, error: companyError } = await supabase
@@ -114,11 +186,20 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     fetchCompanyData();
   }, [user]);
 
+  // Get permissions based on role
+  const permissions = companyUser 
+    ? ROLE_PERMISSIONS[companyUser.role] 
+    : ROLE_PERMISSIONS.employee;
+
+  // isAdmin now means any admin-level role (admin, hr, or partner)
+  const isAdmin = companyUser?.role !== 'employee';
+
   const value = {
     company,
     companyUser,
     loading,
-    isAdmin: companyUser?.role === 'admin',
+    isAdmin,
+    permissions,
     refreshCompany: fetchCompanyData,
   };
 

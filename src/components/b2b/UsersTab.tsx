@@ -103,7 +103,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [showInviteAdmin, setShowInviteAdmin] = useState(false);
   const [showInviteUser, setShowInviteUser] = useState(false);
   const [promoteUser, setPromoteUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
-  const [manageAdmin, setManageAdmin] = useState<{ id: string; email: string; full_name?: string; status: string } | null>(null);
+  const [manageAdmin, setManageAdmin] = useState<{ id: string; email: string; full_name?: string; status: string; role: string } | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [cancelledReminders, setCancelledReminders] = useState<Record<string, number>>({});
   const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
@@ -884,7 +884,20 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="capitalize">{user.role}</span>
+                          <Badge 
+                            variant={user.role === 'employee' ? 'secondary' : 'default'}
+                            className={
+                              user.role === 'admin' ? 'bg-primary/10 text-primary border-primary/20' :
+                              user.role === 'hr' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                              user.role === 'partner' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
+                              ''
+                            }
+                          >
+                            {user.role === 'admin' ? 'Admin' :
+                             user.role === 'hr' ? 'HR' :
+                             user.role === 'partner' ? 'Partner' :
+                             'Employee'}
+                          </Badge>
                           {user.role === "admin" && user.id === superAdminId && (
                             <Badge variant="outline" className="text-xs">Owner</Badge>
                           )}
@@ -1011,27 +1024,28 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                               <TooltipContent>Promote to Admin</TooltipContent>
                             </Tooltip>
                           )}
-                          {/* Super Admin can manage other admins */}
-                          {user.role === "admin" && isSuperAdmin && user.id !== superAdminId && (
+                          {/* Super Admin can manage other admins/hr/partners */}
+                          {user.role !== "employee" && isSuperAdmin && user.id !== superAdminId && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  onClick={() => setManageAdmin({ 
+                                onClick={() => setManageAdmin({ 
                                     id: user.id, 
                                     email: user.email, 
                                     full_name: user.full_name,
-                                    status: user.status 
+                                    status: user.status,
+                                    role: user.role
                                   })}
                                 >
                                   <Settings className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Manage Admin</TooltipContent>
+                              <TooltipContent>Manage {user.role === 'admin' ? 'Admin' : user.role === 'hr' ? 'HR' : 'Partner'}</TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== "admin" && user.status !== "revoked" && (
+                          {user.role === "employee" && user.status !== "revoked" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="destructive" size="sm" onClick={() => handleRevokeAccess(user.id)}>

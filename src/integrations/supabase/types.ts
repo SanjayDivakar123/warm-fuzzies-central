@@ -1635,7 +1635,7 @@ export type Database = {
         | "executive"
         | "manager"
       company_assessment_type: "25q" | "50q"
-      company_user_role: "admin" | "employee"
+      company_user_role: "admin" | "employee" | "hr" | "partner"
       company_user_status: "invited" | "active" | "revoked"
       covey_quadrant: "q1" | "q2" | "q3" | "q4"
       task_priority: "high" | "medium" | "low"
@@ -1789,7 +1789,7 @@ export const Constants = {
         "manager",
       ],
       company_assessment_type: ["25q", "50q"],
-      company_user_role: ["admin", "employee"],
+      company_user_role: ["admin", "employee", "hr", "partner"],
       company_user_status: ["invited", "active", "revoked"],
       covey_quadrant: ["q1", "q2", "q3", "q4"],
       task_priority: ["high", "medium", "low"],

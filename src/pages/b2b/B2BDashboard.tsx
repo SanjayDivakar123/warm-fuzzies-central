@@ -20,7 +20,7 @@ import { HelpButton, useAutoStartTour } from '@/components/help';
 
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
-  const { company, companyUser, loading, isAdmin, refreshCompany } = useCompany();
+  const { company, companyUser, loading, isAdmin, permissions, refreshCompany } = useCompany();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme, resolvedTheme } = useB2BTheme();
@@ -30,6 +30,16 @@ function B2BDashboardContent() {
 
   // Auto-start dashboard tour for first-time admins (hook must be called unconditionally)
   useAutoStartTour('admin-dashboard-overview', 1500, !loading && !!company && isAdmin);
+
+  // Get role display label
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Admin';
+      case 'hr': return 'HR';
+      case 'partner': return 'Partner';
+      default: return role;
+    }
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -218,50 +228,72 @@ function B2BDashboardContent() {
         `}</style>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
-            <TabsTrigger 
-              value="overview" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Users
-            </TabsTrigger>
-            <TabsTrigger 
-              value="candidates" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Candidates
-            </TabsTrigger>
-            <TabsTrigger 
-              value="assessments" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Assessments
-            </TabsTrigger>
-            <TabsTrigger 
-              value="reminders" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Reminders
-            </TabsTrigger>
-            <TabsTrigger 
-              value="matrix" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Work Matrix
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
-            >
-              Settings
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
+              {permissions.canViewOverview && (
+                <TabsTrigger 
+                  value="overview" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Overview
+                </TabsTrigger>
+              )}
+              {permissions.canManageUsers && (
+                <TabsTrigger 
+                  value="users" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Users
+                </TabsTrigger>
+              )}
+              {permissions.canManageCandidates && (
+                <TabsTrigger 
+                  value="candidates" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Candidates
+                </TabsTrigger>
+              )}
+              {permissions.canViewAssessments && (
+                <TabsTrigger 
+                  value="assessments" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Assessments
+                </TabsTrigger>
+              )}
+              {permissions.canManageReminders && (
+                <TabsTrigger 
+                  value="reminders" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Reminders
+                </TabsTrigger>
+              )}
+              {permissions.canUseWorkMatrix && (
+                <TabsTrigger 
+                  value="matrix" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Work Matrix
+                </TabsTrigger>
+              )}
+              {permissions.canManageSettings && (
+                <TabsTrigger 
+                  value="settings" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                >
+                  Settings
+                </TabsTrigger>
+              )}
+            </TabsList>
+            {/* Role badge */}
+            {companyUser && (
+              <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                {getRoleLabel(companyUser.role)}
+              </span>
+            )}
+          </div>
 
           <TabsContent value="overview" className="mt-0">
             <OverviewTab company={company} />
