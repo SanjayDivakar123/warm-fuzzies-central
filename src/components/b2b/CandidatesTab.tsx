@@ -5,13 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import InviteCandidateModal from './InviteCandidateModal';
 import CreateApplicationLinkModal from './CreateApplicationLinkModal';
 import CandidateResultsModal from './CandidateResultsModal';
 import CandidateFitModal from './CandidateFitModal';
+import CandidateBulkImportModal from './CandidateBulkImportModal';
 
 interface Candidate {
   id: string;
@@ -75,6 +76,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [showFitModal, setShowFitModal] = useState(false);
@@ -314,6 +316,10 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowBulkImportModal(true)}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Bulk Import
+              </Button>
               <Button variant="outline" onClick={() => setShowLinkModal(true)}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Create Link
@@ -511,6 +517,13 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
         companyId={company.id}
         companySubdomain={company.subdomain}
         onLinkCreated={fetchApplicationLinks}
+      />
+
+      <CandidateBulkImportModal
+        open={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        companyId={company.id}
+        onImportComplete={fetchCandidates}
       />
 
       {selectedCandidate && (
