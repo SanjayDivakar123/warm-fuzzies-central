@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb } from 'lucide-react';
+import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { TaskEmailModal } from './TaskEmailModal';
 
 interface TaskAssignmentOutputProps {
   task: {
@@ -62,6 +63,8 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   const { toast } = useToast();
   const [isApproving, setIsApproving] = useState(false);
   const [employees, setEmployees] = useState<Record<string, any>>({});
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState<{ id: string; email: string; full_name?: string } | null>(null);
 
   useEffect(() => {
     fetchEmployeeDetails();
@@ -309,16 +312,57 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
         </CardContent>
       </Card>
 
-      {/* Approval Button */}
-      <Button 
-        onClick={handleApprove} 
-        className="w-full" 
-        size="lg"
-        disabled={isApproving || !primaryEmployee}
-      >
-        <Check className="mr-2 h-4 w-4" />
-        {isApproving ? 'Approving...' : 'Approve Assignment'}
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button 
+          onClick={handleApprove} 
+          className="flex-1" 
+          size="lg"
+          disabled={isApproving || !primaryEmployee}
+        >
+          <Check className="mr-2 h-4 w-4" />
+          {isApproving ? 'Approving...' : 'Approve Assignment'}
+        </Button>
+        
+        {primaryEmployee && (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => {
+              setEmailRecipient({
+                id: primaryEmployee.id,
+                email: primaryEmployee.email,
+                full_name: primaryEmployee.full_name,
+              });
+              setEmailModalOpen(true);
+            }}
+          >
+            <Mail className="mr-2 h-4 w-4" />
+            Email Assignee
+          </Button>
+        )}
+      </div>
+
+      {/* Email Modal */}
+      {emailRecipient && (
+        <TaskEmailModal
+          open={emailModalOpen}
+          onClose={() => {
+            setEmailModalOpen(false);
+            setEmailRecipient(null);
+          }}
+          task={{
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            importance: task.importance,
+            urgency: task.urgency,
+            required_skills: task.required_skills,
+          }}
+          assignee={emailRecipient}
+          reasoning={reasoning}
+        />
+      )}
     </div>
   );
 }
