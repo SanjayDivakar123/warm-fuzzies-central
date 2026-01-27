@@ -307,7 +307,7 @@ export default function B2B() {
                         className="h-11 bg-background/50 border-border/50 focus:border-primary/50"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Minimum 2 seats • <span className="text-primary font-medium">$20</span> per employee (one-time)
+                        Minimum 2 seats • <span className="text-primary font-medium">$20</span> per user/month
                       </p>
                     </div>
 
