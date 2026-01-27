@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Navbar } from '@/components/navigation/Navbar';
+import { Footer } from '@/components/Footer';
 
 export default function B2BSignIn() {
   const [subdomain, setSubdomain] = useState('');
@@ -66,87 +68,93 @@ export default function B2BSignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-md mx-auto">
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          className="mb-6 gap-2"
-          onClick={() => navigate('/b2b')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to B2B
-        </Button>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      
+      <main className="flex-1 py-12 px-4">
+        <div className="max-w-md mx-auto">
+          {/* Back button */}
+          <Button 
+            variant="ghost" 
+            className="mb-6 gap-2"
+            onClick={() => navigate('/b2b')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to B2B
+          </Button>
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Building2 className="h-8 w-8 text-primary" />
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Building2 className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Company Sign In</h1>
+            <p className="text-muted-foreground">
+              Enter your company subdomain to access your admin dashboard
+            </p>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Company Sign In</h1>
-          <p className="text-muted-foreground">
-            Enter your company subdomain to access your admin dashboard
-          </p>
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Find Your Company</CardTitle>
-            <CardDescription>
-              Enter your company identifier to access the admin dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="subdomain">Company Identifier</Label>
-                <div className="flex items-center">
-                  <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
-                    rolecolorfinder.com/company/
+          <Card>
+            <CardHeader>
+              <CardTitle>Find Your Company</CardTitle>
+              <CardDescription>
+                Enter your company identifier to access the admin dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="subdomain">Company Identifier</Label>
+                  <div className="flex items-center">
+                    <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
+                      rolecolorfinder.com/company/
+                    </div>
+                    <Input
+                      id="subdomain"
+                      placeholder="your-company"
+                      value={subdomain}
+                      onChange={(e) => setSubdomain(cleanSubdomain(e.target.value))}
+                      className="rounded-l-none"
+                      required
+                    />
                   </div>
-                  <Input
-                    id="subdomain"
-                    placeholder="your-company"
-                    value={subdomain}
-                    onChange={(e) => setSubdomain(cleanSubdomain(e.target.value))}
-                    className="rounded-l-none"
-                    required
-                  />
+                  <p className="text-xs text-muted-foreground">
+                    This is your company identifier from your portal URL
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  This is your company identifier from your portal URL
-                </p>
-              </div>
 
-              <Button type="submit" className="w-full gap-2" disabled={loading || !subdomain.trim()}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Finding company...
-                  </>
-                ) : (
-                  <>
-                    Continue to Admin Login
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
+                <Button type="submit" className="w-full gap-2" disabled={loading || !subdomain.trim()}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Finding company...
+                    </>
+                  ) : (
+                    <>
+                      Continue to Admin Login
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have a company account?{' '}
+              <Button 
+                variant="link" 
+                className="p-0 h-auto"
+                onClick={() => navigate('/b2b')}
+              >
+                Create one here
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Don't have a company account?{' '}
-            <Button 
-              variant="link" 
-              className="p-0 h-auto"
-              onClick={() => navigate('/b2b')}
-            >
-              Create one here
-            </Button>
-          </p>
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
