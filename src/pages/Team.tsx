@@ -76,23 +76,6 @@ const Team = () => {
     link: "/team/tristan-beley",
     roleColor: "green" as const
   }];
-  const advisoryTeam = [{
-    name: "Jennifer D. Klein",
-    title: "Chief Experience Officer (CXO)",
-    location: "Denver, Colorado, USA",
-    image: "/images/jennifer-klein.png?v=2",
-    summary: "Educational transformation leader with 19+ years in the classroom. Author of The Global Education Guidebook and The Landscape Model of Learning. Specializes in culturally responsive practices and experiential learning.",
-    link: "/team/jennifer-klein",
-    roleColor: "blue" as const
-  }, {
-    name: "Dr. Kapono Ciotti",
-    title: "Chief Experience Officer (CXO)",
-    location: "Kāne'ohe, Hawai'i, USA",
-    image: "/images/kapono-ciotti.png",
-    summary: "Globally recognized educational leader and CEO of Pacific American Foundation. Co-author of The Landscape Model of Learning. Integrates Native Hawaiian wisdom with global innovation in education and leadership development.",
-    link: "/team/kapono-ciotti",
-    roleColor: "green" as const
-  }];
   const roleColorConfig = {
     red: { bg: "bg-red-500", text: "text-white", label: "Creative Motivator", border: "border-red-500" },
     yellow: { bg: "bg-yellow-400", text: "text-yellow-900", label: "Fast Executor", border: "border-yellow-400" },
@@ -100,7 +83,7 @@ const Team = () => {
     blue: { bg: "bg-blue-500", text: "text-white", label: "Analytical Strategist", border: "border-blue-500" }
   };
 
-  const allMembers = [...executionTeam, ...advisoryTeam];
+  const allMembers = [...executionTeam];
   const filteredMembers = activeFilter 
     ? allMembers.filter(m => m.roleColor === activeFilter)
     : null;
@@ -238,9 +221,7 @@ const Team = () => {
               </div>
             </section>
           ) : (
-          <>
-            {/* Execution Team Section */}
-            <section className="mb-20">
+          <section>
               <div className="text-center mb-10">
                 <Badge variant="default" className="mb-4 text-sm px-4 py-2">
                   Execution Team
@@ -253,22 +234,6 @@ const Team = () => {
                 {executionTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
               </div>
             </section>
-
-            {/* Advisory Team Section */}
-            <section>
-              <div className="text-center mb-10">
-                <Badge variant="secondary" className="mb-4 text-sm px-4 py-2">
-                  Advisory Team
-                </Badge>
-                <h2 className="text-3xl md:text-4xl font-bold">
-                  Guiding Vision & Strategy
-                </h2>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                {advisoryTeam.map((member, index) => <TeamMemberCard key={index} member={member} />)}
-              </div>
-            </section>
-          </>
         )}
         </div>
       </main>
