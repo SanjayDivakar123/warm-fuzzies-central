@@ -75,6 +75,14 @@ const Team = () => {
     summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
     link: "/team/tristan-beley",
     roleColor: "green" as const
+  }, {
+    name: "Tanisha Sikder",
+    title: "AI Engineer",
+    location: "USA",
+    image: "/images/tanisha-sikder.jpg",
+    summary: "Passionate about building, improving, and experimenting with AI systems to solve real-world problems. Engineers AI to help people understand their leadership style using color-based psychology.",
+    link: "/team/tanisha-sikder",
+    roleColor: "yellow" as const
   }];
   const roleColorConfig = {
     red: { bg: "bg-red-500", text: "text-white", label: "Creative Motivator", border: "border-red-500" },
