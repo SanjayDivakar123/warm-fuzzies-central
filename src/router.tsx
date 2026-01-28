@@ -26,7 +26,7 @@ import JenniferKlein from "@/pages/team/JenniferKlein";
 import KaponoCiotti from "@/pages/team/KaponoCiotti";
 import TristanBeley from "@/pages/team/TristanBeley";
 import AmitSuthar from "@/pages/team/AmitSuthar";
-import SamOtten from "@/pages/team/SamOtten";
+
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import BackToTop from "@/components/BackToTop";
@@ -178,10 +178,6 @@ export const routeConfig = [
   {
     path: "/team/amit-suthar",
     element: <Layout><AmitSuthar /></Layout>,
-  },
-  {
-    path: "/team/sam-otten",
-    element: <Layout><SamOtten /></Layout>,
   },
   {
     path: "/sitemap",
