@@ -22,10 +22,9 @@ import Contact from "@/pages/Contact";
 
 import Team from "@/pages/Team";
 import SanjayDivakar from "@/pages/team/SanjayDivakar";
-import JenniferKlein from "@/pages/team/JenniferKlein";
-import KaponoCiotti from "@/pages/team/KaponoCiotti";
 import TristanBeley from "@/pages/team/TristanBeley";
 import AmitSuthar from "@/pages/team/AmitSuthar";
+
 
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -162,14 +161,6 @@ export const routeConfig = [
   {
     path: "/team/sanjay-divakar",
     element: <Layout><SanjayDivakar /></Layout>,
-  },
-  {
-    path: "/team/jennifer-klein",
-    element: <Layout><JenniferKlein /></Layout>,
-  },
-  {
-    path: "/team/kapono-ciotti",
-    element: <Layout><KaponoCiotti /></Layout>,
   },
   {
     path: "/team/tristan-beley",
