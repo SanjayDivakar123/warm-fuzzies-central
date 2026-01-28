@@ -75,14 +75,6 @@ const Team = () => {
     summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
     link: "/team/tristan-beley",
     roleColor: "green" as const
-  }, {
-    name: "Sam Otten",
-    title: "Head of Application Development",
-    location: "Greenwich, Connecticut, USA",
-    image: "/images/sam-otten-new.png",
-    summary: "Oversees technical architecture and engineering strategy at RoleColorFinder. Known for his builder's mindset, translating high-level psychological theories into functional, scalable code.",
-    link: "/team/sam-otten",
-    roleColor: "yellow" as const
   }];
   const advisoryTeam = [{
     name: "Jennifer D. Klein",
