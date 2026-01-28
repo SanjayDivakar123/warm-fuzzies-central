@@ -91,7 +91,7 @@ const TanishaSikder = () => {
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>USA</span>
+                      <span>Liberty Township, OH, USA</span>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Mail className="w-4 h-4 flex-shrink-0" />
