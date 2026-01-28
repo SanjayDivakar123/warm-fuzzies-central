@@ -78,7 +78,7 @@ const Team = () => {
   }, {
     name: "Tanisha Sikder",
     title: "AI Engineer",
-    location: "USA",
+    location: "Liberty Township, OH, USA",
     image: "/images/tanisha-sikder.jpg",
     summary: "Passionate about building, improving, and experimenting with AI systems to solve real-world problems. Engineers AI to help people understand their leadership style using color-based psychology.",
     link: "/team/tanisha-sikder",
