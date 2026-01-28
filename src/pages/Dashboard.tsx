@@ -30,18 +30,12 @@ import {
   Play,
   Clock,
   Camera,
-  Loader2,
-  Crown
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
 import AssessmentDetails from "@/components/AssessmentDetails";
 import { cn } from "@/lib/utils";
-import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
-import { SubscriptionUpgradeCTA } from "@/components/subscription/SubscriptionUpgradeCTA";
-import { SubscriptionRenewalBanner } from "@/components/subscription/SubscriptionRenewalBanner";
-import { ProgressTracking } from "@/components/subscription/ProgressTracking";
-import { FamilyMemberManager } from "@/components/subscription/FamilyMemberManager";
 
 interface AssessmentResult {
   id: string;
@@ -70,7 +64,7 @@ interface CompanyAccess {
 }
 
 const Dashboard = () => {
-  const { user, updatePassword, signOut, signInWithGoogle, subscription, refreshSubscription } = useAuth();
+  const { user, updatePassword, signOut, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
@@ -81,7 +75,7 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'subscription' | 'settings' | 'business'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business'>('overview');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
   const [googleLinking, setGoogleLinking] = useState(false);
@@ -350,12 +344,6 @@ const Dashboard = () => {
       onClick: () => setActiveSection('assessments'),
     },
     {
-      label: 'Subscription',
-      href: '#',
-      icon: <Crown className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
-      onClick: () => setActiveSection('subscription'),
-    },
-    {
       label: 'Business',
       href: '#',
       icon: <Briefcase className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
@@ -535,11 +523,6 @@ const Dashboard = () => {
                       </h1>
                       <p className="text-muted-foreground mt-1">Here's an overview of your account</p>
                     </div>
-
-                    {/* Subscription Renewal Banner */}
-                    {subscription.isSubscribed && (
-                      <SubscriptionRenewalBanner subscriptionEnd={subscription.subscriptionEnd} />
-                    )}
 
                     {/* Quick Stats */}
                     <div className="grid gap-4 md:grid-cols-3">
@@ -816,133 +799,6 @@ const Dashboard = () => {
                             <Link to="/pricing">View All Options</Link>
                           </Button>
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Subscription Section */}
-                {activeSection === 'subscription' && (
-                  <>
-                    <div className="mb-6">
-                      <h1 className="text-3xl font-bold">Subscription</h1>
-                      <p className="text-muted-foreground mt-1">Manage your subscription and benefits</p>
-                    </div>
-
-                    {subscription.isSubscribed ? (
-                      <div className="grid gap-6 md:grid-cols-2">
-                        {/* Subscription Status */}
-                        <SubscriptionStatus 
-                          tier={subscription.tier} 
-                          subscriptionEnd={subscription.subscriptionEnd} 
-                          onRefresh={refreshSubscription}
-                        />
-
-                        {/* Progress Tracking (if feature enabled) */}
-                        {subscription.features?.progressTracking && (
-                          <ProgressTracking />
-                        )}
-
-                        {/* Family Member Manager (if family plan) */}
-                        {subscription.features?.familyMembers > 0 && (
-                          <div className="md:col-span-2">
-                            <FamilyMemberManager />
-                          </div>
-                        )}
-
-                        {/* Subscription Benefits Summary */}
-                        <Card className="md:col-span-2 shadow-elegant border-border/20">
-                          <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                              <Crown className="w-5 h-5 text-primary" />
-                              Your Benefits
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                              <div className={cn(
-                                "p-4 rounded-lg border",
-                                subscription.features?.unlimitedRetakes 
-                                  ? "bg-primary/5 border-primary/20" 
-                                  : "bg-muted/50 border-border"
-                              )}>
-                                <p className="font-medium text-sm">Unlimited Retakes</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {subscription.features?.unlimitedRetakes ? "Included" : "Not included"}
-                                </p>
-                              </div>
-                              <div className={cn(
-                                "p-4 rounded-lg border",
-                                subscription.features?.progressTracking 
-                                  ? "bg-primary/5 border-primary/20" 
-                                  : "bg-muted/50 border-border"
-                              )}>
-                                <p className="font-medium text-sm">Progress Tracking</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {subscription.features?.progressTracking ? "Included" : "Not included"}
-                                </p>
-                              </div>
-                              <div className={cn(
-                                "p-4 rounded-lg border",
-                                subscription.features?.allAssessments 
-                                  ? "bg-primary/5 border-primary/20" 
-                                  : "bg-muted/50 border-border"
-                              )}>
-                                <p className="font-medium text-sm">All Assessments</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {subscription.features?.allAssessments ? "Unlocked" : "Not included"}
-                                </p>
-                              </div>
-                              <div className={cn(
-                                "p-4 rounded-lg border",
-                                subscription.features?.aiJobMatching 
-                                  ? "bg-primary/5 border-primary/20" 
-                                  : "bg-muted/50 border-border"
-                              )}>
-                                <p className="font-medium text-sm">AI Job Matching</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {subscription.features?.aiJobMatching ? "Included" : "Not included"}
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ) : (
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <SubscriptionUpgradeCTA />
-                        
-                        <Card className="shadow-elegant border-border/20">
-                          <CardHeader>
-                            <CardTitle className="text-lg">Why Subscribe?</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <p className="text-sm text-muted-foreground">
-                              Unlock the full potential of your leadership journey with a subscription:
-                            </p>
-                            <ul className="space-y-2 text-sm">
-                              <li className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                Retake assessments anytime to track growth
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                See how your results evolve over time
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                Access all assessment types
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                Share with family members
-                              </li>
-                            </ul>
-                            <Button asChild className="w-full">
-                              <Link to="/pricing">View All Plans</Link>
-                            </Button>
-                          </CardContent>
-                        </Card>
                       </div>
                     )}
                   </>

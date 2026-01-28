@@ -35,21 +35,10 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided. Please sign in first.");
-    }
-    logStep("Authorization header found");
-
+    const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
-    const { data, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`);
-    }
+    const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });

@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button"
-import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check, Building2, Users, BarChart3, Zap, X, Crown, RefreshCw, TrendingUp, Heart } from "lucide-react"
+import { Star, UserCheck, Palette, PlusIcon, ShieldCheckIcon, Check, Building2, Users, BarChart3, Zap, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Navbar } from "@/components/navigation/Navbar"
 import { Badge } from "@/components/ui/badge"
@@ -8,11 +7,6 @@ import { BorderTrail } from "@/components/ui/border-trail"
 import { PaymentButton } from "@/components/payment/PaymentButton"
 import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { SUBSCRIPTION_TIERS, SubscriptionTier } from "@/lib/subscriptionTiers"
-import { SubscriptionCheckoutButton } from "@/components/subscription/SubscriptionCheckoutButton"
-import { useAuth } from "@/contexts/AuthContext"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 
 interface PlanCardProps {
   name: string
@@ -93,110 +87,7 @@ function PlanCard({ name, price, priceNote, target, description, features, cta, 
   )
 }
 
-interface SubscriptionPlanCardProps {
-  tier: SubscriptionTier;
-  icon: React.ElementType;
-  isCurrentPlan: boolean;
-}
-
-function SubscriptionPlanCard({ tier, icon: Icon, isCurrentPlan }: SubscriptionPlanCardProps) {
-  return (
-    <div className={cn(
-      "relative flex-1 overflow-hidden rounded-xl p-6 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10 group",
-      isCurrentPlan 
-        ? "bg-primary/10 border-2 border-primary" 
-        : "bg-muted/40 hover:bg-muted/60"
-    )}>
-      <PlusIcon className="absolute -right-3 -top-3 size-24 rotate-12 stroke-[0.5] text-muted-foreground/20" />
-      
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <p className="font-semibold text-foreground">{tier.name}</p>
-          {isCurrentPlan && (
-            <Badge className="rounded-full font-normal bg-primary text-primary-foreground">
-              Your Plan
-            </Badge>
-          )}
-          {tier.popular && !isCurrentPlan && (
-            <Badge variant="secondary" className="rounded-full font-normal">
-              Popular
-            </Badge>
-          )}
-          {tier.badge && !isCurrentPlan && (
-            <Badge variant="outline" className="rounded-full font-normal">
-              {tier.badge}
-            </Badge>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">{tier.description}</p>
-        
-        <div className="mt-4">
-          <div className="flex items-baseline gap-1">
-            <span className="text-muted-foreground">$</span>
-            <span className="text-3xl font-bold tracking-tight text-foreground">
-              {tier.price}
-            </span>
-            <span className="text-muted-foreground">/{tier.interval}</span>
-          </div>
-        </div>
-
-        <ul className="mt-4 space-y-2">
-          {tier.features.unlimitedRetakes && (
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>Unlimited retakes</span>
-            </li>
-          )}
-          {tier.features.progressTracking && (
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>Progress tracking</span>
-            </li>
-          )}
-          {tier.features.allAssessments && (
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>All assessments unlocked</span>
-            </li>
-          )}
-          {tier.features.aiJobMatching && (
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>AI job matching</span>
-            </li>
-          )}
-          {tier.features.familyMembers > 0 && (
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span>Up to {tier.features.familyMembers} family members</span>
-            </li>
-          )}
-        </ul>
-
-        <div className="mt-6">
-          {isCurrentPlan ? (
-            <Button className="w-full rounded-full" variant="outline" disabled>
-              Current Plan
-            </Button>
-          ) : (
-            <SubscriptionCheckoutButton 
-              tier={tier}
-              className="w-full rounded-full"
-              variant={tier.popular ? "default" : "outline"}
-            >
-              Subscribe
-            </SubscriptionCheckoutButton>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Pricing() {
-  const { subscription } = useAuth();
-  const [showAnnual, setShowAnnual] = useState(false);
   const individualPlans = [
     {
       name: "Free Assessment",
@@ -315,81 +206,6 @@ export default function Pricing() {
             <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <ShieldCheckIcon className="size-4" />
               All features included with no hidden fees
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Plans Section */}
-        <div className="mb-12 sm:mb-16">
-          <div className="text-center mb-8">
-            <p className="text-muted-foreground mb-2">Subscriptions</p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Continuous Growth Plans
-            </h2>
-            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-              Subscribe for ongoing access to assessments, progress tracking, and more
-            </p>
-          </div>
-
-          {/* Monthly/Annual Toggle */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <Label htmlFor="billing-toggle" className={cn("text-sm", !showAnnual && "text-foreground font-medium")}>Monthly</Label>
-            <Switch
-              id="billing-toggle"
-              checked={showAnnual}
-              onCheckedChange={setShowAnnual}
-            />
-            <Label htmlFor="billing-toggle" className={cn("text-sm", showAnnual && "text-foreground font-medium")}>Annual</Label>
-            {showAnnual && (
-              <Badge variant="secondary" className="ml-2">Save up to 20%</Badge>
-            )}
-          </div>
-
-          <div className="relative max-w-5xl mx-auto">
-            <BorderTrail
-              className={cn(
-                'bg-gradient-to-l from-secondary via-secondary/80 to-secondary/20'
-              )}
-              size={80}
-              transition={{
-                repeat: Infinity,
-                duration: 6,
-                ease: 'linear',
-              }}
-            />
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* RoleColor Pro */}
-              <SubscriptionPlanCard
-                tier={showAnnual ? SUBSCRIPTION_TIERS.pro_annual : SUBSCRIPTION_TIERS.pro_monthly}
-                icon={RefreshCw}
-                isCurrentPlan={subscription.tier === (showAnnual ? 'pro_annual' : 'pro_monthly')}
-              />
-
-              {/* Career Growth */}
-              <SubscriptionPlanCard
-                tier={SUBSCRIPTION_TIERS.career_growth}
-                icon={TrendingUp}
-                isCurrentPlan={subscription.tier === 'career_growth'}
-              />
-
-              {/* Annual Premium Pass */}
-              <SubscriptionPlanCard
-                tier={SUBSCRIPTION_TIERS.annual_pass}
-                icon={Crown}
-                isCurrentPlan={subscription.tier === 'annual_pass'}
-              />
-
-              {/* Family Plan */}
-              <SubscriptionPlanCard
-                tier={SUBSCRIPTION_TIERS.family}
-                icon={Heart}
-                isCurrentPlan={subscription.tier === 'family'}
-              />
-            </div>
-
-            <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <ShieldCheckIcon className="size-4" />
-              Cancel anytime • Manage via Stripe portal
             </div>
           </div>
         </div>

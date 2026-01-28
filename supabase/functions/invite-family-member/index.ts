@@ -102,60 +102,7 @@ serve(async (req) => {
     if (inviteError) throw new Error(`Failed to create invitation: ${inviteError.message}`);
     logStep("Invitation created", { invitationId: invitation.id, status: invitation.status });
 
-    // Send invitation email if member doesn't exist
-    if (!existingMember) {
-      try {
-        // Get the inviter's name from profile
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('full_name')
-          .eq('user_id', user.id)
-          .single();
-
-        const inviterName = profile?.full_name || user.email?.split('@')[0] || 'Someone';
-        const inviteUrl = `${Deno.env.get('SITE_URL') || 'https://rolecolorfinder.lovable.app'}/family-invite-accept`;
-
-        // Send email via Resend (if RESEND_API_KEY is set)
-        const resendKey = Deno.env.get('RESEND_API_KEY');
-        if (resendKey) {
-          const emailResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'Role Color Finder <noreply@rolecolorfinder.com>',
-              to: [memberEmail.toLowerCase()],
-              subject: `${inviterName} invited you to their Family Plan`,
-              html: `
-                <h1>Family Plan Invitation</h1>
-                <p>${inviterName} has invited you to join their Family Plan on Role Color Finder!</p>
-                <p>As a family member, you'll get access to:</p>
-                <ul>
-                  <li>Unlimited assessment retakes</li>
-                  <li>Progress tracking dashboard</li>
-                  <li>All assessment types unlocked</li>
-                </ul>
-                <p><a href="${inviteUrl}" style="display: inline-block; background: #9b87f5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Accept Invitation</a></p>
-                <p style="color: #888; margin-top: 24px;">If you don't want to join, you can simply ignore this email.</p>
-              `
-            }),
-          });
-
-          if (emailResponse.ok) {
-            logStep("Invitation email sent");
-          } else {
-            logStep("Email send failed (continuing anyway)", await emailResponse.text());
-          }
-        } else {
-          logStep("RESEND_API_KEY not set, skipping email");
-        }
-      } catch (emailError) {
-        logStep("Email error (non-fatal)", emailError);
-        // Don't fail the invitation if email fails
-      }
-    }
+    // TODO: Send invitation email if member doesn't exist
 
     return new Response(JSON.stringify({ 
       success: true, 

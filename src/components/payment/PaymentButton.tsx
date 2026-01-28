@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { canBypassPayment } from "@/lib/subscriptionAccess";
 
 interface PaymentButtonProps {
   productType: "premium" | "pro" | "team";
@@ -27,28 +26,9 @@ export const PaymentButton = ({
   customDescription
 }: PaymentButtonProps) => {
   const [loading, setLoading] = useState(false);
-  const [hasCompletedBefore, setHasCompletedBefore] = useState(false);
   const { toast } = useToast();
-  const { user, subscription } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Check if user has completed this assessment type before
-  useEffect(() => {
-    const checkPreviousAssessments = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('assessment_results')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('assessment_type', productType)
-        .limit(1);
-      
-      setHasCompletedBefore((data?.length ?? 0) > 0);
-    };
-
-    checkPreviousAssessments();
-  }, [user, productType]);
 
   const handlePayment = async () => {
     console.log("=== PAYMENT FLOW STARTED ===");
@@ -62,24 +42,6 @@ export const PaymentButton = ({
         variant: "destructive",
       });
       navigate("/auth");
-      return;
-    }
-
-    // Check if subscriber can bypass payment
-    if (productType !== 'team' && canBypassPayment(productType, subscription, hasCompletedBefore)) {
-      console.log("Subscriber bypass - redirecting directly to assessment");
-      toast({
-        title: "Subscriber Access",
-        description: "Accessing your assessment now...",
-      });
-      navigate(`/${productType}-assessment`);
-      return;
-    }
-
-    // Check if subscriber has allAssessments feature (can access even without previous completion)
-    if (productType !== 'team' && subscription?.features?.allAssessments) {
-      console.log("All assessments unlocked - redirecting directly");
-      navigate(`/${productType}-assessment`);
       return;
     }
 
@@ -129,17 +91,6 @@ export const PaymentButton = ({
     }
   };
 
-  // Show different text for subscribers with bypass access
-  const buttonText = () => {
-    if (productType !== 'team' && subscription?.features?.allAssessments) {
-      return "Start Assessment";
-    }
-    if (productType !== 'team' && canBypassPayment(productType, subscription, hasCompletedBefore)) {
-      return "Retake Assessment";
-    }
-    return children;
-  };
-
   return (
     <Button 
       onClick={handlePayment} 
@@ -154,7 +105,7 @@ export const PaymentButton = ({
           Processing...
         </>
       ) : (
-        buttonText()
+        children
       )}
     </Button>
   );
