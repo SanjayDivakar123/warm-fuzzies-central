@@ -23,6 +23,7 @@ import Contact from "@/pages/Contact";
 import Team from "@/pages/Team";
 import SanjayDivakar from "@/pages/team/SanjayDivakar";
 import TristanBeley from "@/pages/team/TristanBeley";
+import TanishaSikder from "@/pages/team/TanishaSikder";
 import AmitSuthar from "@/pages/team/AmitSuthar";
 
 
@@ -165,6 +166,10 @@ export const routeConfig = [
   {
     path: "/team/tristan-beley",
     element: <Layout><TristanBeley /></Layout>,
+  },
+  {
+    path: "/team/tanisha-sikder",
+    element: <Layout><TanishaSikder /></Layout>,
   },
   {
     path: "/team/amit-suthar",
