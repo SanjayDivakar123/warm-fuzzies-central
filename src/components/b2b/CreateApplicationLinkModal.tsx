@@ -87,7 +87,7 @@ export default function CreateApplicationLinkModal({
 
       if (error) throw error;
 
-      const linkUrl = `https://rolecolorfinder.com/apply/${companySubdomain}/${data.link_code}`;
+      const linkUrl = `https://rolecolorfinder.com/company/${companySubdomain}/candidate/${data.link_code}`;
       setCreatedLink(linkUrl);
       onLinkCreated();
 
