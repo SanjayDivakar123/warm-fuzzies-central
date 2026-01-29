@@ -37,31 +37,30 @@ serve(async (req) => {
     const resumeArrayBuffer = await resumeBlob.arrayBuffer();
     const resumeBase64 = btoa(String.fromCharCode(...new Uint8Array(resumeArrayBuffer)));
 
-    // Use Lovable AI to extract text content from the resume
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured, skipping parsing");
+    // Use OpenAI API to extract text content from the resume
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY not configured, skipping parsing");
       return new Response(
         JSON.stringify({ success: true, message: "Parsing skipped - no AI key" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // For PDFs, we'll use vision capabilities to extract text
+    // For PDFs, we'll use OpenAI's vision capabilities to extract text
     const contentType = resumeBlob.type;
     let extractedText = "";
 
     if (contentType === "application/pdf") {
-      // Use AI to describe/extract content from PDF (simplified approach)
-      // In production, you might want to use a dedicated PDF parsing library
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      // Use OpenAI GPT-4o to extract content from PDF
+      const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "gpt-4o",
           messages: [
             {
               role: "system",
@@ -82,7 +81,7 @@ Format the output as structured text that can be used for candidate evaluation.`
               content: [
                 {
                   type: "text",
-                  text: "Please extract and summarize the key information from this resume document. The document has been uploaded as a PDF.",
+                  text: "Please extract and summarize the key information from this resume document.",
                 },
                 {
                   type: "image_url",
@@ -93,6 +92,7 @@ Format the output as structured text that can be used for candidate evaluation.`
               ],
             },
           ],
+          max_tokens: 2000,
         }),
       });
 
@@ -100,7 +100,7 @@ Format the output as structured text that can be used for candidate evaluation.`
         const aiData = await aiResponse.json();
         extractedText = aiData.choices?.[0]?.message?.content || "";
       } else {
-        console.error("AI parsing failed:", await aiResponse.text());
+        console.error("OpenAI parsing failed:", await aiResponse.text());
       }
     } else {
       // For Word documents, we'd need different handling
