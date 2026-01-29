@@ -33,9 +33,19 @@ serve(async (req) => {
       throw new Error("Failed to fetch resume file");
     }
 
-    const resumeBlob = await resumeResponse.blob();
-    const resumeArrayBuffer = await resumeBlob.arrayBuffer();
-    const resumeBase64 = btoa(String.fromCharCode(...new Uint8Array(resumeArrayBuffer)));
+    const resumeArrayBuffer = await resumeResponse.arrayBuffer();
+    const resumeBytes = new Uint8Array(resumeArrayBuffer);
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    let resumeBase64 = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < resumeBytes.length; i += chunkSize) {
+      const chunk = resumeBytes.subarray(i, i + chunkSize);
+      resumeBase64 += String.fromCharCode(...chunk);
+    }
+    resumeBase64 = btoa(resumeBase64);
+    
+    const contentType = resumeResponse.headers.get('content-type') || 'application/pdf';
 
     // Use OpenAI API to extract text content from the resume
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -47,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    // For PDFs, we'll use OpenAI's vision capabilities to extract text
+    // For PDFs, use OpenAI's vision capabilities to extract text
     const contentType = resumeBlob.type;
     let extractedText = "";
 
