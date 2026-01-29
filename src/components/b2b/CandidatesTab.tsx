@@ -83,6 +83,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [showFitModal, setShowFitModal] = useState(false);
   const [analyzingFit, setAnalyzingFit] = useState<string | null>(null);
+  const [uploadingResumeFor, setUploadingResumeFor] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -392,16 +393,38 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                             <p className="font-medium">{candidate.full_name || 'No name'}</p>
                             <p className="text-sm text-muted-foreground">{candidate.email}</p>
                           </div>
-                          {candidate.resume_url && (
+                          {candidate.resume_url ? (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              title="Resume uploaded"
+                              title="View Resume"
                               onClick={() => window.open(candidate.resume_url!, '_blank')}
                             >
                               <FileText className="h-3 w-3 text-primary" />
                             </Button>
+                          ) : (
+                            <ResumeUpload
+                              candidateId={candidate.id}
+                              companyId={company.id}
+                              onUploadComplete={() => {
+                                fetchCandidates();
+                                toast({
+                                  title: 'Resume uploaded',
+                                  description: 'Resume has been uploaded and is being parsed.',
+                                });
+                              }}
+                              trigger={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Upload Resume"
+                                >
+                                  <Upload className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                                </Button>
+                              }
+                            />
                           )}
                         </div>
                       </TableCell>
@@ -477,10 +500,30 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover">
-                            {candidate.resume_url && (
+                            {candidate.resume_url ? (
                               <DropdownMenuItem onClick={() => window.open(candidate.resume_url!, '_blank')}>
                                 <FileText className="h-4 w-4 mr-2" />
                                 View Resume
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem asChild>
+                                <ResumeUpload
+                                  candidateId={candidate.id}
+                                  companyId={company.id}
+                                  onUploadComplete={() => {
+                                    fetchCandidates();
+                                    toast({
+                                      title: 'Resume uploaded',
+                                      description: 'Resume has been uploaded and is being parsed.',
+                                    });
+                                  }}
+                                  trigger={
+                                    <div className="flex items-center cursor-pointer w-full">
+                                      <Upload className="h-4 w-4 mr-2" />
+                                      Upload Resume
+                                    </div>
+                                  }
+                                />
                               </DropdownMenuItem>
                             )}
                             {candidate.assessment_completed_at && (
