@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet } from 'lucide-react';
+import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet, FileText, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import InviteCandidateModal from './InviteCandidateModal';
@@ -13,6 +13,7 @@ import CreateApplicationLinkModal from './CreateApplicationLinkModal';
 import CandidateResultsModal from './CandidateResultsModal';
 import CandidateFitModal from './CandidateFitModal';
 import CandidateBulkImportModal from './CandidateBulkImportModal';
+import ResumeUpload from './ResumeUpload';
 
 interface Candidate {
   id: string;
@@ -27,6 +28,7 @@ interface Candidate {
   assessment_completed_at: string | null;
   fit_score: number | null;
   fit_analysis: any;
+  resume_url: string | null;
   created_at: string;
 }
 
@@ -385,9 +387,22 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                   {filteredCandidates.map(candidate => (
                     <TableRow key={candidate.id}>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{candidate.full_name || 'No name'}</p>
-                          <p className="text-sm text-muted-foreground">{candidate.email}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium">{candidate.full_name || 'No name'}</p>
+                            <p className="text-sm text-muted-foreground">{candidate.email}</p>
+                          </div>
+                          {candidate.resume_url && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              title="Resume uploaded"
+                              onClick={() => window.open(candidate.resume_url!, '_blank')}
+                            >
+                              <FileText className="h-3 w-3 text-primary" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -462,6 +477,12 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover">
+                            {candidate.resume_url && (
+                              <DropdownMenuItem onClick={() => window.open(candidate.resume_url!, '_blank')}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                View Resume
+                              </DropdownMenuItem>
+                            )}
                             {candidate.assessment_completed_at && (
                               <DropdownMenuItem onClick={() => {
                                 setSelectedCandidate(candidate);

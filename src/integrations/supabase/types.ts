@@ -428,6 +428,8 @@ export type Database = {
           position_title: string | null
           public_token: string | null
           required_skills: string[] | null
+          resume_parsed_content: string | null
+          resume_url: string | null
           source: string | null
           status: Database["public"]["Enums"]["candidate_status"]
           updated_at: string | null
@@ -456,6 +458,8 @@ export type Database = {
           position_title?: string | null
           public_token?: string | null
           required_skills?: string[] | null
+          resume_parsed_content?: string | null
+          resume_url?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["candidate_status"]
           updated_at?: string | null
@@ -484,6 +488,8 @@ export type Database = {
           position_title?: string | null
           public_token?: string | null
           required_skills?: string[] | null
+          resume_parsed_content?: string | null
+          resume_url?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["candidate_status"]
           updated_at?: string | null

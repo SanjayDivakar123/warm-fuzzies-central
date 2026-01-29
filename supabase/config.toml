@@ -140,3 +140,9 @@ verify_jwt = true
 
 [functions.send-scheduled-report]
 verify_jwt = false
+
+[functions.parse-resume]
+verify_jwt = false
+
+[functions.ai-follow-up]
+verify_jwt = true

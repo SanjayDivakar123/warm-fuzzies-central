@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useCandidatePortal } from '@/contexts/CandidatePortalContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Building2, ArrowLeft, Mail, User, Phone } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Mail, User, Phone, Upload, FileText, X } from 'lucide-react';
 import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
 import { z } from 'zod';
 
@@ -29,7 +29,65 @@ export default function CandidateLogin() {
   const [email, setEmail] = useState(candidate?.email || '');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResumeSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please upload a PDF or Word document.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: 'File too large',
+          description: 'Maximum file size is 10MB.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setResumeFile(file);
+    }
+  };
+
+  const uploadResumeForCandidate = async (candidateId: string, file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${company!.id}/${candidateId}/resume-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('candidate-resumes')
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = await supabase.storage
+        .from('candidate-resumes')
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+
+      const resumeUrl = urlData?.signedUrl || '';
+
+      await supabase
+        .from('candidates')
+        .update({ resume_url: resumeUrl })
+        .eq('id', candidateId);
+
+      // Trigger AI parsing in background
+      supabase.functions.invoke('parse-resume', {
+        body: { candidateId, resumeUrl },
+      }).catch(err => console.error('Resume parsing failed:', err));
+
+    } catch (error) {
+      console.error('Resume upload error:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -199,6 +257,11 @@ export default function CandidateLogin() {
         .update({ applications_count: (applicationLink.applications_count || 0) + 1 })
         .eq('id', applicationLink.id);
 
+      // Upload resume if provided
+      if (resumeFile && newCandidate) {
+        await uploadResumeForCandidate(newCandidate.id, resumeFile);
+      }
+
       setCandidate(newCandidate);
       toast({
         title: 'Application Started!',
@@ -316,6 +379,55 @@ export default function CandidateLogin() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
+                  </div>
+                )}
+
+                {/* Resume Upload */}
+                {portalMode === 'apply' && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Resume (Optional)
+                    </Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleResumeSelect}
+                    />
+                    {resumeFile ? (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium truncate max-w-[200px]">
+                            {resumeFile.name}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setResumeFile(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Resume (PDF or Word)
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Your resume helps us better understand your background
+                    </p>
                   </div>
                 )}
 
