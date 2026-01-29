@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 const Team = () => {
+  const [searchParams] = useSearchParams();
   useEffect(() => {
     const title = "Our Team - Role Color Finder | Meet the Leadership Experts";
     const description = "Meet the team behind Role Color Finder. Our leadership experts combine decades of experience in education, psychology, and organizational development.";
@@ -45,6 +46,14 @@ const Team = () => {
 
   const [activeFilter, setActiveFilter] = useState<RoleColor | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select category from URL parameter
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category && ['red', 'yellow', 'green', 'blue'].includes(category)) {
+      setActiveFilter(category as RoleColor);
+    }
+  }, [searchParams]);
 
   type RoleColor = "red" | "yellow" | "green" | "blue";
 
