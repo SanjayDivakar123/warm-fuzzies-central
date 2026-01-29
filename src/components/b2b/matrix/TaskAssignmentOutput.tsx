@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail, Bell, BellOff } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail, Bell, BellOff, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { TaskEmailModal } from './TaskEmailModal';
@@ -34,6 +35,13 @@ interface TaskAssignmentOutputProps {
   };
   companyId: string;
   onApproved: () => void;
+}
+
+interface EmployeeOption {
+  id: string;
+  email: string;
+  full_name: string | null;
+  dominantColor: string;
 }
 
 const roleColorInfo: Record<string, { label: string; color: string; description: string }> = {
@@ -65,13 +73,48 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   const { toast } = useToast();
   const [isApproving, setIsApproving] = useState(false);
   const [employees, setEmployees] = useState<Record<string, any>>({});
+  const [allEmployees, setAllEmployees] = useState<EmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [useManualSelection, setUseManualSelection] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [notifyOnCompletion, setNotifyOnCompletion] = useState(true);
 
   useEffect(() => {
     fetchEmployeeDetails();
-  }, [assignment]);
+    fetchAllEmployees();
+  }, [assignment, companyId]);
+
+  const fetchAllEmployees = async () => {
+    const { data } = await supabase
+      .from('company_users')
+      .select('id, email, full_name, assessment_result_id')
+      .eq('company_id', companyId)
+      .eq('status', 'active');
+
+    if (data) {
+      const employeesWithColors: EmployeeOption[] = [];
+      for (const emp of data) {
+        let dominantColor = 'unknown';
+        if (emp.assessment_result_id) {
+          const { data: resultData } = await supabase
+            .from('assessment_results')
+            .select('results')
+            .eq('id', emp.assessment_result_id)
+            .single();
+          const results = resultData?.results as Record<string, any> | null;
+          dominantColor = results?.dominantColor || 'unknown';
+        }
+        employeesWithColors.push({
+          id: emp.id,
+          email: emp.email,
+          full_name: emp.full_name,
+          dominantColor
+        });
+      }
+      setAllEmployees(employeesWithColors);
+    }
+  };
 
   const fetchEmployeeDetails = async () => {
     const ids = [assignment.primary_assignee_id, assignment.secondary_assignee_id].filter(Boolean);
@@ -108,16 +151,34 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
 
   const handleApprove = async () => {
     if (!user) return;
+    
+    const finalAssigneeId = useManualSelection ? selectedEmployeeId : assignment.primary_assignee_id;
+    if (!finalAssigneeId) {
+      toast({
+        title: 'No assignee selected',
+        description: 'Please select an employee or use the AI recommendation',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsApproving(true);
 
     try {
+      const updateData: any = {
+        approved_at: new Date().toISOString(),
+        approved_by: user.id,
+        notify_on_completion: notifyOnCompletion
+      };
+
+      // If manual selection, update the primary assignee
+      if (useManualSelection && selectedEmployeeId) {
+        updateData.primary_assignee_id = selectedEmployeeId;
+      }
+
       const { error: assignError } = await supabase
         .from('task_assignments')
-        .update({
-          approved_at: new Date().toISOString(),
-          approved_by: user.id,
-          notify_on_completion: notifyOnCompletion
-        })
+        .update(updateData)
         .eq('id', assignment.id);
 
       if (assignError) throw assignError;
@@ -146,9 +207,18 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
     }
   };
 
+  const getSelectedEmployee = (): EmployeeOption | null => {
+    if (useManualSelection && selectedEmployeeId) {
+      return allEmployees.find(e => e.id === selectedEmployeeId) || null;
+    }
+    return null;
+  };
+
   const reasoning = assignment.reasoning || {};
   const primaryEmployee = assignment.primaryAssignee || (assignment.primary_assignee_id ? employees[assignment.primary_assignee_id] : null);
   const secondaryEmployee = assignment.secondaryAssignee || (assignment.secondary_assignee_id ? employees[assignment.secondary_assignee_id] : null);
+  const manuallySelectedEmployee = getSelectedEmployee();
+  const finalAssignee = useManualSelection ? manuallySelectedEmployee : primaryEmployee;
 
   const getDisplayName = (employee: any) => {
     if (employee?.full_name) return employee.full_name;
@@ -174,147 +244,222 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
         </CardContent>
       </Card>
 
-      {/* AI Recommendations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Primary Assignee */}
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="pb-2">
+      {/* Manual Selection Toggle */}
+      <Card className="border-accent/30">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              <CardTitle className="text-sm font-medium">Primary Recommendation</CardTitle>
+              <UserCheck className="h-4 w-4 text-accent-foreground" />
+              <CardTitle className="text-sm font-medium">Assignment Method</CardTitle>
             </div>
-          </CardHeader>
-          <CardContent>
-            {primaryEmployee ? (
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className={cn(
-                    'text-white',
-                    primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor]?.color
-                  )}>
-                    {getDisplayName(primaryEmployee).charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{getDisplayName(primaryEmployee)}</p>
-                  <p className="text-xs text-muted-foreground">{primaryEmployee.email}</p>
-                  {primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor] && (
-                    <p className="text-xs text-muted-foreground">
-                      {roleColorInfo[primaryEmployee.dominantColor].label}: {roleColorInfo[primaryEmployee.dominantColor].description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No suitable candidate found</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Secondary Assignee */}
-        <Card className="border-muted">
-          <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">Secondary Recommendation</CardTitle>
+              <Label htmlFor="manual-selection" className="text-sm cursor-pointer">
+                {useManualSelection ? 'Manual Selection' : 'AI Recommendation'}
+              </Label>
+              <Switch
+                id="manual-selection"
+                checked={useManualSelection}
+                onCheckedChange={setUseManualSelection}
+              />
             </div>
-          </CardHeader>
-          <CardContent>
-            {secondaryEmployee ? (
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className={cn(
-                    'text-white',
-                    secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor]?.color
-                  )}>
-                    {getDisplayName(secondaryEmployee).charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{getDisplayName(secondaryEmployee)}</p>
-                  <p className="text-xs text-muted-foreground">{secondaryEmployee.email}</p>
-                  {secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor] && (
-                    <p className="text-xs text-muted-foreground">
-                      {roleColorInfo[secondaryEmployee.dominantColor].label}: {roleColorInfo[secondaryEmployee.dominantColor].description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No backup candidate identified</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Reasoning Panel */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">AI Reasoning</CardTitle>
           </div>
-          {assignment.ai_score && (
-            <CardDescription>
-              Confidence Score: {(assignment.ai_score * 100).toFixed(0)}%
-            </CardDescription>
-          )}
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* RoleColor Justification */}
-          {reasoning.roleColorJustification && (
-            <div className="flex gap-3">
-              <div className={cn(
-                'h-5 w-5 rounded-full shrink-0 mt-0.5',
-                reasoning.recommendedColor && roleColorInfo[reasoning.recommendedColor]?.color
-              )} />
-              <div>
-                <p className="font-medium text-sm">RoleColor Match</p>
-                <p className="text-sm text-muted-foreground">{reasoning.roleColorJustification}</p>
-              </div>
+        {useManualSelection && (
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Select Employee</Label>
+              <Select value={selectedEmployeeId || ''} onValueChange={setSelectedEmployeeId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose an employee..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allEmployees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          'h-3 w-3 rounded-full',
+                          emp.dominantColor && roleColorInfo[emp.dominantColor]?.color || 'bg-muted'
+                        )} />
+                        <span>{emp.full_name || emp.email}</span>
+                        {emp.full_name && (
+                          <span className="text-muted-foreground text-xs">({emp.email})</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {manuallySelectedEmployee && (
+                <div className="flex items-center gap-3 mt-3 p-3 rounded-lg bg-muted/50">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={cn(
+                      'text-white',
+                      manuallySelectedEmployee.dominantColor && roleColorInfo[manuallySelectedEmployee.dominantColor]?.color
+                    )}>
+                      {getDisplayName(manuallySelectedEmployee).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{getDisplayName(manuallySelectedEmployee)}</p>
+                    <p className="text-xs text-muted-foreground">{manuallySelectedEmployee.email}</p>
+                    {manuallySelectedEmployee.dominantColor && roleColorInfo[manuallySelectedEmployee.dominantColor] && (
+                      <p className="text-xs text-muted-foreground">
+                        {roleColorInfo[manuallySelectedEmployee.dominantColor].label}: {roleColorInfo[manuallySelectedEmployee.dominantColor].description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-
-          <Separator />
-
-          {/* Skill Match */}
-          {reasoning.skillMatchNotes && (
-            <div className="flex gap-3">
-              <Briefcase className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Skill Alignment</p>
-                <p className="text-sm text-muted-foreground">{reasoning.skillMatchNotes}</p>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Workload Considerations */}
-          {reasoning.workloadConsiderations && (
-            <div className="flex gap-3">
-              <Activity className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Workload & Availability</p>
-                <p className="text-sm text-muted-foreground">{reasoning.workloadConsiderations}</p>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Behavioral Reasoning */}
-          {reasoning.behavioralReasoning && (
-            <div className="flex gap-3">
-              <Lightbulb className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Behavioral Suitability</p>
-                <p className="text-sm text-muted-foreground">{reasoning.behavioralReasoning}</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
+
+      {/* AI Recommendations */}
+      {!useManualSelection && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Primary Assignee */}
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-medium">Primary Recommendation</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {primaryEmployee ? (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={cn(
+                      'text-white',
+                      primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor]?.color
+                    )}>
+                      {getDisplayName(primaryEmployee).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{getDisplayName(primaryEmployee)}</p>
+                    <p className="text-xs text-muted-foreground">{primaryEmployee.email}</p>
+                    {primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor] && (
+                      <p className="text-xs text-muted-foreground">
+                        {roleColorInfo[primaryEmployee.dominantColor].label}: {roleColorInfo[primaryEmployee.dominantColor].description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No suitable candidate found</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Secondary Assignee */}
+          <Card className="border-muted">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Secondary Recommendation</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {secondaryEmployee ? (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={cn(
+                      'text-white',
+                      secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor]?.color
+                    )}>
+                      {getDisplayName(secondaryEmployee).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{getDisplayName(secondaryEmployee)}</p>
+                    <p className="text-xs text-muted-foreground">{secondaryEmployee.email}</p>
+                    {secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor] && (
+                      <p className="text-xs text-muted-foreground">
+                        {roleColorInfo[secondaryEmployee.dominantColor].label}: {roleColorInfo[secondaryEmployee.dominantColor].description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No backup candidate identified</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Reasoning Panel - only show when using AI recommendation */}
+      {!useManualSelection && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">AI Reasoning</CardTitle>
+            </div>
+            {assignment.ai_score && (
+              <CardDescription>
+                Confidence Score: {(assignment.ai_score * 100).toFixed(0)}%
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* RoleColor Justification */}
+            {reasoning.roleColorJustification && (
+              <div className="flex gap-3">
+                <div className={cn(
+                  'h-5 w-5 rounded-full shrink-0 mt-0.5',
+                  reasoning.recommendedColor && roleColorInfo[reasoning.recommendedColor]?.color
+                )} />
+                <div>
+                  <p className="font-medium text-sm">RoleColor Match</p>
+                  <p className="text-sm text-muted-foreground">{reasoning.roleColorJustification}</p>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Skill Match */}
+            {reasoning.skillMatchNotes && (
+              <div className="flex gap-3">
+                <Briefcase className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Skill Alignment</p>
+                  <p className="text-sm text-muted-foreground">{reasoning.skillMatchNotes}</p>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Workload Considerations */}
+            {reasoning.workloadConsiderations && (
+              <div className="flex gap-3">
+                <Activity className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Workload & Availability</p>
+                  <p className="text-sm text-muted-foreground">{reasoning.workloadConsiderations}</p>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Behavioral Reasoning */}
+            {reasoning.behavioralReasoning && (
+              <div className="flex gap-3">
+                <Lightbulb className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Behavioral Suitability</p>
+                  <p className="text-sm text-muted-foreground">{reasoning.behavioralReasoning}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Notification Preference for this assignment */}
       <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
@@ -346,21 +491,21 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
           onClick={handleApprove} 
           className="flex-1" 
           size="lg"
-          disabled={isApproving || !primaryEmployee}
+          disabled={isApproving || (!finalAssignee)}
         >
           <Check className="mr-2 h-4 w-4" />
           {isApproving ? 'Approving...' : 'Approve Assignment'}
         </Button>
         
-        {primaryEmployee && (
+        {finalAssignee && (
           <Button
             variant="outline"
             size="lg"
             onClick={() => {
               setEmailRecipient({
-                id: primaryEmployee.id,
-                email: primaryEmployee.email,
-                full_name: primaryEmployee.full_name,
+                id: finalAssignee.id,
+                email: finalAssignee.email,
+                full_name: finalAssignee.full_name,
               });
               setEmailModalOpen(true);
             }}
