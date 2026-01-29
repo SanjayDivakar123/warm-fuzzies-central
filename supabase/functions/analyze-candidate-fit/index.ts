@@ -36,6 +36,9 @@ serve(async (req) => {
       .eq("id", candidateId)
       .single();
 
+    // Get resume parsed content
+    const resumeContent = candidate?.resume_parsed_content || null;
+
     if (candidateError || !candidate) {
       console.error("Candidate not found:", candidateError);
       return new Response(
@@ -74,7 +77,11 @@ serve(async (req) => {
     // If OpenAI key is available, get AI-powered analysis
     let aiAnalysis = null;
     if (openaiKey) {
-      const prompt = `Analyze this job candidate's fit based on their RoleColor assessment results.
+      const resumeSection = resumeContent 
+        ? `\n\nResume/Background Information:\n${resumeContent.substring(0, 2000)}${resumeContent.length > 2000 ? '...' : ''}`
+        : '';
+
+      const prompt = `Analyze this job candidate's fit based on their RoleColor assessment results${resumeContent ? ' and resume information' : ''}.
 
 Candidate Information:
 - Position Applied For: ${candidate.position_title || "Not specified"}
@@ -85,6 +92,7 @@ Assessment Results:
 - Secondary Color: ${assessmentResult.secondaryColor || "Not determined"}
 - Color Scores: ${JSON.stringify(assessmentResult.scores)}
 - Key Strengths: ${JSON.stringify(assessmentResult.strengths || [])}
+${resumeSection}
 
 RoleColor Meanings:
 - Yellow: Action-oriented, executors, fast-paced, builders
@@ -93,14 +101,16 @@ RoleColor Meanings:
 - Blue: Innovators, visionaries, strategists, researchers
 
 IMPORTANT LEADERSHIP INSIGHT: The best leaders have Red and/or Yellow as their PRIMARY or SECONDARY colors. If the candidate has Red or Yellow as their second color (or both Red and Yellow in their top two), they have HIGH leadership potential. If neither Red nor Yellow appears in their top two colors, their leadership potential is LIMITED and this should be factored into the fit assessment, especially for leadership/management positions.
+${resumeContent ? '\nIMPORTANT: Consider the resume information when evaluating strengths, experience, and overall fit. Look for evidence of skills and accomplishments that align with the position requirements.' : ''}
 
 Provide a JSON response with:
-1. "summary": A 2-3 sentence overall assessment (include leadership potential assessment)
-2. "strengths": Array of 3-4 specific strengths for this role
+1. "summary": A 2-3 sentence overall assessment (include leadership potential assessment${resumeContent ? ' and key resume highlights' : ''})
+2. "strengths": Array of 3-4 specific strengths for this role${resumeContent ? ' (incorporate resume evidence)' : ''}
 3. "concerns": Array of 2-3 potential areas of concern or gaps
 4. "recommendations": Array of 2-3 hiring recommendations
 5. "fitScore": A number 0-100 representing overall fit
 6. "leadershipPotential": "High" if Red/Yellow is primary or secondary, otherwise "Limited"
+${resumeContent ? '7. "resumeHighlights": Array of 2-3 key findings from the resume that are relevant to the position' : ''}
 
 Return ONLY valid JSON, no markdown.`;
 
