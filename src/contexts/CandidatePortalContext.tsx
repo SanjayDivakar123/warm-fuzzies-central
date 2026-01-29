@@ -100,10 +100,7 @@ export const CandidatePortalProvider = ({ children }: CandidatePortalProviderPro
   // Fetch company and determine portal mode (invite vs public link)
   useEffect(() => {
     const fetchData = async () => {
-      console.log('[CandidatePortal] Params - subdomain:', subdomain, 'code:', code);
-      
       if (!subdomain || !code) {
-        console.error('[CandidatePortal] Missing params - subdomain:', subdomain, 'code:', code);
         setLoading(false);
         setError('Invalid portal URL');
         return;
@@ -114,14 +111,11 @@ export const CandidatePortalProvider = ({ children }: CandidatePortalProviderPro
 
       try {
         // First fetch company
-        console.log('[CandidatePortal] Fetching company with subdomain:', subdomain);
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
           .select('id, name, subdomain, subdomain_enabled, logo_url, logo_url_dark, primary_color, secondary_color')
           .eq('subdomain', subdomain)
           .maybeSingle();
-
-        console.log('[CandidatePortal] Company result:', companyData, 'Error:', companyError);
 
         if (companyError || !companyData) {
           setError('Company not found');
@@ -132,16 +126,13 @@ export const CandidatePortalProvider = ({ children }: CandidatePortalProviderPro
         setCompany(companyData as Company);
 
         // Check if code is a public application link
-        console.log('[CandidatePortal] Checking for application link with company_id:', companyData.id, 'code:', code);
-        const { data: linkData, error: linkError } = await supabase
+        const { data: linkData } = await supabase
           .from('candidate_application_links')
           .select('*')
           .eq('company_id', companyData.id)
           .eq('link_code', code)
           .eq('is_active', true)
           .maybeSingle();
-
-        console.log('[CandidatePortal] Application link result:', linkData, 'Error:', linkError);
 
         if (linkData) {
           // It's a public application link
@@ -156,15 +147,12 @@ export const CandidatePortalProvider = ({ children }: CandidatePortalProviderPro
           }
         } else {
           // Check if it's a direct invite code
-          console.log('[CandidatePortal] Checking for candidate invite with company_id:', companyData.id, 'invite_code:', code);
-          const { data: candidateData, error: candidateError } = await supabase
+          const { data: candidateData } = await supabase
             .from('candidates')
             .select('*')
             .eq('company_id', companyData.id)
             .eq('invite_code', code)
             .maybeSingle();
-
-          console.log('[CandidatePortal] Candidate result:', candidateData, 'Error:', candidateError);
 
           if (candidateData) {
             setPortalMode('invite');
