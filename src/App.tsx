@@ -13,6 +13,12 @@ import { TourTooltip } from "./components/help";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import * as Sentry from "@sentry/react";
+
+export default Sentry.withErrorBoundary(App, {
+  fallback: <p>Something went wrong.</p>,
+});
+
 
 const queryClient = new QueryClient();
 
