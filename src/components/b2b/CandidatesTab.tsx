@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,12 +84,36 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
   const [showFitModal, setShowFitModal] = useState(false);
   const [analyzingFit, setAnalyzingFit] = useState<string | null>(null);
   const [uploadingResumeFor, setUploadingResumeFor] = useState<string | null>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCandidates();
     fetchApplicationLinks();
   }, [company.id]);
+
+  // Handle file picker cancel - reset state after a delay
+  // Handle file picker trigger and cancel detection
+  useEffect(() => {
+    if (uploadingResumeFor && resumeInputRef.current) {
+      const input = resumeInputRef.current;
+      
+      // Trigger the file picker
+      input.click();
+      
+      // Focus listener to detect when file dialog closes without selection
+      const handleFocus = () => {
+        setTimeout(() => {
+          if (!input.files?.length) {
+            setUploadingResumeFor(null);
+          }
+        }, 300);
+      };
+      
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [uploadingResumeFor]);
 
   const fetchCandidates = async () => {
     setLoading(true);
@@ -416,12 +440,12 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                               }}
                               trigger={
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="icon"
-                                  className="h-6 w-6"
+                                  className="h-6 w-6 border-dashed"
                                   title="Upload Resume"
                                 >
-                                  <Upload className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                                  <Upload className="h-3 w-3" />
                                 </Button>
                               }
                             />
@@ -506,24 +530,13 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                                 View Resume
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem asChild>
-                                <ResumeUpload
-                                  candidateId={candidate.id}
-                                  companyId={company.id}
-                                  onUploadComplete={() => {
-                                    fetchCandidates();
-                                    toast({
-                                      title: 'Resume uploaded',
-                                      description: 'Resume has been uploaded and is being parsed.',
-                                    });
-                                  }}
-                                  trigger={
-                                    <div className="flex items-center cursor-pointer w-full">
-                                      <Upload className="h-4 w-4 mr-2" />
-                                      Upload Resume
-                                    </div>
-                                  }
-                                />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setUploadingResumeFor(candidate.id);
+                                }}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Resume
                               </DropdownMenuItem>
                             )}
                             {candidate.assessment_completed_at && (
@@ -614,6 +627,66 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
           />
         </>
       )}
+
+      {/* Hidden file input for dropdown menu resume upload */}
+      <input
+        ref={resumeInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadingResumeFor) {
+            const candidateId = uploadingResumeFor;
+            setUploadingResumeFor(null);
+            
+            // Manually handle upload using same logic as ResumeUpload
+            try {
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${company.id}/${candidateId}/resume-${Date.now()}.${fileExt}`;
+              
+              const { error: uploadError } = await supabase.storage
+                .from('candidate-resumes')
+                .upload(fileName, file, { cacheControl: '3600', upsert: true });
+              
+              if (uploadError) throw uploadError;
+              
+              const { data: urlData } = await supabase.storage
+                .from('candidate-resumes')
+                .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+              
+              const resumeUrl = urlData?.signedUrl || '';
+              
+              await supabase
+                .from('candidates')
+                .update({ resume_url: resumeUrl })
+                .eq('id', candidateId);
+              
+              toast({
+                title: 'Resume uploaded',
+                description: 'Resume has been uploaded and is being parsed.',
+              });
+              
+              fetchCandidates();
+              
+              // Trigger parsing in background
+              supabase.functions.invoke('parse-resume', {
+                body: { candidateId, resumeUrl },
+              }).catch(err => console.error('Resume parsing failed:', err));
+              
+            } catch (error: any) {
+              console.error('Upload error:', error);
+              toast({
+                title: 'Upload failed',
+                description: error.message || 'Failed to upload resume.',
+                variant: 'destructive',
+              });
+            }
+          }
+          // Reset the input
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 }

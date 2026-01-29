@@ -98,74 +98,73 @@ export default function CandidateResultsModal({
           </DialogTitle>
         </DialogHeader>
 
+        {/* Candidate Info - Always shown */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">
+              {candidate.full_name || candidate.email}
+            </h3>
+            <p className="text-sm text-muted-foreground">{candidate.email}</p>
+            {candidate.position_title && (
+              <p className="text-sm">Position: {candidate.position_title}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {candidate.assessment_category && candidate.assessment_type && (
+              <Badge variant="outline" className="capitalize">
+                {candidate.assessment_category} • {candidate.assessment_type.toUpperCase()}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Resume Section - Always shown */}
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Resume:</span>
+          {resumeUrl ? (
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 h-auto"
+              onClick={() => window.open(resumeUrl, '_blank')}
+            >
+              View Resume
+            </Button>
+          ) : candidate.company_id ? (
+            <ResumeUpload
+              candidateId={candidate.id}
+              companyId={candidate.company_id}
+              onUploadComplete={() => {
+                setResumeUrl('uploaded');
+                onCandidateUpdate?.();
+                toast({
+                  title: 'Resume uploaded',
+                  description: 'Resume has been uploaded and is being parsed.',
+                });
+              }}
+              trigger={
+                <Button variant="outline" size="sm" className="h-7">
+                  <Upload className="h-3 w-3 mr-1" />
+                  Upload Resume
+                </Button>
+              }
+            />
+          ) : (
+            <span className="text-sm text-muted-foreground">No resume</span>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : !result ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground">
             <p>No assessment results found for this candidate.</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Candidate Info */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {candidate.full_name || candidate.email}
-                </h3>
-                <p className="text-sm text-muted-foreground">{candidate.email}</p>
-                {candidate.position_title && (
-                  <p className="text-sm">Position: {candidate.position_title}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {candidate.assessment_category && candidate.assessment_type && (
-                  <Badge variant="outline" className="capitalize">
-                    {candidate.assessment_category} • {candidate.assessment_type.toUpperCase()}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Resume Section */}
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Resume:</span>
-              {resumeUrl ? (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto"
-                  onClick={() => window.open(resumeUrl, '_blank')}
-                >
-                  View Resume
-                </Button>
-              ) : candidate.company_id ? (
-                <ResumeUpload
-                  candidateId={candidate.id}
-                  companyId={candidate.company_id}
-                  onUploadComplete={() => {
-                    setResumeUrl('uploaded');
-                    onCandidateUpdate?.();
-                    toast({
-                      title: 'Resume uploaded',
-                      description: 'Resume has been uploaded and is being parsed.',
-                    });
-                  }}
-                  trigger={
-                    <Button variant="outline" size="sm" className="h-7">
-                      <Upload className="h-3 w-3 mr-1" />
-                      Upload Resume
-                    </Button>
-                  }
-                />
-              ) : (
-                <span className="text-sm text-muted-foreground">No resume</span>
-              )}
-            </div>
-
-            {/* Dominant Color */}
             {colorStyle && (
               <Card className={`${colorStyle.bg} border-0`}>
                 <CardHeader className="pb-2">
