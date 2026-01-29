@@ -7,12 +7,16 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, User, FileText, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ResumeUpload from './ResumeUpload';
+import { useToast } from '@/hooks/use-toast';
 
 interface CandidateResultsModalProps {
   open: boolean;
   onClose: () => void;
+  onCandidateUpdate?: () => void;
   candidate: {
     id: string;
     email: string;
@@ -20,6 +24,8 @@ interface CandidateResultsModalProps {
     position_title: string | null;
     assessment_category: string | null;
     assessment_type: string | null;
+    resume_url?: string | null;
+    company_id?: string;
   };
 }
 
@@ -40,16 +46,20 @@ const COLOR_STYLES: Record<string, { bg: string; text: string; label: string }> 
 export default function CandidateResultsModal({
   open,
   onClose,
+  onCandidateUpdate,
   candidate,
 }: CandidateResultsModalProps) {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<AssessmentResult | null>(null);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(candidate.resume_url || null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open && candidate.id) {
       fetchResults();
+      setResumeUrl(candidate.resume_url || null);
     }
-  }, [open, candidate.id]);
+  }, [open, candidate.id, candidate.resume_url]);
 
   const fetchResults = async () => {
     setLoading(true);
@@ -109,10 +119,49 @@ export default function CandidateResultsModal({
                   <p className="text-sm">Position: {candidate.position_title}</p>
                 )}
               </div>
-              {candidate.assessment_category && candidate.assessment_type && (
-                <Badge variant="outline" className="capitalize">
-                  {candidate.assessment_category} • {candidate.assessment_type.toUpperCase()}
-                </Badge>
+              <div className="flex items-center gap-2">
+                {candidate.assessment_category && candidate.assessment_type && (
+                  <Badge variant="outline" className="capitalize">
+                    {candidate.assessment_category} • {candidate.assessment_type.toUpperCase()}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Resume Section */}
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Resume:</span>
+              {resumeUrl ? (
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto"
+                  onClick={() => window.open(resumeUrl, '_blank')}
+                >
+                  View Resume
+                </Button>
+              ) : candidate.company_id ? (
+                <ResumeUpload
+                  candidateId={candidate.id}
+                  companyId={candidate.company_id}
+                  onUploadComplete={() => {
+                    setResumeUrl('uploaded');
+                    onCandidateUpdate?.();
+                    toast({
+                      title: 'Resume uploaded',
+                      description: 'Resume has been uploaded and is being parsed.',
+                    });
+                  }}
+                  trigger={
+                    <Button variant="outline" size="sm" className="h-7">
+                      <Upload className="h-3 w-3 mr-1" />
+                      Upload Resume
+                    </Button>
+                  }
+                />
+              ) : (
+                <span className="text-sm text-muted-foreground">No resume</span>
               )}
             </div>
 

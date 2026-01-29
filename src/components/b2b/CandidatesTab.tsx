@@ -598,7 +598,11 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
               setShowResultsModal(false);
               setSelectedCandidate(null);
             }}
-            candidate={selectedCandidate}
+            onCandidateUpdate={fetchCandidates}
+            candidate={{
+              ...selectedCandidate,
+              company_id: company.id,
+            }}
           />
           <CandidateFitModal
             open={showFitModal}
