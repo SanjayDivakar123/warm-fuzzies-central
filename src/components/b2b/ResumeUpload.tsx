@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, cloneElement, isValidElement, ReactElement } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -15,6 +15,7 @@ interface ResumeUploadProps {
   onRemove?: () => void;
   compact?: boolean;
   primaryColor?: string;
+  trigger?: ReactElement;
 }
 
 const ALLOWED_TYPES = [
@@ -33,6 +34,7 @@ export default function ResumeUpload({
   onRemove,
   compact = false,
   primaryColor = '#9b87f5',
+  trigger,
 }: ResumeUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -152,6 +154,29 @@ export default function ResumeUpload({
       console.error('Remove error:', error);
     }
   };
+
+  // If a custom trigger is provided, render it with click handler
+  if (trigger && isValidElement(trigger)) {
+    return (
+      <>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+        />
+        {cloneElement(trigger as ReactElement<any>, {
+          onClick: (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          },
+          disabled: uploading,
+        })}
+      </>
+    );
+  }
 
   if (compact) {
     return (
