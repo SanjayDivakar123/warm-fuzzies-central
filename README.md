@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: [https://rolecolorfinder.vercel.app](https://rolecolorfinder.vercel.app)
+**URL**: [https://rolecolorfinder.com](https://rolecolorfinder.com)
 
 This project was initially prototyped using Lovable. The platform has now fully migrated off Lovable and is maintained independently via GitHub and Vercel.
 
