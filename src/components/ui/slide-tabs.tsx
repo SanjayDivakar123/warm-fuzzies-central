@@ -21,12 +21,12 @@ export const SlideTabs = ({ tabs }: SlideTabsProps) => {
     opacity: 0,
   });
   
-  // Track which tab is currently highlighted (hovered or selected)
-  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-  
-  // Find active tab index based on current route
+  // Find active tab index based on current route (-1 if not on a nav tab page)
   const activeIndex = tabs.findIndex(tab => tab.href === location.pathname);
-  const [selected, setSelected] = useState(activeIndex >= 0 ? activeIndex : 0);
+  const [selected, setSelected] = useState<number | null>(activeIndex >= 0 ? activeIndex : null);
+  
+  // Track which tab is currently highlighted (hovered or selected) - null if not on a nav tab page
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(activeIndex >= 0 ? activeIndex : null);
   
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -36,19 +36,26 @@ export const SlideTabs = ({ tabs }: SlideTabsProps) => {
     if (newIndex >= 0) {
       setSelected(newIndex);
       setHighlightedIndex(newIndex);
+    } else {
+      // On pages not in the nav (like dashboard), don't highlight any tab
+      setSelected(null);
+      setHighlightedIndex(null);
+      setPosition(prev => ({ ...prev, opacity: 0 }));
     }
   }, [location.pathname, tabs]);
 
   // Position the cursor on the selected tab
   useEffect(() => {
-    const selectedTab = tabsRef.current[selected];
-    if (selectedTab) {
-      const { width } = selectedTab.getBoundingClientRect();
-      setPosition({
-        left: selectedTab.offsetLeft,
-        width,
-        opacity: 1,
-      });
+    if (selected !== null) {
+      const selectedTab = tabsRef.current[selected];
+      if (selectedTab) {
+        const { width } = selectedTab.getBoundingClientRect();
+        setPosition({
+          left: selectedTab.offsetLeft,
+          width,
+          opacity: 1,
+        });
+      }
     }
   }, [selected]);
 
@@ -75,14 +82,19 @@ export const SlideTabs = ({ tabs }: SlideTabsProps) => {
     <div
       onMouseLeave={() => {
         setHighlightedIndex(selected);
-        const selectedTab = tabsRef.current[selected];
-        if (selectedTab) {
-          const { width } = selectedTab.getBoundingClientRect();
-          setPosition({
-            left: selectedTab.offsetLeft,
-            width,
-            opacity: 1,
-          });
+        if (selected !== null) {
+          const selectedTab = tabsRef.current[selected];
+          if (selectedTab) {
+            const { width } = selectedTab.getBoundingClientRect();
+            setPosition({
+              left: selectedTab.offsetLeft,
+              width,
+              opacity: 1,
+            });
+          }
+        } else {
+          // No tab selected (e.g., on dashboard), hide the cursor
+          setPosition(prev => ({ ...prev, opacity: 0 }));
         }
       }}
       className="relative mx-auto flex w-fit rounded-full border border-border bg-background/50 p-1"
