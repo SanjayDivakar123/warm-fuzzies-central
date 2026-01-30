@@ -4,6 +4,8 @@ import { Auth } from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import FreeAssessment from "@/pages/FreeAssessment";
 import FreeResults from "@/pages/FreeResults";
+import CelebrityAssessment from "@/pages/CelebrityAssessment";
+import CelebrityResults from "@/pages/CelebrityResults";
 import PremiumAssessment from "@/pages/PremiumAssessment";
 import PremiumResults from "@/pages/PremiumResults";
 import ProAssessment from "@/pages/ProAssessment";
@@ -98,6 +100,14 @@ export const routeConfig = [
   {
     path: "/free-results",
     element: <Layout><FreeResults /></Layout>,
+  },
+  {
+    path: "/celebrity-assessment",
+    element: <Layout><CelebrityAssessment /></Layout>,
+  },
+  {
+    path: "/celebrity-results",
+    element: <Layout><CelebrityResults /></Layout>,
   },
   {
     path: "/premium-assessment",

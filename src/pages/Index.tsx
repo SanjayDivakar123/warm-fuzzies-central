@@ -1,24 +1,127 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { FAQAccordion } from "@/components/ui/faq-accordion";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import { Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CheckCircle, TrendingUp, ArrowRight, Sparkles, HelpCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Users, Target, Lightbulb, Zap, Brain, Heart, Settings, CheckCircle, TrendingUp, ArrowRight, Sparkles, HelpCircle, Star, Loader2, Copy, X } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import HeroSectionWithGradient from "@/components/ui/hero-section-with-gradient";
 import { ScrollReveal, ScrollRevealGroup } from "@/components/ui/scroll-reveal";
 
+// Celebrity results type
+interface CelebrityResult {
+  celebrityName: string;
+  dominantColor: string;
+  secondaryColor: string;
+  scores: { yellow: number; red: number; green: number; blue: number };
+  totalQuestions: number;
+  profile: {
+    dominant: {
+      name: string;
+      emoji: string;
+      description: string;
+      traits: string[];
+      strengths: string[];
+      challenges: string[];
+      famousExamples: string[];
+    };
+    secondary: {
+      name: string;
+      emoji: string;
+      description: string;
+      traits: string[];
+      strengths: string[];
+      challenges: string[];
+      famousExamples: string[];
+    };
+  };
+  timestamp: string;
+}
+
+const colorStyles: Record<string, { gradient: string; bg: string; text: string; border: string }> = {
+  yellow: { gradient: "bg-gradient-to-br from-yellow-400 to-amber-500", bg: "bg-yellow-50 dark:bg-yellow-950/30", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-500/30" },
+  red: { gradient: "bg-gradient-to-br from-red-400 to-rose-500", bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", border: "border-red-500/30" },
+  green: { gradient: "bg-gradient-to-br from-green-400 to-emerald-500", bg: "bg-green-50 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400", border: "border-green-500/30" },
+  blue: { gradient: "bg-gradient-to-br from-blue-400 to-indigo-500", bg: "bg-blue-50 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400", border: "border-blue-500/30" },
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [celebrityName, setCelebrityName] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [celebrityResult, setCelebrityResult] = useState<CelebrityResult | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
   const {
     user
   } = useAuth();
+
+  const handleCelebrityAnalysis = async () => {
+    if (!celebrityName.trim()) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('celebrity-assessment', {
+        body: { celebrityName: celebrityName.trim() }
+      });
+
+      if (error) throw error;
+      
+      setCelebrityResult(data);
+      setShowResultModal(true);
+    } catch (error) {
+      console.error('Celebrity analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze this celebrity. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleCopyResults = () => {
+    if (!celebrityResult) return;
+    
+    const { profile, scores, totalQuestions } = celebrityResult;
+    const text = `🌟 ${celebrityResult.celebrityName}'s RoleColor™ Profile 🌟
+
+${profile.dominant.emoji} Dominant Color: ${profile.dominant.name} (${celebrityResult.dominantColor.toUpperCase()})
+${profile.secondary.emoji} Secondary Color: ${profile.secondary.name} (${celebrityResult.secondaryColor.toUpperCase()})
+
+📊 Color Scores (out of ${totalQuestions}):
+• Yellow: ${scores.yellow} (${Math.round((scores.yellow / totalQuestions) * 100)}%)
+• Red: ${scores.red} (${Math.round((scores.red / totalQuestions) * 100)}%)
+• Green: ${scores.green} (${Math.round((scores.green / totalQuestions) * 100)}%)
+• Blue: ${scores.blue} (${Math.round((scores.blue / totalQuestions) * 100)}%)
+
+💡 About ${celebrityResult.celebrityName}:
+${profile.dominant.description}
+
+✨ Key Traits: ${profile.dominant.traits.join(", ")}
+🎯 Strengths: ${profile.dominant.strengths.join(", ")}
+📈 Growth Areas: ${profile.dominant.challenges.join(", ")}
+
+Similar to: ${profile.dominant.famousExamples.join(", ")}
+
+---
+Discover your own RoleColor™ at rolecolorfinder.com`;
+
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied!", description: "Results copied to clipboard" });
+  };
+
   useEffect(() => {
     if (searchParams.get('accverified') === 'true') {
       toast({
@@ -32,6 +135,140 @@ const Index = () => {
   }, [searchParams, navigate]);
   return <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {/* Celebrity Results Modal */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {celebrityResult && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-center text-2xl">
+                  <Badge variant="secondary" className="mb-4">
+                    <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                    Celebrity RoleColor™ Profile
+                  </Badge>
+                  <div className="mt-2">
+                    <span className={colorStyles[celebrityResult.dominantColor]?.text}>{celebrityResult.celebrityName}</span>
+                    {" "}is a{" "}
+                    <span className={colorStyles[celebrityResult.dominantColor]?.text}>{celebrityResult.profile.dominant.name}</span>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* Main Result Card */}
+                <div className={`${colorStyles[celebrityResult.dominantColor]?.gradient} p-6 rounded-2xl text-white text-center`}>
+                  <div className="text-5xl mb-3">{celebrityResult.profile.dominant.emoji}</div>
+                  <h3 className="text-2xl font-bold">{celebrityResult.profile.dominant.name}</h3>
+                  <p className="text-white/80 mt-1">Dominant Leadership Style</p>
+                </div>
+
+                {/* Description */}
+                <p className="text-muted-foreground leading-relaxed">
+                  {celebrityResult.profile.dominant.description.replace("A natural", `${celebrityResult.celebrityName} is a natural`)}
+                </p>
+
+                {/* Traits */}
+                <div>
+                  <h4 className="font-bold mb-3 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" /> Key Traits
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {celebrityResult.profile.dominant.traits.map((trait, i) => (
+                      <Badge key={i} variant="secondary" className="px-3 py-1.5">{trait}</Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Strengths */}
+                <div>
+                  <h4 className="font-bold mb-3">💪 {celebrityResult.celebrityName}'s Strengths</h4>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {celebrityResult.profile.dominant.strengths.map((s, i) => (
+                      <div key={i} className={`p-3 rounded-xl ${colorStyles[celebrityResult.dominantColor]?.bg} border ${colorStyles[celebrityResult.dominantColor]?.border}`}>
+                        <span className={colorStyles[celebrityResult.dominantColor]?.text}>✓</span> {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Growth Areas */}
+                <div>
+                  <h4 className="font-bold mb-3">📈 Growth Opportunities</h4>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    {celebrityResult.profile.dominant.challenges.map((c, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-muted/50 border border-border text-sm">{c}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Secondary Color */}
+                <div className={`p-5 rounded-xl ${colorStyles[celebrityResult.secondaryColor]?.bg} border ${colorStyles[celebrityResult.secondaryColor]?.border}`}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2">
+                    {celebrityResult.profile.secondary.emoji} Secondary Style: {celebrityResult.profile.secondary.name}
+                  </h4>
+                  <p className="text-muted-foreground text-sm">
+                    {celebrityResult.celebrityName} also shows strong {celebrityResult.profile.secondary.name.toLowerCase()} tendencies, 
+                    bringing {celebrityResult.profile.secondary.traits.slice(0, 2).join(" and ").toLowerCase()} qualities to their approach.
+                  </p>
+                </div>
+
+                {/* Score Breakdown */}
+                <div>
+                  <h4 className="font-bold mb-3">📊 Color Score Breakdown</h4>
+                  <div className="grid grid-cols-4 gap-3">
+                    {Object.entries(celebrityResult.scores).map(([color, score]) => {
+                      const styles = colorStyles[color];
+                      const percentage = Math.round((score / celebrityResult.totalQuestions) * 100);
+                      return (
+                        <div key={color} className={`p-3 rounded-xl text-center ${styles?.bg} border ${styles?.border}`}>
+                          <div className={`text-xl font-bold ${styles?.text}`}>{percentage}%</div>
+                          <div className="text-xs text-muted-foreground capitalize">{color}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Similar Figures */}
+                <div>
+                  <h4 className="font-bold mb-3">⭐ Similar Leadership Styles</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {celebrityResult.profile.dominant.famousExamples.map((ex, i) => (
+                      <Badge key={i} variant="outline" className={`${colorStyles[celebrityResult.dominantColor]?.border} ${colorStyles[celebrityResult.dominantColor]?.text}`}>{ex}</Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 justify-center pt-4">
+                  <Button onClick={handleCopyResults} variant="outline" className="gap-2">
+                    <Copy className="w-4 h-4" /> Copy Results
+                  </Button>
+                  <Button onClick={() => { setShowResultModal(false); setCelebrityName(""); }} className="gap-2">
+                    Try Another
+                  </Button>
+                </div>
+
+                {/* CTA */}
+                <Card className="bg-gradient-to-br from-primary/10 via-green/10 to-blue/10 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <h4 className="text-lg font-bold mb-2">Discover Your Own RoleColor™</h4>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Now that you've analyzed {celebrityResult.celebrityName}, find out your own leadership color!
+                    </p>
+                    <Button onClick={() => { setShowResultModal(false); navigate('/free-assessment'); }} className="gap-2">
+                      Take Your Free Assessment <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       
       {/* Hero Section with Gradient */}
       <HeroSectionWithGradient />
@@ -217,6 +454,82 @@ const Index = () => {
             </div>
           </ScrollReveal>
           </div>
+        </div>
+      </section>
+
+      {/* Celebrity Assessment Section */}
+      <section className="section-padding bg-gradient-to-b from-background via-primary/5 to-background" aria-label="Celebrity Assessment">
+        <div className="container-wide">
+          <ScrollReveal preset="fade-up" className="max-w-3xl mx-auto text-center">
+            <Badge variant="secondary" className="text-base px-6 py-3 mb-8 font-semibold">
+              <Star className="w-5 h-5 mr-2 text-yellow-500" />
+              Fun Feature
+            </Badge>
+            
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+              Analyze Any Celebrity or Character
+            </h3>
+            
+            <p className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Ever wondered what leadership color your favorite celebrity, fictional character, or historical figure would be? Find out now!
+            </p>
+
+            <div className="relative rounded-3xl border border-border p-1 max-w-xl mx-auto">
+              <GlowingEffect
+                spread={40}
+                glow={true}
+                disabled={false}
+                proximity={64}
+                inactiveZone={0.01}
+                borderWidth={3}
+              />
+              <div className="relative glass-card-strong rounded-[1.25rem] p-6 sm:p-8 bg-background">
+                <div className="flex flex-col gap-4">
+                  <Input
+                    type="text"
+                    placeholder="Enter a celebrity or character name..."
+                    value={celebrityName}
+                    onChange={(e) => setCelebrityName(e.target.value)}
+                    className="text-lg py-6 px-6 text-center"
+                    disabled={isAnalyzing}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && celebrityName.trim() && !isAnalyzing) {
+                        handleCelebrityAnalysis();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="text-base sm:text-lg font-bold group w-full"
+                    onClick={handleCelebrityAnalysis}
+                    disabled={!celebrityName.trim() || isAnalyzing}
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                        Analyzing {celebrityName.trim()}...
+                      </>
+                    ) : (
+                      <>
+                        <Star className="mr-2 w-5 h-5" />
+                        Analyze {celebrityName.trim() || "Their"} RoleColor™
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">
+                  Examples: Elon Musk, Sherlock Holmes, Oprah, Tony Stark, Princess Diana
+                </p>
+                {isAnalyzing && (
+                  <p className="text-sm text-primary mt-2 animate-pulse">
+                    🤖 AI is analyzing 50 leadership questions as {celebrityName.trim()}...
+                  </p>
+                )}
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
