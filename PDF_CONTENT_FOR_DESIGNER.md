@@ -6,7 +6,7 @@
 ## PAGE 1: COVER PAGE
 
 ### Header Section
-**Main Title:** ROLECOLOR ™️ FINDER  
+**Main Title:** ROLECOLORFINDER  
 **Subtitle:** Professional Leadership Assessment  
 **Date Label:** Generated: [Insert Date]
 
