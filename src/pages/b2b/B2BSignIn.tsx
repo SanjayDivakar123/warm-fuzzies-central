@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Navbar } from '@/components/navigation/Navbar';
-import { Footer } from '@/components/Footer';
 
 export default function B2BSignIn() {
   const [subdomain, setSubdomain] = useState('');
@@ -153,8 +152,6 @@ export default function B2BSignIn() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

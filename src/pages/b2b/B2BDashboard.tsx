@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -164,7 +164,7 @@ function B2BDashboardContent() {
         style={{ borderBottomColor: `${primaryColor}30` }}
       >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {(() => {
               // Determine which logo to show based on current theme
               const logoToShow = resolvedTheme === 'dark' && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
@@ -185,7 +185,7 @@ function B2BDashboardContent() {
                 </div>
               );
             })()}
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             {/* Help Button */}
             <HelpButton 

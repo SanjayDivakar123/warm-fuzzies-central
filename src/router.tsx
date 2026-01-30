@@ -221,15 +221,15 @@ export const routeConfig = [
   },
   {
     path: "/b2b",
-    element: <B2B />,
+    element: <Layout><B2B /></Layout>,
   },
   {
     path: "/b2b/signin",
-    element: <B2BSignIn />,
+    element: <Layout><B2BSignIn /></Layout>,
   },
   {
     path: "/b2b/payment-success",
-    element: <B2BPaymentSuccess />,
+    element: <Layout><B2BPaymentSuccess /></Layout>,
   },
   {
     path: "/b2b/company-portal",

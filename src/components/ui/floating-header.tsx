@@ -16,7 +16,7 @@ const navTabs = [
 ];
 
 // Pages where the hero section handles its own spacing (no spacer needed)
-const fullBleedPages = ['/', '/pricing'];
+const fullBleedPages = ["/"];
 
 export function FloatingHeader() {
   const [open, setOpen] = React.useState(false);
