@@ -30,7 +30,7 @@ import AmitSuthar from "@/pages/team/AmitSuthar";
 import Sitemap from "@/components/Sitemap";
 import ScrollToTop from "@/components/ScrollToTop";
 import BackToTop from "@/components/BackToTop";
-import { Footer } from "@/components/Footer";
+import { HoverFooter } from "@/components/ui/hover-footer";
 import { Navbar } from "@/components/navigation/Navbar";
 import { VoiceAssessment } from "@/pages/VoiceAssessment";
 import { VoiceResults } from "@/pages/VoiceResults";
@@ -72,7 +72,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
     {children}
-    <Footer />
+    <HoverFooter />
     <BackToTop />
   </>
 );
