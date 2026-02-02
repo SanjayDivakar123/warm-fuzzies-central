@@ -17,6 +17,8 @@ import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import HeroSectionWithGradient from "@/components/ui/hero-section-with-gradient";
 import { ScrollReveal, ScrollRevealGroup } from "@/components/ui/scroll-reveal";
+import { TestimonialsCarousel } from "@/components/ui/testimonials-carousel";
+import { TestimonialsColumns } from "@/components/ui/testimonials-columns";
 
 // Celebrity results type
 interface CelebrityResult {
@@ -456,6 +458,9 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <TestimonialsColumns />
 
       {/* Celebrity Assessment Section */}
       <section className="section-padding bg-gradient-to-b from-background via-primary/5 to-background" aria-label="Celebrity Assessment">
