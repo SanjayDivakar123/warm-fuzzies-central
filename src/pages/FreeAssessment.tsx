@@ -169,20 +169,20 @@ const FreeAssessment = () => {
               </p>
               
               {/* Quick stats */}
-              <div className="flex justify-center gap-8 mt-8">
-                <div className="text-center">
-                  <Clock className="w-8 h-8 text-blue mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-foreground">3 Minutes</p>
+              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-8">
+                <div className="text-center min-w-[80px]">
+                  <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-blue mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">3 Minutes</p>
                   <p className="text-xs text-muted-foreground">Quick & Easy</p>
                 </div>
-                <div className="text-center">
-                  <Sparkles className="w-8 h-8 text-yellow mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-foreground">Science-Based</p>
+                <div className="text-center min-w-[80px]">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-yellow mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">Science-Based</p>
                   <p className="text-xs text-muted-foreground">Research-backed</p>
                 </div>
-                <div className="text-center">
-                  <Gift className="w-8 h-8 text-green mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-foreground">Completely Free</p>
+                <div className="text-center min-w-[80px]">
+                  <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-green mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">Completely Free</p>
                   <p className="text-xs text-muted-foreground">No signup required</p>
                 </div>
               </div>
@@ -197,23 +197,21 @@ const FreeAssessment = () => {
           <div className="max-w-4xl mx-auto">
             
             {/* Progress Header */}
-            <div className="mb-12 animate-fade-in">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-blue">
-                    <span className="text-white font-bold text-lg">{currentQuestion + 1}</span>
+            <div className="mb-8 md:mb-12 animate-fade-in">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-blue">
+                    <span className="text-white font-bold text-base sm:text-lg">{currentQuestion + 1}</span>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground">Free Leadership Preview</h2>
-                    <p className="text-muted-foreground">Question {currentQuestion + 1} of {freeQuestions.length}</p>
+                    <h2 className="text-lg sm:text-2xl font-bold text-foreground">Free Leadership Preview</h2>
+                    <p className="text-sm text-muted-foreground">Question {currentQuestion + 1} of {freeQuestions.length}</p>
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <Badge variant="outline" className="text-lg px-4 py-2 border-primary/40 text-primary">
-                    {Math.round(progress)}% Complete
-                  </Badge>
-                </div>
+                <Badge variant="outline" className="text-sm sm:text-lg px-3 sm:px-4 py-1 sm:py-2 border-primary/40 text-primary">
+                  {Math.round(progress)}% Complete
+                </Badge>
               </div>
               
               <div className="relative">
@@ -227,54 +225,54 @@ const FreeAssessment = () => {
             </div>
 
             {/* Question Card */}
-            <Card className="glass-card-strong rounded-3xl shadow-xl border-2 border-primary/20 mb-12 animate-scale-in hover-lift">
-              <CardHeader className="pb-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-16 h-16 bg-gradient-${currentStage.color} rounded-2xl flex items-center justify-center text-3xl shadow-${currentStage.color}`}>
+            <Card className="glass-card-strong rounded-2xl sm:rounded-3xl shadow-xl border-2 border-primary/20 mb-8 sm:mb-12 animate-scale-in hover-lift">
+              <CardHeader className="pb-4 sm:pb-6 px-4 sm:px-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 sm:mb-6">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-${currentStage.color} rounded-xl sm:rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-${currentStage.color} flex-shrink-0`}>
                     {currentStage.icon}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant="secondary" className="text-sm px-4 py-1 font-semibold">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                      <Badge variant="secondary" className="text-xs sm:text-sm px-3 sm:px-4 py-1 font-semibold">
                         {currentQuestionData.stage} Stage
                       </Badge>
-                      <Badge variant="outline" className="text-xs px-3 py-1">
+                      <Badge variant="outline" className="text-xs px-2 sm:px-3 py-1 hidden sm:inline-flex">
                         Team Development Psychology
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {currentStage.desc}
                     </p>
                   </div>
                 </div>
                 
-                <CardTitle className="text-2xl lg:text-3xl leading-relaxed text-foreground text-balance">
+                <CardTitle className="text-xl sm:text-2xl lg:text-3xl leading-relaxed text-foreground text-balance">
                   {currentQuestionData.question}
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="px-8 pb-8">
-                <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-4">
+              <CardContent className="px-4 sm:px-8 pb-6 sm:pb-8">
+                <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3 sm:space-y-4">
                   {shuffledOptions.map((option, index) => (
                     <div 
                       key={index} 
-                      className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer hover-lift ${
+                      className={`group relative p-4 sm:p-6 rounded-xl sm:rounded-2xl border-2 transition-all duration-300 cursor-pointer hover-lift ${
                         selectedAnswer === option.color 
                           ? 'border-primary bg-primary/5 shadow-colorful' 
                           : 'border-border/50 hover:border-primary/40 hover:bg-accent/30'
                       }`}
                       onClick={() => handleAnswer(option.color)}
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4">
                         <RadioGroupItem 
                           value={option.color} 
                           id={`option-${index}`}
-                          className="mt-1 flex-shrink-0 scale-125"
+                          className="mt-1 flex-shrink-0 scale-110 sm:scale-125"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <Label 
                             htmlFor={`option-${index}`} 
-                            className="text-lg leading-relaxed cursor-pointer text-foreground font-medium block"
+                            className="text-base sm:text-lg leading-relaxed cursor-pointer text-foreground font-medium block"
                           >
                             {option.text}
                           </Label>
@@ -282,8 +280,8 @@ const FreeAssessment = () => {
                         
                         {selectedAnswer === option.color && (
                           <div className="flex-shrink-0">
-                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                              <span className="text-white text-sm">✓</span>
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs sm:text-sm">✓</span>
                             </div>
                           </div>
                         )}
@@ -295,19 +293,19 @@ const FreeAssessment = () => {
             </Card>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center animate-fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in">
               <Button
                 variant="glass"
                 size="lg"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
-                className="flex items-center gap-3 px-8 py-4"
+                className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 w-full sm:w-auto order-2 sm:order-1"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 Previous
               </Button>
 
-              <div className="text-center hidden sm:block">
+              <div className="text-center hidden md:block order-1 sm:order-2">
                 <p className="text-sm text-muted-foreground mb-1">
                   This is a free preview assessment
                 </p>
@@ -321,10 +319,10 @@ const FreeAssessment = () => {
                 size="lg"
                 onClick={handleNext}
                 disabled={!selectedAnswer}
-                className="flex items-center gap-3 px-8 py-4 font-bold group"
+                className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 font-bold group w-full sm:w-auto order-1 sm:order-3"
               >
                 {currentQuestion === freeQuestions.length - 1 ? 'See Preview Results' : 'Next Question'}
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
             

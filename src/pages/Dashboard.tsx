@@ -438,10 +438,25 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col w-full">
+    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
       <FloatingHeader />
       
-      <div className="flex flex-1 w-full">
+      {/* Mobile Dashboard Header - shown only on mobile */}
+      <div className="md:hidden flex items-center h-12 px-4 bg-card border-b border-border w-full gap-3">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 hover:bg-accent rounded-md"
+          aria-label="Toggle sidebar"
+        >
+          {/* Sidebar toggle icon */}
+          <svg className="h-5 w-5 text-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h6M4 12h10M4 18h6" />
+          </svg>
+        </button>
+        <span className="text-sm font-medium text-foreground">Dashboard</span>
+      </div>
+      
+      <div className="flex flex-1 w-full overflow-hidden">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
           <SidebarBody className="justify-between gap-10">
             <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
@@ -506,73 +521,73 @@ const Dashboard = () => {
         </Sidebar>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 p-4 md:p-8 overflow-auto">
+        <main className="flex-1 min-w-0 p-3 sm:p-4 md:p-8 overflow-x-hidden overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="text-muted-foreground mt-2">Loading your dashboard...</p>
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Overview Section */}
                 {activeSection === 'overview' && (
                   <>
                     {/* Welcome Banner with Gradient */}
-                    <div className="relative mb-8 p-8 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
-                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-green-500/10 to-transparent rounded-full blur-3xl" />
+                    <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
+                      <div className="absolute bottom-0 left-0 w-24 sm:w-48 h-24 sm:h-48 bg-gradient-to-tr from-green-500/10 to-transparent rounded-full blur-3xl" />
                       <div className="relative z-10">
-                        <h1 className="text-4xl font-bold text-foreground mb-2">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
                           Welcome back, {userProfile.name} 👋
                         </h1>
-                        <p className="text-muted-foreground text-lg">Here's an overview of your account and recent activity</p>
+                        <p className="text-muted-foreground text-sm sm:text-base md:text-lg">Here's an overview of your account and recent activity</p>
                       </div>
                     </div>
 
                     {/* Quick Stats - Colorful Gradient Cards */}
-                    <div className="grid gap-6 md:grid-cols-3">
+                    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                       <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-                        <CardContent className="pt-6 relative z-10">
+                        <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+                        <CardContent className="pt-4 sm:pt-6 relative z-10">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-4xl font-bold">{assessments.length}</p>
-                              <p className="text-sm text-white/80 mt-1">Total Assessments</p>
+                              <p className="text-3xl sm:text-4xl font-bold">{assessments.length}</p>
+                              <p className="text-xs sm:text-sm text-white/80 mt-1">Total Assessments</p>
                             </div>
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                              <BarChart3 className="h-6 w-6" />
+                            <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                           </div>
                         </CardContent>
                       </Card>
 
                       <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/20 hover:shadow-xl hover:shadow-yellow-500/30 transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-                        <CardContent className="pt-6 relative z-10">
+                        <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+                        <CardContent className="pt-4 sm:pt-6 relative z-10">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-4xl font-bold">{activeCompanies.length}</p>
-                              <p className="text-sm text-white/80 mt-1">Active Businesses</p>
+                              <p className="text-3xl sm:text-4xl font-bold">{activeCompanies.length}</p>
+                              <p className="text-xs sm:text-sm text-white/80 mt-1">Active Businesses</p>
                             </div>
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                              <Briefcase className="h-6 w-6" />
+                            <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-                        <CardContent className="pt-6 relative z-10">
+                      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-300 hover:-translate-y-1 sm:col-span-2 md:col-span-1">
+                        <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+                        <CardContent className="pt-4 sm:pt-6 relative z-10">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-4xl font-bold">
+                              <p className="text-3xl sm:text-4xl font-bold">
                                 {assessments.filter(a => a.results.dominantColor).length}
                               </p>
-                              <p className="text-sm text-white/80 mt-1">Completed</p>
+                              <p className="text-xs sm:text-sm text-white/80 mt-1">Completed</p>
                             </div>
-                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                              <FileText className="h-6 w-6" />
+                            <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                              <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                           </div>
                         </CardContent>
@@ -617,23 +632,23 @@ const Dashboard = () => {
                     {/* Pending Invites Alert - Enhanced */}
                     {pendingInvites.length > 0 && (
                       <Card className="relative overflow-hidden border-yellow-400/50 bg-gradient-to-r from-yellow-50 to-amber-50/50 dark:from-yellow-950/30 dark:to-amber-950/20 shadow-lg shadow-yellow-500/10">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full" />
-                        <CardContent className="pt-6 relative z-10">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/30">
-                              <Mail className="h-6 w-6 text-white" />
+                        <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full" />
+                        <CardContent className="pt-4 sm:pt-6 relative z-10">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg shadow-yellow-500/30 flex-shrink-0">
+                              <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                             </div>
-                            <div className="flex-1">
-                              <p className="font-bold text-lg text-yellow-800 dark:text-yellow-200">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-base sm:text-lg text-yellow-800 dark:text-yellow-200">
                                 {pendingInvites.length} Pending Invitation{pendingInvites.length > 1 ? 's' : ''}
                               </p>
-                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                              <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300">
                                 Check your Business section to accept or decline
                               </p>
                             </div>
                             <Button 
                               onClick={() => setActiveSection('business')}
-                              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 shadow-lg shadow-yellow-500/25"
+                              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 shadow-lg shadow-yellow-500/25 w-full sm:w-auto"
                             >
                               View Invites
                               <ChevronRight className="h-4 w-4 ml-2" />
@@ -649,19 +664,19 @@ const Dashboard = () => {
                 {activeSection === 'assessments' && (
                   <>
                     {/* Section Header with Gradient */}
-                    <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent border border-blue-500/20">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
-                      <div className="relative z-10 flex items-center justify-between">
+                    <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent border border-blue-500/20">
+                      <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
+                      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                          <h1 className="text-3xl font-bold flex items-center gap-3">
+                          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                              <BarChart3 className="h-6 w-6" />
+                              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                             My Assessments
                           </h1>
-                          <p className="text-muted-foreground mt-2">View and manage your assessment results</p>
+                          <p className="text-muted-foreground mt-2 text-sm sm:text-base">View and manage your assessment results</p>
                         </div>
-                        <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600">
+                        <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600 w-full sm:w-auto">
                           <Link to="/pricing">
                             <Plus className="w-4 h-4 mr-2" />
                             New Assessment
@@ -672,14 +687,14 @@ const Dashboard = () => {
 
                     {/* In-Progress Assessments - Enhanced */}
                     {inProgressAssessments.length > 0 && (
-                      <div className="mb-8">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <div className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-orange-500/10">
-                            <Clock className="h-5 w-5 text-orange-500" />
+                            <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                           </div>
                           Continue Where You Left Off
                         </h2>
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                           {inProgressAssessments.map((progress) => (
                             <Card key={progress.id} className="relative overflow-hidden border-orange-400/30 bg-gradient-to-br from-orange-50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/10 shadow-lg hover:shadow-xl transition-all duration-300">
                               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-400/10 to-transparent rounded-full" />
@@ -716,7 +731,7 @@ const Dashboard = () => {
                     )}
 
                     {assessments.length > 0 ? (
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                         {assessments.map((assessment) => {
                           const isCompleted = assessment.results.dominantColor || assessment.results.scores;
                           const isPurchasedOnly = assessment.results.status === 'payment_completed' && !isCompleted;
@@ -855,20 +870,20 @@ const Dashboard = () => {
                 {activeSection === 'business' && (
                   <>
                     {/* Section Header with Gradient */}
-                    <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent border border-yellow-500/20">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-yellow-500/10 to-transparent rounded-full blur-3xl" />
-                      <div className="relative z-10 flex items-center justify-between">
+                    <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent border border-yellow-500/20">
+                      <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-gradient-to-bl from-yellow-500/10 to-transparent rounded-full blur-3xl" />
+                      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                          <h1 className="text-3xl font-bold flex items-center gap-3">
+                          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 text-white">
-                              <Building2 className="h-6 w-6" />
+                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                             Business
                           </h1>
-                          <p className="text-muted-foreground mt-2">Manage your business accounts and team invitations</p>
+                          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Manage your business accounts and team invitations</p>
                         </div>
-                        <Button asChild className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600">
-                          <Link to="/pricing">
+                        <Button asChild className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 w-full sm:w-auto">
+                          <Link to="/pricing#for-teams">
                             <Plus className="w-4 h-4 mr-2" />
                             Start Business
                           </Link>
@@ -878,10 +893,10 @@ const Dashboard = () => {
 
                     {/* Pending Invites */}
                     {pendingInvites.length > 0 && (
-                      <section className="mb-8">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <section className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-yellow-500/10">
-                            <Mail className="h-5 w-5 text-yellow-600" />
+                            <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
                           </div>
                           Pending Invitations
                           <Badge className="bg-yellow-500 text-white">{pendingInvites.length}</Badge>
@@ -889,20 +904,20 @@ const Dashboard = () => {
                         <div className="space-y-3">
                           {pendingInvites.map((invite) => (
                             <Card key={invite.id} className="relative overflow-hidden shadow-lg border-yellow-400/30 bg-gradient-to-br from-yellow-50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/10 hover:shadow-xl transition-all duration-300">
-                              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full" />
-                              <CardContent className="flex items-center justify-between py-5 relative z-10">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20">
-                                    <Mail className="w-6 h-6 text-white" />
+                              <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full" />
+                              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 sm:py-5 relative z-10">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20">
+                                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                                   </div>
                                   <div>
-                                    <h3 className="font-bold text-lg">{invite.companyName}</h3>
-                                    <p className="text-sm text-muted-foreground">
+                                    <h3 className="font-bold text-base sm:text-lg">{invite.companyName}</h3>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">
                                       Invited as <span className="font-medium text-yellow-600 dark:text-yellow-400">{invite.role}</span>
                                     </p>
                                   </div>
                                 </div>
-                                <Button onClick={() => navigate(`/company/${invite.subdomain}`)} className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 shadow-lg shadow-yellow-500/25">
+                                <Button onClick={() => navigate(`/company/${invite.subdomain}`)} className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 shadow-lg shadow-yellow-500/25 w-full sm:w-auto">
                                   Accept Invite
                                   <ChevronRight className="w-4 h-4 ml-2" />
                                 </Button>
@@ -915,28 +930,28 @@ const Dashboard = () => {
 
                     {/* Your Businesses (Admin) */}
                     {adminCompanies.length > 0 && (
-                      <section className="mb-8">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <section className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-green-500/10">
-                            <Building2 className="h-5 w-5 text-green-600" />
+                            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                           </div>
                           Your Businesses
                         </h2>
                         <div className="space-y-3">
                           {adminCompanies.map((company) => (
                             <Card key={company.id} className="relative overflow-hidden shadow-lg border-green-400/30 bg-gradient-to-br from-green-50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/10 hover:shadow-xl transition-all duration-300">
-                              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-400/10 to-transparent rounded-full" />
-                              <CardContent className="flex items-center justify-between py-5 relative z-10">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
-                                    <Building2 className="w-6 h-6 text-white" />
+                              <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-bl from-green-400/10 to-transparent rounded-full" />
+                              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 sm:py-5 relative z-10">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+                                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                                   </div>
                                   <div>
-                                    <h3 className="font-bold text-lg">{company.companyName}</h3>
+                                    <h3 className="font-bold text-base sm:text-lg">{company.companyName}</h3>
                                     <Badge className="mt-1 bg-green-500/20 text-green-700 dark:text-green-300 border-0">Admin</Badge>
                                   </div>
                                 </div>
-                                <Button onClick={() => navigate('/b2b/company-portal')} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25">
+                                <Button onClick={() => navigate('/b2b/company-portal')} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 w-full sm:w-auto">
                                   <Building2 className="w-4 h-4 mr-2" />
                                   Admin Dashboard
                                 </Button>
@@ -949,28 +964,28 @@ const Dashboard = () => {
 
                     {/* Businesses You're Part Of (Employee) */}
                     {employeeCompanies.length > 0 && (
-                      <section className="mb-8">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <section className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-blue-500/10">
-                            <User className="h-5 w-5 text-blue-600" />
+                            <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                           </div>
                           Businesses You're Part Of
                         </h2>
                         <div className="space-y-3">
                           {employeeCompanies.map((company) => (
                             <Card key={company.id} className="relative overflow-hidden shadow-lg border-blue-400/30 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/10 hover:shadow-xl transition-all duration-300">
-                              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full" />
-                              <CardContent className="flex items-center justify-between py-5 relative z-10">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                    <Building2 className="w-6 h-6 text-white" />
+                              <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full" />
+                              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 sm:py-5 relative z-10">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                                   </div>
                                   <div>
-                                    <h3 className="font-bold text-lg">{company.companyName}</h3>
+                                    <h3 className="font-bold text-base sm:text-lg">{company.companyName}</h3>
                                     <Badge className="mt-1 bg-blue-500/20 text-blue-700 dark:text-blue-300 border-0">Employee</Badge>
                                   </div>
                                 </div>
-                                <Button variant="outline" onClick={() => navigate(`/company/${company.subdomain}`)} className="border-blue-400/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                                <Button variant="outline" onClick={() => navigate(`/company/${company.subdomain}`)} className="border-blue-400/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 w-full sm:w-auto">
                                   <User className="w-4 h-4 mr-2" />
                                   Employee Portal
                                 </Button>
@@ -992,7 +1007,7 @@ const Dashboard = () => {
                           Start a business account to unlock team assessments, analytics, and AI-powered work assignments for your organization.
                         </p>
                         <Button size="lg" asChild className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 hover:from-yellow-600 hover:to-amber-600 shadow-lg shadow-yellow-500/25">
-                          <Link to="/pricing">
+                          <Link to="/pricing#for-teams">
                             <Plus className="w-5 h-5 mr-2" />
                             Start a Business
                           </Link>
@@ -1006,16 +1021,16 @@ const Dashboard = () => {
                 {activeSection === 'settings' && (
                   <>
                     {/* Section Header with Gradient */}
-                    <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-gray-500/10 via-slate-500/5 to-transparent border border-gray-500/20">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-gray-500/5 to-transparent rounded-full blur-3xl" />
+                    <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-500/10 via-slate-500/5 to-transparent border border-gray-500/20">
+                      <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-gradient-to-bl from-gray-500/5 to-transparent rounded-full blur-3xl" />
                       <div className="relative z-10">
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
                           <div className="p-2 rounded-xl bg-gradient-to-br from-gray-600 to-slate-700 text-white">
-                            <Settings className="h-6 w-6" />
+                            <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
                           </div>
                           Account Settings
                         </h1>
-                        <p className="text-muted-foreground mt-2">Manage your account preferences and security</p>
+                        <p className="text-muted-foreground mt-2 text-sm sm:text-base">Manage your account preferences and security</p>
                       </div>
                     </div>
 

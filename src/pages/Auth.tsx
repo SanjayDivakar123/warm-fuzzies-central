@@ -335,7 +335,7 @@ export const Auth = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-black overflow-hidden">
+    <div className="relative min-h-screen w-full bg-black overflow-x-hidden overflow-y-auto">
       {/* Canvas Background */}
       <div className="absolute inset-0">
         <CanvasRevealEffect
@@ -351,14 +351,14 @@ export const Auth = () => {
       {/* Back to Home Link */}
       <Link 
         to="/" 
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm sm:text-base"
       >
-        <ArrowLeft className="w-5 h-5" />
-        <span>Back to Home</span>
+        <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="hidden sm:inline">Back to Home</span>
       </Link>
 
       {/* Content Layer */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 sm:p-4">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait">
             <motion.div

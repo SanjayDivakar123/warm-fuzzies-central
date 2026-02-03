@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Link, LinkProps } from "react-router-dom";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface Links {
   label: string;
@@ -121,17 +121,8 @@ export const MobileSidebar = ({
 }) => {
   const { open, setOpen } = useSidebar();
   return (
-    <div
-      className={cn(
-        "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-card border-b border-border w-full"
-      )}
-    >
-      <div className="flex justify-end z-20 w-full">
-        <Menu
-          className="text-foreground cursor-pointer"
-          onClick={() => setOpen(!open)}
-        />
-      </div>
+    <>
+      {/* Mobile sidebar panel */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -143,21 +134,35 @@ export const MobileSidebar = ({
               ease: "easeInOut",
             }}
             className={cn(
-              "fixed h-full w-full inset-0 bg-card p-10 z-[100] flex flex-col justify-between",
+              "fixed h-full w-[85%] max-w-[320px] left-0 top-0 bg-card p-6 z-[100] flex flex-col justify-between overflow-y-auto md:hidden",
               className
             )}
           >
             <div
-              className="absolute right-10 top-10 z-50 text-foreground cursor-pointer"
+              className="absolute right-4 top-4 z-50 text-foreground cursor-pointer p-2"
               onClick={() => setOpen(!open)}
             >
-              <X />
+              <X className="h-6 w-6" />
             </div>
             {children}
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      
+      {/* Overlay */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/50 z-[99] md:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -170,12 +175,22 @@ export const SidebarLink = ({
   className?: string;
   props?: Omit<LinkProps, 'to'>;
 }) => {
-  const { open, animate } = useSidebar();
+  const { open, setOpen, animate } = useSidebar();
+  
+  const handleClick = () => {
+    // Close sidebar on mobile after clicking a link
+    if (window.innerWidth < 768) {
+      setOpen(false);
+    }
+    if (link.onClick) {
+      link.onClick();
+    }
+  };
   
   if (link.onClick) {
     return (
       <button
-        onClick={link.onClick}
+        onClick={handleClick}
         className={cn(
           "flex items-center justify-start gap-2 group/sidebar py-2 w-full text-left",
           className
@@ -198,6 +213,7 @@ export const SidebarLink = ({
   return (
     <Link
       to={link.href}
+      onClick={handleClick}
       className={cn(
         "flex items-center justify-start gap-2 group/sidebar py-2",
         className
