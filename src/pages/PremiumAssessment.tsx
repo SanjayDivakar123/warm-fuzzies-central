@@ -494,20 +494,20 @@ const PremiumAssessment = () => {
           lastSavedAt={lastSaved}
         />
 
-        <div className="bg-gradient-subtle py-8 px-4">
+        <div className="bg-gradient-subtle py-6 sm:py-8 px-4">
           <div className="max-w-3xl mx-auto">
             {/* Header with Progress */}
-            <div className="mb-8 animate-fade-in">
-              <div className="flex justify-between items-center mb-4">
+            <div className="mb-6 sm:mb-8 animate-fade-in">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow">
+                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
                     <Star className="text-white w-4 h-4" />
                   </div>
-                  <h1 className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
                     Premium Leadership Assessment
                   </h1>
                 </div>
-                <div className="text-right flex flex-col items-end gap-1">
+                <div className="text-left sm:text-right flex flex-col sm:items-end gap-1 w-full sm:w-auto">
                   <div className="text-sm text-muted-foreground">
                     Question {currentQuestion + 1} of {shuffledQuestions.length}
                   </div>
@@ -525,9 +525,9 @@ const PremiumAssessment = () => {
 
             {/* Question Card */}
             <Card className="shadow-elegant border-2 border-border/20 animate-scale-in">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-6 h-6 bg-gradient-hero rounded-full flex items-center justify-center animate-glow-pulse">
+              <CardHeader className="pb-4 px-4 sm:px-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                  <div className="w-6 h-6 bg-gradient-hero rounded-full flex items-center justify-center animate-glow-pulse flex-shrink-0">
                     <span className="text-white font-bold text-xs">{currentQuestion + 1}</span>
                   </div>
                   <div className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
@@ -546,16 +546,16 @@ const PremiumAssessment = () => {
                     {currentQuestionData.stage === "Adjourning" && "Ending with clarity and reflection"}
                   </div>
                 </div>
-                <CardTitle className="text-xl leading-relaxed text-foreground">
+                <CardTitle className="text-lg sm:text-xl leading-relaxed text-foreground">
                   {currentQuestionData.question}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                 <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
                   {shuffledCurrentOptions.map((option, index) => (
                     <div 
                       key={index} 
-                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${
+                      className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${
                         selectedAnswer === option.color 
                           ? 'border-primary bg-primary/5 shadow-glow' 
                           : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
@@ -580,25 +580,25 @@ const PremiumAssessment = () => {
             </Card>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center mt-8 animate-fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 animate-fade-in">
               <Button
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto order-2 sm:order-1"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
               </Button>
 
-              <div className="text-center flex items-center gap-4">
+              <div className="text-center flex items-center gap-4 order-3 sm:order-2">
                 <PauseButton onSave={handleSaveAndExit} disabled={Object.keys(answers).length === 0} />
               </div>
 
               <Button
                 onClick={handleNext}
                 disabled={!selectedAnswer}
-                className="flex items-center gap-2 hover-scale"
+                className="flex items-center gap-2 hover-scale w-full sm:w-auto order-1 sm:order-3"
               >
                 {currentQuestion === shuffledQuestions.length - 1 ? 'Get Premium Results' : 'Next'}
                 <ChevronRight className="w-4 h-4" />

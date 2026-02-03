@@ -675,9 +675,9 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               RoleColorAI is currently in limited early access for individuals and organizations who want to move from understanding roles to making better decisions with them.
             </p>
             <Button variant="default" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 font-semibold rounded-full group" asChild>
-              <a href="https://rolecolorai.com" target="_blank" rel="noopener noreferrer" className="flex flex-wrap items-center justify-center gap-1">
-                <span>Request early access to</span>
-                <span className="flex items-center">RoleColorAI <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" /></span>
+              <a href="https://rolecolorai.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center">
+                Request early access to&nbsp;RoleColorAI
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </a>
             </Button>
           </ScrollReveal>

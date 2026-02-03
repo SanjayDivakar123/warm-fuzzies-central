@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   SMOOTH SCROLL CONFIGURATION
+   Smooth scrolling is handled programmatically via smoothScroll.ts
+   This allows instant scroll on page navigation while keeping
+   smooth scroll for anchor links and back-to-top button.
+   
+   To adjust smooth scroll speed, edit SCROLL_DURATION in:
+   src/lib/smoothScroll.ts
+   ======================================== */
+
+/* NOTE: We intentionally do NOT set scroll-behavior: smooth on html
+   because it would make page navigation animate instead of being instant.
+   Smooth scrolling is handled programmatically where needed. */
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -158,6 +172,7 @@ All colors MUST be HSL.
   /* Smooth theme transitions */
   html {
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
   }
 
   body {
@@ -166,6 +181,8 @@ All colors MUST be HSL.
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   /* Theme transition for common elements */
@@ -239,6 +256,8 @@ h1, h2, h3, h4, h5, h6 {
 
   .container-wide {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .gentle-glow {

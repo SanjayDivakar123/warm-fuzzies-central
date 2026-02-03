@@ -211,7 +211,7 @@ export default function Pricing() {
         </div>
 
         {/* For Teams Section */}
-        <div className="mb-12 sm:mb-16">
+        <div id="for-teams" className="mb-12 sm:mb-16 scroll-mt-24">
           <div className="text-center mb-8">
             <p className="text-muted-foreground mb-2">For Teams</p>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
