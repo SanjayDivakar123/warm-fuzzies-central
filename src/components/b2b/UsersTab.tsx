@@ -818,12 +818,12 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
 
         <Card className="border-0 shadow-sm" data-tour="users-table">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="text-lg font-medium">Team Members</CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Filter Dropdown */}
                 <Select value={userFilter} onValueChange={(value) => setUserFilter(value as UserFilter)}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[140px] sm:w-[180px]">
                     <SelectValue placeholder="Filter users" />
                   </SelectTrigger>
                   <SelectContent>
@@ -843,9 +843,6 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                     Schedule Reminder ({selectedUsers.size})
                   </Button>
                 )}
-                <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
-                  {window.location.origin}/company/{company.subdomain}
-                </code>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -860,7 +857,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                         });
                       }}
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Copy URL</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Copy employee login URL</TooltipContent>
@@ -868,8 +866,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="overflow-x-auto">
+            <Table className="min-w-[600px] sm:min-w-0">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">
@@ -888,13 +886,13 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                   </TableHead>
                   <TableHead>Full Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Job Role</TableHead>
-                  <TableHead>Skills</TableHead>
-                  <TableHead>Assessment</TableHead>
+                  <TableHead className="hidden sm:table-cell">Role</TableHead>
+                  <TableHead className="hidden lg:table-cell">Job Role</TableHead>
+                  <TableHead className="hidden lg:table-cell">Skills</TableHead>
+                  <TableHead className="hidden md:table-cell">Assessment</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Invite Code</TableHead>
-                  <TableHead>Invited</TableHead>
+                  <TableHead className="hidden md:table-cell">Invite Code</TableHead>
+                  <TableHead className="hidden lg:table-cell">Invited</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -923,8 +921,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                           {user.full_name || <span className="text-muted-foreground">Not set</span>}
                         </span>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
+                      <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant={user.role === 'employee' ? 'secondary' : 'default'}
@@ -945,15 +943,15 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <span className="text-sm">
                           {user.job_role || <span className="text-muted-foreground">Not set</span>}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <span className="text-sm text-muted-foreground">{user.skills?.length || 0} skills</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {user.assessment_category && user.assessment_type ? (
                           <Badge variant="outline" className="text-xs capitalize">
                             {user.assessment_category} • {user.assessment_type.toUpperCase()}
@@ -980,7 +978,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {user.invite_code ? (
                           <div className="flex items-center gap-2">
                             <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{user.invite_code}</code>
@@ -1006,7 +1004,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>{new Date(user.invited_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{new Date(user.invited_at).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Tooltip>

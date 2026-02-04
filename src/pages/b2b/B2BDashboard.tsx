@@ -20,6 +20,7 @@ import KeyboardShortcutsModal from '@/components/b2b/KeyboardShortcutsModal';
 import { useKeyboardShortcuts, B2B_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
+import MobileBottomNav from '@/components/b2b/MobileBottomNav';
 
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
@@ -235,7 +236,7 @@ function B2BDashboardContent() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 pt-8 pb-24 sm:pb-8">
         {/* Inject dynamic styles for active tabs using company colors */}
         <style>{`
           .b2b-tab[data-state=active] {
@@ -248,12 +249,12 @@ function B2BDashboardContent() {
         `}</style>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <div className="flex items-center justify-between">
-            <TabsList className="bg-background border p-1 h-auto inline-flex" data-tour="dashboard-tabs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex w-full gap-1 sticky top-16 z-40" data-tour="dashboard-tabs">
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="overview" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Overview
                 </TabsTrigger>
@@ -261,7 +262,7 @@ function B2BDashboardContent() {
               {permissions.canManageUsers && (
                 <TabsTrigger 
                   value="users" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Users
                 </TabsTrigger>
@@ -269,7 +270,7 @@ function B2BDashboardContent() {
               {permissions.canManageCandidates && (
                 <TabsTrigger 
                   value="candidates" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Candidates
                 </TabsTrigger>
@@ -277,7 +278,7 @@ function B2BDashboardContent() {
               {permissions.canViewAssessments && (
                 <TabsTrigger 
                   value="assessments" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Assessments
                 </TabsTrigger>
@@ -285,7 +286,7 @@ function B2BDashboardContent() {
               {permissions.canManageReminders && (
                 <TabsTrigger 
                   value="reminders" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Reminders
                 </TabsTrigger>
@@ -293,7 +294,7 @@ function B2BDashboardContent() {
               {permissions.canUseWorkMatrix && (
                 <TabsTrigger 
                   value="matrix" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Work Matrix
                 </TabsTrigger>
@@ -301,7 +302,7 @@ function B2BDashboardContent() {
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="analytics" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Analytics
                 </TabsTrigger>
@@ -309,7 +310,7 @@ function B2BDashboardContent() {
               {permissions.canManageSettings && (
                 <TabsTrigger 
                   value="settings" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Settings
                 </TabsTrigger>
@@ -323,19 +324,19 @@ function B2BDashboardContent() {
             )}
           </div>
 
-          <TabsContent value="overview" className="mt-0">
+          <TabsContent value="overview" className="mt-0 break-words">
             <OverviewTab company={company} />
           </TabsContent>
 
-          <TabsContent value="users" className="mt-0">
+          <TabsContent value="users" className="mt-0 break-words">
             <UsersTab company={company} />
           </TabsContent>
 
-          <TabsContent value="candidates" className="mt-0">
+          <TabsContent value="candidates" className="mt-0 break-words">
             <CandidatesTab company={company} />
           </TabsContent>
 
-          <TabsContent value="assessments" className="mt-0">
+          <TabsContent value="assessments" className="mt-0 break-words">
             <AssessmentsTab 
               company={company} 
               onSettingsSaved={refreshCompany}
@@ -346,15 +347,15 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="reminders" className="mt-0">
+          <TabsContent value="reminders" className="mt-0 break-words">
             <RemindersHistoryTab company={company} />
           </TabsContent>
 
-          <TabsContent value="matrix" className="mt-0">
+          <TabsContent value="matrix" className="mt-0 break-words">
             <WorkAssigningMatrixTab />
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-0">
+          <TabsContent value="settings" className="mt-0 break-words">
             <SettingsTab 
               company={company} 
               onSettingsSaved={refreshCompany}
@@ -363,11 +364,18 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-0">
+          <TabsContent value="analytics" className="mt-0 break-words">
             <AdvancedAnalyticsDashboard companyId={company.id} />
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        permissions={permissions}
+      />
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />

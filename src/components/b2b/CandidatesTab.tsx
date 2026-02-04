@@ -396,15 +396,15 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
               <p className="text-sm">Invite candidates or create a public application link</p>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
+            <div className="border rounded-lg overflow-hidden overflow-x-auto">
+              <Table className="min-w-[500px] sm:min-w-0">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Candidate</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Assessment</TableHead>
+                    <TableHead className="hidden sm:table-cell">Position</TableHead>
+                    <TableHead className="hidden md:table-cell">Assessment</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Fit Score</TableHead>
+                    <TableHead className="hidden sm:table-cell">Fit Score</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -452,7 +452,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <div>
                           <p>{candidate.position_title || '—'}</p>
                           {candidate.ideal_role_color && (
@@ -462,7 +462,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {candidate.assessment_category && candidate.assessment_type ? (
                           <Badge variant="outline" className="text-xs capitalize">
                             {candidate.assessment_category} • {candidate.assessment_type.toUpperCase()}
@@ -476,7 +476,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                           {STATUS_LABELS[candidate.status] || candidate.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {candidate.fit_score !== null ? (
                           <div className="flex items-center gap-2">
                             <span className={`font-bold ${

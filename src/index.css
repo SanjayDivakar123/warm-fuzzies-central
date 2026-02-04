@@ -185,6 +185,10 @@ All colors MUST be HSL.
     max-width: 100vw;
   }
 
+  /* Hide scrollbars for mobile-friendly horizontal lists */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   /* Theme transition for common elements */
   *:not(svg):not(path) {
     transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
