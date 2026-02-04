@@ -13,6 +13,7 @@ import CreateApplicationLinkModal from './CreateApplicationLinkModal';
 import CandidateResultsModal from './CandidateResultsModal';
 import CandidateFitModal from './CandidateFitModal';
 import CandidateBulkImportModal from './CandidateBulkImportModal';
+import CandidateDetailModal from './CandidateDetailModal';
 import ResumeUpload from './ResumeUpload';
 
 interface Candidate {
@@ -84,6 +85,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
   const [showFitModal, setShowFitModal] = useState(false);
   const [analyzingFit, setAnalyzingFit] = useState<string | null>(null);
   const [uploadingResumeFor, setUploadingResumeFor] = useState<string | null>(null);
+  const [mobileSelectedCandidate, setMobileSelectedCandidate] = useState<Candidate | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -342,16 +344,16 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                 Manage job candidates and track their assessments
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowBulkImportModal(true)}>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setShowBulkImportModal(true)} className="flex-1 sm:flex-none min-w-[100px]">
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Bulk Import
+                <span className="hidden sm:inline">Bulk </span>Import
               </Button>
-              <Button variant="outline" onClick={() => setShowLinkModal(true)}>
+              <Button variant="outline" onClick={() => setShowLinkModal(true)} className="flex-1 sm:flex-none min-w-[100px]">
                 <Link2 className="h-4 w-4 mr-2" />
                 Create Link
               </Button>
-              <Button onClick={() => setShowInviteModal(true)}>
+              <Button onClick={() => setShowInviteModal(true)} className="hidden sm:flex">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Invite Candidate
               </Button>
@@ -370,13 +372,14 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                 className="pl-9"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 sm:flex gap-2">
               {['all', 'invited', 'assessment_completed', 'hired', 'archived'].map(status => (
                 <Button
                   key={status}
                   variant={statusFilter === status ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter(status)}
+                  className="text-xs sm:text-sm"
                 >
                   {status === 'all' ? 'All' : STATUS_LABELS[status] || status}
                 </Button>
@@ -396,15 +399,42 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
               <p className="text-sm">Invite candidates or create a public application link</p>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden overflow-x-auto">
-              <Table className="min-w-[500px] sm:min-w-0">
+            <>
+              {/* Mobile Card View */}
+              <div className="sm:hidden space-y-2">
+                {filteredCandidates.map(candidate => (
+                  <button
+                    key={candidate.id}
+                    onClick={() => setMobileSelectedCandidate(candidate)}
+                    className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">
+                          {candidate.full_name || <span className="text-muted-foreground">No name</span>}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">{candidate.email}</p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Badge className={STATUS_COLORS[candidate.status] || ''}>
+                          {STATUS_LABELS[candidate.status] || candidate.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block border rounded-lg overflow-hidden">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Candidate</TableHead>
-                    <TableHead className="hidden sm:table-cell">Position</TableHead>
+                    <TableHead>Position</TableHead>
                     <TableHead className="hidden md:table-cell">Assessment</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="hidden sm:table-cell">Fit Score</TableHead>
+                    <TableHead>Fit Score</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -452,7 +482,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell>
                         <div>
                           <p>{candidate.position_title || '—'}</p>
                           {candidate.ideal_role_color && (
@@ -476,7 +506,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                           {STATUS_LABELS[candidate.status] || candidate.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell>
                         {candidate.fit_score !== null ? (
                           <div className="flex items-center gap-2">
                             <span className={`font-bold ${
@@ -575,10 +605,47 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
+
+      {/* Mobile Candidate Detail Modal */}
+      <CandidateDetailModal
+        candidate={mobileSelectedCandidate}
+        open={!!mobileSelectedCandidate}
+        onOpenChange={(open) => !open && setMobileSelectedCandidate(null)}
+        analyzingFit={analyzingFit}
+        onViewResume={(c) => c.resume_url && window.open(c.resume_url, '_blank')}
+        onUploadResume={(c) => setUploadingResumeFor(c.id)}
+        onViewResults={(c) => {
+          setSelectedCandidate(c);
+          setShowResultsModal(true);
+          setMobileSelectedCandidate(null);
+        }}
+        onAnalyzeFit={(c) => {
+          handleAnalyzeFit(c);
+          setMobileSelectedCandidate(null);
+        }}
+        onViewFitScore={(c) => {
+          setSelectedCandidate(c);
+          setShowFitModal(true);
+          setMobileSelectedCandidate(null);
+        }}
+        onHire={(c) => {
+          handleHireCandidate(c);
+          setMobileSelectedCandidate(null);
+        }}
+        onArchive={(c) => {
+          handleArchiveCandidate(c);
+          setMobileSelectedCandidate(null);
+        }}
+        onDelete={(c) => {
+          handleDeleteCandidate(c);
+          setMobileSelectedCandidate(null);
+        }}
+      />
 
       {/* Modals */}
       <InviteCandidateModal
