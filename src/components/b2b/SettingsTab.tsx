@@ -561,34 +561,36 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Path-based URL (always available) */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm">
               <Link2 className="h-4 w-4" />
               Path-Based URL
             </Label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <code className="text-sm font-mono flex-1 truncate">
-                  https://rolecolorfinder.com/company/{subdomain}
-                </code>
+            <div className="p-3 bg-muted rounded-lg space-y-2">
+              <code className="text-xs sm:text-sm font-mono block break-all">
+                https://rolecolorfinder.com/company/{subdomain}
+              </code>
+              <div className="flex gap-2">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 flex-1 sm:flex-none"
                   onClick={() => {
                     navigator.clipboard.writeText(`https://rolecolorfinder.com/company/${subdomain}`);
                     toast({ title: "URL copied to clipboard" });
                   }}
                 >
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-3 w-3 mr-1.5" />
+                  Copy
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 flex-1 sm:flex-none"
                   onClick={() => window.open(`/company/${subdomain}`, "_blank")}
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-3 w-3 mr-1.5" />
+                  Open
                 </Button>
               </div>
             </div>
@@ -614,8 +616,8 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
 
           {/* Subdomain URL */}
           <div className="space-y-3 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <Label className="flex items-center gap-2 text-sm">
                 <Globe className="h-4 w-4" />
                 Custom Subdomain URL
                 {subdomainEnabled && (
@@ -651,30 +653,34 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
             </div>
 
             {subdomainEnabled && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                  <code className="text-sm font-mono flex-1 truncate text-primary">
+              <div className="space-y-2">
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                  <code className="text-xs sm:text-sm font-mono block break-all text-primary">
                     https://{subdomain}.rolecolorfinder.com
                   </code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`https://${subdomain}.rolecolorfinder.com`);
-                      toast({ title: "Subdomain URL copied to clipboard" });
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, "_blank")}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1 sm:flex-none"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://${subdomain}.rolecolorfinder.com`);
+                        toast({ title: "Subdomain URL copied to clipboard" });
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1.5" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1 sm:flex-none"
+                      onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, "_blank")}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1.5" />
+                      Open
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Share this custom URL with your employees for easy access

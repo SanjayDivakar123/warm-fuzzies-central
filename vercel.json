@@ -1,5 +1,28 @@
 {
+  "rewrites": [
+    {
+      "source": "/v1/health",
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-gateway"
+    },
+    {
+      "source": "/v1/users/:path*",
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-users"
+    },
+    {
+      "source": "/v1/assessments/:path*",
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-assessments"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-gateway"
+    }
+  ],
   "routes": [
+    {
+      "src": "/v1/(.*)",
+      "dest": "/v1/$1",
+      "continue": true
+    },
     {
       "src": "/[^.]+",
       "dest": "/index.html"

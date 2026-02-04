@@ -50,6 +50,7 @@ import InviteAdminModal from './InviteAdminModal';
 import PromoteToAdminModal from './PromoteToAdminModal';
 import ManageAdminModal from './ManageAdminModal';
 import InviteUserModal from './InviteUserModal';
+import UserDetailModal from './UserDetailModal';
 
 interface UsersTabProps {
   company: any;
@@ -125,6 +126,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [requestingRetake, setRequestingRetake] = useState(false);
   const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
   const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
+  const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
   const { toast } = useToast();
 
   // Identify the super admin (first admin created for the company)
@@ -755,8 +757,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4" data-tour="bulk-actions">
-              <Button onClick={() => setShowInviteUser(true)}>
+            <div className="flex flex-wrap gap-2" data-tour="bulk-actions">
+              <Button onClick={() => setShowInviteUser(true)} className="flex-1 sm:flex-none min-w-[120px]">
                 <Plus className="h-4 w-4 mr-2" />
                 Invite User
               </Button>
@@ -764,6 +766,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 type="button" 
                 variant="outline" 
                 onClick={() => setShowInviteAdmin(true)}
+                className="flex-1 sm:flex-none min-w-[120px]"
               >
                 <Shield className="h-4 w-4 mr-2" />
                 Invite Admin
@@ -772,6 +775,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 type="button" 
                 variant="outline" 
                 onClick={() => setShowBulkImport(true)}
+                className="hidden sm:flex"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Bulk Import
@@ -866,8 +870,36 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table className="min-w-[600px] sm:min-w-0">
+          <CardContent>
+            {/* Mobile Card View */}
+            <div className="sm:hidden space-y-2">
+              {filteredUsers.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => setMobileSelectedUser(user)}
+                  className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">
+                        {user.full_name || <span className="text-muted-foreground">No name</span>}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(user.status)}
+                    </div>
+                  </div>
+                </button>
+              ))}
+              {filteredUsers.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No users found</p>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">
@@ -1423,8 +1455,56 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Mobile User Detail Modal */}
+        <UserDetailModal
+          user={mobileSelectedUser}
+          open={!!mobileSelectedUser}
+          onOpenChange={(open) => !open && setMobileSelectedUser(null)}
+          superAdminId={superAdminId}
+          isSuperAdmin={isSuperAdmin}
+          allJobRoles={allJobRoles}
+          predefinedSkills={PREDEFINED_SKILLS}
+          copiedId={copiedId}
+          resendingId={resendingId}
+          savingUserId={savingUserId}
+          suggestingSkillsFor={suggestingSkillsFor}
+          suggestedSkills={suggestedSkills}
+          onCopyCode={handleCopyCode}
+          onResendInvite={handleResendInvite}
+          onPromoteUser={setPromoteUser}
+          onManageAdmin={setManageAdmin}
+          onRevokeAccess={handleRevokeAccess}
+          onRestoreAccess={handleRestoreAccess}
+          onDeleteUser={handleDeleteUser}
+          onRequestRetake={setRetakeRequestUser}
+          onSaveUserDetails={async (userId, fullName, jobRole, skills) => {
+            setSavingUserId(userId);
+            try {
+              const { error } = await supabase
+                .from('company_users')
+                .update({ full_name: fullName, job_role: jobRole, skills })
+                .eq('id', userId);
+              if (error) throw error;
+              toast({ title: 'User updated', description: 'Changes saved successfully.' });
+              fetchUsers();
+              setMobileSelectedUser(null);
+            } catch (err: any) {
+              toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            } finally {
+              setSavingUserId(null);
+            }
+          }}
+          onSuggestSkills={handleSuggestSkills}
+          canResend={canResend}
+          getResendTooltip={getResendTooltip}
+          getStatusBadge={getStatusBadge}
+          cancelledReminders={cancelledReminders}
+        />
+
         {/* Bulk Import Modal */}
         <BulkImportModal
           open={showBulkImport}
