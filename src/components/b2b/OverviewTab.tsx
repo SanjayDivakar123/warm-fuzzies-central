@@ -479,20 +479,20 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       )}
 
       {/* Company Portal Link */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm overflow-hidden">
         <CardContent className="pt-4 pb-4 space-y-4">
           {/* Path-based URL (always shown) */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg bg-muted flex-shrink-0">
                 <Globe className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="font-medium text-sm">rolecolorfinder.com/company/{company.subdomain}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate">rolecolorfinder.com/company/{company.subdomain}</p>
                 <p className="text-xs text-muted-foreground">Path-based portal URL</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button 
                 variant="outline"
                 size="sm"
@@ -522,20 +522,20 @@ export default function OverviewTab({ company }: OverviewTabProps) {
 
           {/* Subdomain URL (only shown when enabled) */}
           {company.subdomain_enabled && (
-            <div className="flex items-center justify-between pt-3 border-t">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t">
+              <div className="flex items-center gap-3 min-w-0">
                 <div 
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-lg flex-shrink-0"
                   style={{ backgroundColor: `${secondaryColor}15` }}
                 >
                   <Globe className="h-4 w-4" style={{ color: secondaryColor }} />
                 </div>
-                <div>
-                  <p className="font-medium text-sm" style={{ color: secondaryColor }}>{company.subdomain}.rolecolorfinder.com</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate" style={{ color: secondaryColor }}>{company.subdomain}.rolecolorfinder.com</p>
                   <p className="text-xs text-muted-foreground">Subdomain URL (active)</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Button 
                   variant="outline"
                   size="sm"

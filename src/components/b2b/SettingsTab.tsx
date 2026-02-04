@@ -35,6 +35,8 @@ import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
 import AddCreditsModal from "./AddCreditsModal";
+// Integrations infrastructure is kept, but hidden via feature flag
+const INTEGRATIONS_ENABLED = false;
 import IntegrationsSettings from "./admin/IntegrationsSettings";
 import ApiKeyManagement from "./admin/ApiKeyManagement";
 import ScheduledReportsManager from "./admin/ScheduledReportsManager";
@@ -305,15 +307,17 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   return (
     <div className="space-y-4">
       <Tabs defaultValue="branding" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+        <TabsList className={"grid w-full " + (INTEGRATIONS_ENABLED ? "grid-cols-4" : "grid-cols-3") + " lg:w-auto lg:inline-flex"}>
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4 hidden sm:inline" />
             Branding
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-2">
-            <MessageSquare className="h-4 w-4 hidden sm:inline" />
-            Integrations
-          </TabsTrigger>
+          {INTEGRATIONS_ENABLED && (
+            <TabsTrigger value="integrations" className="gap-2">
+              <MessageSquare className="h-4 w-4 hidden sm:inline" />
+              Integrations
+            </TabsTrigger>
+          )}
           <TabsTrigger value="api" className="gap-2">
             <Key className="h-4 w-4 hidden sm:inline" />
             API
@@ -883,9 +887,11 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
       </Card>
         </TabsContent>
 
-        <TabsContent value="integrations" className="space-y-4">
-          <IntegrationsSettings company={company} onSettingsSaved={onSettingsSaved} />
-        </TabsContent>
+        {INTEGRATIONS_ENABLED && (
+          <TabsContent value="integrations" className="space-y-4">
+            <IntegrationsSettings company={company} onSettingsSaved={onSettingsSaved} />
+          </TabsContent>
+        )}
 
         <TabsContent value="api" className="space-y-4">
           <ApiKeyManagement companyId={company.id} />
