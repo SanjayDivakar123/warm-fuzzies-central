@@ -900,7 +900,19 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
         )}
 
         <TabsContent value="api" className="space-y-4">
+          {/* API Management - Coming Soon */}
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-full bg-primary/10 p-4 mb-4">
+              <Key className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">API Access Coming Soon</h3>
+            <p className="text-muted-foreground max-w-md">
+              We're working on providing API access for seamless integration with your existing tools and workflows. Stay tuned!
+            </p>
+          </div>
+          {/* Hidden for now - uncomment when ready:
           <ApiKeyManagement companyId={company.id} />
+          */}
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
