@@ -1,4 +1,27 @@
 {
+  "redirects": [
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        { "type": "host", "value": "api.rolecolorfinder.com" }
+      ],
+      "destination": "https://www.rolecolorfinder.com/",
+      "permanent": false
+    },
+    {
+      "source": "/:path((?!v1).*)",
+      "has": [
+        { "type": "host", "value": "api.rolecolorfinder.com" }
+      ],
+      "destination": "https://www.rolecolorfinder.com/:path",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/v1/health",
@@ -12,32 +35,25 @@
       "has": [
         { "type": "host", "value": "api.rolecolorfinder.com" }
       ],
-      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-users"
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-users/:path*"
     },
     {
       "source": "/v1/assessments/:path*",
       "has": [
         { "type": "host", "value": "api.rolecolorfinder.com" }
       ],
-      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-assessments"
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-assessments/:path*"
     },
     {
       "source": "/v1/:path*",
       "has": [
         { "type": "host", "value": "api.rolecolorfinder.com" }
       ],
-      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-gateway"
+      "destination": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/api-gateway/:path*"
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html",
-      "has": [
-        {
-          "type": "header",
-          "key": "accept",
-          "value": "(?:text/html|\\*/\\*)"
-        }
-      ]
+      "destination": "/index.html"
     }
   ]
 }
