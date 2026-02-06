@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RefreshCw, Eye, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, Eye, CheckCircle, Clock, XCircle, AlertCircle, Check, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -45,9 +46,19 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
   const { toast } = useToast();
   const [assignments, setAssignments] = useState<Record<string, any>>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [modalTab, setModalTab] = useState<'outcome' | 'edit'>('outcome');
   const [outcomeStatus, setOutcomeStatus] = useState('');
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isApproving, setIsApproving] = useState<string | null>(null);
+  
+  // Edit form state
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editImportance, setEditImportance] = useState('');
+  const [editUrgency, setEditUrgency] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editStatus, setEditStatus] = useState('');
 
   useEffect(() => {
     if (tasks.length > 0) {
@@ -77,6 +88,137 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
     setSelectedTask(task);
     setOutcomeStatus(assignment?.outcome_status || '');
     setOutcomeNotes(assignment?.outcome_notes || '');
+    
+    // Populate edit fields
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditImportance(task.importance);
+    setEditUrgency(task.urgency);
+    setEditDueDate(task.due_date ? task.due_date.split('T')[0] : '');
+    setEditStatus(task.status);
+    setModalTab('outcome');
+  };
+
+  const approveTask = async (taskId: string) => {
+    const assignment = assignments[taskId];
+    if (!assignment) {
+      toast({
+        title: 'No assignment found',
+        description: 'This task has not been assigned to anyone yet.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsApproving(taskId);
+    try {
+      const { error } = await supabase
+        .from('task_assignments')
+        .update({ approved_at: new Date().toISOString() })
+        .eq('id', assignment.id);
+
+      if (error) throw error;
+
+      // Update task status to assigned
+      await supabase
+        .from('work_tasks')
+        .update({ status: 'assigned' })
+        .eq('id', taskId);
+
+      toast({
+        title: 'Task approved!',
+        description: 'The employee can now see this task.'
+      });
+
+      onRefresh();
+      fetchAssignments();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to approve task',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsApproving(null);
+    }
+  };
+
+  const saveTaskEdit = async () => {
+    if (!selectedTask) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('work_tasks')
+        .update({
+          title: editTitle,
+          description: editDescription,
+          importance: editImportance,
+          urgency: editUrgency,
+          due_date: editDueDate || null,
+          status: editStatus
+        })
+        .eq('id', selectedTask.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Task updated',
+        description: 'Task details have been saved.'
+      });
+
+      setSelectedTask(null);
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update task',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteTask = async () => {
+    if (!selectedTask) return;
+    
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // First delete any assignments
+      await supabase
+        .from('task_assignments')
+        .delete()
+        .eq('task_id', selectedTask.id);
+
+      // Then delete the task
+      const { error } = await supabase
+        .from('work_tasks')
+        .delete()
+        .eq('id', selectedTask.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Task deleted',
+        description: 'The task has been removed.'
+      });
+
+      setSelectedTask(null);
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete task',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const saveOutcome = async () => {
@@ -199,14 +341,28 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
                     {format(new Date(task.created_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openOutcomeModal(task)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Update
-                    </Button>
+                    <div className="flex gap-1 justify-end">
+                      {assignment && !assignment.approved_at && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => approveTask(task.id)}
+                          disabled={isApproving === task.id}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          {isApproving === task.id ? 'Approving...' : 'Approve'}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openOutcomeModal(task)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Manage
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -215,44 +371,137 @@ export function TaskHistoryPanel({ companyId, tasks, onRefresh }: TaskHistoryPan
         </Table>
       </div>
 
-      {/* Outcome Modal */}
+      {/* Task Management Modal */}
       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Update Task Outcome</DialogTitle>
+            <DialogTitle>Manage Task</DialogTitle>
             <DialogDescription>
               {selectedTask?.title}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Outcome Status</Label>
-              <Select value={outcomeStatus} onValueChange={setOutcomeStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select outcome" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="success">Success</SelectItem>
-                  <SelectItem value="partial">Partial Success</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="reassigned">Reassigned</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea
-                value={outcomeNotes}
-                onChange={(e) => setOutcomeNotes(e.target.value)}
-                placeholder="Add any notes about the task outcome..."
-                rows={3}
-              />
-            </div>
-            <Button onClick={saveOutcome} className="w-full" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Outcome'}
-            </Button>
-          </div>
+          
+          <Tabs value={modalTab} onValueChange={(v) => setModalTab(v as 'outcome' | 'edit')} className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="edit">Edit Task</TabsTrigger>
+              <TabsTrigger value="outcome">Update Outcome</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="edit" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Task title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Task description..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Importance</Label>
+                  <Select value={editImportance} onValueChange={setEditImportance}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select importance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Urgency</Label>
+                  <Select value={editUrgency} onValueChange={setEditUrgency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select urgency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Due Date</Label>
+                  <Input
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={editStatus} onValueChange={setEditStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="assigned">Assigned</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button onClick={saveTaskEdit} className="flex-1" disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={deleteTask} 
+                  disabled={isSaving}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="outcome" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Outcome Status</Label>
+                <Select value={outcomeStatus} onValueChange={setOutcomeStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select outcome" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="success">Success</SelectItem>
+                    <SelectItem value="partial">Partial Success</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="reassigned">Reassigned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Notes</Label>
+                <Textarea
+                  value={outcomeNotes}
+                  onChange={(e) => setOutcomeNotes(e.target.value)}
+                  placeholder="Add any notes about the task outcome..."
+                  rows={3}
+                />
+              </div>
+              <Button onClick={saveOutcome} className="w-full" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Outcome'}
+              </Button>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

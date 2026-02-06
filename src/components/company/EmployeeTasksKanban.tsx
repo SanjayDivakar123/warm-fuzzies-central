@@ -278,132 +278,147 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
         <Badge variant="secondary">{tasks.length} total</Badge>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATUSES.map((status) => {
-          const config = statusConfig[status];
-          const Icon = config.icon;
-          const statusTasks = getTasksByStatus(status);
+      {/* Kanban Board - Full width breakout */}
+      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen px-8 lg:px-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          {STATUSES.map((status) => {
+            const config = statusConfig[status];
+            const Icon = config.icon;
+            const statusTasks = getTasksByStatus(status);
 
-          return (
-            <div
-              key={status}
-              className={`rounded-lg border-2 p-3 min-h-[300px] ${config.color}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, status)}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Icon className="h-4 w-4" />
-                <span className="font-medium text-sm">{config.label}</span>
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {statusTasks.length}
-                </Badge>
-              </div>
+            return (
+              <div
+                key={status}
+                className={`rounded-xl border-2 p-4 min-h-[450px] ${config.color}`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, status)}
+              >
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-current/10">
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-semibold text-sm">{config.label}</span>
+                  <Badge variant="secondary" className="ml-auto text-xs px-2">
+                    {statusTasks.length}
+                  </Badge>
+                </div>
 
-              <div className="space-y-2">
-                {statusTasks.map((task) => (
-                  <Card
-                    key={task.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, task.id)}
-                    className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
-                      draggedTask === task.id ? 'opacity-50' : ''
-                    } ${updating === task.id ? 'opacity-70' : ''}`}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <button 
-                            onClick={() => setSelectedTask(task)}
-                            className="font-medium text-sm truncate text-left hover:underline hover:text-primary transition-colors w-full"
-                          >
-                            {task.task.title}
-                          </button>
-                          
-                          {task.task.due_date && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(task.task.due_date).toLocaleDateString()}
-                            </div>
-                          )}
-
-                          <div className="flex gap-1 mt-2 flex-wrap">
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs"
-                              style={{ borderColor: task.task.importance === 'high' ? '#ef4444' : undefined }}
+                <div className="space-y-3">
+                  {statusTasks.map((task) => (
+                    <Card
+                      key={task.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-lg hover:-translate-y-0.5 ${
+                        draggedTask === task.id ? 'opacity-50 scale-95' : ''
+                      } ${updating === task.id ? 'opacity-70' : ''}`}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <button 
+                              onClick={() => setSelectedTask(task)}
+                              className="font-medium text-sm text-left hover:text-primary transition-colors w-full leading-snug line-clamp-2"
                             >
-                              {task.task.importance}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {task.task.urgency}
-                            </Badge>
-                          </div>
-
-                          {/* Expand toggle */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full mt-2 h-6 text-xs"
-                            onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
-                          >
-                            {expandedTask === task.id ? (
-                              <>
-                                <ChevronUp className="h-3 w-3 mr-1" /> Less
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className="h-3 w-3 mr-1" /> More
-                              </>
-                            )}
-                          </Button>
-
-                          {expandedTask === task.id && (
-                            <div className="mt-3 space-y-3 border-t pt-3">
-                              {task.task.description && (
-                                <p className="text-xs text-muted-foreground">
-                                  {task.task.description}
-                                </p>
-                              )}
-                              
-                              {task.employee_notes && (
-                                <div className="text-xs bg-muted p-2 rounded">
-                                  <p className="font-medium mb-1">Notes:</p>
-                                  <p className="whitespace-pre-wrap">{task.employee_notes}</p>
-                                </div>
-                              )}
-
-                              <div className="space-y-2">
-                                <Textarea
-                                  placeholder="Add a note..."
-                                  value={expandedTask === task.id ? noteInput : ''}
-                                  onChange={(e) => setNoteInput(e.target.value)}
-                                  rows={2}
-                                  className="text-xs"
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="w-full h-7 text-xs"
-                                  onClick={() => handleAddNote(task.id)}
-                                  disabled={!noteInput.trim() || updating === task.id}
-                                >
-                                  <MessageSquare className="h-3 w-3 mr-1" />
-                                  Add Note
-                                </Button>
+                              {task.task.title}
+                            </button>
+                            
+                            {task.task.due_date && (
+                              <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span>{new Date(task.task.due_date).toLocaleDateString()}</span>
                               </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs px-1.5 py-0 ${
+                                  task.task.importance === 'high' ? 'border-red-400 text-red-600 bg-red-50' : 
+                                  task.task.importance === 'medium' ? 'border-yellow-400 text-yellow-700 bg-yellow-50' : 'border-gray-300'
+                                }`}
+                              >
+                                {task.task.importance}
+                              </Badge>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs px-1.5 py-0 ${
+                                  task.task.urgency === 'high' ? 'border-orange-400 text-orange-600 bg-orange-50' : 
+                                  task.task.urgency === 'medium' ? 'border-blue-400 text-blue-600 bg-blue-50' : 'border-gray-300'
+                                }`}
+                              >
+                                {task.task.urgency}
+                              </Badge>
                             </div>
-                          )}
+
+                            {/* Expand toggle */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full mt-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+                              onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
+                            >
+                              {expandedTask === task.id ? (
+                                <>
+                                  <ChevronUp className="h-3.5 w-3.5 mr-1" /> Less
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-3.5 w-3.5 mr-1" /> More
+                                </>
+                              )}
+                            </Button>
+
+                            {expandedTask === task.id && (
+                              <div className="mt-3 space-y-3 border-t pt-3">
+                                {task.task.description && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Description</p>
+                                    <p className="text-xs leading-relaxed">
+                                      {task.task.description}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {task.employee_notes && (
+                                  <div className="bg-muted/50 p-2 rounded-lg">
+                                    <p className="text-xs font-medium mb-1 flex items-center gap-1">
+                                      <MessageSquare className="h-3 w-3" /> Notes
+                                    </p>
+                                    <p className="text-xs whitespace-pre-wrap leading-relaxed">{task.employee_notes}</p>
+                                  </div>
+                                )}
+
+                                <div className="space-y-2">
+                                  <Textarea
+                                    placeholder="Add a note..."
+                                    value={expandedTask === task.id ? noteInput : ''}
+                                    onChange={(e) => setNoteInput(e.target.value)}
+                                    rows={2}
+                                    className="text-xs resize-none"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full h-7 text-xs"
+                                    onClick={() => handleAddNote(task.id)}
+                                    disabled={!noteInput.trim() || updating === task.id}
+                                  >
+                                    <MessageSquare className="h-3 w-3 mr-1" />
+                                    Add Note
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Task Detail Modal */}
