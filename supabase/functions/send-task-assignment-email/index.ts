@@ -1,12 +1,9 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface SendEmailRequest {
@@ -17,8 +14,8 @@ interface SendEmailRequest {
   taskId: string;
   assigneeId: string;
   companyName: string;
-  senderEmail?: string; // Admin's email for reply-to
-  senderName?: string;  // Admin's name
+  senderEmail?: string;
+  senderName?: string;
   design?: {
     headerColor: string;
     accentColor: string;
@@ -35,24 +32,84 @@ const getRcfFooter = (companyName: string) => `
         RoleColorFinder
       </a>
     </p>
-    <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" width="80" style="margin-top: 10px; opacity: 0.8;">
   </div>
 `;
 
-serve(async (req) => {
+async function sendEmailViaMailgun(
+  to: string,
+  subject: string,
+  htmlContent: string,
+  companyName: string,
+  replyTo?: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
+  const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
+
+  if (!mailgunApiKey) {
+    console.error("MAILGUN_API_KEY not configured");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  console.log("Sending email via Mailgun to:", to);
+
+  const formData = new FormData();
+  formData.append("from", `${companyName} <noreply@${mailgunDomain}>`);
+  formData.append("to", to);
+  formData.append("subject", subject);
+  formData.append("html", htmlContent);
+  
+  if (replyTo) {
+    formData.append("h:Reply-To", replyTo);
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.mailgun.net/v3/${mailgunDomain}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+        },
+        body: formData,
+      }
+    );
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error("Mailgun error:", result);
+      return { success: false, error: result.message || "Failed to send email" };
+    }
+
+    console.log("Email sent successfully:", result);
+    return { success: true, messageId: result.id };
+  } catch (error) {
+    console.error("Mailgun request error:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight first
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
     const { to, subject, body, customHtml, taskId, assigneeId, companyName, senderEmail, senderName, design } = await req.json() as SendEmailRequest;
 
     if (!to || !subject) {
-      throw new Error("Missing required fields: to or subject");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: to or subject" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (!body && !customHtml) {
-      throw new Error("Either body or customHtml must be provided");
+      return new Response(
+        JSON.stringify({ error: "Either body or customHtml must be provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const headerColor = design?.headerColor || '#6366f1';
@@ -61,7 +118,6 @@ serve(async (req) => {
     let emailContent: string;
 
     if (customHtml) {
-      // Custom HTML mode - user provides their own HTML, we just add the RCF footer
       emailContent = `
         <!DOCTYPE html>
         <html>
@@ -81,7 +137,6 @@ serve(async (req) => {
         </html>
       `;
     } else {
-      // Text mode - standard template with the user's text
       emailContent = `
         <!DOCTYPE html>
         <html>
@@ -108,35 +163,28 @@ serve(async (req) => {
       `;
     }
 
-    // Send the email with reply-to if sender email provided
-    const emailOptions: any = {
-      from: `${companyName} <onboarding@resend.dev>`,
-      to: [to],
-      subject: subject,
-      html: emailContent,
-    };
+    // Send the email via Mailgun
+    const emailResult = await sendEmailViaMailgun(
+      to,
+      subject,
+      emailContent,
+      companyName,
+      senderEmail
+    );
 
-    // Add reply-to header so employee can reply to the admin
-    if (senderEmail) {
-      emailOptions.reply_to = senderEmail;
+    if (!emailResult.success) {
+      return new Response(
+        JSON.stringify({ error: emailResult.error }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const { data: emailData, error: emailError } = await resend.emails.send(emailOptions);
-
-    if (emailError) {
-      console.error("Resend error:", emailError);
-      throw new Error(emailError.message || "Failed to send email");
-    }
-
-    console.log("Email sent successfully:", emailData);
-
-    // Log the email send to the database (optional - for audit trail)
+    // Log the email send to the database
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Update the task_assignments table to note that email was sent and store assigner email
       await supabase
         .from("task_assignments")
         .update({ 
@@ -146,12 +194,11 @@ serve(async (req) => {
         .eq("task_id", taskId)
         .eq("primary_assignee_id", assigneeId);
     } catch (dbError) {
-      // Don't fail the request if logging fails
       console.error("Failed to log email send:", dbError);
     }
 
     return new Response(
-      JSON.stringify({ success: true, messageId: emailData?.id }),
+      JSON.stringify({ success: true, messageId: emailResult.messageId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

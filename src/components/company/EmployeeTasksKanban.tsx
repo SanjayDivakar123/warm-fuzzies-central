@@ -6,6 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   ClipboardList, 
   Clock, 
@@ -16,7 +22,10 @@ import {
   Loader2,
   MessageSquare,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertTriangle,
+  Flag,
+  X
 } from 'lucide-react';
 
 interface EmployeeTask {
@@ -74,6 +83,7 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
   const { company, employee } = useCompanyPortal();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<EmployeeTask[]>([]);
+  const [selectedTask, setSelectedTask] = useState<EmployeeTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
@@ -91,6 +101,8 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
     
     setLoading(true);
     try {
+      console.log('Fetching tasks for employee:', employee.id);
+      
       const { data, error } = await supabase
         .from('task_assignments')
         .select(`
@@ -99,6 +111,7 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
           employee_status,
           employee_notes,
           employee_completed_at,
+          approved_at,
           task:work_tasks (
             id,
             title,
@@ -110,20 +123,22 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
           )
         `)
         .eq('primary_assignee_id', employee.id)
-        .not('approved_at', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Filter out null tasks and transform data
+      console.log('Raw task assignments:', data);
+      
+      // Filter out null tasks and only show approved ones
       const validTasks = (data || [])
-        .filter(item => item.task !== null)
+        .filter(item => item.task !== null && item.approved_at !== null)
         .map(item => ({
           ...item,
           employee_status: (item.employee_status || 'pending') as EmployeeTask['employee_status'],
           task: item.task as EmployeeTask['task'],
         }));
       
+      console.log('Filtered valid tasks:', validTasks);
       setTasks(validTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -299,7 +314,12 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
                       <div className="flex items-start gap-2">
                         <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{task.task.title}</p>
+                          <button 
+                            onClick={() => setSelectedTask(task)}
+                            className="font-medium text-sm truncate text-left hover:underline hover:text-primary transition-colors w-full"
+                          >
+                            {task.task.title}
+                          </button>
                           
                           {task.task.due_date && (
                             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
@@ -385,6 +405,145 @@ export function EmployeeTasksKanban({ primaryColor = '#6366f1', secondaryColor =
           );
         })}
       </div>
+
+      {/* Task Detail Modal */}
+      <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <DialogContent className="max-w-lg">
+          {selectedTask && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg font-semibold pr-8">
+                  {selectedTask.task.title}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4 mt-4">
+                {/* Status Badge */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Badge className={statusConfig[selectedTask.employee_status].badgeClass}>
+                    {statusConfig[selectedTask.employee_status].label}
+                  </Badge>
+                </div>
+
+                {/* Due Date */}
+                {selectedTask.task.due_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      Due: {new Date(selectedTask.task.due_date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                    {new Date(selectedTask.task.due_date) < new Date() && selectedTask.employee_status !== 'completed' && (
+                      <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* Importance & Urgency */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Flag className={`h-4 w-4 ${
+                      selectedTask.task.importance === 'high' ? 'text-red-500' : 
+                      selectedTask.task.importance === 'medium' ? 'text-yellow-500' : 'text-gray-400'
+                    }`} />
+                    <span className="text-sm">
+                      Importance: <span className="font-medium capitalize">{selectedTask.task.importance}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className={`h-4 w-4 ${
+                      selectedTask.task.urgency === 'high' ? 'text-red-500' : 
+                      selectedTask.task.urgency === 'medium' ? 'text-yellow-500' : 'text-gray-400'
+                    }`} />
+                    <span className="text-sm">
+                      Urgency: <span className="font-medium capitalize">{selectedTask.task.urgency}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedTask.task.description && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Description</h4>
+                    <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg whitespace-pre-wrap">
+                      {selectedTask.task.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Required Skills */}
+                {selectedTask.task.required_skills && selectedTask.task.required_skills.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Required Skills</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedTask.task.required_skills.map((skill, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Employee Notes */}
+                {selectedTask.employee_notes && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Your Notes</h4>
+                    <div className="text-sm bg-muted p-3 rounded-lg whitespace-pre-wrap">
+                      {selectedTask.employee_notes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Completion Date */}
+                {selectedTask.employee_completed_at && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="text-sm">
+                      Completed on {new Date(selectedTask.employee_completed_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-4 border-t">
+                  {selectedTask.employee_status !== 'completed' && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        handleStatusChange(selectedTask.id, 'completed');
+                        setSelectedTask(null);
+                      }}
+                      className="flex-1"
+                      style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Mark Complete
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTask(null)}
+                    className={selectedTask.employee_status === 'completed' ? 'flex-1' : ''}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
