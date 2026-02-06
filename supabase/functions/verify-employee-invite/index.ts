@@ -136,7 +136,9 @@ Deno.serve(async (req) => {
           invite_code: employee.invite_code,
           user_id: employee.user_id,
           assessment_completed_at: employee.assessment_completed_at,
-          assessment_result_id: employee.assessment_result_id
+          assessment_result_id: employee.assessment_result_id,
+          assessment_category: employee.assessment_category,
+          assessment_type: employee.assessment_type
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

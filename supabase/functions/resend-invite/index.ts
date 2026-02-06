@@ -280,8 +280,9 @@ serve(async (req) => {
     }
 
     if (targetUser.status !== 'invited') {
+      console.log('User status is not invited:', targetUser.status);
       return new Response(
-        JSON.stringify({ error: 'User is not in invited status' }),
+        JSON.stringify({ error: `User is not in invited status (current: ${targetUser.status})` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -289,8 +290,9 @@ serve(async (req) => {
     const currentCount = targetUser.invite_count || 1;
     
     if (currentCount >= MAX_INVITES) {
+      console.log('Max invites reached:', currentCount);
       return new Response(
-        JSON.stringify({ error: 'Maximum invite limit reached', invite_count: currentCount }),
+        JSON.stringify({ error: `Maximum invite limit reached (${currentCount}/${MAX_INVITES})`, invite_count: currentCount }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -77,6 +77,7 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
   const [employee, setEmployee] = useState<CompanyEmployee | null>(null);
   const [assessmentResults, setAssessmentResults] = useState<AssessmentResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionRestoring, setSessionRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch company data
@@ -102,16 +103,36 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
           console.error('Error fetching company:', fetchError);
           setError('Failed to load company');
           setCompany(null);
+          setLoading(false);
         } else if (!data) {
           setError('Company not found');
           setCompany(null);
+          setLoading(false);
         } else {
-          setCompany(data as Company);
+          const companyData = data as Company;
+          setCompany(companyData);
+          
+          // Check if there's a session to restore BEFORE setting loading to false
+          const raw = localStorage.getItem(`employee_session_${companyData.subdomain}`);
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed?.employeeId && parsed?.inviteCode) {
+                // There's a session to restore - keep loading true and set restoring flag
+                setSessionRestoring(true);
+              } else {
+                setLoading(false);
+              }
+            } catch {
+              setLoading(false);
+            }
+          } else {
+            setLoading(false);
+          }
         }
       } catch (err) {
         console.error('Error in fetchCompany:', err);
         setError('An unexpected error occurred');
-      } finally {
         setLoading(false);
       }
     };
@@ -121,10 +142,15 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
 
   // Try to restore employee session from localStorage
   useEffect(() => {
-    if (!company || employee) return;
+    if (!company || employee || !sessionRestoring) return;
 
     const raw = localStorage.getItem(`employee_session_${company.subdomain}`);
-    if (!raw) return;
+    if (!raw) {
+      // No saved session - done loading
+      setSessionRestoring(false);
+      setLoading(false);
+      return;
+    }
 
     // Backward compatible: older versions stored just the employeeId
     let employeeId: string | null = null;
@@ -142,11 +168,14 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
     if (!employeeId || !inviteCode) {
       // Old/incomplete session format – require login
       localStorage.removeItem(`employee_session_${company.subdomain}`);
+      setSessionRestoring(false);
+      setLoading(false);
       return;
     }
 
+    // Restore the session
     refreshEmployeeBySession(employeeId, inviteCode);
-  }, [company, employee]);
+  }, [company, employee, sessionRestoring]);
 
   const refreshEmployeeBySession = async (employeeId: string, inviteCode: string) => {
     if (!company) return;
@@ -168,6 +197,9 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
       setAssessmentResults(data.assessmentResults?.results ?? null);
     } catch (err) {
       console.error('Error refreshing employee session:', err);
+    } finally {
+      setSessionRestoring(false);
+      setLoading(false);
     }
   };
 

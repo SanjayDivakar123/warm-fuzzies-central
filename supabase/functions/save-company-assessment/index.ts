@@ -86,9 +86,9 @@ Deno.serve(async (req) => {
 
     // Check if already completed
     if (employee.assessment_completed_at) {
-      console.log('Assessment already completed for employee')
+      console.log('Assessment already completed for employee at:', employee.assessment_completed_at)
       return new Response(
-        JSON.stringify({ success: false, message: 'Assessment already completed' }),
+        JSON.stringify({ success: false, message: 'Assessment already completed. Use the retake feature to reset your assessment.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
