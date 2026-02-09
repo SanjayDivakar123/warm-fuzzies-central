@@ -1,0 +1,11 @@
+# pack-refs with: peeled fully-peeled sorted 
+5d45d66356bd4ed14fa0779b15de3e50eccb8122 refs/heads/Tristan_Edits
+61e254aed7e60bdb65f2bd011439eb84a5eee087 refs/heads/main
+1deaa37cf815cffb04162b4a50b5caaf68af11e3 refs/pull/1/head
+7c7b8e83f203ff2fdd6258bd98996e4c95900f1b refs/pull/2/head
+99f3f7b816cb2df03e44195324739376bd1ccba7 refs/pull/3/head
+f192c73de1429e6710d5ba141ad2cbfc406fa0de refs/pull/4/head
+b410cfd82f9bc5971cb756f72f7622738cc2fbc8 refs/pull/5/head
+f2ccd5f0e46da8f0518c551d05a9e7efc8a45eea refs/pull/6/head
+ae1d7105e2cb54e4b9aa2b8883f0fe96015a46bf refs/pull/7/head
+5d45d66356bd4ed14fa0779b15de3e50eccb8122 refs/pull/8/head

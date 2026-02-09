@@ -110,7 +110,8 @@ interface CompanyContextType {
   refreshCompany: () => Promise<void>;
 }
 
-const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
+// Export context for direct access (e.g., when the hook would throw during HMR)
+export const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const useCompany = () => {
   const context = useContext(CompanyContext);

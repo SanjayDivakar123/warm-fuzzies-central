@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { useContext } from "https://deno.land/x/next@v1.1.0/context.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

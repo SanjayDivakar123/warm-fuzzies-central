@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useCompany } from './CompanyContext';
+
+// Import the context directly to avoid the throwing hook during HMR/error scenarios
+import { CompanyContext } from './CompanyContext';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -51,7 +53,9 @@ function hexToHsl(hex: string): string {
 }
 
 export function B2BThemeProvider({ children }: { children: React.ReactNode }) {
-  const { company } = useCompany();
+  // Use context directly to avoid throwing during HMR or when provider isn't ready
+  const companyContext = useContext(CompanyContext);
+  const company = companyContext?.company ?? null;
   
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
