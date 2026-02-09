@@ -72,7 +72,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(company.secondary_color);
   const [subdomain, setSubdomain] = useState(company.subdomain);
-  const [subdomainEnabled, setSubdomainEnabled] = useState(company.subdomain_enabled || false);
   const [customDomain, setCustomDomain] = useState(company.custom_domain || "");
   const [customDomainEnabled, setCustomDomainEnabled] = useState(company.custom_domain_enabled);
   const [googleSsoEnabled, setGoogleSsoEnabled] = useState(company.google_sso_enabled || false);
@@ -86,7 +85,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
-  const [disableSubdomainConfirmOpen, setDisableSubdomainConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -274,7 +272,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           subdomain,
-          subdomain_enabled: subdomainEnabled,
           custom_domain: customDomain,
           custom_domain_enabled: customDomainEnabled,
           google_sso_enabled: googleSsoEnabled,
@@ -613,130 +610,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
               Lowercase letters, numbers, and hyphens only (3-63 characters)
             </p>
           </div>
-
-          {/* Subdomain URL */}
-          <div className="space-y-3 pt-4 border-t">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <Label className="flex items-center gap-2 text-sm">
-                <Globe className="h-4 w-4" />
-                Custom Subdomain URL
-                {subdomainEnabled && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  >
-                    Active
-                  </Badge>
-                )}
-              </Label>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="subdomainEnabled"
-                  checked={subdomainEnabled}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setSubdomainEnabled(true);
-                      toast({
-                        title: "Subdomain enabled",
-                        description: `Your custom URL is now active at ${subdomain}.rolecolorfinder.com`,
-                      });
-                    } else {
-                      // Show confirmation dialog before disabling
-                      setDisableSubdomainConfirmOpen(true);
-                    }
-                  }}
-                />
-                <Label htmlFor="subdomainEnabled" className="text-sm font-normal">
-                  Enable subdomain
-                </Label>
-              </div>
-            </div>
-
-            {subdomainEnabled && (
-              <div className="space-y-2">
-                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-                  <code className="text-xs sm:text-sm font-mono block break-all text-primary">
-                    https://{subdomain}.rolecolorfinder.com
-                  </code>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 flex-1 sm:flex-none"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://${subdomain}.rolecolorfinder.com`);
-                        toast({ title: "Subdomain URL copied to clipboard" });
-                      }}
-                    >
-                      <Copy className="h-3 w-3 mr-1.5" />
-                      Copy
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 flex-1 sm:flex-none"
-                      onClick={() => window.open(`https://${subdomain}.rolecolorfinder.com`, "_blank")}
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1.5" />
-                      Open
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Share this custom URL with your employees for easy access
-                </p>
-              </div>
-            )}
-
-            {!subdomainEnabled && (
-              <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-                Enable subdomain to give employees a memorable URL like <strong>{subdomain}.rolecolorfinder.com</strong>
-              </p>
-            )}
-          </div>
-
-
-          {/* Disable Subdomain Confirmation Dialog */}
-          <AlertDialog open={disableSubdomainConfirmOpen} onOpenChange={setDisableSubdomainConfirmOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  Disable Subdomain?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <p>
-                    Are you sure you want to disable the custom subdomain URL?
-                  </p>
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg mt-2">
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
-                      <strong>{subdomain}.rolecolorfinder.com</strong> will no longer be active. 
-                      Employees using this URL will not be able to access your portal.
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    The path-based URL will remain available as a fallback.
-                  </p>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={() => {
-                    setSubdomainEnabled(false);
-                    setDisableSubdomainConfirmOpen(false);
-                    toast({
-                      title: "Subdomain disabled",
-                      description: "Your custom subdomain URL is no longer active.",
-                    });
-                  }}
-                >
-                  Disable Subdomain
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </CardContent>
       </Card>
 

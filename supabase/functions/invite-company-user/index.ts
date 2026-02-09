@@ -40,7 +40,6 @@ async function sendInviteEmail(
   inviteCode: string, 
   companyName: string, 
   subdomain: string,
-  subdomainEnabled: boolean,
   template?: EmailTemplateSettings
 ) {
   const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
@@ -53,10 +52,8 @@ async function sendInviteEmail(
 
   console.log("Sending email via Mailgun domain:", mailgunDomain);
 
-  // Use subdomain URL if enabled, otherwise use path-based URL
-  const portalUrl = subdomainEnabled 
-    ? `https://${subdomain}.rolecolorfinder.com/login`
-    : `https://rolecolorfinder.com/company/${subdomain}/login`;
+  // Always use path-based URL
+  const portalUrl = `https://rolecolorfinder.com/company/${subdomain}/login`;
   const timestamp = new Date().getTime();
   
   // Template defaults
@@ -462,7 +459,7 @@ serve(async (req) => {
       primaryColor: company.primary_color,
       secondaryColor: company.secondary_color,
     };
-    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, company.subdomain_enabled || false, templateSettings);
+    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
 
     // === SLACK DM INVITE ===
     // Send Slack DM invite if Slack is enabled for this company

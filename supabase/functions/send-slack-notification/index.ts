@@ -383,9 +383,8 @@ serve(async (req) => {
           );
         }
         
-        const portalUrl = company.subdomain_enabled 
-          ? `https://${company.subdomain}.rolecolorfinder.com/login`
-          : `https://rolecolorfinder.com/company/${company.subdomain}/login`;
+        // Always use path-based URL
+        const portalUrl = `https://rolecolorfinder.com/company/${company.subdomain}/login`;
         
         const inviteBlocks = buildInviteBlocks(company.name, invite_code, portalUrl);
         success = await sendDirectMessage(

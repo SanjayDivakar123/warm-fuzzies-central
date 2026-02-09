@@ -10,7 +10,7 @@ import { Loader2, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Navbar } from '@/components/navigation/Navbar';
 
 export default function B2BSignIn() {
-  const [subdomain, setSubdomain] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -18,10 +18,10 @@ export default function B2BSignIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!subdomain.trim()) {
+    if (!companyId.trim()) {
       toast({
-        title: 'Please enter a subdomain',
-        description: 'Enter your company subdomain to continue.',
+        title: 'Please enter a company identifier',
+        description: 'Enter your company identifier to continue.',
         variant: 'destructive',
       });
       return;
@@ -34,7 +34,7 @@ export default function B2BSignIn() {
       const { data: company, error } = await supabase
         .from('companies')
         .select('id, name, subdomain')
-        .eq('subdomain', subdomain.toLowerCase().trim())
+        .eq('subdomain', companyId.toLowerCase().trim())
         .maybeSingle();
 
       if (error) throw error;
@@ -42,7 +42,7 @@ export default function B2BSignIn() {
       if (!company) {
         toast({
           title: 'Company not found',
-          description: 'No company exists with that subdomain. Please check and try again.',
+          description: 'No company exists with that identifier. Please check and try again.',
           variant: 'destructive',
         });
         return;
@@ -61,8 +61,8 @@ export default function B2BSignIn() {
     }
   };
 
-  // Clean subdomain input (remove special chars, lowercase)
-  const cleanSubdomain = (value: string) => {
+  // Clean company identifier input (remove special chars, lowercase)
+  const cleanCompanyId = (value: string) => {
     return value.toLowerCase().replace(/[^a-z0-9-]/g, '');
   };
 
@@ -88,7 +88,7 @@ export default function B2BSignIn() {
             </div>
             <h1 className="text-3xl font-bold mb-2">Company Sign In</h1>
             <p className="text-muted-foreground">
-              Enter your company subdomain to access your admin dashboard
+              Enter your company identifier to access your admin dashboard
             </p>
           </div>
 
@@ -102,16 +102,16 @@ export default function B2BSignIn() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="subdomain">Company Identifier</Label>
+                  <Label htmlFor="companyId">Company Identifier</Label>
                   <div className="flex items-center">
                     <div className="bg-muted px-3 py-2 border border-r-0 rounded-l-md text-sm text-muted-foreground whitespace-nowrap">
                       rolecolorfinder.com/company/
                     </div>
                     <Input
-                      id="subdomain"
+                      id="companyId"
                       placeholder="your-company"
-                      value={subdomain}
-                      onChange={(e) => setSubdomain(cleanSubdomain(e.target.value))}
+                      value={companyId}
+                      onChange={(e) => setCompanyId(cleanCompanyId(e.target.value))}
                       className="rounded-l-none"
                       required
                     />
@@ -121,7 +121,7 @@ export default function B2BSignIn() {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full gap-2" disabled={loading || !subdomain.trim()}>
+                <Button type="submit" className="w-full gap-2" disabled={loading || !companyId.trim()}>
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />

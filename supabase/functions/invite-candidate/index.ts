@@ -90,10 +90,8 @@ serve(async (req) => {
       );
     }
 
-    // Generate portal URL
-    const portalUrl = company.subdomain_enabled && company.subdomain_status === "active"
-      ? `https://${company.subdomain}.rolecolorfinder.com`
-      : `https://rolecolorfinder.com/company/${company.subdomain}`;
+    // Generate portal URL (always use path-based)
+    const portalUrl = `https://rolecolorfinder.com/company/${company.subdomain}`;
 
     const candidateUrl = `${portalUrl}/candidate/${candidate.invite_code}`;
 

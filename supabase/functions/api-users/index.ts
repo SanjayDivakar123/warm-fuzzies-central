@@ -252,9 +252,7 @@ serve(async (req) => {
               invite_code: invite.invite_code,
               status: invite.status,
               expires_at: invite.expires_at,
-              portal_url: company?.subdomain_enabled 
-                ? `https://${company.subdomain}.rolecolorfinder.com/login`
-                : `https://rolecolorfinder.com/company/${company?.subdomain}/login`,
+              portal_url: `https://rolecolorfinder.com/company/${company?.subdomain}/login`,
             },
           }),
           { status: 201, headers: corsHeaders }

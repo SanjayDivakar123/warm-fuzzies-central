@@ -123,7 +123,7 @@ export default function B2B() {
 
         toast({
           title: 'Company created!',
-          description: `Promo code applied! Your portal is ready at ${subdomain}.rolecolorfinder.com`,
+          description: `Promo code applied! Your portal is ready.`,
         });
 
         navigate('/b2b/company-portal');
@@ -162,16 +162,17 @@ export default function B2B() {
       const errorMessage = (error?.message || '').toString();
       console.error('Create company error:', errorMessage);
 
-      const isSubdomainTaken =
+      const isIdentifierTaken =
         errorMessage.toLowerCase().includes('subdomain already taken') ||
+        errorMessage.toLowerCase().includes('identifier already taken') ||
         (errorMessage.toLowerCase().includes('subdomain') &&
           errorMessage.toLowerCase().includes('taken')) ||
-        (errorMessage.toLowerCase().includes('subdomain') &&
+        (errorMessage.toLowerCase().includes('identifier') &&
           errorMessage.toLowerCase().includes('exists'));
 
-      if (isSubdomainTaken) {
+      if (isIdentifierTaken) {
         toast({
-          title: 'That subdomain already exists',
+          title: 'That company identifier already exists',
           description: 'Please try another company name.',
           variant: 'destructive',
         });
@@ -196,7 +197,7 @@ export default function B2B() {
   }
 
   const features = [
-    { icon: Building2, text: 'Custom branded portal', description: 'Your own subdomain with company branding' },
+    { icon: Building2, text: 'Custom branded portal', description: 'Your own branded company portal' },
     { icon: Users, text: 'Team assessments', description: 'Insights for your entire organization' },
     { icon: Shield, text: 'Enterprise security', description: 'SOC 2 compliant data protection' },
     { icon: Sparkles, text: 'AI-powered matching', description: 'Smart role recommendations' },
@@ -205,7 +206,7 @@ export default function B2B() {
   const benefits = [
     'Unlimited team assessments',
     'Real-time analytics dashboard',
-    'Custom branding & subdomain',
+    'Custom branding & portal',
     'Priority email support',
     'Team comparison reports',
     'Export to PDF & CSV',
@@ -331,7 +332,7 @@ export default function B2B() {
                       />
                       {companyName && (
                         <p className="text-xs text-muted-foreground">
-                          Your portal: <span className="font-mono text-primary font-medium">{generateSubdomain(companyName)}</span>.rolecolorfinder.com
+                          Your portal: <span className="font-mono text-primary font-medium">rolecolorfinder.com/company/{generateSubdomain(companyName)}</span>
                         </p>
                       )}
                     </div>

@@ -248,7 +248,7 @@ export default function Pricing() {
                     </div>
                     
                     <p className="text-muted-foreground mb-6">
-                      Get your own branded subdomain with full admin controls, team analytics, and AI-powered work assignment tools.
+                      Get your own branded company portal with full admin controls, team analytics, and AI-powered work assignment tools.
                     </p>
 
                     <div className="grid sm:grid-cols-2 gap-4 mb-6">
@@ -277,7 +277,7 @@ export default function Pricing() {
                         <Palette className="w-5 h-5 text-primary mt-0.5" />
                         <div>
                           <p className="font-medium text-foreground">Custom Branding</p>
-                          <p className="text-sm text-muted-foreground">Your logo, colors, and subdomain</p>
+                          <p className="text-sm text-muted-foreground">Your logo, colors, and portal</p>
                         </div>
                       </div>
                     </div>

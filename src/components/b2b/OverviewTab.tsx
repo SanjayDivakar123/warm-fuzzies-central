@@ -519,50 +519,6 @@ export default function OverviewTab({ company }: OverviewTabProps) {
               </Button>
             </div>
           </div>
-
-          {/* Subdomain URL (only shown when enabled) */}
-          {company.subdomain_enabled && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t">
-              <div className="flex items-center gap-3 min-w-0">
-                <div 
-                  className="p-2 rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: `${secondaryColor}15` }}
-                >
-                  <Globe className="h-4 w-4" style={{ color: secondaryColor }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate" style={{ color: secondaryColor }}>{company.subdomain}.rolecolorfinder.com</p>
-                  <p className="text-xs text-muted-foreground">Subdomain URL (active)</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://${company.subdomain}.rolecolorfinder.com`);
-                    toast({
-                      title: "Subdomain URL copied",
-                      description: "Subdomain URL copied to clipboard",
-                    });
-                  }}
-                  className="gap-2"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(`https://${company.subdomain}.rolecolorfinder.com`, '_blank')}
-                  className="gap-2"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  View
-                </Button>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
