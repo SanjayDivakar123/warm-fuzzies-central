@@ -21,10 +21,12 @@ import {
   BarChart3,
   Download,
   Copy,
-  Check
+  Check,
+  Brain
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportDashboardPdf } from '@/lib/dashboardPdfExport';
+import RoleAnalysisCard from './RoleAnalysisCard';
 
 interface OverviewTabProps {
   company: any;
@@ -477,6 +479,25 @@ export default function OverviewTab({ company }: OverviewTabProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* AI Role Analysis Tool */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Brain className="h-4 w-4 text-muted-foreground" />
+            AI Role Analysis
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Enter a job role to see if they should take the RoleColor assessment
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RoleAnalysisCard 
+            mode="standalone" 
+            showCategorySelect={false}
+          />
+        </CardContent>
+      </Card>
 
       {/* Company Portal Link */}
       <Card className="border-0 shadow-sm overflow-hidden">

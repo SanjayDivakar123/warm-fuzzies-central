@@ -31,7 +31,12 @@ import {
   Download,
   RefreshCw,
   UserPlus,
+  Brain,
+  ThumbsUp,
+  ThumbsDown,
+  Minus,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BulkImportModalProps {
   open: boolean;
@@ -51,6 +56,14 @@ interface ColumnMapping {
   notes: string;
 }
 
+interface RoleRecommendation {
+  shouldTakeAssessment: boolean;
+  recommendation: 'highly_recommended' | 'recommended' | 'optional' | 'not_recommended';
+  confidence: 'high' | 'medium' | 'low';
+  reasons: string[];
+  suggestedCategory: 'professional' | 'entrepreneur' | 'executive' | 'manager';
+}
+
 interface ParsedEmployee {
   email: string;
   fullName: string | null;
@@ -63,6 +76,7 @@ interface ParsedEmployee {
   existingUser?: { id: string; status: string; full_name: string | null; job_role: string | null } | null;
   action?: 'invite' | 'update' | 'skip';
   selected?: boolean;
+  roleRecommendation?: RoleRecommendation | null;
 }
 
 type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
@@ -85,6 +99,8 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
   const [bulkAssessmentCategory, setBulkAssessmentCategory] = useState<'professional' | 'entrepreneur' | 'executive' | 'manager' | ''>('');
   const [bulkAssessmentType, setBulkAssessmentType] = useState<'25q' | '50q' | ''>('');
   const [aiSuggestingCategories, setAiSuggestingCategories] = useState(false);
+  const [aiAnalyzingRoles, setAiAnalyzingRoles] = useState(false);
+  const [roleRecommendations, setRoleRecommendations] = useState<Map<string, RoleRecommendation>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -119,6 +135,7 @@ export default function BulkImportModal({ open, onClose, companyId, onImportComp
     setAiAnalyzed(false);
     setParsedEmployees([]);
     setImportResults({ success: 0, failed: 0, updated: 0, errors: [] });
+    setRoleRecommendations(new Map());
   };
 
   const handleClose = () => {
@@ -370,6 +387,93 @@ bob.wilson@company.com,Bob,Wilson,Project Manager,"Project Management, Strategy,
       });
     } finally {
       setAiSuggestingCategories(false);
+    }
+  };
+
+  const handleAiAnalyzeRoles = async () => {
+    const employeesWithJobRoles = parsedEmployees.filter(e => e.valid && e.jobRole);
+    
+    if (employeesWithJobRoles.length === 0) {
+      toast({
+        title: 'No job roles found',
+        description: 'No users with job roles to analyze',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiAnalyzingRoles(true);
+    try {
+      const uniqueJobRoles = [...new Set(employeesWithJobRoles.map(e => e.jobRole!))];
+      const newRecommendations = new Map<string, RoleRecommendation>();
+
+      // Batch analyze roles (limit concurrent requests)
+      const batchSize = 5;
+      for (let i = 0; i < uniqueJobRoles.length; i += batchSize) {
+        const batch = uniqueJobRoles.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map(async (jobRole) => {
+            try {
+              const { data, error } = await supabase.functions.invoke('analyze-role-assessment-need', {
+                body: { jobRole },
+              });
+              if (error) throw error;
+              if (data?.error) throw new Error(data.error);
+              return { jobRole, data };
+            } catch {
+              return { jobRole, data: null };
+            }
+          })
+        );
+
+        for (const { jobRole, data } of results) {
+          if (data) {
+            newRecommendations.set(jobRole.toLowerCase(), {
+              shouldTakeAssessment: data.shouldTakeAssessment,
+              recommendation: data.recommendation,
+              confidence: data.confidence,
+              reasons: data.reasons || [],
+              suggestedCategory: data.suggestedCategory,
+            });
+          }
+        }
+      }
+
+      setRoleRecommendations(newRecommendations);
+
+      // Update employees with recommendations and auto-deselect not recommended
+      setParsedEmployees(prev => prev.map(e => {
+        if (e.valid && e.jobRole) {
+          const rec = newRecommendations.get(e.jobRole.toLowerCase());
+          if (rec) {
+            const shouldDeselect = rec.recommendation === 'not_recommended' || rec.recommendation === 'optional';
+            return {
+              ...e,
+              roleRecommendation: rec,
+              selected: shouldDeselect ? false : e.selected,
+              assessmentCategory: rec.suggestedCategory,
+            };
+          }
+        }
+        return e;
+      }));
+
+      const deselectedCount = [...newRecommendations.values()].filter(
+        r => r.recommendation === 'not_recommended' || r.recommendation === 'optional'
+      ).length;
+
+      toast({
+        title: 'AI Analysis Complete',
+        description: `Analyzed ${uniqueJobRoles.length} roles. ${deselectedCount > 0 ? `${deselectedCount} optional/not recommended roles auto-deselected.` : 'All roles recommended for assessment.'}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error analyzing roles',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setAiAnalyzingRoles(false);
     }
   };
 
@@ -779,6 +883,49 @@ bob.wilson@company.com,Bob,Wilson,Project Manager,"Project Management, Strategy,
                 </div>
               </div>
 
+              {/* AI Role Analysis */}
+              <div className="border rounded-lg p-4 bg-primary/5 border-primary/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="font-medium text-sm">AI Role Analysis</p>
+                      <p className="text-xs text-muted-foreground">Analyze which roles should take the assessment</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleAiAnalyzeRoles}
+                    disabled={aiAnalyzingRoles || parsedEmployees.filter(e => e.valid && e.jobRole).length === 0}
+                    className="gap-1"
+                  >
+                    {aiAnalyzingRoles ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Brain className="h-3 w-3" />
+                    )}
+                    Analyze Roles
+                  </Button>
+                </div>
+                {roleRecommendations.size > 0 && (
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
+                      <ThumbsUp className="h-3 w-3" />
+                      {parsedEmployees.filter(e => e.roleRecommendation?.recommendation === 'highly_recommended' || e.roleRecommendation?.recommendation === 'recommended').length} Recommended
+                    </Badge>
+                    <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200">
+                      <Minus className="h-3 w-3" />
+                      {parsedEmployees.filter(e => e.roleRecommendation?.recommendation === 'optional').length} Optional
+                    </Badge>
+                    <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200">
+                      <ThumbsDown className="h-3 w-3" />
+                      {parsedEmployees.filter(e => e.roleRecommendation?.recommendation === 'not_recommended').length} Not Recommended
+                    </Badge>
+                    <span className="text-muted-foreground ml-2">Optional/Not recommended roles are auto-deselected</span>
+                  </div>
+                )}
+              </div>
+
               <ScrollArea className="h-64 border rounded-lg">
                 <Table>
                   <TableHeader>
@@ -786,14 +933,15 @@ bob.wilson@company.com,Bob,Wilson,Project Manager,"Project Management, Strategy,
                       <TableHead className="w-10"></TableHead>
                       <TableHead className="w-10"></TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Full Name</TableHead>
+                      <TableHead>Job Role</TableHead>
+                      <TableHead>Rec.</TableHead>
                       <TableHead>Assessment</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {parsedEmployees.map((emp, idx) => (
-                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : emp.action === 'update' ? 'bg-muted/30' : ''}>
+                      <TableRow key={idx} className={!emp.valid ? 'bg-destructive/5' : emp.roleRecommendation?.recommendation === 'not_recommended' ? 'bg-red-50/50' : emp.roleRecommendation?.recommendation === 'optional' ? 'bg-amber-50/50' : emp.action === 'update' ? 'bg-muted/30' : ''}>
                         <TableCell>
                           {emp.valid && (
                             <Checkbox
@@ -816,8 +964,57 @@ bob.wilson@company.com,Bob,Wilson,Project Manager,"Project Management, Strategy,
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{emp.email}</TableCell>
-                        <TableCell className="text-sm">
-                          {emp.fullName || <span className="text-muted-foreground">—</span>}
+                        <TableCell className="text-sm max-w-[120px] truncate">
+                          {emp.jobRole || <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            {emp.roleRecommendation ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    {emp.roleRecommendation.recommendation === 'highly_recommended' && (
+                                      <Badge className="text-xs bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                                        <ThumbsUp className="h-3 w-3 mr-1" />
+                                        High
+                                      </Badge>
+                                    )}
+                                    {emp.roleRecommendation.recommendation === 'recommended' && (
+                                      <Badge className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
+                                        <ThumbsUp className="h-3 w-3 mr-1" />
+                                        Yes
+                                      </Badge>
+                                    )}
+                                    {emp.roleRecommendation.recommendation === 'optional' && (
+                                      <Badge className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">
+                                        <Minus className="h-3 w-3 mr-1" />
+                                        Maybe
+                                      </Badge>
+                                    )}
+                                    {emp.roleRecommendation.recommendation === 'not_recommended' && (
+                                      <Badge className="text-xs bg-red-100 text-red-700 hover:bg-red-100 border-red-200">
+                                        <ThumbsDown className="h-3 w-3 mr-1" />
+                                        No
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <p className="font-medium mb-1">
+                                    {emp.roleRecommendation.recommendation === 'highly_recommended' && 'Highly Recommended'}
+                                    {emp.roleRecommendation.recommendation === 'recommended' && 'Recommended'}
+                                    {emp.roleRecommendation.recommendation === 'optional' && 'Optional'}
+                                    {emp.roleRecommendation.recommendation === 'not_recommended' && 'Not Recommended'}
+                                  </p>
+                                  {emp.roleRecommendation.reasons.slice(0, 2).map((r, i) => (
+                                    <p key={i} className="text-xs text-muted-foreground">• {r}</p>
+                                  ))}
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </TooltipProvider>
                         </TableCell>
                         <TableCell>
                           {emp.assessmentCategory && emp.assessmentType ? (

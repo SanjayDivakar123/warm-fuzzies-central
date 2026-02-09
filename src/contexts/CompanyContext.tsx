@@ -46,6 +46,8 @@ interface RolePermissions {
   canUseWorkMatrix: boolean;
   canManageSettings: boolean;
   canInviteAdmins: boolean;
+  canPromoteUsers: boolean;
+  canManageAllRoles: boolean; // Can manage admin/hr/partner users (not just employees)
 }
 
 const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
@@ -58,6 +60,8 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
     canUseWorkMatrix: true,
     canManageSettings: true,
     canInviteAdmins: true,
+    canPromoteUsers: true,
+    canManageAllRoles: true,
   },
   hr: {
     canViewOverview: true,
@@ -68,6 +72,8 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
     canUseWorkMatrix: false,
     canManageSettings: false,
     canInviteAdmins: false,
+    canPromoteUsers: false, // HR cannot promote users
+    canManageAllRoles: false, // HR can only manage employees
   },
   partner: {
     canViewOverview: true,
@@ -78,6 +84,8 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
     canUseWorkMatrix: true,
     canManageSettings: false,
     canInviteAdmins: false,
+    canPromoteUsers: false,
+    canManageAllRoles: false,
   },
   employee: {
     canViewOverview: false,
@@ -88,6 +96,8 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
     canUseWorkMatrix: false,
     canManageSettings: false,
     canInviteAdmins: false,
+    canPromoteUsers: false,
+    canManageAllRoles: false,
   },
 };
 
@@ -121,7 +131,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   const fetchCompanyData = async () => {
-    if (!user) {
+    if (!user || !user.email) {
       setCompany(null);
       setCompanyUser(null);
       setLoading(false);
@@ -130,25 +140,68 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     try {
       // Fetch company user records (user might be admin of multiple companies)
-      // Prioritize: active admins first, then by most recent activity
-      const { data: companyUserRecords, error: userError } = await supabase
+      // Query by user_id first, then also check by email for non-linked accounts
+      const { data: byUserId, error: userIdError } = await supabase
         .from('company_users')
         .select('*')
-        .eq('user_id', user.id)
-        .order('role', { ascending: true }) // 'admin' comes before 'employee' alphabetically
-        .order('status', { ascending: true }) // 'active' comes first
-        .order('updated_at', { ascending: false });
+        .eq('user_id', user.id);
 
-      if (userError) throw userError;
+      const { data: byEmail, error: emailError } = await supabase
+        .from('company_users')
+        .select('*')
+        .ilike('email', user.email);
 
-      // Pick the first active admin record, or fall back to first active record
-      const activeAdminRecord = companyUserRecords?.find(
-        (r) => r.role === 'admin' && r.status === 'active'
+      console.log('[CompanyContext] Fetching for user:', user.email, 'user_id:', user.id);
+      console.log('[CompanyContext] By user_id:', byUserId?.length, 'records', byUserId?.map(r => ({ role: r.role, status: r.status, id: r.id })));
+      console.log('[CompanyContext] By email:', byEmail?.length, 'records', byEmail?.map(r => ({ role: r.role, status: r.status, user_id: r.user_id, id: r.id })));
+
+      // Merge and deduplicate records (prefer user_id linked records)
+      const userIdRecordIds = new Set(byUserId?.map(r => r.id) || []);
+      const emailOnlyRecords = (byEmail || []).filter(r => !userIdRecordIds.has(r.id));
+      const companyUserRecords = [...(byUserId || []), ...emailOnlyRecords];
+
+      // Sort: admin/hr/partner first, then active status, then most recent
+      companyUserRecords.sort((a, b) => {
+        // Non-employee roles come first
+        const aIsAdmin = ['admin', 'hr', 'partner'].includes(a.role);
+        const bIsAdmin = ['admin', 'hr', 'partner'].includes(b.role);
+        if (aIsAdmin && !bIsAdmin) return -1;
+        if (!aIsAdmin && bIsAdmin) return 1;
+        // Active status comes first
+        if (a.status === 'active' && b.status !== 'active') return -1;
+        if (a.status !== 'active' && b.status === 'active') return 1;
+        return 0;
+      });
+
+      // Pick the first admin/hr/partner record (active or invited), or fall back to first active record
+      // Admin-level users don't need to complete an invite flow, so 'invited' status is OK for them
+      const adminRecord = companyUserRecords?.find(
+        (r) => ['admin', 'hr', 'partner'].includes(r.role) && ['active', 'invited'].includes(r.status)
       );
       const activeRecord = companyUserRecords?.find((r) => r.status === 'active');
-      const companyUserData = activeAdminRecord || activeRecord || companyUserRecords?.[0];
+      const companyUserData = adminRecord || activeRecord || companyUserRecords?.[0];
+
+      console.log('[CompanyContext] All records after merge:', companyUserRecords?.length);
+      console.log('[CompanyContext] adminRecord:', adminRecord ? { role: adminRecord.role, status: adminRecord.status } : null);
+      console.log('[CompanyContext] Selected:', companyUserData ? { role: companyUserData.role, status: companyUserData.status } : null);
 
       if (companyUserData) {
+        // If found by email but user_id not linked, link it now
+        if (!companyUserData.user_id && companyUserData.email.toLowerCase() === user.email?.toLowerCase()) {
+          await supabase
+            .from('company_users')
+            .update({ 
+              user_id: user.id, 
+              status: 'active',
+              joined_at: companyUserData.joined_at || new Date().toISOString()
+            })
+            .eq('id', companyUserData.id);
+          
+          // Update local data
+          companyUserData.user_id = user.id;
+          companyUserData.status = 'active';
+        }
+
         // Map database role to our type
         const mappedUser: CompanyUser = {
           id: companyUserData.id,

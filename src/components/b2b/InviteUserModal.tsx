@@ -11,10 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Sparkles } from 'lucide-react';
+import { Loader2, UserPlus, Sparkles, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import { AssessmentCategory, getCategoryDisplayName } from '@/lib/assessmentQuestionLoader';
+import RoleAnalysisCard from './RoleAnalysisCard';
 
 interface InviteUserModalProps {
   open: boolean;
@@ -54,6 +60,7 @@ export default function InviteUserModal({
   const [assessmentType, setAssessmentType] = useState<AssessmentType>('25q');
   const [loading, setLoading] = useState(false);
   const [suggestingCategory, setSuggestingCategory] = useState(false);
+  const [showRoleAnalysis, setShowRoleAnalysis] = useState(false);
   const { toast } = useToast();
 
   const handleSuggestCategory = async () => {
@@ -181,6 +188,7 @@ export default function InviteUserModal({
     setJobRole('');
     setAssessmentCategory('professional');
     setAssessmentType('25q');
+    setShowRoleAnalysis(false);
     onClose();
   };
 
@@ -232,6 +240,34 @@ export default function InviteUserModal({
               onChange={(e) => setJobRole(e.target.value)}
               disabled={loading}
             />
+            
+            {/* AI Role Analysis Section */}
+            <Collapsible open={showRoleAnalysis} onOpenChange={setShowRoleAnalysis}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-muted-foreground hover:text-primary px-0"
+                  type="button"
+                >
+                  <HelpCircle className="h-3 w-3" />
+                  Should this role take the test?
+                  {showRoleAnalysis ? (
+                    <ChevronUp className="h-3 w-3 ml-1" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <RoleAnalysisCard
+                  mode="inline"
+                  initialJobRole={jobRole}
+                  onCategorySelect={(cat) => setAssessmentCategory(cat)}
+                  showCategorySelect
+                />
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           <div className="space-y-2">

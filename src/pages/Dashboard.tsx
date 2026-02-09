@@ -57,7 +57,7 @@ interface InProgressAssessment {
 
 interface CompanyAccess {
   id: string;
-  role: 'admin' | 'employee';
+  role: 'admin' | 'hr' | 'partner' | 'employee';
   status: 'invited' | 'active' | 'revoked';
   companyName: string;
   subdomain: string;
@@ -151,7 +151,7 @@ const Dashboard = () => {
           const company = cu.companies as { id: string; name: string; subdomain: string };
           return {
             id: cu.id,
-            role: cu.role as 'admin' | 'employee',
+            role: cu.role as 'admin' | 'hr' | 'partner' | 'employee',
             status: cu.status as 'invited' | 'active' | 'revoked',
             companyName: company.name,
             subdomain: company.subdomain,
@@ -326,8 +326,19 @@ const Dashboard = () => {
   // Separate companies by status
   const activeCompanies = companyAccessList.filter(c => c.status === 'active');
   const pendingInvites = companyAccessList.filter(c => c.status === 'invited');
-  const adminCompanies = activeCompanies.filter(c => c.role === 'admin');
+  // Admin, HR, and Partner roles can access the admin dashboard
+  const adminCompanies = activeCompanies.filter(c => ['admin', 'hr', 'partner'].includes(c.role));
   const employeeCompanies = activeCompanies.filter(c => c.role === 'employee');
+
+  // Get role display label
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'admin': return { label: 'Admin', color: 'bg-green-500/20 text-green-700 dark:text-green-300' };
+      case 'hr': return { label: 'HR', color: 'bg-purple-500/20 text-purple-700 dark:text-purple-300' };
+      case 'partner': return { label: 'Partner', color: 'bg-orange-500/20 text-orange-700 dark:text-orange-300' };
+      default: return { label: 'Employee', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-300' };
+    }
+  };
 
   // Build sidebar links for Aceternity sidebar
   const sidebarLinks = [
@@ -948,12 +959,12 @@ const Dashboard = () => {
                                   </div>
                                   <div>
                                     <h3 className="font-bold text-base sm:text-lg">{company.companyName}</h3>
-                                    <Badge className="mt-1 bg-green-500/20 text-green-700 dark:text-green-300 border-0">Admin</Badge>
+                                    <Badge className={`mt-1 border-0 ${getRoleBadge(company.role).color}`}>{getRoleBadge(company.role).label}</Badge>
                                   </div>
                                 </div>
                                 <Button onClick={() => navigate('/b2b/company-portal')} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 w-full sm:w-auto">
                                   <Building2 className="w-4 h-4 mr-2" />
-                                  Admin Dashboard
+                                  {company.role === 'admin' ? 'Admin Dashboard' : company.role === 'hr' ? 'HR Portal' : 'Partner Portal'}
                                 </Button>
                               </CardContent>
                             </Card>

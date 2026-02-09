@@ -50,6 +50,8 @@ interface UserDetailModalProps {
   getResendTooltip: (user: any) => string;
   getStatusBadge: (status: string) => React.ReactNode;
   cancelledReminders: Record<string, number>;
+  canPromoteUsers?: boolean;
+  canManageAllRoles?: boolean;
 }
 
 export default function UserDetailModal({
@@ -79,6 +81,8 @@ export default function UserDetailModal({
   getResendTooltip,
   getStatusBadge,
   cancelledReminders,
+  canPromoteUsers = true,
+  canManageAllRoles = true,
 }: UserDetailModalProps) {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [jobRole, setJobRole] = useState(user?.job_role || '');
@@ -354,7 +358,7 @@ export default function UserDetailModal({
                 </Button>
               )}
 
-              {user.role !== 'admin' && user.status === 'active' && (
+              {user.role !== 'admin' && user.status === 'active' && canPromoteUsers && (
                 <Button
                   variant="outline"
                   size="sm"

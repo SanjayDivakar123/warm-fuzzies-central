@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 import {
   Plus,
   Mail,
@@ -128,6 +129,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
   const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
   const { toast } = useToast();
+  const { permissions } = useCompany();
 
   // Identify the super admin (first admin created for the company)
   const superAdminId = users
@@ -762,15 +764,17 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 <Plus className="h-4 w-4 mr-2" />
                 Invite User
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowInviteAdmin(true)}
-                className="flex-1 sm:flex-none min-w-[120px]"
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Invite Admin
-              </Button>
+              {permissions.canInviteAdmins && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowInviteAdmin(true)}
+                  className="flex-1 sm:flex-none min-w-[120px]"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Invite Admin
+                </Button>
+              )}
               <Button 
                 type="button" 
                 variant="outline" 
@@ -1082,7 +1086,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                               </TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== "admin" && user.status === "active" && (
+                          {user.role !== "admin" && user.status === "active" && permissions.canPromoteUsers && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
@@ -1503,6 +1507,8 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
           getResendTooltip={getResendTooltip}
           getStatusBadge={getStatusBadge}
           cancelledReminders={cancelledReminders}
+          canPromoteUsers={permissions.canPromoteUsers}
+          canManageAllRoles={permissions.canManageAllRoles}
         />
 
         {/* Bulk Import Modal */}
