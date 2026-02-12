@@ -673,6 +673,44 @@ export type Database = {
           },
         ]
       }
+      company_roles: {
+        Row: {
+          id: string
+          company_id: string
+          name: string
+          description: string | null
+          skills: string[] | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          name: string
+          description?: string | null
+          skills?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          name?: string
+          description?: string | null
+          skills?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_users: {
         Row: {
           assessment_category: string | null
@@ -690,6 +728,7 @@ export type Database = {
           invite_code: string | null
           invite_count: number
           invited_at: string | null
+          job_description: string | null
           job_role: string | null
           joined_at: string | null
           keyboard_shortcuts_enabled: boolean | null
@@ -717,6 +756,7 @@ export type Database = {
           invite_code?: string | null
           invite_count?: number
           invited_at?: string | null
+          job_description?: string | null
           job_role?: string | null
           joined_at?: string | null
           keyboard_shortcuts_enabled?: boolean | null
@@ -744,6 +784,7 @@ export type Database = {
           invite_code?: string | null
           invite_count?: number
           invited_at?: string | null
+          job_description?: string | null
           job_role?: string | null
           joined_at?: string | null
           keyboard_shortcuts_enabled?: boolean | null

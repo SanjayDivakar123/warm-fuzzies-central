@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet, FileText, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +50,8 @@ interface CandidatesTabProps {
     name: string;
     subdomain: string;
   };
+  canHireCandidates?: boolean; // Allow hiring candidates (converting to employee)
+  canManageCandidates?: boolean; // Full management (edit, delete, etc.)
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -71,7 +74,7 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: 'Rejected',
 };
 
-export default function CandidatesTab({ company }: CandidatesTabProps) {
+export default function CandidatesTab({ company, canHireCandidates = true, canManageCandidates = true }: CandidatesTabProps) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [applicationLinks, setApplicationLinks] = useState<ApplicationLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -441,11 +444,20 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                 <TableBody>
                   {filteredCandidates.map(candidate => (
                     <TableRow key={candidate.id}>
-                      <TableCell>
+                      <TableCell className="max-w-[200px]">
                         <div className="flex items-center gap-2">
-                          <div>
-                            <p className="font-medium">{candidate.full_name || 'No name'}</p>
-                            <p className="text-sm text-muted-foreground">{candidate.email}</p>
+                          <div className="min-w-0 flex-1">
+                            <TruncatedText 
+                              text={candidate.full_name} 
+                              fallback="No name"
+                              maxWidth="160px"
+                              className="font-medium"
+                            />
+                            <TruncatedText 
+                              text={candidate.email} 
+                              maxWidth="160px"
+                              className="text-sm text-muted-foreground"
+                            />
                           </div>
                           {candidate.resume_url ? (
                             <Button
@@ -578,7 +590,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                                 View Results
                               </DropdownMenuItem>
                             )}
-                            {candidate.status === 'assessment_completed' && (
+                            {candidate.status === 'assessment_completed' && canHireCandidates && (
                               <>
                                 <DropdownMenuItem onClick={() => handleHireCandidate(candidate)}>
                                   <UserCheck className="h-4 w-4 mr-2" />
@@ -617,6 +629,7 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
         open={!!mobileSelectedCandidate}
         onOpenChange={(open) => !open && setMobileSelectedCandidate(null)}
         analyzingFit={analyzingFit}
+        canHire={canHireCandidates}
         onViewResume={(c) => c.resume_url && window.open(c.resume_url, '_blank')}
         onUploadResume={(c) => setUploadingResumeFor(c.id)}
         onViewResults={(c) => {

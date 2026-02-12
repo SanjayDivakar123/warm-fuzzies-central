@@ -57,6 +57,7 @@ interface CandidateDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   analyzingFit: string | null;
+  canHire?: boolean; // Whether to show hire button
   onViewResults: (candidate: Candidate) => void;
   onViewFitAnalysis: (candidate: Candidate) => void;
   onAnalyzeFit: (candidate: Candidate) => void;
@@ -71,6 +72,7 @@ export default function CandidateDetailModal({
   open,
   onOpenChange,
   analyzingFit,
+  canHire = true,
   onViewResults,
   onViewFitAnalysis,
   onAnalyzeFit,
@@ -241,7 +243,7 @@ export default function CandidateDetailModal({
               )}
 
               {/* Hire */}
-              {candidate.status === 'assessment_completed' && (
+              {candidate.status === 'assessment_completed' && canHire && (
                 <Button
                   variant="outline"
                   size="sm"

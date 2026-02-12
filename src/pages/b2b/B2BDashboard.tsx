@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -16,11 +16,15 @@ import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab'
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
 import CandidatesTab from '@/components/b2b/CandidatesTab';
 import AdvancedAnalyticsDashboard from '@/components/b2b/analytics/AdvancedAnalyticsDashboard';
+import RolesTab from '@/components/b2b/RolesTab';
+import EmployeeTasksView from '@/components/b2b/EmployeeTasksView';
 import KeyboardShortcutsModal from '@/components/b2b/KeyboardShortcutsModal';
 import { useKeyboardShortcuts, B2B_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
 import MobileBottomNav from '@/components/b2b/MobileBottomNav';
+import GlobalSearch from '@/components/b2b/GlobalSearch';
+import UserProfileSheet from '@/components/b2b/UserProfileSheet';
 
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
@@ -32,6 +36,10 @@ function B2BDashboardContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -46,6 +54,8 @@ function B2BDashboardContent() {
       { ...B2B_SHORTCUTS.NAVIGATE_SETTINGS, action: () => setActiveTab('settings') },
       { ...B2B_SHORTCUTS.HELP, action: () => setShowShortcuts(prev => !prev) },
       { ...B2B_SHORTCUTS.TOGGLE_THEME, action: () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark') },
+      { key: 'k', ctrl: true, description: 'Open search', action: () => setShowSearch(true) },
+      { key: '/', description: 'Open search', action: () => setShowSearch(true) },
     ],
   });
 
@@ -188,6 +198,20 @@ function B2BDashboardContent() {
             })()}
           </Link>
           <div className="flex items-center gap-2">
+            {/* Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSearch(true)}
+              className="text-muted-foreground hover:text-foreground"
+              title="Search (Ctrl+K or /)"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="ml-2 hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
             {/* Help Button */}
             <HelpButton 
               tourFilter={(tour) => tour.id.startsWith('admin-')}
@@ -237,6 +261,11 @@ function B2BDashboardContent() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 pt-8 pb-24 sm:pb-8">
+        {/* Employee-specific view: show tasks instead of admin tabs */}
+        {companyUser?.role === 'employee' ? (
+          <EmployeeTasksView />
+        ) : (
+          <>
         {/* Inject dynamic styles for active tabs using company colors */}
         <style>{`
           .b2b-tab[data-state=active] {
@@ -259,7 +288,7 @@ function B2BDashboardContent() {
                   Overview
                 </TabsTrigger>
               )}
-              {permissions.canManageUsers && (
+              {(permissions.canManageUsers || permissions.canViewUsers) && (
                 <TabsTrigger 
                   value="users" 
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
@@ -267,7 +296,7 @@ function B2BDashboardContent() {
                   Users
                 </TabsTrigger>
               )}
-              {permissions.canManageCandidates && (
+              {(permissions.canManageCandidates || permissions.canViewCandidates) && (
                 <TabsTrigger 
                   value="candidates" 
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
@@ -297,6 +326,14 @@ function B2BDashboardContent() {
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
                   Work Matrix
+                </TabsTrigger>
+              )}
+              {permissions.canManageSettings && (
+                <TabsTrigger 
+                  value="roles" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                >
+                  Roles
                 </TabsTrigger>
               )}
               {permissions.canViewOverview && (
@@ -329,11 +366,18 @@ function B2BDashboardContent() {
           </TabsContent>
 
           <TabsContent value="users" className="mt-0 break-words">
-            <UsersTab company={company} />
+            <UsersTab 
+              company={company} 
+              readOnly={!permissions.canManageUsers}
+            />
           </TabsContent>
 
           <TabsContent value="candidates" className="mt-0 break-words">
-            <CandidatesTab company={company} />
+            <CandidatesTab 
+              company={company} 
+              canHireCandidates={permissions.canHireCandidates}
+              canManageCandidates={permissions.canManageCandidates}
+            />
           </TabsContent>
 
           <TabsContent value="assessments" className="mt-0 break-words">
@@ -355,6 +399,10 @@ function B2BDashboardContent() {
             <WorkAssigningMatrixTab />
           </TabsContent>
 
+          <TabsContent value="roles" className="mt-0 break-words">
+            <RolesTab company={company} />
+          </TabsContent>
+
           <TabsContent value="settings" className="mt-0 break-words">
             <SettingsTab 
               company={company} 
@@ -368,6 +416,8 @@ function B2BDashboardContent() {
             <AdvancedAnalyticsDashboard companyId={company.id} />
           </TabsContent>
         </Tabs>
+          </>
+        )}
       </main>
 
       {/* Mobile Bottom Navigation */}
@@ -379,6 +429,38 @@ function B2BDashboardContent() {
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
+
+      {/* Global Search Dialog */}
+      {company && (
+        <GlobalSearch
+          companyId={company.id}
+          open={showSearch}
+          onOpenChange={setShowSearch}
+          onSelectUser={(userId) => {
+            setSelectedUserId(userId);
+            setShowUserProfile(true);
+          }}
+          onSelectCandidate={(candidateId) => {
+            setSelectedCandidateId(candidateId);
+            setActiveTab('candidates');
+          }}
+          onSelectTask={() => {
+            setActiveTab('overview');
+          }}
+        />
+      )}
+
+      {/* User Profile Sheet */}
+      {company && (
+        <UserProfileSheet
+          userId={selectedUserId}
+          companyId={company.id}
+          open={showUserProfile}
+          onOpenChange={setShowUserProfile}
+          readOnly={!permissions?.canManageUsers}
+          onUserUpdate={refreshCompany}
+        />
+      )}
     </div>
   );
 }

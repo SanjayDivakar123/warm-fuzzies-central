@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TruncatedText } from "@/components/ui/truncated-text";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +32,7 @@ import {
   RotateCcw,
   RefreshCw,
   Sparkles,
+  Eye,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -52,10 +54,14 @@ import PromoteToAdminModal from './PromoteToAdminModal';
 import ManageAdminModal from './ManageAdminModal';
 import InviteUserModal from './InviteUserModal';
 import UserDetailModal from './UserDetailModal';
+import UserProfileSheet from './UserProfileSheet';
 
 interface UsersTabProps {
   company: any;
   onCompanyUpdate?: () => void;
+  readOnly?: boolean; // For partners: view-only mode, no editing/inviting
+  selectedUserId?: string | null; // Open profile for this user
+  onClearSelectedUser?: () => void; // Clear the selected user
 }
 
 const MAX_INVITES = 3;
@@ -96,7 +102,7 @@ const PREDEFINED_SKILLS = [
 
 type UserFilter = 'all' | 'pending_reminders' | 'completed';
 
-export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
+export default function UsersTab({ company, onCompanyUpdate, readOnly = false, selectedUserId, onClearSelectedUser }: UsersTabProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -128,8 +134,18 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
   const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
   const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
   const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
   const { toast } = useToast();
   const { permissions } = useCompany();
+
+  // Handle external selectedUserId prop
+  useEffect(() => {
+    if (selectedUserId) {
+      setProfileUserId(selectedUserId);
+      setShowProfileSheet(true);
+    }
+  }, [selectedUserId]);
 
   // Identify the super admin (first admin created for the company)
   const superAdminId = users
@@ -759,6 +775,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!readOnly && (
             <div className="flex flex-wrap gap-2" data-tour="bulk-actions">
               <Button onClick={() => setShowInviteUser(true)} className="flex-1 sm:flex-none min-w-[120px]">
                 <Plus className="h-4 w-4 mr-2" />
@@ -815,6 +832,7 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                 </>
               )}
             </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Active users: {users.filter((u: any) => u.status !== "revoked").length}
             </p>
@@ -952,12 +970,21 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                           />
                         ) : null}
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
-                          {user.full_name || <span className="text-muted-foreground">Not set</span>}
-                        </span>
+                      <TableCell className="max-w-[140px]">
+                        <TruncatedText 
+                          text={user.full_name} 
+                          fallback={<span className="text-muted-foreground">Not set</span>}
+                          maxWidth="140px"
+                          className="text-sm"
+                        />
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
+                      <TableCell className="max-w-[180px]">
+                        <TruncatedText 
+                          text={user.email} 
+                          maxWidth="180px"
+                          className="text-sm"
+                        />
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <Badge 
@@ -1043,6 +1070,21 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
                       <TableCell className="hidden lg:table-cell">{new Date(user.invited_at).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  setProfileUserId(user.id);
+                                  setShowProfileSheet(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View profile</TooltipContent>
+                          </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button variant="outline" size="sm" onClick={() => toggleExpanded(user.id)}>
@@ -1629,6 +1671,22 @@ export default function UsersTab({ company, onCompanyUpdate }: UsersTabProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* User Profile Sheet */}
+        <UserProfileSheet
+          userId={profileUserId}
+          companyId={company.id}
+          open={showProfileSheet}
+          onOpenChange={(open) => {
+            setShowProfileSheet(open);
+            if (!open) {
+              setProfileUserId(null);
+              onClearSelectedUser?.();
+            }
+          }}
+          readOnly={readOnly || !permissions?.canManageUsers}
+          onUserUpdate={fetchUsers}
+        />
       </div>
     </TooltipProvider>
   );

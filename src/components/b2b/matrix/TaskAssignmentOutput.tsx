@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { Check, User, Users, Brain, Target, Briefcase, Activity, Lightbulb, Mail, Bell, BellOff, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -74,6 +75,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   const [isApproving, setIsApproving] = useState(false);
   const [employees, setEmployees] = useState<Record<string, any>>({});
   const [allEmployees, setAllEmployees] = useState<EmployeeOption[]>([]);
+  const [currentUserCompanyId, setCurrentUserCompanyId] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [useManualSelection, setUseManualSelection] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -83,7 +85,25 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
   useEffect(() => {
     fetchEmployeeDetails();
     fetchAllEmployees();
+    fetchCurrentUserCompanyId();
   }, [assignment, companyId]);
+
+  // Fetch current user's company_users record to prevent self-assignment
+  const fetchCurrentUserCompanyId = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('company_users')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('user_id', user.id)
+      .single();
+    if (data) {
+      setCurrentUserCompanyId(data.id);
+    }
+  };
+
+  // Filter out current user from assignable employees (can't assign work to yourself)
+  const assignableEmployees = allEmployees.filter(emp => emp.id !== currentUserCompanyId);
 
   const fetchAllEmployees = async () => {
     const { data } = await supabase
@@ -157,6 +177,16 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
       toast({
         title: 'No assignee selected',
         description: 'Please select an employee or use the AI recommendation',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Prevent self-assignment
+    if (finalAssigneeId === currentUserCompanyId) {
+      toast({
+        title: 'Cannot assign to yourself',
+        description: 'You cannot assign work to yourself. Please select a different team member.',
         variant: 'destructive'
       });
       return;
@@ -268,12 +298,13 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
           <CardContent>
             <div className="space-y-2">
               <Label>Select Employee</Label>
+              <p className="text-xs text-muted-foreground">You cannot assign work to yourself</p>
               <Select value={selectedEmployeeId || ''} onValueChange={setSelectedEmployeeId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose an employee..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {allEmployees.map((emp) => (
+                  {assignableEmployees.map((emp) => (
                     <SelectItem key={emp.id} value={emp.id}>
                       <div className="flex items-center gap-2">
                         <div className={cn(
@@ -291,7 +322,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
               </Select>
               {manuallySelectedEmployee && (
                 <div className="flex items-center gap-3 mt-3 p-3 rounded-lg bg-muted/50">
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
                     <AvatarFallback className={cn(
                       'text-white',
                       manuallySelectedEmployee.dominantColor && roleColorInfo[manuallySelectedEmployee.dominantColor]?.color
@@ -299,9 +330,17 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
                       {getDisplayName(manuallySelectedEmployee).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium">{getDisplayName(manuallySelectedEmployee)}</p>
-                    <p className="text-xs text-muted-foreground">{manuallySelectedEmployee.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <TruncatedText 
+                      text={getDisplayName(manuallySelectedEmployee)} 
+                      maxWidth="200px"
+                      className="font-medium"
+                    />
+                    <TruncatedText 
+                      text={manuallySelectedEmployee.email} 
+                      maxWidth="200px"
+                      className="text-xs text-muted-foreground"
+                    />
                     {manuallySelectedEmployee.dominantColor && roleColorInfo[manuallySelectedEmployee.dominantColor] && (
                       <p className="text-xs text-muted-foreground">
                         {roleColorInfo[manuallySelectedEmployee.dominantColor].label}: {roleColorInfo[manuallySelectedEmployee.dominantColor].description}
@@ -329,7 +368,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
             <CardContent>
               {primaryEmployee ? (
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
                     <AvatarFallback className={cn(
                       'text-white',
                       primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor]?.color
@@ -337,9 +376,17 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
                       {getDisplayName(primaryEmployee).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium">{getDisplayName(primaryEmployee)}</p>
-                    <p className="text-xs text-muted-foreground">{primaryEmployee.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <TruncatedText 
+                      text={getDisplayName(primaryEmployee)} 
+                      maxWidth="180px"
+                      className="font-medium"
+                    />
+                    <TruncatedText 
+                      text={primaryEmployee.email} 
+                      maxWidth="180px"
+                      className="text-xs text-muted-foreground"
+                    />
                     {primaryEmployee.dominantColor && roleColorInfo[primaryEmployee.dominantColor] && (
                       <p className="text-xs text-muted-foreground">
                         {roleColorInfo[primaryEmployee.dominantColor].label}: {roleColorInfo[primaryEmployee.dominantColor].description}
@@ -364,7 +411,7 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
             <CardContent>
               {secondaryEmployee ? (
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
                     <AvatarFallback className={cn(
                       'text-white',
                       secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor]?.color
@@ -372,9 +419,17 @@ export function TaskAssignmentOutput({ task, assignment, companyId, onApproved }
                       {getDisplayName(secondaryEmployee).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium">{getDisplayName(secondaryEmployee)}</p>
-                    <p className="text-xs text-muted-foreground">{secondaryEmployee.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <TruncatedText 
+                      text={getDisplayName(secondaryEmployee)} 
+                      maxWidth="180px"
+                      className="font-medium"
+                    />
+                    <TruncatedText 
+                      text={secondaryEmployee.email} 
+                      maxWidth="180px"
+                      className="text-xs text-muted-foreground"
+                    />
                     {secondaryEmployee.dominantColor && roleColorInfo[secondaryEmployee.dominantColor] && (
                       <p className="text-xs text-muted-foreground">
                         {roleColorInfo[secondaryEmployee.dominantColor].label}: {roleColorInfo[secondaryEmployee.dominantColor].description}

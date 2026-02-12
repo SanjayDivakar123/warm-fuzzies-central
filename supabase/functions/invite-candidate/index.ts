@@ -136,8 +136,11 @@ serve(async (req) => {
                           Take Assessment
                         </a>
                       </div>
-                      <p style="color: #999999; font-size: 14px; text-align: center; margin: 30px 0 0;">
+                      <p style="color: #999999; font-size: 14px; text-align: center; margin: 20px 0 5px;">
                         Your access code: <strong>${candidate.invite_code}</strong>
+                      </p>
+                      <p style="color: #e74c3c; font-size: 12px; text-align: center; margin: 0;">
+                        ⏰ This link expires in 7 days
                       </p>
                     </td>
                   </tr>

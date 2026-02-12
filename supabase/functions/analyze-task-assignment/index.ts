@@ -103,7 +103,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    let { taskId, companyId, title, description, quadrant, importance, urgency, skills, department } = body;
+    let { taskId, companyId, title, description, quadrant, importance, urgency, skills, department, createdByUserId } = body;
 
     // Input validation
     if (!companyId) {
@@ -176,12 +176,20 @@ serve(async (req) => {
     console.log('Analyzing task assignment:', { taskId, companyId, title, quadrant });
 
     // Fetch all employees with completed assessments
-    const { data: employees, error: empError } = await supabase
+    let employeesQuery = supabase
       .from('company_users')
-      .select('id, email, role, status, assessment_result_id, job_role, skills, full_name')
+      .select('id, email, role, status, assessment_result_id, job_role, skills, full_name, user_id')
       .eq('company_id', companyId)
       .eq('status', 'active')
       .not('assessment_result_id', 'is', null);
+
+    // Exclude task creator from assignment (can't assign work to yourself)
+    if (createdByUserId && isValidUUID(createdByUserId)) {
+      employeesQuery = employeesQuery.neq('user_id', createdByUserId);
+      console.log('Excluding task creator from assignment:', createdByUserId);
+    }
+
+    const { data: employees, error: empError } = await employeesQuery;
 
     if (empError) {
       console.error('Error fetching employees:', empError);

@@ -447,7 +447,8 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Dominant Color</TableHead>
+                  <TableHead>RoleColor</TableHead>
+                  <TableHead>Designation</TableHead>
                   <TableHead>Completed</TableHead>
                   <TableHead>Quick Breakdown</TableHead>
                   <TableHead>Actions</TableHead>
@@ -465,6 +466,9 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                         ? getColorBadge(assessment.results.dominantColor)
                         : <span className="text-muted-foreground">—</span>
                       }
+                    </TableCell>
+                    <TableCell>
+                      {assessment.job_role || <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
                       {new Date(assessment.assessment_completed_at).toLocaleDateString()}

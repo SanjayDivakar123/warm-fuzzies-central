@@ -40,7 +40,10 @@ interface CompanyUser {
 interface RolePermissions {
   canViewOverview: boolean;
   canManageUsers: boolean;
+  canViewUsers: boolean; // Read-only view of users list
   canManageCandidates: boolean;
+  canViewCandidates: boolean; // Read-only + add candidates (no hire)
+  canHireCandidates: boolean; // Can convert candidates to employees
   canViewAssessments: boolean;
   canManageReminders: boolean;
   canUseWorkMatrix: boolean;
@@ -54,7 +57,10 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
   admin: {
     canViewOverview: true,
     canManageUsers: true,
+    canViewUsers: true,
     canManageCandidates: true,
+    canViewCandidates: true,
+    canHireCandidates: true,
     canViewAssessments: true,
     canManageReminders: true,
     canUseWorkMatrix: true,
@@ -66,7 +72,10 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
   hr: {
     canViewOverview: true,
     canManageUsers: true,
+    canViewUsers: true,
     canManageCandidates: true,
+    canViewCandidates: true,
+    canHireCandidates: true,
     canViewAssessments: true,
     canManageReminders: true,
     canUseWorkMatrix: false,
@@ -78,7 +87,10 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
   partner: {
     canViewOverview: true,
     canManageUsers: false,
+    canViewUsers: true, // Can view users list (read-only)
     canManageCandidates: false,
+    canViewCandidates: true, // Can view and add candidates
+    canHireCandidates: false, // Cannot hire candidates
     canViewAssessments: true,
     canManageReminders: false,
     canUseWorkMatrix: true,
@@ -90,7 +102,10 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
   employee: {
     canViewOverview: false,
     canManageUsers: false,
+    canViewUsers: false,
     canManageCandidates: false,
+    canViewCandidates: false,
+    canHireCandidates: false,
     canViewAssessments: false,
     canManageReminders: false,
     canUseWorkMatrix: false,

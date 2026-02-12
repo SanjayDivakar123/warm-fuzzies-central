@@ -105,6 +105,29 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Check if invite code has expired (7 days from invited_at)
+    if (employee.status === 'invited' && employee.invited_at) {
+      const invitedAt = new Date(employee.invited_at);
+      const expiresAt = new Date(invitedAt.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const now = new Date();
+      
+      if (now > expiresAt) {
+        console.log('Invite code expired:', {
+          invitedAt: invitedAt.toISOString(),
+          expiresAt: expiresAt.toISOString(),
+          now: now.toISOString()
+        });
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Your invite code has expired. Please request a new invite from your administrator.',
+            expired: true
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     // Update employee status to active and set joined_at if first time
     if (employee.status === 'invited') {
       const { error: updateError } = await supabase

@@ -143,11 +143,21 @@ export default function CompanyLogin() {
       });
 
       if (fnError || !data.success) {
-        toast({
-          title: "Login Failed",
-          description: data?.message || "Invalid email or invite code combination.",
-          variant: "destructive"
-        });
+        // Check if invite expired
+        if (data?.expired) {
+          toast({
+            title: "Invite Code Expired",
+            description: "Your invite code has expired after 7 days. Please contact your administrator to request a new invite.",
+            variant: "destructive",
+            duration: 10000
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: data?.message || "Invalid email or invite code combination.",
+            variant: "destructive"
+          });
+        }
         return;
       }
 

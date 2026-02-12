@@ -155,6 +155,17 @@ export const CandidatePortalProvider = ({ children }: CandidatePortalProviderPro
             .maybeSingle();
 
           if (candidateData) {
+            // Check if invite has expired (7 days from created_at)
+            if (candidateData.created_at && candidateData.status === 'invited') {
+              const createdAt = new Date(candidateData.created_at);
+              const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+              if (new Date() > expiresAt) {
+                setError('Your invitation link has expired after 7 days. Please contact the company to request a new invite.');
+                setLoading(false);
+                return;
+              }
+            }
+
             setPortalMode('invite');
             setCandidate(candidateData as Candidate);
             

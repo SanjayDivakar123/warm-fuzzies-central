@@ -96,7 +96,8 @@ export function TaskIntakeForm({ companyId, onTaskCreated, isAnalyzing, setIsAna
           importance,
           urgency,
           skills,
-          department: department.trim() || null
+          department: department.trim() || null,
+          createdByUserId: user.id // Exclude task creator from assignment recommendations
         }
       });
 

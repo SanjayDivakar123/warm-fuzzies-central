@@ -121,7 +121,8 @@ async function sendInviteEmail(
                     <tr>
                       <td style="padding: 28px; text-align: center;">
                         <p style="margin: 0 0 12px 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Invite Code</p>
-                        <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 6px; color: ${primaryColor}; font-family: 'Courier New', monospace;">${inviteCode}</p>
+                        <p style="margin: 0 0 8px; font-size: 36px; font-weight: 700; letter-spacing: 6px; color: ${primaryColor}; font-family: 'Courier New', monospace;">${inviteCode}</p>
+                        <p style="margin: 0; font-size: 12px; color: #e74c3c;">⏰ This code expires in 7 days</p>
                       </td>
                     </tr>
                   </table>

@@ -27,6 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { exportDashboardPdf } from '@/lib/dashboardPdfExport';
 import RoleAnalysisCard from './RoleAnalysisCard';
+import ActivityFeed from './ActivityFeed';
 
 interface OverviewTabProps {
   company: any;
@@ -386,34 +387,40 @@ export default function OverviewTab({ company }: OverviewTabProps) {
         </Card>
       </div>
 
-      {/* Color Distribution */}
-      {stats.completedAssessments > 0 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-              Team Color Distribution
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Leadership style breakdown across {stats.completedAssessments} completed assessments
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-3">
-              {Object.entries(stats.colorDistribution).map(([color, count]) => {
-                const info = colorLabels[color as keyof typeof colorLabels];
-                return (
-                  <div key={color} className="text-center p-3 rounded-lg bg-muted/30">
-                    <div className={`w-8 h-8 mx-auto rounded-full mb-2 ${info.color}`} />
-                    <p className="text-lg font-semibold">{count}</p>
-                    <p className="text-xs text-muted-foreground">{info.label}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Activity Feed & Color Distribution */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Activity Feed */}
+        <ActivityFeed companyId={company.id} maxItems={8} />
+
+        {/* Color Distribution */}
+        {stats.completedAssessments > 0 && (
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                Team Color Distribution
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Leadership style breakdown across {stats.completedAssessments} completed assessments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-3">
+                {Object.entries(stats.colorDistribution).map(([color, count]) => {
+                  const info = colorLabels[color as keyof typeof colorLabels];
+                  return (
+                    <div key={color} className="text-center p-3 rounded-lg bg-muted/30">
+                      <div className={`w-8 h-8 mx-auto rounded-full mb-2 ${info.color}`} />
+                      <p className="text-lg font-semibold">{count}</p>
+                      <p className="text-xs text-muted-foreground">{info.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Admin Assessment Card */}
       {adminUser && (

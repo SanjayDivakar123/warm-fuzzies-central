@@ -34,6 +34,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AIFollowUpChat from './AIFollowUpChat';
+import { ExpandableText, ExpandableOverview } from '@/components/ui/expandable-text';
+import { InsightUsageMeter, type InsightUsage } from './InsightUsageMeter';
+import InsightPaywallModal from './InsightPaywallModal';
+import { getInsightUsage, incrementInsightUsage } from '@/lib/insightMetering';
 
 interface TeamMember {
   id: string;
@@ -136,6 +140,8 @@ export default function TeamInsightsModal({
   const [insights, setInsights] = useState<InsightData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
+  const [usage, setUsage] = useState<InsightUsage | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
   const { toast } = useToast();
 
   const currentTeamHash = generateTeamHash(teamMembers);
@@ -224,11 +230,65 @@ export default function TeamInsightsModal({
     }
   };
 
-  const generateInsights = async () => {
+  const generateInsights = async (skipUsageCheck = false, forceRegenerate = false) => {
+    // First, check if we have cached insights with matching hash
+    // This prevents re-generating (and charging) when nothing has changed
+    // Skip this check if forceRegenerate is true
+    if (!forceRegenerate) {
+      try {
+        const { data: cachedData } = await supabase
+          .from('team_insights')
+          .select('*')
+          .eq('company_id', companyId)
+          .single();
+        
+        if (cachedData && cachedData.team_hash === currentTeamHash) {
+          // Team unchanged - use cached insights without consuming usage
+          setInsights(cachedData.insights as unknown as InsightData);
+          toast({
+            title: 'Using cached insights',
+            description: 'Your team composition hasn\'t changed. Showing previously generated insights.',
+          });
+          return;
+        }
+      } catch {
+        // No cached data found, proceed with generation
+      }
+    }
+
+    // Check usage limits before generating (unless loading from cache)
+    if (!skipUsageCheck) {
+      const currentUsage = await getInsightUsage(companyId);
+      setUsage(currentUsage);
+      
+      if (!currentUsage.canGenerate) {
+        setShowPaywall(true);
+        return;
+      }
+      
+      if (currentUsage.requiresPayment) {
+        setShowPaywall(true);
+        return;
+      }
+    }
+    
     setLoading(true);
     setError(null);
 
     try {
+      // Increment usage count before generating
+      if (!skipUsageCheck) {
+        const result = await incrementInsightUsage(companyId);
+        if (!result.success) {
+          if (result.needsPayment) {
+            setShowPaywall(true);
+            return;
+          }
+          throw new Error('Failed to record usage');
+        }
+        setUsage(result.usage);
+      }
+      
       const { data, error: fnError } = await supabase.functions.invoke('generate-team-insights', {
         body: {
           companyId,
@@ -300,13 +360,36 @@ export default function TeamInsightsModal({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Lightbulb className="h-6 w-6 text-primary" />
-            Team Leadership Insights
-          </DialogTitle>
-          <DialogDescription>
-            AI-powered analysis of your team's leadership styles and role alignment
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Team Leadership Insights
+              </DialogTitle>
+              <DialogDescription>
+                AI-powered analysis of your team's leadership styles and role alignment
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              {insights && !loading && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => generateInsights(false, true)}
+                  disabled={loading}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Re-Do
+                </Button>
+              )}
+              <div className="w-48">
+                <InsightUsageMeter 
+                  companyId={companyId} 
+                  onUsageChange={setUsage}
+                />
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6">
@@ -342,7 +425,10 @@ export default function TeamInsightsModal({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-muted-foreground leading-relaxed">{insights.overallAnalysis}</p>
+                    <ExpandableOverview 
+                      text={insights.overallAnalysis} 
+                      className="text-muted-foreground leading-relaxed" 
+                    />
                     {insights.teamDynamics && (
                       <>
                         <Separator />
@@ -351,7 +437,10 @@ export default function TeamInsightsModal({
                             <Sparkles className="h-4 w-4 text-primary" />
                             Team Dynamics
                           </p>
-                          <p className="text-sm text-muted-foreground">{insights.teamDynamics}</p>
+                          <ExpandableText 
+                            text={insights.teamDynamics} 
+                            className="text-sm text-muted-foreground" 
+                          />
                         </div>
                       </>
                     )}
@@ -464,18 +553,20 @@ export default function TeamInsightsModal({
                                 {/* Leadership Style & Match Analysis */}
                                 <div>
                                   <p className="font-medium text-sm mb-2">Leadership-Role Match Analysis</p>
-                                  <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {member.matchAnalysis}
-                                  </p>
+                                  <ExpandableText 
+                                    text={member.matchAnalysis} 
+                                    className="text-sm text-muted-foreground leading-relaxed" 
+                                  />
                                 </div>
 
                                 {/* Leadership Style */}
                                 {member.leadershipStyle && (
                                   <div>
                                     <p className="font-medium text-sm mb-2">Leadership Style</p>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                      {member.leadershipStyle}
-                                    </p>
+                                    <ExpandableText 
+                                      text={member.leadershipStyle} 
+                                      className="text-sm text-muted-foreground leading-relaxed" 
+                                    />
                                   </div>
                                 )}
 
@@ -483,9 +574,10 @@ export default function TeamInsightsModal({
                                 {member.workplaceContribution && (
                                   <div>
                                     <p className="font-medium text-sm mb-2">Workplace Contribution</p>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                      {member.workplaceContribution}
-                                    </p>
+                                    <ExpandableText 
+                                      text={member.workplaceContribution} 
+                                      className="text-sm text-muted-foreground leading-relaxed" 
+                                    />
                                   </div>
                                 )}
 
@@ -523,7 +615,10 @@ export default function TeamInsightsModal({
                                 {member.potentialChallenges && (
                                   <div className="p-3 rounded-lg bg-muted/50">
                                     <p className="font-medium text-sm mb-2">Potential Challenges</p>
-                                    <p className="text-sm text-muted-foreground">{member.potentialChallenges}</p>
+                                    <ExpandableText 
+                                      text={member.potentialChallenges} 
+                                      className="text-sm text-muted-foreground" 
+                                    />
                                   </div>
                                 )}
                                 {/* Actionable Advice */}
@@ -533,7 +628,10 @@ export default function TeamInsightsModal({
                                       <Lightbulb className="h-4 w-4" />
                                       Actionable Advice
                                     </p>
-                                    <p className="text-sm text-blue-700 dark:text-blue-400">{member.actionableAdvice}</p>
+                                    <ExpandableText 
+                                      text={member.actionableAdvice} 
+                                      className="text-sm text-blue-700 dark:text-blue-400" 
+                                    />
                                   </div>
                                 )}
 
@@ -662,6 +760,17 @@ export default function TeamInsightsModal({
           </Button>
         </div>
       </DialogContent>
+      
+      <InsightPaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onPurchaseComplete={() => {
+          setShowPaywall(false);
+          generateInsights();
+        }}
+        companyId={companyId}
+        insightCredits={usage?.remaining ?? 0}
+      />
     </Dialog>
   );
 }
