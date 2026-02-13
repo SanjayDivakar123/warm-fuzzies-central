@@ -20,6 +20,8 @@ async function sha256(input: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+//Example Push Notification Payload
+
 // Validate API key and return company context
 async function validateApiKey(rawKey: string, supabase: any): Promise<{ valid: boolean; company_id?: string; permissions?: string[]; error?: string }> {
   if (!rawKey) {
