@@ -142,7 +142,7 @@ async function sendInviteEmail(
                     <tr>
                       <td style="vertical-align: middle; padding-right: 8px;">
                         <a href="https://rolecolorfinder.com" style="text-decoration: none;">
-                          <img src="https://rolecolorfinder.lovable.app/rcf-logo.png" alt="RoleColorFinder" width="100" height="24" style="display: block;">
+                          <img src="https://rolecolorfinder.com/rcf-logo.png" alt="RoleColorFinder" width="100" height="24" style="display: block;">
                         </a>
                       </td>
                       <td style="vertical-align: middle;">

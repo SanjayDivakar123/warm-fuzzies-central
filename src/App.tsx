@@ -8,6 +8,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { routeConfig } from "./router";
+import { HelmetProvider } from "react-helmet-async";
 
 import { AuthProvider } from "./contexts/AuthContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
@@ -48,27 +49,29 @@ const router = createBrowserRouter([
 
 const App = () => {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      forcedTheme="light"
-      storageKey="rcf-theme"
-    >
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <CompanyProvider>
-            <TooltipProvider>
-              <HelpTourProvider>
-                <Toaster />
-                <Sonner />
-                <TourTooltip />
-                <RouterProvider router={router} />
-              </HelpTourProvider>
-            </TooltipProvider>
-          </CompanyProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        forcedTheme="light"
+        storageKey="rcf-theme"
+      >
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <CompanyProvider>
+              <TooltipProvider>
+                <HelpTourProvider>
+                  <Toaster />
+                  <Sonner />
+                  <TourTooltip />
+                  <RouterProvider router={router} />
+                </HelpTourProvider>
+              </TooltipProvider>
+            </CompanyProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 };
 

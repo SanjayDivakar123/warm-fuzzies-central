@@ -60,7 +60,7 @@ serve(async (req) => {
       logStep("Created new customer", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://rolecolorfinder.lovable.app";
+    const origin = req.headers.get("origin") || "https://rolecolorfinder.com";
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

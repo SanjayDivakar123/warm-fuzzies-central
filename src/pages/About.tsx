@@ -41,7 +41,7 @@ const About = () => {
         "@type": "Organization",
         "name": "Role Color Finder",
         "url": window.location.origin,
-        "logo": `${window.location.origin}/lovable-uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png`,
+        "logo": `${window.location.origin}/uploads/fe97ed85-5d66-4caf-bd60-b8463d40052f.png`,
         "description": "Leadership assessment platform helping professionals discover their natural leadership style through color psychology.",
         "foundingDate": "2024",
         "founder": {

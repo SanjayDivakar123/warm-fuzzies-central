@@ -132,7 +132,7 @@ serve(async (req) => {
 
     if (action === "setup_payment_method") {
       // Create a Checkout Session in setup mode
-      const origin = req.headers.get("origin") || success_url?.split('/').slice(0, 3).join('/') || "https://rolecolorfinder.lovable.app";
+      const origin = req.headers.get("origin") || success_url?.split('/').slice(0, 3).join('/') || "https://rolecolorfinder.com";
       
       const session = await stripe.checkout.sessions.create({
         customer: customerId,

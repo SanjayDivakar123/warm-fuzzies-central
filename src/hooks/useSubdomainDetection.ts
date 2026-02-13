@@ -16,9 +16,6 @@ const MAIN_DOMAIN = 'rolecolorfinder.com';
 const IGNORED_HOSTS = [
   'localhost',
   '127.0.0.1',
-  'lovable.app',
-  'lovable.dev',
-  'preview.lovable.app',
 ];
 
 /**

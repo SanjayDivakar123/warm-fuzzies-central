@@ -47,7 +47,7 @@ export function Footer() {
             {/* Logo & Description */}
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <img src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor™ Finder" className="h-8 w-auto" />
+                <img src="/uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" alt="RoleColor™ Finder" className="h-8 w-auto" />
               </div>
               <p className="text-background/80 text-sm leading-relaxed">
                 Discover your unique leadership color profile with our science-backed assessment system.
@@ -93,7 +93,7 @@ export function Footer() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-background/80 text-sm">
                 <span>&copy; {new Date().getFullYear()}</span>
-                <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-4 w-auto" />
+                <img src="/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-4 w-auto" />
                 <span>All rights reserved.</span>
               </div>
               <div className="flex gap-6">

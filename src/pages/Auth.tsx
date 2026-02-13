@@ -373,7 +373,7 @@ export const Auth = () => {
               <div className="text-center">
                 <div className="flex items-center justify-center mx-auto mb-4">
                   <img 
-                    src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+                    src="/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
                     alt="RoleColor™ Finder" 
                     className="h-12 w-auto"
                   />

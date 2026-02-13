@@ -344,6 +344,209 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          calendar_integration_id: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          end_time: string
+          external_event_id: string | null
+          id: string
+          interview_id: string | null
+          last_synced_at: string | null
+          location: string | null
+          meeting_link: string | null
+          start_time: string
+          sync_error: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          calendar_integration_id?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          end_time: string
+          external_event_id?: string | null
+          id?: string
+          interview_id?: string | null
+          last_synced_at?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          start_time: string
+          sync_error?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          calendar_integration_id?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          external_event_id?: string | null
+          id?: string
+          interview_id?: string | null
+          last_synced_at?: string | null
+          location?: string | null
+          meeting_link?: string | null
+          start_time?: string
+          sync_error?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_calendar_integration_id_fkey"
+            columns: ["calendar_integration_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_integrations: {
+        Row: {
+          access_token: string | null
+          calendar_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_connected: boolean | null
+          last_synced_at: string | null
+          provider: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          calendar_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_integrations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_activities: {
+        Row: {
+          activity_type: string
+          application_id: string | null
+          candidate_id: string
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          job_posting_id: string | null
+          metadata: Json | null
+          performed_by: string | null
+          performed_by_name: string | null
+          title: string
+        }
+        Insert: {
+          activity_type: string
+          application_id?: string | null
+          candidate_id: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          job_posting_id?: string | null
+          metadata?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          title: string
+        }
+        Update: {
+          activity_type?: string
+          application_id?: string | null
+          candidate_id?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          job_posting_id?: string | null
+          metadata?: Json | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_activities_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_activities_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_activities_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_application_links: {
         Row: {
           applications_count: number | null
@@ -403,6 +606,402 @@ export type Database = {
           },
         ]
       }
+      candidate_applications: {
+        Row: {
+          application_link_id: string | null
+          applied_at: string | null
+          candidate_id: string
+          created_at: string | null
+          current_stage_id: string | null
+          hired_at: string | null
+          id: string
+          internal_notes: string | null
+          job_posting_id: string
+          referrer_id: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
+          source: string | null
+          stage_entered_at: string | null
+          updated_at: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          application_link_id?: string | null
+          applied_at?: string | null
+          candidate_id: string
+          created_at?: string | null
+          current_stage_id?: string | null
+          hired_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_posting_id: string
+          referrer_id?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          source?: string | null
+          stage_entered_at?: string | null
+          updated_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          application_link_id?: string | null
+          applied_at?: string | null
+          candidate_id?: string
+          created_at?: string | null
+          current_stage_id?: string | null
+          hired_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_posting_id?: string
+          referrer_id?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          source?: string | null
+          stage_entered_at?: string | null
+          updated_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_applications_application_link_id_fkey"
+            columns: ["application_link_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_application_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_applications_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_applications_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_applications_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_documents: {
+        Row: {
+          application_id: string | null
+          candidate_id: string
+          company_id: string
+          document_type: string
+          extracted_experience: Json | null
+          extracted_skills: Json | null
+          extracted_text: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          candidate_id: string
+          company_id: string
+          document_type: string
+          extracted_experience?: Json | null
+          extracted_skills?: Json | null
+          extracted_text?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          candidate_id?: string
+          company_id?: string
+          document_type?: string
+          extracted_experience?: Json | null
+          extracted_skills?: Json | null
+          extracted_text?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_documents_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_notes: {
+        Row: {
+          application_id: string | null
+          candidate_id: string
+          company_id: string
+          content: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          is_pinned: boolean | null
+          is_private: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          candidate_id: string
+          company_id: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          is_private?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          candidate_id?: string
+          company_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          is_private?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_notes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_notes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_ratings: {
+        Row: {
+          application_id: string | null
+          candidate_id: string
+          comments: string | null
+          communication: number | null
+          company_id: string
+          created_at: string
+          culture_fit: number | null
+          custom_ratings: Json | null
+          experience: number | null
+          id: string
+          interview_id: string | null
+          overall_rating: number | null
+          rated_by: string | null
+          rated_by_name: string | null
+          recommendation: string | null
+          strengths: string | null
+          technical_skills: number | null
+          updated_at: string
+          weaknesses: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          candidate_id: string
+          comments?: string | null
+          communication?: number | null
+          company_id: string
+          created_at?: string
+          culture_fit?: number | null
+          custom_ratings?: Json | null
+          experience?: number | null
+          id?: string
+          interview_id?: string | null
+          overall_rating?: number | null
+          rated_by?: string | null
+          rated_by_name?: string | null
+          recommendation?: string | null
+          strengths?: string | null
+          technical_skills?: number | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          candidate_id?: string
+          comments?: string | null
+          communication?: number | null
+          company_id?: string
+          created_at?: string
+          culture_fit?: number | null
+          custom_ratings?: Json | null
+          experience?: number | null
+          id?: string
+          interview_id?: string | null
+          overall_rating?: number | null
+          rated_by?: string | null
+          rated_by_name?: string | null
+          recommendation?: string | null
+          strengths?: string | null
+          technical_skills?: number | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_ratings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_ratings_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_ratings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_ratings_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_tag_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          candidate_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          candidate_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          candidate_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_tag_assignments_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_tags: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_tags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
           archived_at: string | null
@@ -423,6 +1022,7 @@ export type Database = {
           id: string
           ideal_role_color: string | null
           invite_code: string | null
+          job_posting_id: string | null
           notes: string | null
           phone: string | null
           position_title: string | null
@@ -453,6 +1053,7 @@ export type Database = {
           id?: string
           ideal_role_color?: string | null
           invite_code?: string | null
+          job_posting_id?: string | null
           notes?: string | null
           phone?: string | null
           position_title?: string | null
@@ -483,6 +1084,7 @@ export type Database = {
           id?: string
           ideal_role_color?: string | null
           invite_code?: string | null
+          job_posting_id?: string | null
           notes?: string | null
           phone?: string | null
           position_title?: string | null
@@ -516,11 +1118,87 @@ export type Database = {
             referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "candidates_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_page_settings: {
+        Row: {
+          about_company: string | null
+          benefits_list: Json | null
+          company_id: string
+          contact_email: string | null
+          created_at: string
+          glassdoor_url: string | null
+          hero_image_url: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          is_enabled: boolean | null
+          linkedin_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          slug: string | null
+          twitter_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          about_company?: string | null
+          benefits_list?: Json | null
+          company_id: string
+          contact_email?: string | null
+          created_at?: string
+          glassdoor_url?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          linkedin_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          slug?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          about_company?: string | null
+          benefits_list?: Json | null
+          company_id?: string
+          contact_email?: string | null
+          created_at?: string
+          glassdoor_url?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          linkedin_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          slug?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_page_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
         ]
       }
       companies: {
         Row: {
           admin_email: string
+          allow_pay_per_insight: boolean | null
           assessment_category: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type: Database["public"]["Enums"]["company_assessment_type"]
           created_at: string | null
@@ -535,6 +1213,10 @@ export type Database = {
           google_sso_enabled: boolean | null
           google_workspace_domain: string | null
           id: string
+          insight_credits: number | null
+          insight_usage_count: number | null
+          insight_usage_month: string | null
+          insights_paid_enabled: boolean | null
           logo_url: string | null
           logo_url_dark: string | null
           ms_teams_notifications_enabled: boolean | null
@@ -554,6 +1236,7 @@ export type Database = {
         }
         Insert: {
           admin_email: string
+          allow_pay_per_insight?: boolean | null
           assessment_category?: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
@@ -568,6 +1251,10 @@ export type Database = {
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
           id?: string
+          insight_credits?: number | null
+          insight_usage_count?: number | null
+          insight_usage_month?: string | null
+          insights_paid_enabled?: boolean | null
           logo_url?: string | null
           logo_url_dark?: string | null
           ms_teams_notifications_enabled?: boolean | null
@@ -587,6 +1274,7 @@ export type Database = {
         }
         Update: {
           admin_email?: string
+          allow_pay_per_insight?: boolean | null
           assessment_category?: Database["public"]["Enums"]["company_assessment_category"]
           assessment_type?: Database["public"]["Enums"]["company_assessment_type"]
           created_at?: string | null
@@ -601,6 +1289,10 @@ export type Database = {
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
           id?: string
+          insight_credits?: number | null
+          insight_usage_count?: number | null
+          insight_usage_month?: string | null
+          insights_paid_enabled?: boolean | null
           logo_url?: string | null
           logo_url_dark?: string | null
           ms_teams_notifications_enabled?: boolean | null
@@ -675,31 +1367,31 @@ export type Database = {
       }
       company_roles: {
         Row: {
-          id: string
           company_id: string
-          name: string
+          created_at: string | null
           description: string | null
+          id: string
+          name: string
           skills: string[] | null
-          created_at: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          id?: string
           company_id: string
-          name: string
+          created_at?: string | null
           description?: string | null
+          id?: string
+          name: string
           skills?: string[] | null
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          id?: string
           company_id?: string
-          name?: string
+          created_at?: string | null
           description?: string | null
+          id?: string
+          name?: string
           skills?: string[] | null
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -813,6 +1505,174 @@ export type Database = {
           },
         ]
       }
+      email_campaign_recipients: {
+        Row: {
+          application_id: string | null
+          campaign_id: string
+          candidate_id: string
+          clicked_at: string | null
+          created_at: string
+          email: string
+          error_message: string | null
+          id: string
+          name: string | null
+          opened_at: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          campaign_id: string
+          candidate_id: string
+          clicked_at?: string | null
+          created_at?: string
+          email: string
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          campaign_id?: string
+          candidate_id?: string
+          clicked_at?: string | null
+          created_at?: string
+          email?: string
+          error_message?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_recipients_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_recipients_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          bounced_count: number | null
+          clicked_count: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          opened_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string | null
+          subject: string
+          target_criteria: Json | null
+          target_job_id: string | null
+          target_stage_id: string | null
+          template_id: string | null
+          total_recipients: number | null
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          bounced_count?: number | null
+          clicked_count?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          opened_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject: string
+          target_criteria?: Json | null
+          target_job_id?: string | null
+          target_stage_id?: string | null
+          template_id?: string | null
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          bounced_count?: number | null
+          clicked_count?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          opened_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject?: string
+          target_criteria?: Json | null
+          target_job_id?: string | null
+          target_stage_id?: string | null
+          template_id?: string | null
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_target_job_id_fkey"
+            columns: ["target_job_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_target_stage_id_fkey"
+            columns: ["target_stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_signups: {
         Row: {
           created_at: string
@@ -836,6 +1696,59 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      email_templates: {
+        Row: {
+          available_variables: string[] | null
+          body_html: string
+          body_text: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          subject: string
+          template_type: Database["public"]["Enums"]["email_template_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          available_variables?: string[] | null
+          body_html: string
+          body_text?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          subject: string
+          template_type: Database["public"]["Enums"]["email_template_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          available_variables?: string[] | null
+          body_html?: string
+          body_text?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          subject?: string
+          template_type?: Database["public"]["Enums"]["email_template_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       family_plan_members: {
         Row: {
@@ -900,6 +1813,329 @@ export type Database = {
         }
         Relationships: []
       }
+      hiring_pipeline_stages: {
+        Row: {
+          auto_send_email_template_id: string | null
+          color_code: string | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_final_stage: boolean | null
+          is_rejection_stage: boolean | null
+          job_posting_id: string
+          name: string
+          stage_order: number
+          stage_type: Database["public"]["Enums"]["hiring_stage_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          auto_send_email_template_id?: string | null
+          color_code?: string | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_final_stage?: boolean | null
+          is_rejection_stage?: boolean | null
+          job_posting_id: string
+          name: string
+          stage_order?: number
+          stage_type?: Database["public"]["Enums"]["hiring_stage_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          auto_send_email_template_id?: string | null
+          color_code?: string | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_final_stage?: boolean | null
+          is_rejection_stage?: boolean | null
+          job_posting_id?: string
+          name?: string
+          stage_order?: number
+          stage_type?: Database["public"]["Enums"]["hiring_stage_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_pipeline_stages_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_pipeline_stages_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_team_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          id: string
+          job_posting_id: string
+          team_role: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          id?: string
+          job_posting_id: string
+          team_role?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          id?: string
+          job_posting_id?: string
+          team_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_team_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_team_members_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interviews: {
+        Row: {
+          application_id: string
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          duration_minutes: number | null
+          feedback: Json | null
+          id: string
+          instructions_for_candidate: string | null
+          interview_type: Database["public"]["Enums"]["interview_type"]
+          interviewer_ids: string[] | null
+          location: string | null
+          meeting_link: string | null
+          organizer_id: string | null
+          overall_score: number | null
+          recommendation: string | null
+          reminder_sent_at: string | null
+          scheduled_at: string
+          stage_id: string | null
+          status: Database["public"]["Enums"]["interview_status"]
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          feedback?: Json | null
+          id?: string
+          instructions_for_candidate?: string | null
+          interview_type?: Database["public"]["Enums"]["interview_type"]
+          interviewer_ids?: string[] | null
+          location?: string | null
+          meeting_link?: string | null
+          organizer_id?: string | null
+          overall_score?: number | null
+          recommendation?: string | null
+          reminder_sent_at?: string | null
+          scheduled_at: string
+          stage_id?: string | null
+          status?: Database["public"]["Enums"]["interview_status"]
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          feedback?: Json | null
+          id?: string
+          instructions_for_candidate?: string | null
+          interview_type?: Database["public"]["Enums"]["interview_type"]
+          interviewer_ids?: string[] | null
+          location?: string | null
+          meeting_link?: string | null
+          organizer_id?: string | null
+          overall_score?: number | null
+          recommendation?: string | null
+          reminder_sent_at?: string | null
+          scheduled_at?: string
+          stage_id?: string | null
+          status?: Database["public"]["Enums"]["interview_status"]
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interviews_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interviews_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          applications_count: number | null
+          closes_at: string | null
+          company_id: string
+          company_role_id: string | null
+          created_at: string | null
+          department: string | null
+          description: string | null
+          employment_type: Database["public"]["Enums"]["employment_type"] | null
+          hiring_manager_id: string | null
+          id: string
+          ideal_role_color_primary: string | null
+          ideal_role_color_secondary: string | null
+          location: string | null
+          preferred_skills: string[] | null
+          published_at: string | null
+          recruiter_id: string | null
+          remote_policy: Database["public"]["Enums"]["remote_policy"] | null
+          required_experience_years: number | null
+          required_skills: string[] | null
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          status: Database["public"]["Enums"]["job_posting_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          applications_count?: number | null
+          closes_at?: string | null
+          company_id: string
+          company_role_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type"]
+            | null
+          hiring_manager_id?: string | null
+          id?: string
+          ideal_role_color_primary?: string | null
+          ideal_role_color_secondary?: string | null
+          location?: string | null
+          preferred_skills?: string[] | null
+          published_at?: string | null
+          recruiter_id?: string | null
+          remote_policy?: Database["public"]["Enums"]["remote_policy"] | null
+          required_experience_years?: number | null
+          required_skills?: string[] | null
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          status?: Database["public"]["Enums"]["job_posting_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          applications_count?: number | null
+          closes_at?: string | null
+          company_id?: string
+          company_role_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type"]
+            | null
+          hiring_manager_id?: string | null
+          id?: string
+          ideal_role_color_primary?: string | null
+          ideal_role_color_secondary?: string | null
+          location?: string | null
+          preferred_skills?: string[] | null
+          published_at?: string | null
+          recruiter_id?: string | null
+          remote_policy?: Database["public"]["Enums"]["remote_policy"] | null
+          required_experience_years?: number | null
+          required_skills?: string[] | null
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          status?: Database["public"]["Enums"]["job_posting_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_company_role_id_fkey"
+            columns: ["company_role_id"]
+            isOneToOne: false
+            referencedRelation: "company_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_templates: {
         Row: {
           company_id: string | null
@@ -942,6 +2178,129 @@ export type Database = {
           required_skills?: string[] | null
           suggested_interview_questions?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          application_id: string
+          bonus: number | null
+          candidate_notes: string | null
+          created_at: string | null
+          created_by: string | null
+          decline_reason: string | null
+          document_url: string | null
+          equity: string | null
+          expires_at: string | null
+          id: string
+          internal_notes: string | null
+          job_title: string | null
+          responded_at: string | null
+          salary: number
+          salary_currency: string | null
+          sent_at: string | null
+          signed_at: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["offer_status"]
+          updated_at: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          application_id: string
+          bonus?: number | null
+          candidate_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          decline_reason?: string | null
+          document_url?: string | null
+          equity?: string | null
+          expires_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_title?: string | null
+          responded_at?: string | null
+          salary: number
+          salary_currency?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          bonus?: number | null
+          candidate_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          decline_reason?: string | null
+          document_url?: string | null
+          equity?: string | null
+          expires_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_title?: string | null
+          responded_at?: string | null
+          salary?: number
+          salary_currency?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          email: string
+          id: string
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          email: string
+          id?: string
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          email?: string
+          id?: string
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1012,15 +2371,7 @@ export type Database = {
           strengths?: Json
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "rcaimobile_candidate_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "rcaimobile_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rcaimobile_candidate_reviews: {
         Row: {
@@ -1068,13 +2419,6 @@ export type Database = {
             referencedRelation: "rcaimobile_jobs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "rcaimobile_candidate_reviews_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "rcaimobile_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       rcaimobile_jobs: {
@@ -1114,15 +2458,7 @@ export type Database = {
           status?: string
           title?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "rcaimobile_jobs_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "rcaimobile_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rcaimobile_notifications: {
         Row: {
@@ -1154,41 +2490,6 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rcaimobile_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "rcaimobile_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rcaimobile_profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          email: string
-          full_name: string
-          id: string
-          role: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          email: string
-          full_name: string
-          id: string
-          role: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          email?: string
-          full_name?: string
-          id?: string
-          role?: string
         }
         Relationships: []
       }
@@ -1296,6 +2597,47 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      saved_searches: {
+        Row: {
+          company_id: string
+          created_at: string
+          filters: Json
+          id: string
+          last_used_at: string | null
+          name: string
+          use_count: number | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          filters: Json
+          id?: string
+          last_used_at?: string | null
+          name: string
+          use_count?: number | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          filters?: Json
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          use_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_searches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_reminders: {
         Row: {
@@ -1536,6 +2878,68 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "school_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_transitions: {
+        Row: {
+          application_id: string
+          auto_transitioned: boolean | null
+          from_stage_id: string | null
+          id: string
+          moved_at: string | null
+          moved_by: string | null
+          notes: string | null
+          to_stage_id: string | null
+        }
+        Insert: {
+          application_id: string
+          auto_transitioned?: boolean | null
+          from_stage_id?: string | null
+          id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          notes?: string | null
+          to_stage_id?: string | null
+        }
+        Update: {
+          application_id?: string
+          auto_transitioned?: boolean | null
+          from_stage_id?: string | null
+          id?: string
+          moved_at?: string | null
+          moved_by?: string | null
+          notes?: string | null
+          to_stage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_transitions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_transitions_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_transitions_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_transitions_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_pipeline_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -1986,6 +3390,47 @@ export type Database = {
       company_user_role: "admin" | "employee" | "hr" | "partner"
       company_user_status: "invited" | "active" | "revoked"
       covey_quadrant: "q1" | "q2" | "q3" | "q4"
+      email_template_type:
+        | "candidate_invite"
+        | "interview_scheduled"
+        | "interview_reminder"
+        | "rejection"
+        | "offer_letter"
+        | "offer_accepted"
+        | "welcome"
+      employment_type:
+        | "full_time"
+        | "part_time"
+        | "contract"
+        | "temporary"
+        | "internship"
+      hiring_stage_type:
+        | "applied"
+        | "screening"
+        | "phone_interview"
+        | "technical_interview"
+        | "onsite_interview"
+        | "reference_check"
+        | "offer"
+        | "hired"
+        | "rejected"
+      interview_status: "scheduled" | "completed" | "cancelled" | "no_show"
+      interview_type:
+        | "phone"
+        | "video"
+        | "onsite"
+        | "panel"
+        | "technical"
+        | "behavioral"
+      job_posting_status: "draft" | "open" | "paused" | "closed" | "filled"
+      offer_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "declined"
+        | "expired"
+        | "rescinded"
+      remote_policy: "onsite" | "remote" | "hybrid"
       task_priority: "high" | "medium" | "low"
       task_status:
         | "pending"
@@ -2140,6 +3585,52 @@ export const Constants = {
       company_user_role: ["admin", "employee", "hr", "partner"],
       company_user_status: ["invited", "active", "revoked"],
       covey_quadrant: ["q1", "q2", "q3", "q4"],
+      email_template_type: [
+        "candidate_invite",
+        "interview_scheduled",
+        "interview_reminder",
+        "rejection",
+        "offer_letter",
+        "offer_accepted",
+        "welcome",
+      ],
+      employment_type: [
+        "full_time",
+        "part_time",
+        "contract",
+        "temporary",
+        "internship",
+      ],
+      hiring_stage_type: [
+        "applied",
+        "screening",
+        "phone_interview",
+        "technical_interview",
+        "onsite_interview",
+        "reference_check",
+        "offer",
+        "hired",
+        "rejected",
+      ],
+      interview_status: ["scheduled", "completed", "cancelled", "no_show"],
+      interview_type: [
+        "phone",
+        "video",
+        "onsite",
+        "panel",
+        "technical",
+        "behavioral",
+      ],
+      job_posting_status: ["draft", "open", "paused", "closed", "filled"],
+      offer_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "declined",
+        "expired",
+        "rescinded",
+      ],
+      remote_policy: ["onsite", "remote", "hybrid"],
       task_priority: ["high", "medium", "low"],
       task_status: [
         "pending",

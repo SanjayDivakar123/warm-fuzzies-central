@@ -4,7 +4,7 @@
 
 **URL**: [https://rolecolorfinder.com](https://rolecolorfinder.com)
 
-This project was initially prototyped using Lovable. The platform has now fully migrated off Lovable and is maintained independently via GitHub and Vercel.
+RoleColor™ Finder is a behavioral assessment platform that helps individuals and organizations understand work styles and team dynamics.
 
 ## How can I edit this code?
 
@@ -78,5 +78,4 @@ Vercel build configuration:
 
 ## Notes
 
-* Lovable is no longer used for editing, deployment, or domain management.
-* GitHub and Vercel are the sole sources of version control and CI/CD.
+* GitHub and Vercel are the sources of version control and CI/CD.

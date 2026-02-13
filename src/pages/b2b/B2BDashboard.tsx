@@ -15,6 +15,7 @@ import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
 import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
 import CandidatesTab from '@/components/b2b/CandidatesTab';
+import HiringSection from '@/components/b2b/hiring/HiringSection';
 import AdvancedAnalyticsDashboard from '@/components/b2b/analytics/AdvancedAnalyticsDashboard';
 import RolesTab from '@/components/b2b/RolesTab';
 import EmployeeTasksView from '@/components/b2b/EmployeeTasksView';
@@ -47,7 +48,7 @@ function B2BDashboardContent() {
     shortcuts: [
       { ...B2B_SHORTCUTS.NAVIGATE_OVERVIEW, action: () => setActiveTab('overview') },
       { ...B2B_SHORTCUTS.NAVIGATE_USERS, action: () => setActiveTab('users') },
-      { ...B2B_SHORTCUTS.NAVIGATE_CANDIDATES, action: () => setActiveTab('candidates') },
+      { ...B2B_SHORTCUTS.NAVIGATE_CANDIDATES, action: () => setActiveTab('hiring') },
       { ...B2B_SHORTCUTS.NAVIGATE_ASSESSMENTS, action: () => setActiveTab('assessments') },
       { ...B2B_SHORTCUTS.NAVIGATE_REMINDERS, action: () => setActiveTab('reminders') },
       { ...B2B_SHORTCUTS.NAVIGATE_MATRIX, action: () => setActiveTab('matrix') },
@@ -278,8 +279,8 @@ function B2BDashboardContent() {
         `}</style>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex w-full gap-1 sticky top-16 z-40" data-tour="dashboard-tabs">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex gap-1 sticky top-16 z-40" data-tour="dashboard-tabs">
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="overview" 
@@ -298,10 +299,10 @@ function B2BDashboardContent() {
               )}
               {(permissions.canManageCandidates || permissions.canViewCandidates) && (
                 <TabsTrigger 
-                  value="candidates" 
+                  value="hiring" 
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
                 >
-                  Candidates
+                  Hiring
                 </TabsTrigger>
               )}
               {permissions.canViewAssessments && (
@@ -372,11 +373,10 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="candidates" className="mt-0 break-words">
-            <CandidatesTab 
-              company={company} 
-              canHireCandidates={permissions.canHireCandidates}
-              canManageCandidates={permissions.canManageCandidates}
+          <TabsContent value="hiring" className="mt-0 break-words">
+            <HiringSection 
+              company={company}
+              companyUser={companyUser}
             />
           </TabsContent>
 
@@ -442,7 +442,7 @@ function B2BDashboardContent() {
           }}
           onSelectCandidate={(candidateId) => {
             setSelectedCandidateId(candidateId);
-            setActiveTab('candidates');
+            setActiveTab('hiring');
           }}
           onSelectTask={() => {
             setActiveTab('overview');

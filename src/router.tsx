@@ -70,6 +70,10 @@ import CandidateLogin from "@/pages/candidate/CandidateLogin";
 import CandidateAssessment from "@/pages/candidate/CandidateAssessment";
 import CandidateResults from "@/pages/candidate/CandidateResults";
 
+// Public careers pages
+import PublicCareersPage from "@/pages/careers/PublicCareersPage";
+import PublicJobDetailPage from "@/pages/careers/PublicJobDetailPage";
+
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
     <ScrollToTop />
@@ -292,6 +296,15 @@ export const routeConfig = [
         ]
       },
     ],
+  },
+  // Public Careers Pages
+  {
+    path: "/careers/:companySlug",
+    element: <PublicCareersPage />,
+  },
+  {
+    path: "/careers/:companySlug/jobs/:jobId",
+    element: <PublicJobDetailPage />,
   },
   {
     path: "*",

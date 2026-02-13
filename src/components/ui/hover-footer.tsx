@@ -187,7 +187,7 @@ export function HoverFooter() {
           <div className="flex flex-col space-y-4">
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/lovable-uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" 
+                src="/uploads/215460ce-2150-4569-b60c-3a223ce10adf.png" 
                 alt="RoleColor™ Finder" 
                 className="h-10 w-auto" 
               />
@@ -224,7 +224,7 @@ export function HoverFooter() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2 text-white/80 text-sm">
               <span>&copy; {new Date().getFullYear()}</span>
-              <img src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-4 w-auto" />
+              <img src="/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" alt="RoleColor™ Finder" className="h-4 w-auto" />
               <span>All rights reserved.</span>
             </div>
             <div className="flex gap-6">

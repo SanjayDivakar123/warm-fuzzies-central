@@ -35,7 +35,7 @@ export function FloatingHeader() {
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 px-2">
           <img 
-            src="/lovable-uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
+            src="/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png" 
             alt="RoleColor™ Finder" 
             className="h-8 w-auto" 
           />
