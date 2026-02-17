@@ -20,6 +20,11 @@ interface Company {
   google_workspace_domain?: string;
   custom_domain?: string;
   custom_domain_enabled: boolean;
+  hiring_subscription_enabled?: boolean;
+  hiring_subscription_status?: string;
+  hiring_subscription_id?: string;
+  hiring_subscription_current_period_end?: string;
+  hiring_subscription_cancel_at_period_end?: boolean;
 }
 
 interface CompanyUser {

@@ -491,7 +491,7 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Brain className="h-4 w-4 text-muted-foreground" />
+            <Sparkles className="h-8 w-8 text-muted-foreground" />
             AI Role Analysis
           </CardTitle>
           <CardDescription className="text-sm">

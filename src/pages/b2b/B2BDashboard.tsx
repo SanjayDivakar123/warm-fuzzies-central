@@ -81,6 +81,7 @@ function B2BDashboardContent() {
   useEffect(() => {
     const seatsAdded = searchParams.get('seats_added');
     const sessionId = searchParams.get('session_id');
+    const hiringSubscribed = searchParams.get('hiring_subscribed');
 
     if (seatsAdded === 'true' && sessionId) {
       const verifyPayment = async () => {
@@ -98,18 +99,46 @@ function B2BDashboardContent() {
             });
           }
         } catch (err) {
-          console.error('Error verifying seat payment:', err);
+          console.error('Error verifying payment:', err);
+        } finally {
+          // Clean up URL
+          searchParams.delete('seats_added');
+          searchParams.delete('session_id');
+          setSearchParams(searchParams, { replace: true });
         }
-
-        setSearchParams({});
-        refreshCompany();
       };
-
       verifyPayment();
-    } else {
-      refreshCompany();
     }
-  }, [searchParams]);
+
+    if (hiringSubscribed === 'true' && sessionId) {
+      const verifySubscription = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-hiring-subscription', {
+            body: { sessionId },
+          });
+
+          if (error || !data?.success) {
+            console.error('Hiring subscription verification failed:', error || data?.error);
+          } else {
+            toast({
+              title: 'Hiring Tab Activated!',
+              description: 'You now have access to premium hiring features.',
+            });
+            // Refresh company data
+            refreshCompany();
+          }
+        } catch (err) {
+          console.error('Error verifying subscription:', err);
+        } finally {
+          // Clean up URL
+          searchParams.delete('hiring_subscribed');
+          searchParams.delete('session_id');
+          setSearchParams(searchParams, { replace: true });
+        }
+      };
+      verifySubscription();
+    }
+  }, [searchParams, setSearchParams, toast, refreshCompany]);
 
   if (loading) {
     return (
