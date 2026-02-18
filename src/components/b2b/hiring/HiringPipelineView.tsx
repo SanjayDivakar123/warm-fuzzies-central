@@ -318,7 +318,7 @@ export default function HiringPipelineView({
         </div>
       ) : selectedJobId ? (
         /* Pipeline Kanban Board */
-        <div className="overflow-x-auto pb-4">
+        <div className="overflow-x-auto pb-4 [overflow-anchor:none]">
           <div className="flex gap-4 min-w-max">
             {/* Unstaged column (if any) */}
             {getUnstagedApplications().length > 0 && (
@@ -497,7 +497,16 @@ function CandidateCard({
           {canManage && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isMoving}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={isMoving}
+                  onFocus={(e) => {
+                    // Avoid scroll jumps caused by focus in horizontally scrollable areas
+                    e.currentTarget.blur();
+                  }}
+                >
                   {isMoving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (

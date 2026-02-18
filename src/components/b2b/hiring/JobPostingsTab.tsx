@@ -518,7 +518,15 @@ export default function JobPostingsTab({
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onFocus={(e) => {
+                            // Blur on focus to prevent scroll jump while keeping click behavior
+                            e.currentTarget.blur();
+                          }}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

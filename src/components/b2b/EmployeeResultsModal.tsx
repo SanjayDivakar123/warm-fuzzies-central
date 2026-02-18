@@ -155,6 +155,10 @@ export default function EmployeeResultsModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      {/* Lock background scroll while the results modal is open */}
+      {open && (
+        <style>{`html, body { overflow: hidden !important; }`}</style>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center gap-2 mb-1">
