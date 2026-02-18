@@ -325,8 +325,9 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       )}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HiringTab)}>
-        <div className="flex items-center justify-between mb-4">
-          <TabsList className="grid grid-cols-7 w-auto">
+        {/* Keep the nav bar position fixed across sub-tabs */}
+        <div className="mb-2">
+          <TabsList className="grid grid-cols-7 w-full justify-start">
             <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3">
               <Briefcase className="h-4 w-4" />
               <span className="hidden sm:inline">Jobs</span>
@@ -356,10 +357,11 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
-
-          {/* Quick actions based on active tab */}
+        </div>
+        {/* Action row placed below nav bar to avoid layout shifts */}
+        <div className="flex justify-end mb-4 min-h-[2.25rem]">
           {activeTab === 'jobs' && isHROrAdmin && (
-            <Button onClick={() => setShowCreateJob(true)}>
+            <Button className="h-9" onClick={() => setShowCreateJob(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Job
             </Button>

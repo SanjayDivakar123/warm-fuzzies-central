@@ -309,7 +309,7 @@ function B2BDashboardContent() {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex gap-1 sticky top-16 z-40" data-tour="dashboard-tabs">
+            <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex gap-1 sticky top-16 z-40 w-full justify-start" data-tour="dashboard-tabs">
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="overview" 

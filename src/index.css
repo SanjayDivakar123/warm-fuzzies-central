@@ -173,6 +173,10 @@ All colors MUST be HSL.
   html {
     transition: background-color 0.3s ease, color 0.3s ease;
     overflow-x: hidden;
+    /* Keep layout stable without reserving space on both edges */
+    scrollbar-gutter: stable;
+    /* Always show vertical scrollbar to avoid width shifts when modals open */
+    overflow-y: scroll;
   }
 
   body {
