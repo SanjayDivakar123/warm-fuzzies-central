@@ -20,6 +20,7 @@ interface Company {
   google_workspace_domain?: string;
   custom_domain?: string;
   custom_domain_enabled: boolean;
+  credit_balance?: number;
   hiring_subscription_enabled?: boolean;
   hiring_subscription_status?: string;
   hiring_subscription_id?: string;

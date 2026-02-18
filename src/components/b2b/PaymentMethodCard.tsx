@@ -226,7 +226,7 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
             <div className="flex justify-between items-center p-3 rounded-lg bg-green-50 border border-green-200">
               <span className="text-sm text-green-800">Billing Credits</span>
               <span className="font-semibold text-green-700">
-                ${((company.credit_balance || 0) / 100).toFixed(2)}
+                ${(company.credit_balance || 0).toFixed(2)}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">

@@ -11,10 +11,21 @@ import {
   Plus,
   Lock,
   Sparkles,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +42,7 @@ interface HiringSectionProps {
   company: { 
     id: string; 
     name: string;
+    credit_balance?: number;
     hiring_subscription_enabled?: boolean;
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
@@ -46,18 +58,60 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [showCreditConfirmDialog, setShowCreditConfirmDialog] = useState(false);
   const { toast } = useToast();
 
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
   const hasHiringAccess = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
 
+  const creditBalance = company.credit_balance || 0; // In dollars
+  const hiringCost = 500; // $500 in dollars
+  const hasEnoughCredits = creditBalance >= hiringCost;
+
+  // Handle subscription with credits
+  const handleSubscribeWithCredits = async () => {
+    setSubscribing(true);
+    setShowCreditConfirmDialog(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
+        body: { companyId: company.id, useCredits: true },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success!',
+        description: 'Hiring tab activated using billing credits.',
+      });
+
+      // Refresh the page to show the hiring tab
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error subscribing with credits:', error);
+      toast({
+        title: 'Subscription failed',
+        description: error.message || 'Failed to activate subscription',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   // Handle subscription to hiring tab
   const handleSubscribe = async () => {
+    // Check if company has enough credits
+    if (hasEnoughCredits) {
+      setShowCreditConfirmDialog(true);
+      return;
+    }
+
+    // No credits, proceed to Stripe
     setSubscribing(true);
     try {
       const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
-        body: { companyId: company.id },
+        body: { companyId: company.id, useCredits: false },
       });
 
       if (error) throw error;
@@ -180,10 +234,57 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             </div>
 
             <p className="text-xs text-center text-muted-foreground">
-              Payment will be processed securely via Stripe. Billing credits will be applied first, then your card on file will be charged.
+              {hasEnoughCredits 
+                ? `You have $${creditBalance.toFixed(2)} in billing credits. Credits will be used for this subscription.`
+                : 'Payment will be processed securely via Stripe. Billing credits will be applied first if available.'
+              }
             </p>
           </CardContent>
         </Card>
+
+        {/* Credit Confirmation Dialog */}
+        <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Use Billing Credits?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Confirm using your billing credits to activate the Hiring tab.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-3 mt-2">
+              <p>
+                You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
+              </p>
+              <p>
+                The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
+              </p>
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <p className="font-medium text-foreground mb-1">After activation:</p>
+                <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleSubscribeWithCredits}
+                disabled={subscribing}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {subscribing ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  'Use Credits'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -321,6 +422,50 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
           />
         </TabsContent>
       </Tabs>
+
+      {/* Credit Confirmation Dialog (for when already subscribed but want to manage) */}
+      <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Use Billing Credits?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirm using your billing credits to activate the Hiring tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 mt-2">
+            <p>
+              You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
+            </p>
+            <p>
+              The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
+            </p>
+            <div className="bg-muted p-3 rounded-lg text-sm">
+              <p className="font-medium text-foreground mb-1">After activation:</p>
+              <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSubscribeWithCredits}
+              disabled={subscribing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {subscribing ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  Processing...
+                </>
+              ) : (
+                'Use Credits'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

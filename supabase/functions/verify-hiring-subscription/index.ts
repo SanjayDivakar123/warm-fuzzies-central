@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req) => {
@@ -60,13 +61,18 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Record transaction
-    await supabase.from("billing_transactions").insert({
+    // Record initial charge (in dollars) for auditing
+    const { error: txError } = await supabase.from("billing_transactions").insert({
       company_id: companyId,
-      type: "hiring_subscription_started",
-      amount: 50000, // $500
+      type: "charge",
+      amount: 500.0,
       description: "Hiring Tab subscription started",
     });
+
+    if (txError) {
+      console.error("Error inserting billing transaction:", txError);
+      // Do not fail verification due to logging issues
+    }
 
     console.log("Hiring subscription activated for company:", companyId);
 
