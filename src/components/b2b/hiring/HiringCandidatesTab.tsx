@@ -583,7 +583,14 @@ export default function HiringCandidatesTab({
                       {isHROrAdmin && !app.hired_at && !app.rejected_at && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onFocus={(e) => {
+                                e.currentTarget.blur();
+                              }}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

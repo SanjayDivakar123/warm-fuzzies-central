@@ -466,6 +466,70 @@ const RoleColorModal = ({
   onClose: () => void;
 }) => {
   const IconComponent = role.icon;
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [contentScale, setContentScale] = useState(1);
+
+  useEffect(() => {
+    const scrollY = window.scrollY;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyPosition = document.body.style.position;
+    const originalBodyTop = document.body.style.top;
+    const originalBodyWidth = document.body.style.width;
+    const originalBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
+
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overscrollBehavior = "none";
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.position = originalBodyPosition;
+      document.body.style.top = originalBodyTop;
+      document.body.style.width = originalBodyWidth;
+      document.body.style.overscrollBehavior = originalBodyOverscrollBehavior;
+
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
+
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const availableHeight = window.innerHeight - 160;
+      const naturalHeight = modal.scrollHeight;
+      const nextScale = naturalHeight > availableHeight
+        ? Math.max(0.72, availableHeight / naturalHeight)
+        : 1;
+
+      setContentScale(nextScale);
+    };
+
+    const frame = window.requestAnimationFrame(() => {
+      updateScale();
+    });
+
+    window.addEventListener("resize", updateScale);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateScale);
+    };
+  }, [role]);
+
   return <motion.div initial={{
     opacity: 0
   }} animate={{
@@ -474,7 +538,7 @@ const RoleColorModal = ({
     opacity: 0
   }} transition={{
     duration: 0.2
-  }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+  }} className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden overscroll-none p-4 pt-28 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <motion.div initial={{
       opacity: 0,
       scale: 0.3,
@@ -482,7 +546,7 @@ const RoleColorModal = ({
       y: 100
     }} animate={{
       opacity: 1,
-      scale: 1,
+      scale: contentScale,
       rotateX: 0,
       y: 0
     }} exit={{
@@ -495,9 +559,10 @@ const RoleColorModal = ({
       stiffness: 300,
       damping: 25,
       duration: 0.5
-    }} onClick={e => e.stopPropagation()} className={cn("relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 bg-background shadow-2xl", role.borderColor)} style={{
+    }} onClick={e => e.stopPropagation()} ref={modalRef} className={cn("relative w-full max-w-2xl overflow-hidden rounded-3xl border-2 bg-background shadow-2xl", role.borderColor)} style={{
       perspective: "1000px",
-      transformStyle: "preserve-3d"
+      transformStyle: "preserve-3d",
+      transformOrigin: "top center"
     }}>
         {/* Animated glow background */}
         <div className={cn("absolute inset-0 rounded-3xl opacity-20 blur-3xl", role.color)} />

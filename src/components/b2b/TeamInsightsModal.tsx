@@ -354,13 +354,25 @@ export default function TeamInsightsModal({
     }
   };
 
-  const getDisplayName = (email: string) => {
-    // First check if we have a full_name from team members
-    const member = teamMembers.find(m => m.email === email);
-    if (member?.full_name) return member.full_name;
-    // Fallback to parsing email
-    const name = email.split('@')[0];
-    return name.charAt(0).toUpperCase() + name.slice(1).replace(/[._]/g, ' ');
+  const toTitleCase = (value: string) => {
+    if (!value) return '';
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  };
+
+  const getDisplayName = (email: string, preferredName?: string | null) => {
+    const sourceName = preferredName?.trim();
+    if (sourceName) {
+      const firstName = sourceName.split(/\s+/)[0] || '';
+      if (firstName) return toTitleCase(firstName);
+    }
+
+    const localPart = email.split('@')[0] || '';
+    const firstToken = localPart
+      .split(/[._+-]/)[0]
+      ?.replace(/\d+$/g, '')
+      ?.trim();
+
+    return toTitleCase(firstToken || localPart || 'User');
   };
 
   const toggleMember = (email: string) => {
@@ -560,7 +572,7 @@ export default function TeamInsightsModal({
                       const memberData = teamMembers.find(m => m.email === member.email);
                       const memberColor = memberData?.dominantColor?.toLowerCase() || 'blue';
                       const colorData = colorInfo[memberColor] || colorInfo.blue;
-                      const displayName = member.name || memberData?.full_name || getDisplayName(member.email);
+                      const displayName = getDisplayName(member.email, memberData?.full_name || member.name);
                       const isExpanded = expandedMembers.has(member.email);
 
                       return (
@@ -596,7 +608,7 @@ export default function TeamInsightsModal({
                                         {member.currentRole}
                                       </Badge>
                                     </div>
-                                    <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                                    <p className="text-sm text-muted-foreground truncate lowercase">{member.email.trim()}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
