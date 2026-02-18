@@ -9,8 +9,25 @@ import {
   Mail, 
   BarChart3,
   Plus,
+  Lock,
+  Sparkles,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 // Import hiring sub-components
 import JobPostingsTab from './JobPostingsTab';
@@ -22,7 +39,15 @@ import EmailTemplatesTab from './EmailTemplatesTab';
 import HiringAnalyticsTab from './HiringAnalyticsTab';
 
 interface HiringSectionProps {
-  company: { id: string; name: string };
+  company: { 
+    id: string; 
+    name: string;
+    credit_balance?: number;
+    hiring_subscription_enabled?: boolean;
+    hiring_subscription_status?: string;
+    hiring_subscription_cancel_at_period_end?: boolean;
+    hiring_subscription_current_period_end?: string;
+  };
   companyUser: { id: string; role: string } | null;
 }
 
@@ -32,8 +57,237 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const [activeTab, setActiveTab] = useState<HiringTab>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [showCreditConfirmDialog, setShowCreditConfirmDialog] = useState(false);
+  const { toast } = useToast();
 
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
+  const hasHiringAccess = company.hiring_subscription_enabled && 
+    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
+
+  const creditBalance = company.credit_balance || 0; // In dollars
+  const hiringCost = 500; // $500 in dollars
+  const hasEnoughCredits = creditBalance >= hiringCost;
+
+  // Handle subscription with credits
+  const handleSubscribeWithCredits = async () => {
+    setSubscribing(true);
+    setShowCreditConfirmDialog(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
+        body: { companyId: company.id, useCredits: true },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success!',
+        description: 'Hiring tab activated using billing credits.',
+      });
+
+      // Refresh the page to show the hiring tab
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error subscribing with credits:', error);
+      toast({
+        title: 'Subscription failed',
+        description: error.message || 'Failed to activate subscription',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  // Handle subscription to hiring tab
+  const handleSubscribe = async () => {
+    // Check if company has enough credits
+    if (hasEnoughCredits) {
+      setShowCreditConfirmDialog(true);
+      return;
+    }
+
+    // No credits, proceed to Stripe
+    setSubscribing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
+        body: { companyId: company.id, useCredits: false },
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error('Error subscribing to hiring tab:', error);
+      toast({
+        title: 'Subscription failed',
+        description: error.message || 'Failed to start subscription process',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  // Show paywall if no access
+  if (!hasHiringAccess) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-2 border-primary/20">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Lock className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl flex items-center justify-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              Unlock Premium Hiring Features
+            </CardTitle>
+            <CardDescription className="text-base mt-2">
+              Get access to our complete Applicant Tracking System (ATS) and advanced hiring tools
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Features List */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <Briefcase className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Job Posting Management</p>
+                  <p className="text-xs text-muted-foreground">Create and manage job postings with custom pipelines</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <GitBranch className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Visual Pipeline</p>
+                  <p className="text-xs text-muted-foreground">Track candidates through customizable stages</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <Users className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Candidate Management</p>
+                  <p className="text-xs text-muted-foreground">Centralized candidate database and screening</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Interview Scheduling</p>
+                  <p className="text-xs text-muted-foreground">Schedule and manage interviews seamlessly</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <FileCheck className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Offer Management</p>
+                  <p className="text-xs text-muted-foreground">Create and track job offers</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <BarChart3 className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Hiring Analytics</p>
+                  <p className="text-xs text-muted-foreground">Track hiring metrics and pipeline performance</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="border-t pt-6">
+              <div className="text-center space-y-4">
+                <div>
+                  <p className="text-3xl font-bold">$500<span className="text-base font-normal text-muted-foreground">/month</span></p>
+                  <p className="text-sm text-muted-foreground mt-1">Cancel anytime</p>
+                </div>
+                
+                {isHROrAdmin && (
+                  <Button 
+                    size="lg" 
+                    onClick={handleSubscribe}
+                    disabled={subscribing}
+                    className="w-full max-w-md"
+                  >
+                    {subscribing ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Subscribe Now
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {!isHROrAdmin && (
+                  <p className="text-sm text-muted-foreground">
+                    Contact your company admin to subscribe to this feature
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              {hasEnoughCredits 
+                ? `You have $${creditBalance.toFixed(2)} in billing credits. Credits will be used for this subscription.`
+                : 'Payment will be processed securely via Stripe. Billing credits will be applied first if available.'
+              }
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Credit Confirmation Dialog */}
+        <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Use Billing Credits?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Confirm using your billing credits to activate the Hiring tab.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-3 mt-2">
+              <p>
+                You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
+              </p>
+              <p>
+                The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
+              </p>
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <p className="font-medium text-foreground mb-1">After activation:</p>
+                <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleSubscribeWithCredits}
+                disabled={subscribing}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {subscribing ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  'Use Credits'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   // Navigate to pipeline for a specific job
   const handleViewPipeline = (jobId: string) => {
@@ -47,11 +301,33 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
     setActiveTab('candidates');
   };
 
+  // Show subscription warning if cancelling at period end
+  const showCancellationWarning = company.hiring_subscription_cancel_at_period_end && 
+    company.hiring_subscription_current_period_end;
+
   return (
     <div className="space-y-6">
+      {showCancellationWarning && (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <Lock className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-sm">Subscription Ending</p>
+                <p className="text-sm text-muted-foreground">
+                  Your Hiring tab subscription will end on {new Date(company.hiring_subscription_current_period_end!).toLocaleDateString()}.
+                  You can reactivate it in Settings before it expires.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HiringTab)}>
-        <div className="flex items-center justify-between mb-4">
-          <TabsList className="grid grid-cols-7 w-auto">
+        {/* Keep the nav bar position fixed across sub-tabs */}
+        <div className="mb-2">
+          <TabsList className="grid grid-cols-7 w-full justify-start">
             <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3">
               <Briefcase className="h-4 w-4" />
               <span className="hidden sm:inline">Jobs</span>
@@ -81,10 +357,11 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
-
-          {/* Quick actions based on active tab */}
+        </div>
+        {/* Action row placed below nav bar to avoid layout shifts */}
+        <div className="flex justify-end mb-4 min-h-[2.25rem]">
           {activeTab === 'jobs' && isHROrAdmin && (
-            <Button onClick={() => setShowCreateJob(true)}>
+            <Button className="h-9" onClick={() => setShowCreateJob(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Job
             </Button>
@@ -147,6 +424,50 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
           />
         </TabsContent>
       </Tabs>
+
+      {/* Credit Confirmation Dialog (for when already subscribed but want to manage) */}
+      <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Use Billing Credits?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirm using your billing credits to activate the Hiring tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 mt-2">
+            <p>
+              You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
+            </p>
+            <p>
+              The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
+            </p>
+            <div className="bg-muted p-3 rounded-lg text-sm">
+              <p className="font-medium text-foreground mb-1">After activation:</p>
+              <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSubscribeWithCredits}
+              disabled={subscribing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {subscribing ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  Processing...
+                </>
+              ) : (
+                'Use Credits'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

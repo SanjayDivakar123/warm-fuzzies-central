@@ -1212,6 +1212,11 @@ export type Database = {
           email_template_subject: string | null
           google_sso_enabled: boolean | null
           google_workspace_domain: string | null
+          hiring_subscription_cancel_at_period_end: boolean | null
+          hiring_subscription_current_period_end: string | null
+          hiring_subscription_enabled: boolean | null
+          hiring_subscription_id: string | null
+          hiring_subscription_status: string | null
           id: string
           insight_credits: number | null
           insight_usage_count: number | null
@@ -1250,6 +1255,11 @@ export type Database = {
           email_template_subject?: string | null
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
+          hiring_subscription_cancel_at_period_end?: boolean | null
+          hiring_subscription_current_period_end?: string | null
+          hiring_subscription_enabled?: boolean | null
+          hiring_subscription_id?: string | null
+          hiring_subscription_status?: string | null
           id?: string
           insight_credits?: number | null
           insight_usage_count?: number | null
@@ -1288,6 +1298,11 @@ export type Database = {
           email_template_subject?: string | null
           google_sso_enabled?: boolean | null
           google_workspace_domain?: string | null
+          hiring_subscription_cancel_at_period_end?: boolean | null
+          hiring_subscription_current_period_end?: string | null
+          hiring_subscription_enabled?: boolean | null
+          hiring_subscription_id?: string | null
+          hiring_subscription_status?: string | null
           id?: string
           insight_credits?: number | null
           insight_usage_count?: number | null

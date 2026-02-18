@@ -35,6 +35,7 @@ import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
 import AddCreditsModal from "./AddCreditsModal";
+import HiringSubscriptionSettings from "./HiringSubscriptionSettings";
 // Integrations infrastructure is kept, but hidden via feature flag
 const INTEGRATIONS_ENABLED = false;
 import IntegrationsSettings from "./admin/IntegrationsSettings";
@@ -304,10 +305,14 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   return (
     <div className="space-y-4">
       <Tabs defaultValue="branding" className="space-y-4">
-        <TabsList className={"grid w-full " + (INTEGRATIONS_ENABLED ? "grid-cols-4" : "grid-cols-3") + " lg:w-auto lg:inline-flex"}>
+        <TabsList className={"grid w-full grid-cols-4 lg:w-auto lg:inline-flex"}>
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4 hidden sm:inline" />
             Branding
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions" className="gap-2">
+            <CreditCard className="h-4 w-4 hidden sm:inline" />
+            Subscriptions
           </TabsTrigger>
           {INTEGRATIONS_ENABLED && (
             <TabsTrigger value="integrations" className="gap-2">
@@ -764,6 +769,47 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Subscriptions Tab */}
+        <TabsContent value="subscriptions" className="space-y-4">
+          <HiringSubscriptionSettings 
+            company={company}
+            onSubscriptionUpdated={onSettingsSaved}
+          />
+
+          {/* Payment Method */}
+          <PaymentMethodCard company={company} />
+
+          {/* Wallet / Credit Balance */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                <Wallet className="h-5 w-5" />
+                Wallet
+              </CardTitle>
+              <CardDescription>Your credit balance for payments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
+                  {loadingBalance ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Credits are applied to your account and deducted before charging your card on file.
+                </p>
+                <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add Credits
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {INTEGRATIONS_ENABLED && (

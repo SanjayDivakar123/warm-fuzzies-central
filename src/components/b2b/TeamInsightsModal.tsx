@@ -6,6 +6,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,6 +152,8 @@ export default function TeamInsightsModal({
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
   const [usage, setUsage] = useState<InsightUsage | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [cachedHash, setCachedHash] = useState<string | null>(null);
+  const [showRedoConfirm, setShowRedoConfirm] = useState(false);
   const { toast } = useToast();
 
   const currentTeamHash = generateTeamHash(teamMembers);
@@ -152,6 +164,20 @@ export default function TeamInsightsModal({
       loadCachedInsights();
     }
   }, [open, companyId]);
+
+  // Lock background scroll while modal is open
+  useEffect(() => {
+    if (!open) return;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow || '';
+      document.body.style.overflow = prevBodyOverflow || '';
+    };
+  }, [open]);
 
   const loadCachedInsights = async () => {
     try {
@@ -168,6 +194,7 @@ export default function TeamInsightsModal({
       }
 
       if (data) {
+        setCachedHash(data.team_hash || null);
         // Check if team has changed since last insight generation
         if (data.team_hash === currentTeamHash) {
           // Team unchanged, use cached insights
@@ -211,6 +238,7 @@ export default function TeamInsightsModal({
         if (updateError) {
           console.error('Error updating insights:', updateError);
         }
+        setCachedHash(currentTeamHash);
       } else {
         // Insert new record
         const { error: insertError } = await supabase
@@ -224,6 +252,7 @@ export default function TeamInsightsModal({
         if (insertError) {
           console.error('Error inserting insights:', insertError);
         }
+        setCachedHash(currentTeamHash);
       }
     } catch (err) {
       console.error('Error saving insights:', err);
@@ -375,7 +404,13 @@ export default function TeamInsightsModal({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => generateInsights(false, true)}
+                  onClick={() => {
+                    if (cachedHash && cachedHash === currentTeamHash) {
+                      setShowRedoConfirm(true);
+                    } else {
+                      generateInsights(false, true);
+                    }
+                  }}
                   disabled={loading}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -391,6 +426,29 @@ export default function TeamInsightsModal({
             </div>
           </div>
         </DialogHeader>
+
+        {/* Re-Do confirmation when team hasn't changed */}
+        <AlertDialog open={showRedoConfirm} onOpenChange={setShowRedoConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Redo insights?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your team composition hasn&apos;t changed. Re-generating will use one of your free AI insights credits. Are you sure you want to continue?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowRedoConfirm(false);
+                  generateInsights(false, true);
+                }}
+              >
+                Yes, re-do insights
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <ScrollArea className="flex-1 px-6">
           <div className="py-4">

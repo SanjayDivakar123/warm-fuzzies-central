@@ -153,8 +153,8 @@ export default function RoleAnalysisCard({
     <div className={cn("space-y-4", mode === "inline" && "pt-2 border-t")}>
       {mode === "standalone" && (
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">AI Role Analysis</h3>
+          {/* <Sparkles className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">AI Role Analysis</h3> */}
         </div>
       )}
 
