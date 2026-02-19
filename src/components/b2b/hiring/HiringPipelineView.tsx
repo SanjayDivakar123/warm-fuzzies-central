@@ -495,7 +495,7 @@ function CandidateCard({
           </div>
 
           {canManage && (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
