@@ -238,7 +238,7 @@ export default function UserDetailModal({
 
             <div className="space-y-2">
               <Label>Job Role</Label>
-              <Select value={jobRole} onValueChange={setJobRole}>
+              <Select value={jobRole} onValueChange={setJobRole} disabled={allJobRoles.length === 0}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select job role" />
                 </SelectTrigger>
@@ -250,6 +250,9 @@ export default function UserDetailModal({
                   ))}
                 </SelectContent>
               </Select>
+              {allJobRoles.length === 0 && (
+                <p className="text-xs text-muted-foreground">No roles available. Create roles in the Roles tab first.</p>
+              )}
             </div>
 
             <div className="space-y-2">

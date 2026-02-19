@@ -66,22 +66,6 @@ interface UsersTabProps {
 
 const MAX_INVITES = 3;
 
-const DEFAULT_JOB_ROLES = [
-  "Engineer",
-  "Designer",
-  "PM",
-  "Sales",
-  "Support",
-  "Analyst",
-  "Marketing",
-  "Founder",
-  "Intern",
-  "Operations",
-  "QA",
-  "Writer",
-  "Researcher",
-];
-
 const PREDEFINED_SKILLS = [
   "UI Design",
   "Data Analysis",
@@ -112,8 +96,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
   const [newSkillInput, setNewSkillInput] = useState("");
-  const [newJobRoleInput, setNewJobRoleInput] = useState("");
-  const [customJobRoles, setCustomJobRoles] = useState<string[]>([]);
+  const [allJobRoles, setAllJobRoles] = useState<string[]>([]);
   
   const [fullNameInput, setFullNameInput] = useState<Record<string, string>>({});
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -155,15 +138,76 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   // Check if current user is the super admin
   const isSuperAdmin = currentUserId ? users.some(u => u.id === superAdminId && u.user_id === currentUserId) : false;
 
-  // Combine default and custom job roles
-  const allJobRoles = [...DEFAULT_JOB_ROLES, ...customJobRoles].sort();
-
   useEffect(() => {
     fetchUsers();
+    fetchCompanyRoles();
     fetchCancelledReminders();
     fetchPendingReminders();
     fetchCurrentUser();
   }, [company.id]);
+
+  const fetchCompanyRoles = async () => {
+    const { data, error } = await supabase
+      .from('company_roles')
+      .select('name')
+      .eq('company_id', company.id)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching company roles:', error);
+      setAllJobRoles([]);
+      return;
+    }
+
+    setAllJobRoles((data || []).map((role) => role.name).filter(Boolean));
+  };
+
+  const syncJobRoleToCompanyRoles = async (jobRole: string) => {
+    const normalizedRole = jobRole.trim();
+    if (!normalizedRole) return;
+
+    const roleAlreadyInState = allJobRoles.some(
+      (existingRole) => existingRole.toLowerCase() === normalizedRole.toLowerCase()
+    );
+
+    if (roleAlreadyInState) return;
+
+    try {
+      const { data: existingRole, error: existingRoleError } = await supabase
+        .from('company_roles')
+        .select('name')
+        .eq('company_id', company.id)
+        .ilike('name', normalizedRole)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingRoleError) throw existingRoleError;
+
+      if (existingRole?.name) {
+        setAllJobRoles((prev) => [...new Set([...prev, existingRole.name])].sort());
+        return;
+      }
+
+      const { data: insertedRole, error: insertError } = await supabase
+        .from('company_roles')
+        .insert({
+          company_id: company.id,
+          name: normalizedRole,
+          description: null,
+          skills: [],
+        })
+        .select('name')
+        .single();
+
+      if (insertError) throw insertError;
+
+      if (insertedRole?.name) {
+        setAllJobRoles((prev) => [...new Set([...prev, insertedRole.name])].sort());
+      }
+    } catch (error) {
+      console.error('Error syncing job role to company roles:', error);
+    }
+  };
 
   const fetchCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -534,6 +578,8 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       const { error } = await supabase.from("company_users").update({ job_role: jobRole }).eq("id", userId);
 
       if (error) throw error;
+
+      await syncJobRoleToCompanyRoles(jobRole);
 
       setUsers(users.map((u) => (u.id === userId ? { ...u, job_role: jobRole } : u)));
 
@@ -1268,7 +1314,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                                 <Select
                                   value={user.job_role || ""}
                                   onValueChange={(value) => handleUpdateJobRole(user.id, value)}
-                                  disabled={savingUserId === user.id}
+                                  disabled={savingUserId === user.id || allJobRoles.length === 0}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select a job role" />
@@ -1277,49 +1323,15 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                                     {allJobRoles.map((role) => (
                                       <SelectItem key={role} value={role}>
                                         {role}
-                                        {!DEFAULT_JOB_ROLES.includes(role) && (
-                                          <span className="ml-2 text-xs text-muted-foreground">(custom)</span>
-                                        )}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Input
-                                    placeholder="Or add custom role..."
-                                    value={newJobRoleInput}
-                                    onChange={(e) => setNewJobRoleInput(e.target.value)}
-                                    className="flex-1"
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" && newJobRoleInput.trim()) {
-                                        e.preventDefault();
-                                        const newRole = newJobRoleInput.trim();
-                                        if (!allJobRoles.includes(newRole)) {
-                                          setCustomJobRoles((prev) => [...prev, newRole]);
-                                        }
-                                        handleUpdateJobRole(user.id, newRole);
-                                        setNewJobRoleInput("");
-                                      }
-                                    }}
-                                  />
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      if (newJobRoleInput.trim()) {
-                                        const newRole = newJobRoleInput.trim();
-                                        if (!allJobRoles.includes(newRole)) {
-                                          setCustomJobRoles((prev) => [...prev, newRole]);
-                                        }
-                                        handleUpdateJobRole(user.id, newRole);
-                                        setNewJobRoleInput("");
-                                      }
-                                    }}
-                                    disabled={!newJobRoleInput.trim() || savingUserId === user.id}
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                {allJobRoles.length === 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    No roles available. Create roles in the Roles tab first.
+                                  </p>
+                                )}
                               </div>
 
                               {/* Assessment Type Section */}
@@ -1535,6 +1547,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                 .update({ full_name: fullName, job_role: jobRole, skills })
                 .eq('id', userId);
               if (error) throw error;
+              await syncJobRoleToCompanyRoles(jobRole);
               toast({ title: 'User updated', description: 'Changes saved successfully.' });
               fetchUsers();
               setMobileSelectedUser(null);
