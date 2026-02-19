@@ -388,13 +388,10 @@ export default function OverviewTab({ company }: OverviewTabProps) {
       </div>
 
       {/* Activity Feed & Color Distribution */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Activity Feed */}
-        <ActivityFeed companyId={company.id} maxItems={8} />
-
+      <div className="space-y-4">
         {/* Color Distribution */}
         {stats.completedAssessments > 0 && (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
@@ -404,8 +401,8 @@ export default function OverviewTab({ company }: OverviewTabProps) {
                 Leadership style breakdown across {stats.completedAssessments} completed assessments
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-3">
+            <CardContent className="min-h-[140px] md:min-h-[160px]">
+              <div className="grid grid-cols-4 gap-3 mt-3">
                 {Object.entries(stats.colorDistribution).map(([color, count]) => {
                   const info = colorLabels[color as keyof typeof colorLabels];
                   return (
@@ -420,6 +417,9 @@ export default function OverviewTab({ company }: OverviewTabProps) {
             </CardContent>
           </Card>
         )}
+
+        {/* Activity Feed */}
+        <ActivityFeed companyId={company.id} maxItems={8} />
       </div>
 
       {/* Admin Assessment Card */}
