@@ -419,8 +419,9 @@ serve(async (req) => {
       console.log("User re-invited:", invitedUser.id);
     } else {
       // Create new user invite
-      // Validate role - only allow 'admin' or 'employee'
-      const userRole = requestedRole === 'admin' ? 'admin' : 'employee';
+      // Validate role - allow admin-level roles and employee
+      const allowedRoles = ['admin', 'hr', 'partner', 'employee'];
+      const userRole = allowedRoles.includes(requestedRole) ? requestedRole : 'employee';
       
       const { data: newUser, error: userError } = await supabase
         .from("company_users")

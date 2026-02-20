@@ -55,9 +55,37 @@ export default function PromoteToAdminModal({
 
     setLoading(true);
     try {
+      const { data: currentRecord } = await supabase
+        .from('company_users')
+        .select('email, user_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      let resolvedUserId = currentRecord?.user_id || null;
+
+      if (!resolvedUserId && currentRecord?.email) {
+        const { data: linkedUserRecord } = await supabase
+          .from('company_users')
+          .select('user_id')
+          .ilike('email', currentRecord.email)
+          .not('user_id', 'is', null)
+          .limit(1)
+          .maybeSingle();
+
+        resolvedUserId = linkedUserRecord?.user_id || null;
+      }
+
+      const updatePayload: Record<string, any> = {
+        role: selectedRole,
+      };
+
+      if (resolvedUserId) {
+        updatePayload.user_id = resolvedUserId;
+      }
+
       const { error } = await supabase
         .from("company_users")
-        .update({ role: selectedRole })
+        .update(updatePayload)
         .eq("id", user.id);
 
       if (error) throw error;
