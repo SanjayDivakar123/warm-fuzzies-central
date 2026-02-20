@@ -99,6 +99,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [allJobRoles, setAllJobRoles] = useState<string[]>([]);
   
   const [fullNameInput, setFullNameInput] = useState<Record<string, string>>({});
+  const [emailInput, setEmailInput] = useState<Record<string, string>>({});
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showGoogleImport, setShowGoogleImport] = useState(false);
@@ -112,6 +113,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [pendingReminders, setPendingReminders] = useState<Set<string>>(new Set());
   const [userFilter, setUserFilter] = useState<UserFilter>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [retakeRequestUser, setRetakeRequestUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [requestingRetake, setRequestingRetake] = useState(false);
   const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
@@ -119,6 +121,13 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [showProfileSheet, setShowProfileSheet] = useState(false);
+  const [pendingEmailChange, setPendingEmailChange] = useState<{
+    id: string;
+    currentEmail: string;
+    newEmail: string;
+    full_name?: string;
+  } | null>(null);
+  const [changingEmail, setChangingEmail] = useState(false);
   const { toast } = useToast();
   const { permissions } = useCompany();
 
@@ -213,6 +222,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setCurrentUserId(user.id);
+      setCurrentUserEmail(user.email?.toLowerCase() || null);
     }
   };
 
@@ -568,6 +578,142 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         variant: "destructive",
       });
     } finally {
+      setSavingUserId(null);
+    }
+  };
+
+  const isValidEmail = (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+  };
+
+  const generateFallbackInviteCode = () => {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  };
+
+  const requestEmailChange = (user: any) => {
+    const draftEmail = (emailInput[user.id] ?? user.email ?? '').trim().toLowerCase();
+    const currentEmail = (user.email ?? '').trim().toLowerCase();
+
+    if (!draftEmail) {
+      toast({
+        title: 'Email required',
+        description: 'Please enter an email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isValidEmail(draftEmail)) {
+      toast({
+        title: 'Invalid email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (draftEmail === currentEmail) {
+      toast({
+        title: 'No change detected',
+        description: 'Enter a different email to update this user.',
+      });
+      return;
+    }
+
+    const duplicateUser = users.find(
+      (existingUser) =>
+        existingUser.id !== user.id &&
+        (existingUser.email || '').toLowerCase() === draftEmail,
+    );
+
+    if (duplicateUser) {
+      toast({
+        title: 'Email already in use',
+        description: 'Another user in this company already uses this email.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPendingEmailChange({
+      id: user.id,
+      currentEmail,
+      newEmail: draftEmail,
+      full_name: user.full_name,
+    });
+  };
+
+  const handleConfirmEmailChange = async () => {
+    if (!pendingEmailChange) return;
+
+    setChangingEmail(true);
+    setSavingUserId(pendingEmailChange.id);
+
+    try {
+      const { data: existingMatch, error: lookupError } = await supabase
+        .from('company_users')
+        .select('id')
+        .eq('company_id', company.id)
+        .ilike('email', pendingEmailChange.newEmail)
+        .neq('id', pendingEmailChange.id)
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
+
+      if (existingMatch) {
+        toast({
+          title: 'Email already in use',
+          description: 'Another user in this company already uses this email.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('update-company-user-email', {
+        body: {
+          company_user_id: pendingEmailChange.id,
+          new_email: pendingEmailChange.newEmail,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const updatedUser = data?.user;
+
+      setUsers((prevUsers) =>
+        prevUsers.map((existingUser) =>
+          existingUser.id === pendingEmailChange.id
+            ? {
+                ...existingUser,
+                ...(updatedUser || {}),
+              }
+            : existingUser,
+        ),
+      );
+
+      setEmailInput((prev) => ({ ...prev, [pendingEmailChange.id]: pendingEmailChange.newEmail }));
+
+      const requiresRelogin = Boolean(data?.authEmailUpdated && currentUserId && updatedUser?.user_id === currentUserId);
+
+      toast({
+        title: 'Email updated',
+        description: requiresRelogin
+          ? 'Email updated and access reassigned. Please sign out and sign back in with the new email.'
+          : 'Email updated and access reassigned to the new email account.',
+      });
+
+      setPendingEmailChange(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error updating email',
+        description: error?.message || 'Unable to update email at this time.',
+        variant: 'destructive',
+      });
+    } finally {
+      setChangingEmail(false);
       setSavingUserId(null);
     }
   };
@@ -1308,6 +1454,41 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                                 </div>
                               </div>
 
+                              {/* Email Section */}
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Email</label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="email"
+                                    placeholder="Enter email..."
+                                    value={emailInput[user.id] ?? user.email ?? ''}
+                                    onChange={(e) => setEmailInput(prev => ({ ...prev, [user.id]: e.target.value }))}
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        requestEmailChange(user);
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => requestEmailChange(user)}
+                                    disabled={
+                                      !(emailInput[user.id] ?? user.email ?? '').trim() ||
+                                      (emailInput[user.id] ?? user.email ?? '').trim().toLowerCase() === (user.email ?? '').toLowerCase() ||
+                                      savingUserId === user.id
+                                    }
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Changing email removes access for the old email and links this account to the new one.
+                                </p>
+                              </div>
+
                               {/* Job Role Section */}
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">Job Role</label>
@@ -1654,6 +1835,44 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           availableSeats={Infinity}
           isUnlimitedCompany={true}
         />
+        {/* Change Email Confirmation Dialog */}
+        <AlertDialog
+          open={!!pendingEmailChange}
+          onOpenChange={(open) => {
+            if (!open && !changingEmail) {
+              setPendingEmailChange(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Email Change</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are changing <span className="font-medium">{pendingEmailChange?.full_name || 'this user'}</span> from{' '}
+                <span className="font-medium">{pendingEmailChange?.currentEmail}</span> to{' '}
+                <span className="font-medium">{pendingEmailChange?.newEmail}</span>.
+                <br /><br />
+                This will revoke access tied to the old email and associate this account with the new email.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={changingEmail}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmEmailChange}
+                disabled={changingEmail}
+              >
+                {changingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Confirm Change'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {/* Request Retake Confirmation Dialog */}
         <AlertDialog open={!!retakeRequestUser} onOpenChange={(open) => !open && setRetakeRequestUser(null)}>
           <AlertDialogContent>

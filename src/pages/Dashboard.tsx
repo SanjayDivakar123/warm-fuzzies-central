@@ -124,13 +124,25 @@ const Dashboard = () => {
   };
 
   const checkCompanyAccess = async () => {
+    if (!user) {
+      setCompanyAccessList([]);
+      return;
+    }
+
     try {
+      const userEmail = (user.email || '').trim();
+      const accessFilter = userEmail
+        ? `user_id.eq.${user.id},email.ilike.${userEmail}`
+        : `user_id.eq.${user.id}`;
+
       const { data: companyUsers, error } = await supabase
         .from('company_users')
         .select(`
           id, 
           role, 
           status,
+          user_id,
+          email,
           company_id,
           companies:company_id (
             id,
@@ -138,11 +150,30 @@ const Dashboard = () => {
             subdomain
           )
         `)
-        .eq('email', user?.email);
+        .in('status', ['active', 'invited'])
+        .or(accessFilter);
 
       if (error || !companyUsers || companyUsers.length === 0) {
         setCompanyAccessList([]);
         return;
+      }
+
+      const rowsToLink = companyUsers.filter(
+        (cu) => !cu.user_id && typeof cu.email === 'string' && cu.email.toLowerCase() === userEmail.toLowerCase(),
+      );
+
+      if (rowsToLink.length > 0) {
+        await Promise.all(
+          rowsToLink.map((cu) =>
+            supabase
+              .from('company_users')
+              .update({
+                user_id: user.id,
+                joined_at: new Date().toISOString(),
+              })
+              .eq('id', cu.id),
+          ),
+        );
       }
 
       const accessList = companyUsers

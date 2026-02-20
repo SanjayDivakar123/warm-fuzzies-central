@@ -35,11 +35,26 @@ export default function B2B() {
         return;
       }
 
+      const userEmail = user.email || '';
+
       const { data: companyUser } = await supabase
         .from('company_users')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('id, user_id, email, status')
+        .in('status', ['active', 'invited'])
+        .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+        .limit(1)
         .maybeSingle();
+
+      if (companyUser && !companyUser.user_id && companyUser.email?.toLowerCase() === userEmail.toLowerCase()) {
+        await supabase
+          .from('company_users')
+          .update({
+            user_id: user.id,
+            status: 'active',
+            joined_at: new Date().toISOString(),
+          })
+          .eq('id', companyUser.id);
+      }
 
       if (companyUser) {
         // User already has company access, redirect to dashboard
