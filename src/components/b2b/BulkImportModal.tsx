@@ -82,6 +82,18 @@ interface ParsedEmployee {
 type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
 
 export default function BulkImportModal({ open, onClose, companyId, onImportComplete }: BulkImportModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.overflow = prevHtml || '';
+      document.body.style.overflow = prevBody || '';
+    };
+  }, [open]);
+
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [csvContent, setCsvContent] = useState<string>('');

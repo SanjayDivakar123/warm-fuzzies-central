@@ -236,15 +236,15 @@ export default function ThemeExportImport({
 
       {/* Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Import Theme Settings</DialogTitle>
             <DialogDescription>
               Paste the theme JSON or upload a theme file to apply branding settings from another portal
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto min-h-0 flex-1 pr-1">
             <div className="flex gap-2">
               <input
                 ref={fileInputRef}
@@ -293,7 +293,7 @@ export default function ThemeExportImport({
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
               Cancel
             </Button>

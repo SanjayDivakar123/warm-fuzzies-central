@@ -155,7 +155,6 @@ export default function EmployeeResultsModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      {/* Lock background scroll while the results modal is open */}
       {open && (
         <style>{`html, body { overflow: hidden !important; }`}</style>
       )}

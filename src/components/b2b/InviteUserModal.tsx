@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,15 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Sparkles, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
-import { AssessmentCategory, getCategoryDisplayName } from '@/lib/assessmentQuestionLoader';
+import { Loader2, UserPlus, Sparkles, ChevronDown, ChevronUp, Brain } from 'lucide-react';
+import { AssessmentCategory } from '@/lib/assessmentQuestionLoader';
 import RoleAnalysisCard from './RoleAnalysisCard';
 
 interface InviteUserModalProps {
@@ -62,6 +57,19 @@ export default function InviteUserModal({
   const [suggestingCategory, setSuggestingCategory] = useState(false);
   const [showRoleAnalysis, setShowRoleAnalysis] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow || '';
+      document.body.style.overflow = prevBodyOverflow || '';
+    };
+  }, [open]);
 
   const handleSuggestCategory = async () => {
     if (!jobRole.trim()) {
@@ -194,7 +202,7 @@ export default function InviteUserModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] max-w-5xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
@@ -205,125 +213,130 @@ export default function InviteUserModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="user@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+        <div className="grid items-start gap-6 py-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+          <div className="space-y-4 min-w-0">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name (optional)</Label>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="John Doe"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name (optional)</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={loading}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="jobRole">Job Role (optional)</Label>
-            <Input
-              id="jobRole"
-              type="text"
-              placeholder="e.g., Senior Engineer, Sales Manager"
-              value={jobRole}
-              onChange={(e) => setJobRole(e.target.value)}
-              disabled={loading}
-            />
-            
-            {/* AI Role Analysis Section */}
-            <Collapsible open={showRoleAnalysis} onOpenChange={setShowRoleAnalysis}>
-              <CollapsibleTrigger asChild>
+            <div className="space-y-2">
+              <Label htmlFor="jobRole">Job Role (optional)</Label>
+              <Input
+                id="jobRole"
+                type="text"
+                placeholder="e.g., Senior Engineer, Sales Manager"
+                value={jobRole}
+                onChange={(e) => setJobRole(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Assessment Category *</Label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs gap-1 text-muted-foreground hover:text-primary px-0"
-                  type="button"
+                  onClick={handleSuggestCategory}
+                  disabled={loading || suggestingCategory || !jobRole.trim()}
+                  className="h-7 text-xs gap-1 text-primary hover:text-primary"
                 >
-                  <HelpCircle className="h-3 w-3" />
-                  Should this role take the test?
-                  {showRoleAnalysis ? (
-                    <ChevronUp className="h-3 w-3 ml-1" />
+                  {suggestingCategory ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <ChevronDown className="h-3 w-3 ml-1" />
+                    <Sparkles className="h-3 w-3" />
                   )}
+                  Use AI to find category
                 </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-2">
-                <RoleAnalysisCard
-                  mode="inline"
-                  initialJobRole={jobRole}
-                  onCategorySelect={(cat) => setAssessmentCategory(cat)}
-                  showCategorySelect
-                />
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
+              <Select
+                value={assessmentCategory}
+                onValueChange={(v) => setAssessmentCategory(v as AssessmentCategory)}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSESSMENT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assessment Length *</Label>
+              <Select
+                value={assessmentType}
+                onValueChange={(v) => setAssessmentType(v as AssessmentType)}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select length" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSESSMENT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="rounded-lg border bg-muted/20 p-4 space-y-3 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between">
-              <Label>Assessment Category *</Label>
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary" />
+                <p className="font-medium text-sm">AI Role Analysis</p>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleSuggestCategory}
-                disabled={loading || suggestingCategory || !jobRole.trim()}
-                className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                className="text-xs text-muted-foreground"
+                onClick={() => setShowRoleAnalysis((prev) => !prev)}
               >
-                {suggestingCategory ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                Use AI to find category
+                {showRoleAnalysis ? "Hide" : "Show"}
+                {showRoleAnalysis ? <ChevronUp className="h-3.5 w-3.5 ml-1" /> : <ChevronDown className="h-3.5 w-3.5 ml-1" />}
               </Button>
             </div>
-            <Select
-              value={assessmentCategory}
-              onValueChange={(v) => setAssessmentCategory(v as AssessmentCategory)}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {ASSESSMENT_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Assessment Length *</Label>
-            <Select
-              value={assessmentType}
-              onValueChange={(v) => setAssessmentType(v as AssessmentType)}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select length" />
-              </SelectTrigger>
-              <SelectContent>
-                {ASSESSMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <p className="text-xs text-muted-foreground">
+              Get a quick recommendation on whether this role should take the test.
+            </p>
+
+            {showRoleAnalysis && (
+              <RoleAnalysisCard
+                mode="inline"
+                initialJobRole={jobRole}
+                onCategorySelect={(cat) => setAssessmentCategory(cat)}
+                showCategorySelect
+              />
+            )}
           </div>
         </div>
 

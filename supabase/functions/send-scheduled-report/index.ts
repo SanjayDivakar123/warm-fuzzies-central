@@ -6,6 +6,123 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const SCHEDULE_HOUR_LOCAL = 8;
+
+const zonedDatePartsFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function getZonedDateParts(date: Date, timeZone: string) {
+  const cacheKey = `parts:${timeZone}`;
+  let formatter = zonedDatePartsFormatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    zonedDatePartsFormatterCache.set(cacheKey, formatter);
+  }
+
+  const partEntries = formatter
+    .formatToParts(date)
+    .filter((part) => part.type !== "literal")
+    .map((part) => [part.type, part.value] as const);
+  const parts = Object.fromEntries(partEntries);
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  };
+}
+
+function zonedLocalTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  timeZone: string,
+) {
+  let utcMs = Date.UTC(year, month - 1, day, hour, minute, second, 0);
+
+  // Resolve timezone offset (and DST) for this local datetime.
+  for (let i = 0; i < 6; i++) {
+    const zoned = getZonedDateParts(new Date(utcMs), timeZone);
+    const expectedAsUtc = Date.UTC(year, month - 1, day, hour, minute, second, 0);
+    const actualAsUtc = Date.UTC(
+      zoned.year,
+      zoned.month - 1,
+      zoned.day,
+      zoned.hour,
+      zoned.minute,
+      zoned.second,
+      0,
+    );
+    const diff = expectedAsUtc - actualAsUtc;
+    if (diff === 0) break;
+    utcMs += diff;
+  }
+
+  return new Date(utcMs);
+}
+
+function calculateNextSendAt(
+  frequency: string,
+  timezone: string,
+  baseInstant: Date,
+) {
+  const localBase = getZonedDateParts(baseInstant, timezone);
+
+  let year = localBase.year;
+  let month = localBase.month;
+  let day = localBase.day;
+
+  switch (frequency) {
+    case "daily":
+      day += 1;
+      break;
+    case "weekly":
+      day += 7;
+      break;
+    case "monthly":
+      month += 1;
+      break;
+    default:
+      day += 1;
+      break;
+  }
+
+  let next = zonedLocalTimeToUtc(year, month, day, SCHEDULE_HOUR_LOCAL, 0, 0, timezone);
+
+  // Guard against stale next-send values after delays/outages.
+  while (next <= new Date()) {
+    const localNext = getZonedDateParts(next, timezone);
+    const bumpDay = frequency === "weekly" ? 7 : 1;
+    const bumpMonth = frequency === "monthly" ? 1 : 0;
+
+    next = zonedLocalTimeToUtc(
+      localNext.year,
+      localNext.month + bumpMonth,
+      localNext.day + bumpDay,
+      SCHEDULE_HOUR_LOCAL,
+      0,
+      0,
+      timezone,
+    );
+  }
+
+  return next.toISOString();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -120,26 +237,19 @@ serve(async (req) => {
           }
         }
 
-        // Calculate next send time
-        let nextSendAt = new Date();
-        switch (report.frequency) {
-          case "daily":
-            nextSendAt.setDate(nextSendAt.getDate() + 1);
-            break;
-          case "weekly":
-            nextSendAt.setDate(nextSendAt.getDate() + 7);
-            break;
-          case "monthly":
-            nextSendAt.setMonth(nextSendAt.getMonth() + 1);
-            break;
-        }
+        const reportTimezone = report.timezone || "UTC";
+        const nextSendAt = calculateNextSendAt(
+          report.frequency,
+          reportTimezone,
+          report.next_send_at ? new Date(report.next_send_at) : new Date(),
+        );
 
         // Update report
         await supabase
           .from("scheduled_reports")
           .update({
             last_sent_at: now,
-            next_send_at: nextSendAt.toISOString()
+            next_send_at: nextSendAt
           })
           .eq("id", report.id);
 

@@ -17,6 +17,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -39,7 +44,8 @@ import {
   TrendingUp,
   AlertCircle,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -153,10 +159,14 @@ export default function TeamInsightsModal({
   const [usage, setUsage] = useState<InsightUsage | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [cachedHash, setCachedHash] = useState<string | null>(null);
+  const [newMembersCount, setNewMembersCount] = useState(0);
+  const [hasTeamChanges, setHasTeamChanges] = useState(false);
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
+  const [processingPaidRedo, setProcessingPaidRedo] = useState(false);
   const { toast } = useToast();
 
   const currentTeamHash = generateTeamHash(teamMembers);
+  const hasMatchingCachedTeam = !!cachedHash && cachedHash === currentTeamHash;
 
   // Load cached insights when modal opens
   useEffect(() => {
@@ -195,20 +205,33 @@ export default function TeamInsightsModal({
 
       if (data) {
         setCachedHash(data.team_hash || null);
-        // Check if team has changed since last insight generation
-        if (data.team_hash === currentTeamHash) {
-          // Team unchanged, use cached insights
-          setInsights(data.insights as unknown as InsightData);
+        const cachedInsights = data.insights as unknown as InsightData;
+        setInsights(cachedInsights);
+
+        const teamChanged = data.team_hash !== currentTeamHash;
+        setHasTeamChanges(teamChanged);
+
+        if (teamChanged) {
+          const cachedEmails = new Set(
+            (cachedInsights?.memberInsights || []).map((member) => member.email.toLowerCase())
+          );
+          const joinedCount = teamMembers.filter(
+            (member) => !cachedEmails.has(member.email.toLowerCase())
+          ).length;
+          setNewMembersCount(joinedCount);
         } else {
-          // Team changed, need to regenerate
-          generateInsights();
+          setNewMembersCount(0);
         }
       } else {
         // No cached insights, generate new
+        setHasTeamChanges(false);
+        setNewMembersCount(0);
         generateInsights();
       }
     } catch (err) {
       console.error('Error loading insights:', err);
+      setHasTeamChanges(false);
+      setNewMembersCount(0);
       generateInsights();
     }
   };
@@ -338,6 +361,8 @@ export default function TeamInsightsModal({
 
       const insightsData = data.insights as InsightData;
       setInsights(insightsData);
+      setHasTeamChanges(false);
+      setNewMembersCount(0);
       
       // Save to database for caching
       await saveInsights(insightsData);
@@ -352,6 +377,121 @@ export default function TeamInsightsModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const replayCachedInsights = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Keep a short loading period so redo feels intentional, then replay exact cached payload.
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      const { data, error: fetchError } = await supabase
+        .from('team_insights')
+        .select('insights, team_hash')
+        .eq('company_id', companyId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!data?.insights) throw new Error('No cached insights found');
+
+      setInsights(data.insights as unknown as InsightData);
+      setCachedHash(data.team_hash || null);
+      toast({
+        title: 'Insights refreshed',
+        description: 'No team changes detected. Showing the same saved insights.',
+      });
+    } catch (err: any) {
+      console.error('Error replaying cached insights:', err);
+      setError(err.message || 'Failed to reload cached insights');
+      toast({
+        title: 'Error loading insights',
+        description: err.message || 'Failed to reload cached insights',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runPaidRedo = async () => {
+    setProcessingPaidRedo(true);
+    try {
+      const { data, error: chargeError } = await supabase.functions.invoke('charge-insight-redo', {
+        body: { company_id: companyId },
+      });
+
+      if (chargeError) throw chargeError;
+      if (data?.needsPaymentMethod) {
+        toast({
+          title: 'Payment method required',
+          description: 'No card is on file. Please add a payment method in billing settings to continue.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (data?.error) throw new Error(data.error);
+
+      if (hasMatchingCachedTeam) {
+        await replayCachedInsights();
+      } else {
+        await generateInsights(true, true);
+      }
+    } catch (err: any) {
+      console.error('Error processing paid re-do:', err);
+      toast({
+        title: 'Payment failed',
+        description: err.message || 'Unable to process the $5 insight charge.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingPaidRedo(false);
+    }
+  };
+
+  const runFreeRedoWithCachedReplay = async () => {
+    setProcessingPaidRedo(true);
+    try {
+      const result = await incrementInsightUsage(companyId);
+      if (!result.success) {
+        if (result.needsPayment) {
+          await runPaidRedo();
+          return;
+        }
+        throw new Error('Failed to record usage');
+      }
+
+      setUsage(result.usage);
+      await replayCachedInsights();
+    } catch (err: any) {
+      console.error('Error processing re-do usage:', err);
+      toast({
+        title: 'Unable to re-do insights',
+        description: err.message || 'Failed to process insight usage.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingPaidRedo(false);
+    }
+  };
+
+  const handleConfirmRedo = async () => {
+    setShowRedoConfirm(false);
+
+    const currentUsage = await getInsightUsage(companyId);
+    setUsage(currentUsage);
+
+    if (currentUsage.used >= currentUsage.limit) {
+      await runPaidRedo();
+      return;
+    }
+
+    if (hasMatchingCachedTeam) {
+      await runFreeRedoWithCachedReplay();
+      return;
+    }
+
+    await generateInsights(false, true);
   };
 
   const toTitleCase = (value: string) => {
@@ -411,32 +551,58 @@ export default function TeamInsightsModal({
                 AI-powered analysis of your team's leadership styles and role alignment
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {insights && !loading && (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    if (cachedHash && cachedHash === currentTeamHash) {
-                      setShowRedoConfirm(true);
-                    } else {
-                      generateInsights(false, true);
-                    }
-                  }}
-                  disabled={loading}
+                  onClick={() => setShowRedoConfirm(true)}
+                  disabled={loading || processingPaidRedo}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Re-Do
                 </Button>
               )}
-              <div className="w-48">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    aria-label="AI insights info"
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 text-xs leading-relaxed">
+                  Free AI insights reset at the beginning of each calendar month. If you run out, you can purchase additional insights for $5 USD each.
+                </PopoverContent>
+              </Popover>
+              <div className="w-52 sm:w-56">
                 <InsightUsageMeter 
                   companyId={companyId} 
                   onUsageChange={setUsage}
+                  usageOverride={usage}
                 />
               </div>
             </div>
           </div>
+          {insights && hasTeamChanges && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">These insights are based on an earlier team snapshot.</p>
+                  <p className="mt-1">
+                    {newMembersCount > 0
+                      ? `${newMembersCount} new employee${newMembersCount === 1 ? '' : 's'} joined after this analysis. Click Re-Do to include them.`
+                      : 'Your team data changed after this analysis. Click Re-Do when you are ready to refresh insights.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Re-Do confirmation when team hasn't changed */}
@@ -445,18 +611,17 @@ export default function TeamInsightsModal({
             <AlertDialogHeader>
               <AlertDialogTitle>Redo insights?</AlertDialogTitle>
               <AlertDialogDescription>
-                Your team composition hasn&apos;t changed. Re-generating will use one of your free AI insights credits. Are you sure you want to continue?
+                {usage && usage.used >= usage.limit
+                  ? 'You have used all free AI insights this month. Re-doing now will charge $5 USD to your card on file via Stripe (using any available insight credits first). Do you want to continue?'
+                  : hasMatchingCachedTeam
+                  ? 'Your team composition hasn\'t changed. Re-doing now will use one free AI insight credit and reload the same saved insights with the same percentages and analysis.'
+                  : 'Your team composition has changed. Re-generating insights will use one of your free AI insights credits. Do you want to continue?'}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  setShowRedoConfirm(false);
-                  generateInsights(false, true);
-                }}
-              >
-                Yes, re-do insights
+              <AlertDialogAction onClick={handleConfirmRedo}>
+                {usage && usage.used >= usage.limit ? 'Yes, charge $5 and re-do' : 'Yes, re-do insights'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
