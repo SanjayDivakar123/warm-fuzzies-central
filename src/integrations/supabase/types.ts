@@ -2725,6 +2725,7 @@ export type Database = {
           next_send_at: string | null
           recipients: string[]
           report_type: string
+          timezone: string
           updated_at: string
         }
         Insert: {
@@ -2740,6 +2741,7 @@ export type Database = {
           next_send_at?: string | null
           recipients?: string[]
           report_type?: string
+          timezone?: string
           updated_at?: string
         }
         Update: {
@@ -2755,6 +2757,7 @@ export type Database = {
           next_send_at?: string | null
           recipients?: string[]
           report_type?: string
+          timezone?: string
           updated_at?: string
         }
         Relationships: [

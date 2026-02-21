@@ -19,6 +19,7 @@ interface ScheduledReport {
   name: string;
   report_type: string;
   frequency: string;
+  timezone: string | null;
   recipients: string[];
   is_active: boolean;
   include_sections: string[];
@@ -55,6 +56,16 @@ export default function ScheduledReportsManager({ companyId }: ScheduledReportsM
   });
   
   const { toast } = useToast();
+  const adminTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+  const getNextDailySendAt = () => {
+    const next = new Date();
+    next.setHours(8, 0, 0, 0);
+    if (next <= new Date()) {
+      next.setDate(next.getDate() + 1);
+    }
+    return next;
+  };
 
   useEffect(() => {
     fetchReports();
@@ -71,10 +82,44 @@ export default function ScheduledReportsManager({ companyId }: ScheduledReportsM
     if (error) {
       console.error('Error fetching reports:', error);
     } else {
+      const dailyReportsToAlign = (data || []).filter(
+        (report) => report.frequency === 'daily' && report.timezone !== adminTimezone
+      );
+
+      if (dailyReportsToAlign.length > 0) {
+        const nextDailySendAtIso = getNextDailySendAt().toISOString();
+        await Promise.all(
+          dailyReportsToAlign.map((report) =>
+            supabase
+              .from('scheduled_reports')
+              .update({
+                timezone: adminTimezone,
+                next_send_at: nextDailySendAtIso,
+              })
+              .eq('id', report.id)
+          )
+        );
+      }
+
       setReports(data?.map(r => ({
         ...r,
+        timezone: r.timezone || adminTimezone,
         include_sections: (r.include_sections as string[]) || []
       })) || []);
+
+      if (dailyReportsToAlign.length > 0) {
+        const { data: refreshedData } = await supabase
+          .from('scheduled_reports')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false });
+
+        setReports(refreshedData?.map(r => ({
+          ...r,
+          timezone: r.timezone || adminTimezone,
+          include_sections: (r.include_sections as string[]) || []
+        })) || []);
+      }
     }
     setLoading(false);
   };
@@ -94,21 +139,23 @@ export default function ScheduledReportsManager({ companyId }: ScheduledReportsM
       const { data: { user } } = await supabase.auth.getUser();
       const recipients = newReport.recipients.split(',').map(e => e.trim()).filter(Boolean);
 
-      // Calculate next send time
+      // Calculate next send time (8:00 AM in the admin's local timezone)
       let nextSendAt = new Date();
       switch (newReport.frequency) {
         case 'daily':
-          nextSendAt.setDate(nextSendAt.getDate() + 1);
-          nextSendAt.setHours(9, 0, 0, 0);
+          nextSendAt.setHours(8, 0, 0, 0);
+          if (nextSendAt <= new Date()) {
+            nextSendAt.setDate(nextSendAt.getDate() + 1);
+          }
           break;
         case 'weekly':
           nextSendAt.setDate(nextSendAt.getDate() + (7 - nextSendAt.getDay() + 1) % 7 + 1);
-          nextSendAt.setHours(9, 0, 0, 0);
+          nextSendAt.setHours(8, 0, 0, 0);
           break;
         case 'monthly':
           nextSendAt.setMonth(nextSendAt.getMonth() + 1);
           nextSendAt.setDate(1);
-          nextSendAt.setHours(9, 0, 0, 0);
+          nextSendAt.setHours(8, 0, 0, 0);
           break;
       }
 
@@ -119,6 +166,7 @@ export default function ScheduledReportsManager({ companyId }: ScheduledReportsM
           name: newReport.name,
           report_type: newReport.report_type,
           frequency: newReport.frequency,
+          timezone: adminTimezone,
           recipients,
           include_sections: newReport.include_sections,
           next_send_at: nextSendAt.toISOString(),

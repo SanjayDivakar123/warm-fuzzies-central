@@ -41,6 +41,22 @@ interface CompletedAssessment {
   };
 }
 
+interface TeamStats {
+  total: number;
+  completed: number;
+  pending: number;
+  colorDistribution: { yellow: number; red: number; green: number; blue: number };
+}
+
+interface AssessmentsPayload {
+  completedAssessments: CompletedAssessment[];
+  teamStats: TeamStats;
+}
+
+const ASSESSMENTS_CACHE_TTL_MS = 60_000;
+const assessmentsCache = new Map<string, { fetchedAt: number; payload: AssessmentsPayload }>();
+const assessmentsInFlight = new Map<string, Promise<AssessmentsPayload>>();
+
 const colorLabels: Record<string, { label: string; bg: string; text: string }> = {
   yellow: { label: 'Executor', bg: 'bg-yellow-100', text: 'text-yellow-800' },
   red: { label: 'Motivator', bg: 'bg-red-100', text: 'text-red-800' },
@@ -48,12 +64,103 @@ const colorLabels: Record<string, { label: string; bg: string; text: string }> =
   blue: { label: 'Innovator', bg: 'bg-blue-100', text: 'text-blue-800' },
 };
 
+const buildAssessmentsPayload = (users: any[]): AssessmentsPayload => {
+  const completedUsers = users.filter((u) => u.assessment_completed_at && u.assessment_result_id);
+
+  const completedAssessments: CompletedAssessment[] = completedUsers.map((user) => {
+    const resultRecord = Array.isArray(user.assessment_results)
+      ? user.assessment_results[0]
+      : user.assessment_results;
+
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name || null,
+      job_role: user.job_role,
+      skills: user.skills,
+      assessment_completed_at: user.assessment_completed_at,
+      assessment_result_id: user.assessment_result_id,
+      assessment_category: user.assessment_category as AssessmentCategory,
+      assessment_type: user.assessment_type as AssessmentType,
+      shareable_code: resultRecord?.shareable_code,
+      results: resultRecord?.results as CompletedAssessment['results'],
+    };
+  });
+
+  completedAssessments.sort(
+    (a, b) => new Date(b.assessment_completed_at).getTime() - new Date(a.assessment_completed_at).getTime()
+  );
+
+  const total = users.length;
+  const completed = completedUsers.length;
+  const pending = total - completed;
+  const colorDistribution = { yellow: 0, red: 0, green: 0, blue: 0 };
+
+  completedAssessments.forEach((assessment) => {
+    const color = assessment.results?.dominantColor?.toLowerCase();
+    if (color && color in colorDistribution) {
+      colorDistribution[color as keyof typeof colorDistribution]++;
+    }
+  });
+
+  return {
+    completedAssessments,
+    teamStats: { total, completed, pending, colorDistribution },
+  };
+};
+
+const fetchAssessmentsPayload = async (companyId: string): Promise<AssessmentsPayload> => {
+  const inFlight = assessmentsInFlight.get(companyId);
+  if (inFlight) return inFlight;
+
+  const request = (async () => {
+    const { data, error } = await supabase
+      .from('company_users')
+      .select(`
+        id,
+        email,
+        full_name,
+        status,
+        job_role,
+        skills,
+        assessment_completed_at,
+        assessment_result_id,
+        assessment_category,
+        assessment_type,
+        assessment_results:assessment_result_id(
+          results,
+          shareable_code
+        )
+      `)
+      .eq('company_id', companyId)
+      .neq('status', 'revoked');
+
+    if (error) throw error;
+
+    const payload = buildAssessmentsPayload(data || []);
+    assessmentsCache.set(companyId, {
+      fetchedAt: Date.now(),
+      payload,
+    });
+
+    return payload;
+  })();
+
+  assessmentsInFlight.set(companyId, request);
+
+  try {
+    return await request;
+  } finally {
+    assessmentsInFlight.delete(companyId);
+  }
+};
+
 export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToSettings }: AssessmentsTabProps) {
   const [assessmentType, setAssessmentType] = useState(company.assessment_type);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completedAssessments, setCompletedAssessments] = useState<CompletedAssessment[]>([]);
-  const [teamStats, setTeamStats] = useState({
+  const [teamStats, setTeamStats] = useState<TeamStats>({
     total: 0,
     completed: 0,
     pending: 0,
@@ -73,63 +180,26 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
   }, [company.id]);
 
   const fetchAssessments = async () => {
-    setLoading(true);
+    const cacheEntry = assessmentsCache.get(company.id);
+    const hasWarmCache = !!cacheEntry;
+    const isCacheFresh = hasWarmCache && (Date.now() - cacheEntry.fetchedAt) < ASSESSMENTS_CACHE_TTL_MS;
+
+    if (hasWarmCache) {
+      setCompletedAssessments(cacheEntry.payload.completedAssessments);
+      setTeamStats(cacheEntry.payload.teamStats);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    if (isCacheFresh) {
+      return;
+    }
+
     try {
-      // Fetch all company users with their assessment results
-      const { data: users, error: usersError } = await supabase
-        .from('company_users')
-        .select('id, email, full_name, status, job_role, skills, assessment_completed_at, assessment_result_id, assessment_category, assessment_type')
-        .eq('company_id', company.id)
-        .neq('status', 'revoked');
-
-      if (usersError) throw usersError;
-
-      // Fetch assessment results for completed assessments
-      const completedUsers = users?.filter(u => u.assessment_completed_at && u.assessment_result_id) || [];
-      
-      const assessmentsWithResults: CompletedAssessment[] = [];
-      
-      for (const user of completedUsers) {
-        const { data: result } = await supabase
-          .from('assessment_results')
-          .select('results, shareable_code')
-          .eq('id', user.assessment_result_id)
-          .single();
-        
-        assessmentsWithResults.push({
-          id: user.id,
-          email: user.email,
-          full_name: user.full_name || null,
-          job_role: user.job_role,
-          skills: user.skills,
-          assessment_completed_at: user.assessment_completed_at,
-          assessment_result_id: user.assessment_result_id,
-          assessment_category: user.assessment_category as AssessmentCategory,
-          assessment_type: user.assessment_type as AssessmentType,
-          shareable_code: result?.shareable_code,
-          results: result?.results as any,
-        });
-      }
-
-      setCompletedAssessments(assessmentsWithResults);
-
-      // Calculate stats
-      const total = users?.length || 0;
-      const completed = completedUsers.length;
-      const pending = total - completed;
-      
-      // Calculate color distribution
-      const colorDistribution = { yellow: 0, red: 0, green: 0, blue: 0 };
-      assessmentsWithResults.forEach(a => {
-        if (a.results?.dominantColor) {
-          const color = a.results.dominantColor.toLowerCase();
-          if (color in colorDistribution) {
-            colorDistribution[color as keyof typeof colorDistribution]++;
-          }
-        }
-      });
-
-      setTeamStats({ total, completed, pending, colorDistribution });
+      const payload = await fetchAssessmentsPayload(company.id);
+      setCompletedAssessments(payload.completedAssessments);
+      setTeamStats(payload.teamStats);
     } catch (error: any) {
       console.error('Error fetching assessments:', error);
       toast({
