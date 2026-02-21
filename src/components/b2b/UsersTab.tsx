@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +128,9 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     full_name?: string;
   } | null>(null);
   const [changingEmail, setChangingEmail] = useState(false);
+  const [jobRoleInput, setJobRoleInput] = useState<Record<string, string>>({});
+  const [showJobChangeConfirmed, setShowJobChangeConfirmed] = useState(false);
+  const jobChangeConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
   const { permissions } = useCompany();
 
@@ -138,6 +141,14 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       setShowProfileSheet(true);
     }
   }, [selectedUserId]);
+
+  useEffect(() => {
+    return () => {
+      if (jobChangeConfirmTimerRef.current) {
+        clearTimeout(jobChangeConfirmTimerRef.current);
+      }
+    };
+  }, []);
 
   // Identify the super admin (first admin created for the company)
   const superAdminId = users
@@ -215,6 +226,27 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       }
     } catch (error) {
       console.error('Error syncing job role to company roles:', error);
+    }
+  };
+
+  const fetchRoleSkillsForJobRole = async (jobRole: string): Promise<string[] | null> => {
+    const normalizedRole = jobRole.trim();
+    if (!normalizedRole) return null;
+
+    try {
+      const { data: role, error } = await supabase
+        .from('company_roles')
+        .select('skills')
+        .eq('company_id', company.id)
+        .ilike('name', normalizedRole)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return Array.isArray(role?.skills) ? role.skills : [];
+    } catch (error) {
+      console.error('Error fetching role skills for job role sync:', error);
+      return null;
     }
   };
 
@@ -718,30 +750,68 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     }
   };
 
-  const handleUpdateJobRole = async (userId: string, jobRole: string) => {
+  const handleUpdateJobRole = async (userId: string, jobRole: string): Promise<boolean> => {
+    const normalizedRole = jobRole.trim();
     setSavingUserId(userId);
     try {
-      const { error } = await supabase.from("company_users").update({ job_role: jobRole }).eq("id", userId);
+      await syncJobRoleToCompanyRoles(normalizedRole);
+      const roleSkills = await fetchRoleSkillsForJobRole(normalizedRole);
+      const syncedSkills = roleSkills ?? [];
+
+      const { error } = await supabase
+        .from("company_users")
+        .update({ job_role: normalizedRole, skills: syncedSkills })
+        .eq("id", userId);
 
       if (error) throw error;
 
-      await syncJobRoleToCompanyRoles(jobRole);
-
-      setUsers(users.map((u) => (u.id === userId ? { ...u, job_role: jobRole } : u)));
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === userId ? { ...u, job_role: normalizedRole, skills: syncedSkills } : u)),
+      );
 
       toast({
-        title: "Job role updated",
-        description: `Job role set to ${jobRole}`,
+        title: "Job change confirmed",
+        description: `Job role set to ${normalizedRole}. Synced ${syncedSkills.length} role skill${syncedSkills.length === 1 ? "" : "s"}.`,
       });
+      return true;
     } catch (error: any) {
       toast({
         title: "Error updating job role",
         description: error.message,
         variant: "destructive",
       });
+      return false;
     } finally {
       setSavingUserId(null);
     }
+  };
+
+  const handleConfirmJobRoleChange = async (user: any) => {
+    const selectedRole = (jobRoleInput[user.id] ?? user.job_role ?? "").trim();
+    const currentRole = (user.job_role ?? "").trim();
+
+    if (!selectedRole) {
+      toast({
+        title: "Job role required",
+        description: "Please select a job role before confirming.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedRole === currentRole) return;
+
+    const updated = await handleUpdateJobRole(user.id, selectedRole);
+    if (!updated) return;
+
+    if (jobChangeConfirmTimerRef.current) {
+      clearTimeout(jobChangeConfirmTimerRef.current);
+    }
+    setShowJobChangeConfirmed(true);
+    jobChangeConfirmTimerRef.current = setTimeout(() => {
+      setShowJobChangeConfirmed(false);
+      jobChangeConfirmTimerRef.current = null;
+    }, 2500);
   };
 
   const handleAddSkill = async (userId: string, skill: string) => {
@@ -1492,22 +1562,40 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                               {/* Job Role Section */}
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">Job Role</label>
-                                <Select
-                                  value={user.job_role || ""}
-                                  onValueChange={(value) => handleUpdateJobRole(user.id, value)}
-                                  disabled={savingUserId === user.id || allJobRoles.length === 0}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select a job role" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {allJobRoles.map((role) => (
-                                      <SelectItem key={role} value={role}>
-                                        {role}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex items-center gap-2">
+                                  <Select
+                                    value={jobRoleInput[user.id] ?? user.job_role ?? ""}
+                                    onValueChange={(value) =>
+                                      setJobRoleInput((prev) => ({ ...prev, [user.id]: value }))
+                                    }
+                                    disabled={savingUserId === user.id || allJobRoles.length === 0}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Select a job role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {allJobRoles.map((role) => (
+                                        <SelectItem key={role} value={role}>
+                                          {role}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleConfirmJobRoleChange(user)}
+                                    disabled={
+                                      savingUserId === user.id ||
+                                      allJobRoles.length === 0 ||
+                                      !(jobRoleInput[user.id] ?? user.job_role ?? "").trim() ||
+                                      (jobRoleInput[user.id] ?? user.job_role ?? "").trim() ===
+                                        (user.job_role ?? "").trim()
+                                    }
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                </div>
                                 {allJobRoles.length === 0 && (
                                   <p className="text-xs text-muted-foreground">
                                     No roles available. Create roles in the Roles tab first.
@@ -1723,12 +1811,18 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           onSaveUserDetails={async (userId, fullName, jobRole, skills) => {
             setSavingUserId(userId);
             try {
+              const normalizedRole = jobRole.trim();
+              if (normalizedRole) {
+                await syncJobRoleToCompanyRoles(normalizedRole);
+              }
+              const roleSkills = normalizedRole ? await fetchRoleSkillsForJobRole(normalizedRole) : null;
+              const syncedSkills = normalizedRole ? (roleSkills ?? []) : skills;
+
               const { error } = await supabase
                 .from('company_users')
-                .update({ full_name: fullName, job_role: jobRole, skills })
+                .update({ full_name: fullName, job_role: normalizedRole || null, skills: syncedSkills })
                 .eq('id', userId);
               if (error) throw error;
-              await syncJobRoleToCompanyRoles(jobRole);
               toast({ title: 'User updated', description: 'Changes saved successfully.' });
               fetchUsers();
               setMobileSelectedUser(null);
@@ -1919,6 +2013,15 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           readOnly={readOnly || !permissions?.canManageUsers}
           onUserUpdate={fetchUsers}
         />
+        {showJobChangeConfirmed && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md">
+            <Alert className="border-primary/40 bg-background shadow-lg">
+              <Check className="h-4 w-4 text-primary" />
+              <AlertTitle>Job change confirmed</AlertTitle>
+              <AlertDescription>Role skills synced successfully.</AlertDescription>
+            </Alert>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,12 +12,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Users,
-  Crown,
-  Brain,
-  Lightbulb,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -86,8 +79,45 @@ export default function RoleAnalysisCard({
   const [teamSize, setTeamSize] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<RoleAnalysis | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setJobRole(initialJobRole || "");
+  }, [initialJobRole]);
+
+  const getOneWordVerdict = (recommendation: RoleAnalysis["recommendation"]) => {
+    if (recommendation === "not_recommended") return "No";
+    if (recommendation === "optional") return "Maybe";
+    return "Yes";
+  };
+
+  const getConfidenceScore = (analysisData: RoleAnalysis) => {
+    const confidenceBase: Record<RoleAnalysis["confidence"], number> = {
+      high: 9,
+      medium: 7,
+      low: 5,
+    };
+
+    const scoreAverage =
+      (analysisData.teamCollaborationScore +
+        analysisData.leadershipComplexityScore +
+        analysisData.selfAwarenessValueScore) /
+      3;
+    const blended = Math.round((confidenceBase[analysisData.confidence] + scoreAverage) / 2);
+    return Math.max(1, Math.min(10, blended));
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 8) return "High";
+    if (score >= 5) return "Medium";
+    return "Low";
+  };
+
+  const getSummaryBullets = (analysisData: RoleAnalysis) => [
+    `Collaboration: ${getScoreLabel(analysisData.teamCollaborationScore)} (${analysisData.teamCollaborationScore}/10)`,
+    `Leadership complexity: ${getScoreLabel(analysisData.leadershipComplexityScore)} (${analysisData.leadershipComplexityScore}/10)`,
+    `Self-awareness value: ${getScoreLabel(analysisData.selfAwarenessValueScore)} (${analysisData.selfAwarenessValueScore}/10)`,
+  ];
 
   const handleAnalyze = async () => {
     if (!jobRole.trim()) {
@@ -114,7 +144,6 @@ export default function RoleAnalysisCard({
       if (data?.error) throw new Error(data.error);
 
       setAnalysis(data);
-      setShowDetails(true);
     } catch (error: any) {
       toast({
         title: "Analysis failed",
@@ -136,21 +165,8 @@ export default function RoleAnalysisCard({
     }
   };
 
-  const ScoreBar = ({ label, score, icon: Icon }: { label: string; score: number; icon: any }) => (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Icon className="h-3.5 w-3.5" />
-          {label}
-        </span>
-        <span className="font-medium">{score}/10</span>
-      </div>
-      <Progress value={score * 10} className="h-1.5" />
-    </div>
-  );
-
   return (
-    <div className={cn("space-y-4", mode === "inline" && "pt-2 border-t")}>
+    <div className={cn("space-y-4 w-full max-w-full", mode === "inline" && "pt-2 border-t")}>
       {mode === "standalone" && (
         <div className="flex items-center gap-2 mb-2">
           {/* <Sparkles className="h-5 w-5 text-primary" />
@@ -206,26 +222,30 @@ export default function RoleAnalysisCard({
       </div>
 
       {analysis && (
-        <Card className="border-2 overflow-hidden">
+        <Card className="border-2 overflow-hidden w-full max-w-full">
           <CardContent className="p-4 space-y-4">
-            {/* Header with recommendation */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
+            {/* Initial basic answer */}
+            <div className="flex items-start justify-between gap-3 pb-2">
+              <div className="flex items-center gap-3 min-w-0">
                 {(() => {
                   const config = recommendationConfig[analysis.recommendation];
-                  const Icon = config.icon;
+                  const verdict = getOneWordVerdict(analysis.recommendation);
+                  const confidenceScore = getConfidenceScore(analysis);
                   return (
                     <>
-                      <div className={cn("p-2 rounded-full", config.color.split(" ")[0])}>
-                        <Icon className={cn("h-5 w-5", config.iconColor)} />
-                      </div>
-                      <div>
-                        <Badge className={config.color}>{config.label}</Badge>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {analysis.shouldTakeAssessment
-                            ? "This role would benefit from the assessment"
-                            : "Assessment may not be necessary for this role"}
+                      <div className="space-y-2 min-w-0">
+                        <Badge className={config.color}>{verdict}</Badge>
+                        <p className="text-sm mt-1">
+                          Confidence: <span className="font-medium">{confidenceScore}/10</span>
                         </p>
+                        <ul className="space-y-1 pt-1">
+                          {getSummaryBullets(analysis).map((point, idx) => (
+                            <li key={`${idx}-${point}`} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <span className="text-primary mt-0.5">•</span>
+                              <span className="block min-w-0 leading-4">{point}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </>
                   );
@@ -239,86 +259,18 @@ export default function RoleAnalysisCard({
               )}
             </div>
 
-            {/* Scores */}
-            <div className="grid gap-3 pt-2">
-              <ScoreBar
-                label="Team Collaboration"
-                score={analysis.teamCollaborationScore}
-                icon={Users}
-              />
-              <ScoreBar
-                label="Leadership Complexity"
-                score={analysis.leadershipComplexityScore}
-                icon={Crown}
-              />
-              <ScoreBar
-                label="Self-Awareness Value"
-                score={analysis.selfAwarenessValueScore}
-                icon={Brain}
-              />
-            </div>
-
-            {/* Expandable details */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-between text-muted-foreground"
-              onClick={() => setShowDetails(!showDetails)}
-            >
-              <span>{showDetails ? "Hide details" : "Show details"}</span>
-              {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-
-            {showDetails && (
-              <div className="space-y-4 pt-2 border-t">
-                {/* Reasons */}
-                {analysis.reasons.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Key Reasons:</p>
-                    <ul className="space-y-1">
-                      {analysis.reasons.map((reason, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          {reason}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Benefits */}
-                {analysis.shouldTakeAssessment && analysis.benefits.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
-                      Benefits:
-                    </p>
-                    <ul className="space-y-1">
-                      {analysis.benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="text-primary">•</span>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Suggested category */}
-                {showCategorySelect && analysis.shouldTakeAssessment && (
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div>
-                      <p className="text-sm font-medium">Suggested Assessment:</p>
-                      <p className="text-sm text-muted-foreground">
-                        {categoryLabels[analysis.suggestedCategory]}
-                      </p>
-                    </div>
-                    {onCategorySelect && (
-                      <Button size="sm" variant="outline" onClick={handleUseCategory}>
-                        Use This Category
-                      </Button>
-                    )}
-                  </div>
+            {showCategorySelect && analysis.shouldTakeAssessment && (
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div>
+                  <p className="text-sm font-medium">Suggested Assessment:</p>
+                  <p className="text-sm text-muted-foreground">
+                    {categoryLabels[analysis.suggestedCategory]}
+                  </p>
+                </div>
+                {onCategorySelect && (
+                  <Button size="sm" variant="outline" onClick={handleUseCategory}>
+                    Use This Category
+                  </Button>
                 )}
               </div>
             )}
