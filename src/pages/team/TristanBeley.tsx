@@ -37,11 +37,11 @@ const TristanBeley = () => {
       "jobTitle": "Chief Technology Officer (CTO)",
       "worksFor": {
         "@type": "Organization",
-        "name": "RoleColorFinder"
+        "name": "RoleColor"
       },
       "url": canonicalHref,
       "image": `${window.location.origin}/images/tristan-beley-new.png`,
-      "email": "tristan@rolecolorfinder.com",
+      "email": "tristan@rolecolor.com",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Toronto",
@@ -103,7 +103,7 @@ const TristanBeley = () => {
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Mail className="w-4 h-4 flex-shrink-0" />
                       <a href="mailto:tristan@rolecolorfinder.com" className="hover:text-primary transition-colors">
-                        tristan@rolecolorfinder.com
+                        tristan@rolecolor.com
                       </a>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">

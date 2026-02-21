@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Lightbulb, Sparkles } from 'lucide-react';
 import { getInsightUsage, type InsightUsage } from '@/lib/insightMetering';
 
 interface InsightUsageMeterProps {
   companyId: string;
   onUsageChange?: (usage: InsightUsage) => void;
+  usageOverride?: InsightUsage | null;
   className?: string;
 }
 
 /**
  * Displays insight usage meter: "X / 3 free insights used this month"
  */
-export function InsightUsageMeter({ companyId, onUsageChange, className = '' }: InsightUsageMeterProps) {
+export function InsightUsageMeter({ companyId, onUsageChange, usageOverride = null, className = '' }: InsightUsageMeterProps) {
   const [usage, setUsage] = useState<InsightUsage | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +34,9 @@ export function InsightUsageMeter({ companyId, onUsageChange, className = '' }: 
     }
   };
 
-  if (loading || !usage) {
+  const displayUsage = usageOverride ?? usage;
+
+  if ((loading && !displayUsage) || !displayUsage) {
     return (
       <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
         <Lightbulb className="h-4 w-4 animate-pulse" />
@@ -43,18 +45,18 @@ export function InsightUsageMeter({ companyId, onUsageChange, className = '' }: 
     );
   }
 
-  const percentage = (usage.used / usage.limit) * 100;
-  const isAtLimit = usage.remaining === 0;
+  const percentage = (displayUsage.used / displayUsage.limit) * 100;
+  const isAtLimit = displayUsage.remaining === 0;
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 text-sm">
+        <div className="flex min-w-0 items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="font-medium">AI Insights</span>
         </div>
-        <span className={`font-medium ${isAtLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
-          {usage.used} / {usage.limit} free used
+        <span className={`ml-auto shrink-0 pl-2 font-medium tabular-nums ${isAtLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
+          {displayUsage.used} / {displayUsage.limit} free used
         </span>
       </div>
       <Progress 
@@ -67,16 +69,7 @@ export function InsightUsageMeter({ companyId, onUsageChange, className = '' }: 
         }}
       />
       {isAtLimit && (
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
-            Free limit reached
-          </Badge>
-          {usage.canGenerate && (
-            <span className="text-xs text-muted-foreground">
-              Paid insights available
-            </span>
-          )}
-        </div>
+        <p className="text-xs font-medium text-amber-600">Free limit reached</p>
       )}
     </div>
   );

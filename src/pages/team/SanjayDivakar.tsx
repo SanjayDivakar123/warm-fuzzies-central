@@ -37,7 +37,7 @@ const SanjayDivakar = () => {
       "jobTitle": "Founder & CEO",
       "worksFor": {
         "@type": "Organization",
-        "name": "RoleColorFinder"
+        "name": "RoleColor"
       },
       "url": canonicalHref,
       "image": `${window.location.origin}/images/sanjay-divakar.png`,
@@ -103,7 +103,7 @@ const SanjayDivakar = () => {
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Mail className="w-4 h-4 flex-shrink-0" />
                       <a href="mailto:sanjay@rolecolorfinder.com" className="hover:text-primary transition-colors">
-                        sanjay@rolecolorfinder.com
+                        sanjay@rolecolor.com
                       </a>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">

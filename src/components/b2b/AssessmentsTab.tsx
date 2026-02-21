@@ -414,7 +414,6 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                   <Button
                     onClick={() => setShowInsightsModal(true)}
                     disabled={
-                      teamStats.pending > 0 || 
                       completedAssessments.length === 0 ||
                       completedAssessments.some(a => !a.job_role)
                     }
@@ -428,9 +427,9 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                   </Button>
                 </span>
               </TooltipTrigger>
-              {(teamStats.pending > 0 || completedAssessments.length === 0 || completedAssessments.some(a => !a.job_role)) && (
+              {(completedAssessments.length === 0 || completedAssessments.some(a => !a.job_role)) && (
                 <TooltipContent>
-                  All team assessments must be completed and all team members must have a job role set
+                  At least one completed assessment is required, and each included member must have a job role set
                 </TooltipContent>
               )}
             </Tooltip>
