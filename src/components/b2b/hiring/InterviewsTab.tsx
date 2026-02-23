@@ -75,6 +75,7 @@ interface InterviewWithDetails extends Interview {
 interface InterviewsTabProps {
   company: { id: string; name: string };
   companyUser: { id: string; role: string } | null;
+  isActive?: boolean;
 }
 
 const INTERVIEW_TYPE_ICONS: Record<InterviewType, React.ReactNode> = {
@@ -96,6 +97,7 @@ const INTERVIEW_STATUS_BADGES: Record<InterviewStatus, { variant: 'default' | 's
 export default function InterviewsTab({
   company,
   companyUser,
+  isActive = false,
 }: InterviewsTabProps) {
   const [interviews, setInterviews] = useState<InterviewWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,8 +110,9 @@ export default function InterviewsTab({
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
 
   useEffect(() => {
+    if (!isActive) return;
     fetchInterviews();
-  }, [company.id]);
+  }, [company.id, isActive]);
 
   const fetchInterviews = async () => {
     setLoading(true);
