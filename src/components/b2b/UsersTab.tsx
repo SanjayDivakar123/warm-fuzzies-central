@@ -116,6 +116,14 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [retakeRequestUser, setRetakeRequestUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [requestingRetake, setRequestingRetake] = useState(false);
+  const [adminDeleteTarget, setAdminDeleteTarget] = useState<{
+    id: string;
+    email: string;
+    full_name?: string;
+    role: string;
+    user_id?: string | null;
+  } | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState(false);
   const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
   const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
   const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
@@ -587,6 +595,69 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const isCurrentUserRecord = (user: any) => {
+    const rowEmail = (user?.email || '').toLowerCase();
+    return (currentUserId && user?.user_id === currentUserId) || (currentUserEmail && rowEmail === currentUserEmail);
+  };
+
+  const handleDeleteAdmin = async () => {
+    if (!adminDeleteTarget) return;
+
+    if (isCurrentUserRecord(adminDeleteTarget)) {
+      toast({
+        title: "Action blocked",
+        description: "You cannot delete your own admin account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeletingAdmin(true);
+    try {
+      const { error: primaryError } = await supabase
+        .from("task_assignments")
+        .update({ primary_assignee_id: null })
+        .eq("primary_assignee_id", adminDeleteTarget.id);
+
+      if (primaryError) {
+        console.error("Error clearing primary assignments:", primaryError);
+      }
+
+      const { error: secondaryError } = await supabase
+        .from("task_assignments")
+        .update({ secondary_assignee_id: null })
+        .eq("secondary_assignee_id", adminDeleteTarget.id);
+
+      if (secondaryError) {
+        console.error("Error clearing secondary assignments:", secondaryError);
+      }
+
+      const { error: deleteError } = await supabase
+        .from("company_users")
+        .delete()
+        .eq("id", adminDeleteTarget.id);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: "Admin deleted",
+        description: `${adminDeleteTarget.full_name || adminDeleteTarget.email} has been removed.`,
+      });
+
+      setAdminDeleteTarget(null);
+      fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting admin",
+        description: error?.message || "Unable to delete this admin right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAdmin(false);
     }
   };
 
@@ -1404,6 +1475,29 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                               <TooltipContent>Promote to Admin</TooltipContent>
                             </Tooltip>
                           )}
+                          {user.role !== "employee" && permissions.canManageAllRoles && !isCurrentUserRecord(user) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() =>
+                                    setAdminDeleteTarget({
+                                      id: user.id,
+                                      email: user.email,
+                                      full_name: user.full_name,
+                                      role: user.role,
+                                      user_id: user.user_id,
+                                    })
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete {user.role === 'admin' ? 'Admin' : user.role === 'hr' ? 'HR' : 'Partner'}</TooltipContent>
+                            </Tooltip>
+                          )}
                           {/* Super Admin can manage other admins/hr/partners */}
                           {user.role !== "employee" && isSuperAdmin && user.id !== superAdminId && (
                             <Tooltip>
@@ -1992,6 +2086,44 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                   </>
                 ) : (
                   "Request Retake"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {/* Delete Admin Confirmation Dialog */}
+        <AlertDialog
+          open={!!adminDeleteTarget}
+          onOpenChange={(open) => {
+            if (!open && !deletingAdmin) {
+              setAdminDeleteTarget(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Admin Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to permanently delete{" "}
+                <span className="font-medium">{adminDeleteTarget?.full_name || adminDeleteTarget?.email}</span>?
+                <br /><br />
+                This removes their {adminDeleteTarget?.role === 'admin' ? 'admin' : adminDeleteTarget?.role === 'hr' ? 'HR' : 'partner'} access and deletes their company user record.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingAdmin}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAdmin}
+                disabled={deletingAdmin}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              >
+                {deletingAdmin ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Admin"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
