@@ -43,6 +43,7 @@ import LeadershipGame from "@/pages/LeadershipGame";
 import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
+import RCFB2BAdminDashboard from "@/pages/admin/RCFB2BAdminDashboard";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
@@ -232,6 +233,10 @@ export const routeConfig = [
   {
     path: "/admin/users",
     element: <Layout><UserManagement /></Layout>,
+  },
+  {
+    path: "/admin/rcf-b2b",
+    element: <Layout><RCFB2BAdminDashboard /></Layout>,
   },
   {
     path: "/b2b",

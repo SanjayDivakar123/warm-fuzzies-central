@@ -30,7 +30,8 @@ import {
   Play,
   Clock,
   Camera,
-  Loader2
+  Loader2,
+  Shield,
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -360,6 +361,7 @@ const Dashboard = () => {
   // Admin, HR, and Partner roles can access the admin dashboard
   const adminCompanies = activeCompanies.filter(c => ['admin', 'hr', 'partner'].includes(c.role));
   const employeeCompanies = activeCompanies.filter(c => c.role === 'employee');
+  const isRcfSuperAdmin = ['sanjay@rolecolorfinder.com', 'tristan@rolecolorfinder.com'].includes((user?.email || '').toLowerCase());
 
   // Get role display label
   const getRoleBadge = (role: string) => {
@@ -1001,6 +1003,38 @@ const Dashboard = () => {
                             </Card>
                           ))}
                         </div>
+                      </section>
+                    )}
+
+                    {/* RCF Super Admin Dashboard */}
+                    {isRcfSuperAdmin && (
+                      <section className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-violet-500/10">
+                            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-violet-600" />
+                          </div>
+                          Role Color Finder Admin
+                        </h2>
+                        <Card className="relative overflow-hidden shadow-lg border-violet-400/30 bg-gradient-to-br from-violet-50 to-fuchsia-50/50 dark:from-violet-950/20 dark:to-fuchsia-950/10 hover:shadow-xl transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-bl from-violet-400/10 to-transparent rounded-full" />
+                          <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 sm:py-5 relative z-10">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-base sm:text-lg">RCF Super-Admin Portal</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                  View all B2B companies, company users, and platform accounts
+                                </p>
+                              </div>
+                            </div>
+                            <Button onClick={() => navigate('/admin/rcf-b2b')} className="bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white border-0 hover:from-violet-600 hover:to-fuchsia-700 shadow-lg shadow-violet-500/25 w-full sm:w-auto">
+                              <Shield className="w-4 h-4 mr-2" />
+                              Admin Dashboard
+                            </Button>
+                          </CardContent>
+                        </Card>
                       </section>
                     )}
 
