@@ -385,6 +385,8 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             companyUser={companyUser}
             selectedJobId={selectedJobId}
             onSelectJob={setSelectedJobId}
+            onNavigateToInterviews={() => setActiveTab('interviews')}
+            onNavigateToOffers={() => setActiveTab('offers')}
           />
         </TabsContent>
 
@@ -400,6 +402,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
           <InterviewsTab 
             company={company}
             companyUser={companyUser}
+            isActive={activeTab === 'interviews'}
           />
         </TabsContent>
 

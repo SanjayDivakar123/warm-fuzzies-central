@@ -8,8 +8,8 @@ import { useEffect } from "react";
 
 const TristanBeley = () => {
   useEffect(() => {
-    const title = "Tristan Beley - Chief Technology Officer | Role Color Finder";
-    const description = "Tristan Beley is the CTO at RoleColorFinder, leading technology and product direction with a focus on intuitive, intelligent leadership tools.";
+    const title = "Tristan Beley - Co-Founder & CTO | Role Color Finder";
+    const description = "Tristan Beley is the Co-Founder & CTO at RoleColorFinder, leading technology and product direction with a focus on intuitive, intelligent leadership tools.";
 
     document.title = title;
 
@@ -34,7 +34,7 @@ const TristanBeley = () => {
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Tristan Beley",
-      "jobTitle": "Chief Technology Officer (CTO)",
+      "jobTitle": "Co-Founder & CTO",
       "worksFor": {
         "@type": "Organization",
         "name": "RoleColor"
@@ -92,7 +92,7 @@ const TristanBeley = () => {
                 <div className="p-6 space-y-4">
                   <div>
                     <h1 className="text-2xl font-bold">Tristan Beley</h1>
-                    <p className="text-lg text-primary font-semibold">Chief Technology Officer (CTO)</p>
+                    <p className="text-lg text-primary font-semibold">Co-Founder & CTO</p>
                   </div>
                   
                   <div className="space-y-3 text-sm">
@@ -128,13 +128,13 @@ const TristanBeley = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <section>
-              <Badge variant="default" className="mb-4">Chief Technology Officer</Badge>
+              <Badge variant="default" className="mb-4">Co-Founder & CTO</Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Building Human-Centered Technology
               </h2>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Tristan Beley is the CTO at RoleColorFinder and a builder at heart. He loves starting from zero, sketching ideas on paper, and turning them into real products that people actually use. Tristan joined RoleColorFinder as an intern and worked his way onto the executive team because he saw three things clearly: a real product-market gap in how we teach leadership, a founder with a vision worth betting on, and an opportunity to create something that genuinely benefits others, not just look good on a slide deck.
+                  Tristan Beley is the Co-Founder & CTO at RoleColorFinder and a builder at heart. He loves starting from zero, sketching ideas on paper, and turning them into real products that people actually use. Tristan joined RoleColorFinder as an intern and worked his way onto the executive team because he saw three things clearly: a real product-market gap in how we teach leadership, a founder with a vision worth betting on, and an opportunity to create something that genuinely benefits others, not just look good on a slide deck.
                 </p>
                 <p>
                   At RoleColorFinder, Tristan leads the technology and product direction, focusing on tools that feel as intuitive as they are intelligent. He's obsessed with innovation in a very practical sense: shipping features, testing them with real users, and iterating until the experience feels simple, human, and genuinely helpful.

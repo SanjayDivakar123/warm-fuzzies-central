@@ -55,6 +55,8 @@ interface HiringPipelineViewProps {
   companyUser: { id: string; role: string } | null;
   selectedJobId: string | null;
   onSelectJob: (jobId: string | null) => void;
+  onNavigateToInterviews?: () => void;
+  onNavigateToOffers?: () => void;
 }
 
 const ROLECOLOR_COLORS: Record<string, string> = {
@@ -69,6 +71,8 @@ export default function HiringPipelineView({
   companyUser,
   selectedJobId,
   onSelectJob,
+  onNavigateToInterviews,
+  onNavigateToOffers,
 }: HiringPipelineViewProps) {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [stages, setStages] = useState<HiringStage[]>([]);
@@ -343,6 +347,8 @@ export default function HiringPipelineView({
                         isMoving={movingCandidate === app.id}
                         onMove={(toStageId) => moveCandidate(app.id, toStageId, null)}
                         onReject={() => rejectCandidate(app.id)}
+                            onScheduleInterview={onNavigateToInterviews}
+                            onSendOffer={onNavigateToOffers}
                         canManage={isHROrAdmin}
                       />
                     ))}
@@ -393,6 +399,8 @@ export default function HiringPipelineView({
                             onMovePrev={prevStage ? () => moveCandidate(app.id, prevStage.id, stage.id) : undefined}
                             onMove={(toStageId) => moveCandidate(app.id, toStageId, stage.id)}
                             onReject={() => rejectCandidate(app.id)}
+                            onScheduleInterview={onNavigateToInterviews}
+                            onSendOffer={onNavigateToOffers}
                             canManage={isHROrAdmin}
                           />
                         ))
@@ -425,6 +433,8 @@ interface CandidateCardProps {
   onMovePrev?: () => void;
   onMove: (toStageId: string) => void;
   onReject: () => void;
+  onScheduleInterview?: () => void;
+  onSendOffer?: () => void;
   canManage: boolean;
 }
 
@@ -437,6 +447,8 @@ function CandidateCard({
   onMovePrev,
   onMove,
   onReject,
+  onScheduleInterview,
+  onSendOffer,
   canManage,
 }: CandidateCardProps) {
   const candidate = application.candidate;
@@ -452,6 +464,10 @@ function CandidateCard({
       return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
     return email.slice(0, 2).toUpperCase();
+  }
+
+  function handleSendEmail() {
+    window.location.href = `mailto:${candidate.email}`;
   }
 
   return (
@@ -528,15 +544,15 @@ function CandidateCard({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onScheduleInterview}>
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule Interview
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onSendOffer}>
                   <FileCheck className="h-4 w-4 mr-2" />
                   Send Offer
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSendEmail}>
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </DropdownMenuItem>

@@ -146,3 +146,15 @@ verify_jwt = false
 
 [functions.ai-follow-up]
 verify_jwt = true
+
+[functions.list-rcf-b2b-companies]
+verify_jwt = true
+
+[functions.list-rcf-company-users]
+verify_jwt = true
+
+[functions.list-rcf-platform-users]
+verify_jwt = true
+
+[functions.send-rcf-password-reset]
+verify_jwt = true
