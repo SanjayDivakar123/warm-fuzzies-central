@@ -28,6 +28,7 @@ interface SendOfferDialogProps {
   candidateId: string | null;
   candidateName: string;
   candidateEmail: string;
+  companyName: string;
   jobTitle: string;
   companyId: string;
   open: boolean;
@@ -40,6 +41,7 @@ export default function SendOfferDialog({
   candidateId,
   candidateName,
   candidateEmail,
+  companyName,
   jobTitle,
   companyId,
   open,
@@ -128,30 +130,39 @@ export default function SendOfferDialog({
       // Send email notification if enabled
       if (sendEmail && candidateEmail) {
         try {
-          await supabase.functions.invoke('send-email', {
+          const salaryValue = parseFloat(salary);
+          const bonusValue = bonus ? parseFloat(bonus) : null;
+          const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-offer-email', {
             body: {
               to: candidateEmail,
-              subject: `Job Offer: ${jobTitle}`,
-              html: `
-                <h2>Congratulations!</h2>
-                <p>Dear ${candidateName},</p>
-                <p>We are pleased to extend an offer for the position of <strong>${jobTitle}</strong>.</p>
-                <h3>Offer Details:</h3>
-                <ul>
-                  <li><strong>Base Salary:</strong> $${parseFloat(salary).toLocaleString()} ${currency}</li>
-                  ${bonus ? `<li><strong>Signing Bonus:</strong> $${parseFloat(bonus).toLocaleString()} ${currency}</li>` : ''}
-                  ${equity ? `<li><strong>Equity:</strong> ${equity}</li>` : ''}
-                  ${startDate ? `<li><strong>Start Date:</strong> ${format(new Date(startDate), 'MMMM d, yyyy')}</li>` : ''}
-                </ul>
-                ${expiresAt ? `<p><em>This offer expires on ${format(new Date(expiresAt), 'MMMM d, yyyy')}.</em></p>` : ''}
-                ${notes ? `<p><strong>Additional Notes:</strong><br>${notes}</p>` : ''}
-                <p>Please review the offer and let us know your decision.</p>
-                <p>Best regards,<br>The Hiring Team</p>
-              `,
+              candidateName,
+              companyName,
+              jobTitle,
+              salary: salaryValue,
+              currency,
+              bonus: bonusValue,
+              equity: equity.trim() || null,
+              startDate: startDate ? format(new Date(startDate), 'MMMM d, yyyy') : null,
+              offerExpires: expiresAt ? format(new Date(expiresAt), 'MMMM d, yyyy') : null,
+              notes: notes.trim() || null,
             },
           });
+
+          if (emailError || (emailResponse && typeof emailResponse === 'object' && 'error' in emailResponse)) {
+            const message = emailError?.message || (emailResponse as { error?: string }).error || 'Failed to send offer email';
+            toast({
+              title: 'Offer created, but email failed',
+              description: message,
+              variant: 'destructive',
+            });
+          }
         } catch (emailErr) {
           console.error('Failed to send email:', emailErr);
+          toast({
+            title: 'Offer created, but email failed',
+            description: 'Could not send the offer email to the candidate.',
+            variant: 'destructive',
+          });
         }
       }
 

@@ -689,6 +689,7 @@ export default function HiringCandidatesTab({
         candidateId={interviewApp?.candidate.id || null}
         candidateName={interviewApp?.candidate.full_name || 'Candidate'}
         candidateEmail={interviewApp?.candidate.email || ''}
+        companyName={company.name}
         jobTitle={interviewApp?.job_posting?.title || ''}
         companyId={company.id}
         open={!!interviewApp}
@@ -702,6 +703,7 @@ export default function HiringCandidatesTab({
         candidateId={offerApp?.candidate.id || null}
         candidateName={offerApp?.candidate.full_name || 'Candidate'}
         candidateEmail={offerApp?.candidate.email || ''}
+        companyName={company.name}
         jobTitle={offerApp?.job_posting?.title || ''}
         companyId={company.id}
         open={!!offerApp}

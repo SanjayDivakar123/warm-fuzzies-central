@@ -161,3 +161,9 @@ verify_jwt = true
 
 [functions.rcf-company-billing-admin]
 verify_jwt = true
+
+[functions.send-interview-email]
+verify_jwt = true
+
+[functions.send-offer-email]
+verify_jwt = true

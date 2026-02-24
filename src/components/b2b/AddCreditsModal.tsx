@@ -3,7 +3,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, Wallet, Tag, Check, X } from "lucide-react";
@@ -28,11 +37,11 @@ export default function AddCreditsModal({
   onCreditsAdded,
 }: AddCreditsModalProps) {
   const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
 
   const appliedPromo = promoApplied ? VALID_PROMO_CODES[promoApplied] : null;
@@ -62,7 +71,7 @@ export default function AddCreditsModal({
     setPromoError(null);
   };
 
-  const handleAddCredits = async () => {
+  const handleRequestAddCredits = () => {
     if (isNaN(creditAmount) || creditAmount <= 0) {
       toast({
         title: "Invalid amount",
@@ -83,17 +92,18 @@ export default function AddCreditsModal({
       return;
     }
 
+    setShowConfirmDialog(true);
+  };
+
+  const handleAddCredits = async () => {
     setLoading(true);
     try {
-      const promoDescription = promoApplied 
-        ? ` (Promo: ${promoApplied} - ${discountPercent}% off, saved $${discountAmount.toFixed(2)})`
-        : "";
-      
       const { data, error } = await supabase.functions.invoke("add-credits", {
         body: {
           company_id: companyId,
           amount: creditAmount,
-          description: (description.trim() || `Manual credit addition of $${creditAmount}`) + promoDescription,
+          charge_amount: finalCost,
+          promo_code: promoApplied,
         },
       });
 
@@ -110,9 +120,9 @@ export default function AddCreditsModal({
       });
 
       setAmount("");
-      setDescription("");
       setPromoCode("");
       setPromoApplied(null);
+      setShowConfirmDialog(false);
       onCreditsAdded();
       onClose();
     } catch (error: any) {
@@ -128,10 +138,10 @@ export default function AddCreditsModal({
 
   const handleClose = () => {
     setAmount("");
-    setDescription("");
     setPromoCode("");
     setPromoApplied(null);
     setPromoError(null);
+    setShowConfirmDialog(false);
     onClose();
   };
 
@@ -144,7 +154,7 @@ export default function AddCreditsModal({
             Add Credits
           </DialogTitle>
           <DialogDescription>
-            Add credits to the company wallet. Credits are used for monthly user billing ($20/user/month).
+            Purchase wallet credits. Your card on file will be charged the purchase amount.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -219,17 +229,6 @@ export default function AddCreditsModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Reason for adding credits..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
-          </div>
-
           {creditAmount > 0 && (
             <div className="space-y-2 p-3 bg-muted rounded-lg">
               <div className="flex justify-between items-center text-sm">
@@ -261,12 +260,30 @@ export default function AddCreditsModal({
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleAddCredits} disabled={loading || creditAmount <= 0}>
+          <Button onClick={handleRequestAddCredits} disabled={loading || creditAmount <= 0}>
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-            {finalCost === 0 ? "Add Free Credits" : `Add Credits ($${finalCost.toFixed(2)})`}
+            {finalCost === 0 ? "Add Free Credits" : `Purchase Credits ($${finalCost.toFixed(2)})`}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Credit Purchase</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will purchase ${creditAmount.toFixed(2)} in wallet credits and charge your card on file{" "}
+              {finalCost === 0 ? "for $0.00." : `for $${finalCost.toFixed(2)}.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAddCredits} disabled={loading}>
+              {loading ? "Processing..." : "Confirm Purchase"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

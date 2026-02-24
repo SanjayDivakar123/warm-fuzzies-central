@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface HiringSubscriptionSettingsProps {
   company: {
@@ -41,9 +48,31 @@ export default function HiringSubscriptionSettings({
   company, 
   onSubscriptionUpdated 
 }: HiringSubscriptionSettingsProps) {
+  type StatementRow = {
+    id: string;
+    created_at: string;
+    category: 'subscription' | 'charge' | 'extra_insight' | 'credit';
+    description: string;
+    amount: number;
+    source: 'transaction' | 'credit';
+  };
+
   const [subscribing, setSubscribing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showStatementDialog, setShowStatementDialog] = useState(false);
+  const [statementLoading, setStatementLoading] = useState(false);
+  const [statementRows, setStatementRows] = useState<StatementRow[]>([]);
+  const [statementStartDate, setStatementStartDate] = useState<Date | null>(null);
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState<Date | null>(null);
+  const [renewalDateLoading, setRenewalDateLoading] = useState(false);
+  const [statementTotals, setStatementTotals] = useState({
+    charges: 0,
+    subscriptions: 0,
+    extraInsights: 0,
+    creditsApplied: 0,
+    net: 0,
+  });
   const { toast } = useToast();
 
   const hasActiveSubscription = company.hiring_subscription_enabled && 
@@ -53,6 +82,229 @@ export default function HiringSubscriptionSettings({
   const periodEnd = company.hiring_subscription_current_period_end 
     ? new Date(company.hiring_subscription_current_period_end)
     : null;
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+  const addOneMonthAnchored = (current: Date, anchorDay: number) => {
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const targetMonthDate = new Date(year, month + 1, 1);
+    const lastDayOfTargetMonth = new Date(
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth() + 1,
+      0
+    ).getDate();
+    const day = Math.min(anchorDay, lastDayOfTargetMonth);
+
+    return new Date(
+      targetMonthDate.getFullYear(),
+      targetMonthDate.getMonth(),
+      day,
+      current.getHours(),
+      current.getMinutes(),
+      current.getSeconds(),
+      current.getMilliseconds()
+    );
+  };
+
+  const getNextRenewalFromStart = (startDate: Date) => {
+    const now = new Date();
+    const anchorDay = startDate.getDate();
+    let cursor = new Date(startDate);
+
+    while (cursor <= now) {
+      cursor = addOneMonthAnchored(cursor, anchorDay);
+    }
+    return cursor;
+  };
+
+  const displayedRenewalDate = subscriptionStartDate
+    ? getNextRenewalFromStart(subscriptionStartDate)
+    : periodEnd;
+
+  const getStatementCategory = (type: string, description?: string | null): StatementRow['category'] => {
+    const normalizedType = (type || '').toLowerCase();
+    const normalizedDescription = (description || '').toLowerCase();
+
+    if (normalizedType.includes('insight') || normalizedDescription.includes('insight')) {
+      return 'extra_insight';
+    }
+    if (normalizedDescription.includes('hiring tab subscription')) {
+      return 'subscription';
+    }
+    if (normalizedType.includes('credit')) {
+      return 'credit';
+    }
+    return 'charge';
+  };
+
+  const getCategoryLabel = (category: StatementRow['category']) => {
+    if (category === 'subscription') return 'Subscription';
+    if (category === 'extra_insight') return 'Extra Insights';
+    if (category === 'credit') return 'Credits';
+    return 'Charges';
+  };
+
+  const loadMonthlyStatement = async () => {
+    setStatementLoading(true);
+    try {
+      const [txRes, creditRes] = await Promise.all([
+        supabase
+          .from('billing_transactions')
+          .select('id, created_at, type, amount, description')
+          .eq('company_id', company.id)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('billing_credits')
+          .select('id, created_at, amount, description, type')
+          .eq('company_id', company.id)
+          .order('created_at', { ascending: true }),
+      ]);
+
+      if (txRes.error) throw txRes.error;
+      if (creditRes.error) throw creditRes.error;
+
+      const transactions = txRes.data || [];
+      const credits = creditRes.data || [];
+
+      const firstHiringSubscriptionEvent = transactions.find((row) => {
+        const text = (row.description || '').toLowerCase();
+        return text.includes('hiring tab subscription') || text.includes('hiring tab subscription started');
+      });
+
+      const derivedStartDate = firstHiringSubscriptionEvent?.created_at
+        ? new Date(firstHiringSubscriptionEvent.created_at)
+        : company.hiring_subscription_current_period_end
+          ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
+          : null;
+
+      setStatementStartDate(derivedStartDate);
+
+      const txRows: StatementRow[] = transactions
+        .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
+        .map((row) => {
+          const category = getStatementCategory(row.type, row.description);
+          return {
+            id: `tx-${row.id}`,
+            created_at: row.created_at,
+            category,
+            description: row.description || row.type,
+            amount: row.amount || 0,
+            source: 'transaction',
+          };
+        });
+
+      const creditRows: StatementRow[] = credits
+        .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
+        .map((row) => ({
+          id: `credit-${row.id}`,
+          created_at: row.created_at,
+          category: 'credit',
+          description: row.description || row.type || 'Credit adjustment',
+          amount: row.amount || 0,
+          source: 'credit',
+        }));
+
+      const allRows = [...txRows, ...creditRows].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      const totals = allRows.reduce(
+        (acc, row) => {
+          if (row.category === 'subscription') acc.subscriptions += row.amount;
+          if (row.category === 'extra_insight') acc.extraInsights += row.amount;
+          if (row.category === 'charge') acc.charges += row.amount;
+          if (row.category === 'credit') acc.creditsApplied += row.amount;
+          acc.net += row.amount;
+          return acc;
+        },
+        { charges: 0, subscriptions: 0, extraInsights: 0, creditsApplied: 0, net: 0 }
+      );
+
+      setStatementRows(allRows);
+      setStatementTotals(totals);
+    } catch (error: any) {
+      console.error('Error loading monthly statement:', error);
+      toast({
+        title: 'Failed to load statement',
+        description: error.message || 'Unable to load billing statement right now.',
+        variant: 'destructive',
+      });
+    } finally {
+      setStatementLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadSubscriptionStartDate = async () => {
+      if (!hasActiveSubscription) {
+        setSubscriptionStartDate(null);
+        setRenewalDateLoading(false);
+        return;
+      }
+
+      const storageKey = `rcf_hiring_subscription_start_date_${company.id}`;
+      const cachedStartDate = sessionStorage.getItem(storageKey);
+      if (cachedStartDate) {
+        if (cachedStartDate === "__NONE__") {
+          setSubscriptionStartDate(null);
+        } else {
+          setSubscriptionStartDate(new Date(cachedStartDate));
+        }
+        setRenewalDateLoading(false);
+        return;
+      }
+
+      setRenewalDateLoading(true);
+      const { data, error } = await supabase
+        .from('billing_transactions')
+        .select('created_at, description')
+        .eq('company_id', company.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading subscription start date:', error);
+        const fallbackStart = company.hiring_subscription_current_period_end
+          ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
+          : null;
+        setSubscriptionStartDate(
+          company.hiring_subscription_current_period_end
+            ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
+            : null
+        );
+        sessionStorage.setItem(storageKey, fallbackStart ? fallbackStart.toISOString() : "__NONE__");
+        setRenewalDateLoading(false);
+        return;
+      }
+
+      const firstSubscriptionEvent = (data || []).find((row) => {
+        const text = (row.description || '').toLowerCase();
+        return text.includes('hiring tab subscription') || text.includes('hiring tab subscription started');
+      });
+
+      if (firstSubscriptionEvent?.created_at) {
+        const start = new Date(firstSubscriptionEvent.created_at);
+        setSubscriptionStartDate(start);
+        sessionStorage.setItem(storageKey, start.toISOString());
+      } else if (company.hiring_subscription_current_period_end) {
+        const start = new Date(
+          new Date(company.hiring_subscription_current_period_end).setMonth(
+            new Date(company.hiring_subscription_current_period_end).getMonth() - 1
+          )
+        );
+        setSubscriptionStartDate(start);
+        sessionStorage.setItem(storageKey, start.toISOString());
+      } else {
+        setSubscriptionStartDate(null);
+        sessionStorage.setItem(storageKey, "__NONE__");
+      }
+
+      setRenewalDateLoading(false);
+    };
+
+    loadSubscriptionStartDate();
+  }, [company.id, company.hiring_subscription_current_period_end, hasActiveSubscription]);
 
   const handleSubscribe = async () => {
     setSubscribing(true);
@@ -132,6 +384,35 @@ export default function HiringSubscriptionSettings({
 
   return (
     <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Monthly Statement
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Open your monthly statement with charges, subscriptions, and extra insights.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            disabled={!hasActiveSubscription}
+            onClick={() => {
+              setShowStatementDialog(true);
+              loadMonthlyStatement();
+            }}
+          >
+            View Statement
+          </Button>
+          {!hasActiveSubscription && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Statement details become available after your Hiring tab subscription is active.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <Card id="hiring-subscription" className="scroll-mt-20">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -160,17 +441,23 @@ export default function HiringSubscriptionSettings({
                   <span className="font-semibold">$500/month</span>
                 </div>
 
-                {periodEnd && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">
-                        {isCancelling ? 'Ends on' : 'Next billing date'}
-                      </span>
-                    </div>
-                    <span className="text-sm">{periodEnd.toLocaleDateString()}</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {isCancelling ? 'Ends on' : 'Renewal date'}
+                    </span>
                   </div>
-                )}
+                  <span className="text-sm">
+                    {renewalDateLoading ? (
+                      <span className="inline-block h-4 w-24 animate-pulse rounded bg-muted-foreground/20 align-middle" />
+                    ) : displayedRenewalDate ? (
+                      displayedRenewalDate.toLocaleDateString()
+                    ) : (
+                      'Not available'
+                    )}
+                  </span>
+                </div>
 
                 {isCancelling && (
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
@@ -299,6 +586,87 @@ export default function HiringSubscriptionSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showStatementDialog} onOpenChange={setShowStatementDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Monthly Statement</DialogTitle>
+            <DialogDescription>
+              Statement period starts from your Hiring pipeline subscription start date.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Subscription Started</p>
+                <p className="text-sm font-medium">
+                  {statementStartDate ? statementStartDate.toLocaleDateString() : 'Not available yet'}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Renewal Date</p>
+                <p className="text-sm font-medium">
+                  {displayedRenewalDate ? displayedRenewalDate.toLocaleDateString() : 'Not available yet'}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Net Activity</p>
+                <p className="text-sm font-medium">{formatCurrency(statementTotals.net)}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Subscriptions</p>
+                <p className="text-sm font-semibold">{formatCurrency(statementTotals.subscriptions)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Charges</p>
+                <p className="text-sm font-semibold">{formatCurrency(statementTotals.charges)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Extra Insights</p>
+                <p className="text-sm font-semibold">{formatCurrency(statementTotals.extraInsights)}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Credits</p>
+                <p className="text-sm font-semibold">{formatCurrency(statementTotals.creditsApplied)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border">
+              <div className="grid grid-cols-12 gap-2 border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+                <div className="col-span-3">Date</div>
+                <div className="col-span-3">Category</div>
+                <div className="col-span-4">Description</div>
+                <div className="col-span-2 text-right">Amount</div>
+              </div>
+
+              {statementLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : statementRows.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No statement activity yet.
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-auto">
+                  {statementRows.map((row) => (
+                    <div key={row.id} className="grid grid-cols-12 gap-2 border-b px-3 py-2 text-sm">
+                      <div className="col-span-3">{new Date(row.created_at).toLocaleDateString()}</div>
+                      <div className="col-span-3">{getCategoryLabel(row.category)}</div>
+                      <div className="col-span-4 truncate" title={row.description}>{row.description}</div>
+                      <div className="col-span-2 text-right font-medium">{formatCurrency(row.amount)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -5,6 +5,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +51,11 @@ function B2BDashboardContent() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
+  const [settingsSaveHandler, setSettingsSaveHandler] = useState<(() => Promise<boolean>) | null>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -76,6 +91,45 @@ function B2BDashboardContent() {
   const handleLogout = async () => {
     await signOut();
     window.location.href = '/b2b';
+  };
+
+  const handleTabChange = (nextTab: string) => {
+    if (nextTab === activeTab) return;
+    if (activeTab === 'settings' && settingsDirty) {
+      setPendingTab(nextTab);
+      setShowUnsavedDialog(true);
+      return;
+    }
+    setActiveTab(nextTab);
+  };
+
+  const handleDiscardAndLeave = () => {
+    setSettingsDirty(false);
+    setShowUnsavedDialog(false);
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+    }
+  };
+
+  const handleSaveAndLeave = async () => {
+    if (!settingsSaveHandler) {
+      handleDiscardAndLeave();
+      return;
+    }
+
+    setSavingBeforeLeave(true);
+    const success = await settingsSaveHandler();
+    setSavingBeforeLeave(false);
+
+    if (!success) return;
+
+    setSettingsDirty(false);
+    setShowUnsavedDialog(false);
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+    }
   };
 
   useEffect(() => {
@@ -139,6 +193,17 @@ function B2BDashboardContent() {
       verifySubscription();
     }
   }, [searchParams, setSearchParams, toast, refreshCompany]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (activeTab === 'settings' && settingsDirty) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [activeTab, settingsDirty]);
 
   if (loading) {
     return (
@@ -307,7 +372,7 @@ function B2BDashboardContent() {
           }
         `}</style>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <TabsList className="bg-background border p-1 h-auto hidden sm:inline-flex gap-1 sticky top-16 z-40 justify-start" data-tour="dashboard-tabs">
               {permissions.canViewOverview && (
@@ -414,7 +479,7 @@ function B2BDashboardContent() {
               company={company} 
               onSettingsSaved={refreshCompany}
               onNavigateToSettings={() => {
-                setActiveTab('settings');
+                handleTabChange('settings');
                 setScrollToSection('assessment-config');
               }}
             />
@@ -438,6 +503,8 @@ function B2BDashboardContent() {
               onSettingsSaved={refreshCompany}
               scrollToSection={scrollToSection}
               onScrollComplete={() => setScrollToSection(null)}
+              onDirtyChange={setSettingsDirty}
+              registerSaveHandler={(handler) => setSettingsSaveHandler(() => handler)}
             />
           </TabsContent>
 
@@ -452,9 +519,39 @@ function B2BDashboardContent() {
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         permissions={permissions}
       />
+
+      <AlertDialog
+        open={showUnsavedDialog}
+        onOpenChange={(open) => {
+          setShowUnsavedDialog(open);
+          if (!open) setPendingTab(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You have unsaved settings</AlertDialogTitle>
+            <AlertDialogDescription>
+              Save your settings before leaving this page, or discard your unsaved changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingBeforeLeave}>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDiscardAndLeave}
+              disabled={savingBeforeLeave}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Discard Changes
+            </AlertDialogAction>
+            <AlertDialogAction onClick={handleSaveAndLeave} disabled={savingBeforeLeave}>
+              {savingBeforeLeave ? 'Saving...' : 'Save All'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
@@ -471,10 +568,10 @@ function B2BDashboardContent() {
           }}
           onSelectCandidate={(candidateId) => {
             setSelectedCandidateId(candidateId);
-            setActiveTab('hiring');
+            handleTabChange('hiring');
           }}
           onSelectTask={() => {
-            setActiveTab('overview');
+            handleTabChange('overview');
           }}
         />
       )}

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { HelpCircle, Play, RotateCcw, CheckCircle2, BookOpen } from 'lucide-react';
 import { useHelpTour, TourDefinition } from '@/contexts/HelpTourContext';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface HelpButtonProps {
   /** Filter to only show certain tours */
@@ -24,6 +25,13 @@ interface HelpButtonProps {
   iconOnly?: boolean;
 }
 
+const TOUR_ROUTE_BY_ID: Record<string, string> = {
+  'admin-dashboard-overview': '/b2b/company-portal?tab=overview',
+  'admin-users-management': '/b2b/company-portal?tab=users',
+  'admin-assessments-overview': '/b2b/company-portal?tab=assessments',
+  'admin-work-matrix': '/b2b/company-portal?tab=matrix',
+};
+
 export function HelpButton({ 
   tourFilter, 
   className, 
@@ -31,6 +39,7 @@ export function HelpButton({
   iconOnly = false 
 }: HelpButtonProps) {
   const { availableTours, startTour, hasCompletedTour, resetTourProgress, isActive } = useHelpTour();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const filteredTours = tourFilter 
@@ -39,8 +48,12 @@ export function HelpButton({
 
   const handleStartTour = (tourId: string) => {
     setOpen(false);
+    const targetRoute = TOUR_ROUTE_BY_ID[tourId];
+    if (targetRoute) {
+      navigate(targetRoute);
+    }
     // Small delay to allow dropdown to close
-    setTimeout(() => startTour(tourId), 100);
+    setTimeout(() => startTour(tourId), targetRoute ? 300 : 100);
   };
 
   const handleResetTour = (tourId: string, e: React.MouseEvent) => {

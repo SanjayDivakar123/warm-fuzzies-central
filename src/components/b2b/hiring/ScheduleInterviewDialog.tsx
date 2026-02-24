@@ -23,16 +23,27 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar, Clock, Video, MapPin, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 
+export interface InterviewScheduleCandidateOption {
+  applicationId: string;
+  candidateId: string | null;
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+}
+
 interface ScheduleInterviewDialogProps {
   applicationId: string | null;
   candidateId: string | null;
   candidateName: string;
   candidateEmail: string;
+  companyName: string;
   jobTitle: string;
   companyId: string;
   open: boolean;
   onClose: () => void;
   onScheduled: () => void;
+  candidateOptions?: InterviewScheduleCandidateOption[];
+  requireCandidateSelection?: boolean;
 }
 
 type InterviewType = 'video' | 'phone' | 'onsite';
@@ -42,12 +53,16 @@ export default function ScheduleInterviewDialog({
   candidateId,
   candidateName,
   candidateEmail,
+  companyName,
   jobTitle,
   companyId,
   open,
   onClose,
   onScheduled,
+  candidateOptions = [],
+  requireCandidateSelection = false,
 }: ScheduleInterviewDialogProps) {
+  const [selectedApplicationId, setSelectedApplicationId] = useState('');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -61,16 +76,50 @@ export default function ScheduleInterviewDialog({
 
   useEffect(() => {
     if (open) {
+      setSelectedApplicationId(applicationId || '');
+
+      const initialJobTitle =
+        jobTitle ||
+        candidateOptions.find((option) => option.applicationId === applicationId)?.jobTitle ||
+        '';
+
       // Set defaults
-      setTitle(`Interview - ${jobTitle}`);
+      setTitle(initialJobTitle ? `Interview - ${initialJobTitle}` : 'Interview');
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setDate(format(tomorrow, 'yyyy-MM-dd'));
       setTime('10:00');
     }
-  }, [open, jobTitle]);
+  }, [open, jobTitle, applicationId, candidateOptions]);
+
+  const selectedCandidateOption =
+    candidateOptions.find((option) => option.applicationId === selectedApplicationId) || null;
+
+  const resolvedApplicationId = applicationId || selectedCandidateOption?.applicationId || null;
+  const resolvedCandidateId = candidateId || selectedCandidateOption?.candidateId || null;
+  const resolvedCandidateName = candidateName || selectedCandidateOption?.candidateName || 'Candidate';
+  const resolvedCandidateEmail = candidateEmail || selectedCandidateOption?.candidateEmail || '';
+  const resolvedJobTitle = jobTitle || selectedCandidateOption?.jobTitle || '';
 
   const handleSchedule = async () => {
+    if (requireCandidateSelection && !selectedCandidateOption) {
+      toast({
+        title: 'Select a candidate',
+        description: 'Please select a candidate to schedule an interview.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!resolvedApplicationId) {
+      toast({
+        title: 'Missing candidate application',
+        description: 'Please select a valid candidate application.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!date || !time) {
       toast({
         title: 'Missing information',
@@ -89,7 +138,7 @@ export default function ScheduleInterviewDialog({
       const { data: interview, error } = await supabase
         .from('interviews')
         .insert({
-          application_id: applicationId!,
+          application_id: resolvedApplicationId,
           scheduled_at: scheduledAt.toISOString(),
           duration_minutes: parseInt(duration),
           interview_type: interviewType,
@@ -104,11 +153,11 @@ export default function ScheduleInterviewDialog({
       if (error) throw error;
 
       // Log activity
-      if (candidateId) {
+      if (resolvedCandidateId) {
         await supabase.from('candidate_activities').insert({
           company_id: companyId,
-          candidate_id: candidateId,
-          application_id: applicationId,
+          candidate_id: resolvedCandidateId,
+          application_id: resolvedApplicationId,
           activity_type: 'interview_scheduled',
           title: 'Interview scheduled',
           description: `${interviewType === 'video' ? 'Video' : interviewType === 'phone' ? 'Phone' : 'In-person'} interview scheduled for ${format(scheduledAt, 'MMM d, yyyy')} at ${format(scheduledAt, 'h:mm a')}`,
@@ -121,36 +170,46 @@ export default function ScheduleInterviewDialog({
       }
 
       // Send email notification if enabled
-      if (sendEmail && candidateEmail) {
+      if (sendEmail && resolvedCandidateEmail) {
         try {
-          await supabase.functions.invoke('send-email', {
+          const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-interview-email', {
             body: {
-              to: candidateEmail,
-              subject: `Interview Scheduled: ${title || jobTitle}`,
-              html: `
-                <h2>Interview Scheduled</h2>
-                <p>Hello ${candidateName},</p>
-                <p>Your interview has been scheduled:</p>
-                <ul>
-                  <li><strong>Date:</strong> ${format(scheduledAt, 'EEEE, MMMM d, yyyy')}</li>
-                  <li><strong>Time:</strong> ${format(scheduledAt, 'h:mm a')}</li>
-                  <li><strong>Duration:</strong> ${duration} minutes</li>
-                  <li><strong>Type:</strong> ${interviewType === 'video' ? 'Video Call' : interviewType === 'phone' ? 'Phone Call' : 'In-Person'}</li>
-                  ${location ? `<li><strong>Location:</strong> ${location}</li>` : ''}
-                </ul>
-                ${notes ? `<p><strong>Additional Notes:</strong><br>${notes}</p>` : ''}
-                <p>Best regards,<br>The Hiring Team</p>
-              `,
+              to: resolvedCandidateEmail,
+              candidateName: resolvedCandidateName,
+              companyName,
+              jobTitle: resolvedJobTitle,
+              interviewTitle: title || (resolvedJobTitle ? `Interview - ${resolvedJobTitle}` : 'Interview'),
+              scheduledDate: format(scheduledAt, 'EEEE, MMMM d, yyyy'),
+              scheduledTime: format(scheduledAt, 'h:mm a'),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              durationMinutes: parseInt(duration),
+              interviewType,
+              location: location.trim() || null,
+              notes: notes.trim() || null,
             },
           });
+
+          if (emailError || (emailResponse && typeof emailResponse === 'object' && 'error' in emailResponse)) {
+            const message = emailError?.message || (emailResponse as { error?: string }).error || 'Failed to send interview email';
+            toast({
+              title: 'Interview scheduled, but email failed',
+              description: message,
+              variant: 'destructive',
+            });
+          }
         } catch (emailErr) {
           console.error('Failed to send email:', emailErr);
+          toast({
+            title: 'Interview scheduled, but email failed',
+            description: 'Could not send the interview confirmation email.',
+            variant: 'destructive',
+          });
         }
       }
 
       toast({
         title: 'Interview scheduled',
-        description: `Interview with ${candidateName} scheduled for ${format(scheduledAt, 'MMM d')} at ${format(scheduledAt, 'h:mm a')}`,
+        description: `Interview with ${resolvedCandidateName} scheduled for ${format(scheduledAt, 'MMM d')} at ${format(scheduledAt, 'h:mm a')}`,
       });
 
       onScheduled();
@@ -168,6 +227,7 @@ export default function ScheduleInterviewDialog({
   };
 
   const handleClose = () => {
+    setSelectedApplicationId('');
     setTitle('');
     setDate('');
     setTime('');
@@ -187,11 +247,31 @@ export default function ScheduleInterviewDialog({
             Schedule Interview
           </DialogTitle>
           <DialogDescription>
-            Schedule an interview with {candidateName} for {jobTitle}
+            {resolvedCandidateName && resolvedJobTitle
+              ? `Schedule an interview with ${resolvedCandidateName} for ${resolvedJobTitle}`
+              : 'Select a candidate and schedule an interview'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {requireCandidateSelection && (
+            <div className="space-y-2">
+              <Label>Select Candidate</Label>
+              <Select value={selectedApplicationId} onValueChange={setSelectedApplicationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a candidate..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidateOptions.map((option) => (
+                    <SelectItem key={option.applicationId} value={option.applicationId}>
+                      {option.candidateName} - {option.jobTitle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="title">Interview Title</Label>
             <Input

@@ -14,21 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
@@ -52,6 +38,7 @@ import {
 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { format, addDays, isSameDay, startOfDay, parseISO } from 'date-fns';
+import ScheduleInterviewDialog, { InterviewScheduleCandidateOption } from './ScheduleInterviewDialog';
 
 type Interview = Database['public']['Tables']['interviews']['Row'];
 type InterviewStatus = Database['public']['Enums']['interview_status'];
@@ -100,6 +87,7 @@ export default function InterviewsTab({
   isActive = false,
 }: InterviewsTabProps) {
   const [interviews, setInterviews] = useState<InterviewWithDetails[]>([]);
+  const [scheduleCandidateOptions, setScheduleCandidateOptions] = useState<InterviewScheduleCandidateOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -134,10 +122,35 @@ export default function InterviewsTab({
       // Get applications for those jobs
       const { data: appsData } = await supabase
         .from('candidate_applications')
-        .select('id')
+        .select(`
+          id,
+          candidate_id,
+          rejected_at,
+          withdrawn_at,
+          candidate:candidates (
+            id,
+            full_name,
+            email
+          ),
+          job_posting:job_postings (
+            id,
+            title
+          )
+        `)
         .in('job_posting_id', jobIds);
 
-      const appIds = appsData?.map(a => a.id) || [];
+      const appIds = appsData?.map((a: any) => a.id) || [];
+
+      const schedulableOptions = (appsData || [])
+        .filter((app: any) => !app.rejected_at && !app.withdrawn_at && app.candidate?.email)
+        .map((app: any) => ({
+          applicationId: app.id,
+          candidateId: app.candidate_id,
+          candidateName: app.candidate?.full_name || app.candidate?.email?.split('@')[0] || 'Candidate',
+          candidateEmail: app.candidate.email,
+          jobTitle: app.job_posting?.title || 'Unknown Role',
+        }));
+      setScheduleCandidateOptions(schedulableOptions);
 
       if (appIds.length === 0) {
         setInterviews([]);
@@ -311,7 +324,7 @@ export default function InterviewsTab({
         </div>
 
         {isHROrAdmin && (
-          <Button onClick={() => setShowScheduleDialog(true)}>
+          <Button onClick={() => setShowScheduleDialog(true)} disabled={scheduleCandidateOptions.length === 0}>
             <Plus className="h-4 w-4 mr-2" />
             Schedule Interview
           </Button>
@@ -395,22 +408,23 @@ export default function InterviewsTab({
         </Card>
       )}
 
-      {/* Schedule Dialog (placeholder - would need application selector) */}
-      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Schedule Interview</DialogTitle>
-            <DialogDescription>
-              To schedule an interview, go to the Pipeline or Candidates tab and select a candidate.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ScheduleInterviewDialog
+        applicationId={null}
+        candidateId={null}
+        candidateName=""
+        candidateEmail=""
+        companyName={company.name}
+        jobTitle=""
+        companyId={company.id}
+        open={showScheduleDialog}
+        onClose={() => setShowScheduleDialog(false)}
+        onScheduled={() => {
+          fetchInterviews();
+          setShowScheduleDialog(false);
+        }}
+        candidateOptions={scheduleCandidateOptions}
+        requireCandidateSelection
+      />
     </div>
   );
 }

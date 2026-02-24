@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +49,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { company_id, amount, description } = body;
+    const { company_id, amount, charge_amount, promo_code } = body;
 
     // Validate inputs
     if (!company_id || !isValidUUID(company_id)) {
@@ -60,6 +61,16 @@ serve(async (req) => {
 
     if (!amount || typeof amount !== "number" || amount <= 0) {
       return new Response(JSON.stringify({ error: "Invalid amount" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (
+      charge_amount !== undefined &&
+      (typeof charge_amount !== "number" || charge_amount < 0 || charge_amount > amount)
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid charge amount" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -87,10 +98,10 @@ serve(async (req) => {
       });
     }
 
-    // Get current balance
+    // Get current balance + Stripe metadata
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("credit_balance")
+      .select("id, name, admin_email, credit_balance, stripe_customer_id")
       .eq("id", company_id)
       .single();
 
@@ -101,7 +112,83 @@ serve(async (req) => {
       });
     }
 
-    const newBalance = (company.credit_balance || 0) + amount;
+    const chargeAmount = Number(((charge_amount ?? amount) as number).toFixed(2));
+    const creditAmount = Number((amount as number).toFixed(2));
+    const promoSuffix = promo_code ? ` (Promo: ${promo_code})` : "";
+
+    let chargedPaymentIntentId: string | null = null;
+    if (chargeAmount > 0) {
+      const stripeSecret = Deno.env.get("STRIPE_SECRET");
+      if (!stripeSecret) {
+        return new Response(JSON.stringify({ error: "Stripe is not configured" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+
+      let customerId = company.stripe_customer_id;
+      if (!customerId) {
+        const customers = await stripe.customers.list({ email: company.admin_email, limit: 1 });
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+        } else {
+          const customer = await stripe.customers.create({
+            email: company.admin_email,
+            name: company.name,
+            metadata: { company_id: company.id },
+          });
+          customerId = customer.id;
+        }
+
+        const { error: customerUpdateError } = await supabase
+          .from("companies")
+          .update({ stripe_customer_id: customerId })
+          .eq("id", company_id);
+        if (customerUpdateError) {
+          throw customerUpdateError;
+        }
+      }
+
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: "card",
+      });
+
+      if (paymentMethods.data.length === 0) {
+        return new Response(JSON.stringify({ error: "No payment method on file" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(chargeAmount * 100),
+        currency: "usd",
+        customer: customerId,
+        payment_method: paymentMethods.data[0].id,
+        off_session: true,
+        confirm: true,
+        description: `Wallet credit purchase for ${company.name}: $${chargeAmount.toFixed(2)}`,
+        metadata: {
+          company_id: company.id,
+          type: "wallet_credit_purchase",
+          credits_added: creditAmount.toFixed(2),
+        },
+      });
+
+      if (paymentIntent.status !== "succeeded") {
+        return new Response(JSON.stringify({ error: `Payment failed with status ${paymentIntent.status}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      chargedPaymentIntentId = paymentIntent.id;
+    }
+
+    const newBalance = Number((Number(company.credit_balance || 0) + creditAmount).toFixed(2));
 
     // Update company credit balance
     const { error: updateError } = await supabase
@@ -119,9 +206,12 @@ serve(async (req) => {
       .from("billing_credits")
       .insert({
         company_id,
-        amount,
-        type: "manual_addition",
-        description: description || `Manual credit addition of $${amount}`,
+        amount: creditAmount,
+        type: chargeAmount > 0 ? "payment" : "manual",
+        description:
+          chargeAmount > 0
+            ? `Credit purchase: added $${creditAmount.toFixed(2)}, charged $${chargeAmount.toFixed(2)}${promoSuffix}`
+            : `Free credits added: $${creditAmount.toFixed(2)}${promoSuffix}`,
         created_by: user.id,
       });
 
@@ -130,13 +220,31 @@ serve(async (req) => {
       // Don't throw - the credit was added, logging failed
     }
 
+    if (chargeAmount > 0) {
+      const { error: txError } = await supabase
+        .from("billing_transactions")
+        .insert({
+          company_id,
+          amount: chargeAmount,
+          type: "charge",
+          stripe_payment_intent_id: chargedPaymentIntentId,
+          description: `Wallet credit purchase charge: $${chargeAmount.toFixed(2)}`,
+        });
+
+      if (txError) {
+        console.error("Error logging charge transaction:", txError);
+      }
+    }
+
     console.log("Credits added successfully. New balance:", newBalance);
 
     return new Response(
       JSON.stringify({
         success: true,
         previousBalance: company.credit_balance || 0,
-        amountAdded: amount,
+        amountAdded: creditAmount,
+        chargeAmount,
+        chargedPaymentIntentId,
         newBalance,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
