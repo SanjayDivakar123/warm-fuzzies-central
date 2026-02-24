@@ -19,6 +19,7 @@ interface SendEmailDialogProps {
   candidateId: string | null;
   candidateName: string;
   candidateEmail: string;
+  companyName: string;
   companyId: string;
   open: boolean;
   onClose: () => void;
@@ -28,6 +29,7 @@ export default function SendEmailDialog({
   candidateId,
   candidateName,
   candidateEmail,
+  companyName,
   companyId,
   open,
   onClose,
@@ -49,16 +51,20 @@ export default function SendEmailDialog({
 
     setSending(true);
     try {
-      // Call the send-email edge function
-      const { error } = await supabase.functions.invoke('send-email', {
+      // Send through Mailgun-backed function.
+      const { data, error } = await supabase.functions.invoke('send-candidate-email', {
         body: {
           to: candidateEmail,
           subject: subject.trim(),
-          html: body.trim().replace(/\n/g, '<br>'),
+          message: body.trim(),
+          candidateName,
+          companyName,
         },
       });
 
-      if (error) throw error;
+      if (error || (data && typeof data === 'object' && 'error' in data)) {
+        throw new Error(error?.message || (data as { error?: string }).error || 'Failed to send email');
+      }
 
       // Log the email activity
       if (candidateId) {

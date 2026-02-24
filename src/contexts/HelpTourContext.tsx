@@ -126,7 +126,7 @@ export const adminAssessmentsTour: TourDefinition = {
       target: '[data-tour="team-insights"]',
       title: 'AI Team Insights',
       content: 'Get AI-powered analysis of your team\'s strengths, collaboration tips, and growth opportunities.',
-      placement: 'bottom',
+      placement: 'left',
     },
     {
       id: 'individual-results',
@@ -145,23 +145,172 @@ export const adminWorkMatrixTour: TourDefinition = {
   steps: [
     {
       id: 'create-task',
-      target: '[data-tour="matrix-create"]',
+      target: '[data-tour="matrix-tab-create"]',
       title: 'Create a Task',
       content: 'Start by describing the task, setting importance and urgency levels, and selecting required skills.',
       placement: 'bottom',
     },
     {
       id: 'ai-assignment',
-      target: '[data-tour="matrix-assignment"]',
-      title: 'AI Recommendations',
-      content: 'Our AI analyzes team members\' RoleColors, skills, and workload to suggest the best person for each task.',
+      target: '[data-tour="matrix-assignment-explainer"]',
+      title: 'What Happens Next',
+      content: 'Once you create a task, the Assignment tab unlocks. That screen shows AI recommendations based on RoleColor, skills, and workload.',
       placement: 'bottom',
     },
     {
       id: 'task-history',
-      target: '[data-tour="matrix-history"]',
+      target: '[data-tour="matrix-tab-history"]',
       title: 'Assignment History',
       content: 'Track all past task assignments and their outcomes to improve future decisions.',
+      placement: 'bottom',
+    },
+  ],
+};
+
+export const adminHiringLockedTour: TourDefinition = {
+  id: 'admin-hiring-locked',
+  name: 'Hiring Platform (Locked)',
+  description: 'See hiring features and how to unlock access',
+  steps: [
+    {
+      id: 'hiring-overview',
+      target: '[data-tour="hiring-locked-overview"]',
+      title: 'Hiring Platform Overview',
+      content: 'This is your hiring workspace. It includes ATS tools for jobs, candidates, pipeline stages, interviews, offers, templates, and analytics.',
+      placement: 'bottom',
+    },
+    {
+      id: 'unlock-access',
+      target: '[data-tour="hiring-pricing"]',
+      title: 'Unlock Premium Hiring',
+      content: 'To unlock Hiring, subscribe from this section. After activation, you will get full access to all hiring tabs and workflows.',
+      placement: 'top',
+    },
+  ],
+};
+
+export const adminHiringUnlockedTour: TourDefinition = {
+  id: 'admin-hiring-unlocked',
+  name: 'Hiring Platform Walkthrough',
+  description: 'Walk through each hiring tab and what it does',
+  steps: [
+    {
+      id: 'jobs-1',
+      target: '[data-tour="hiring-tab-jobs"]',
+      title: 'Jobs',
+      content: 'Start in Jobs. This is your command center for creating roles and tracking posting health.',
+      placement: 'bottom',
+    },
+    {
+      id: 'jobs-2',
+      target: '[data-tour="hiring-jobs-filters"]',
+      title: 'Jobs Filters & Status',
+      content: 'Use status filters to focus on open, draft, paused, or closed roles. This helps prioritize active hiring.',
+      placement: 'bottom',
+    },
+    {
+      id: 'jobs-3',
+      target: '[data-tour="hiring-jobs-list"]',
+      title: 'Job Cards & Actions',
+      content: 'Open a job card menu to jump to Pipeline/Candidates, publish or pause roles, copy application links, and edit details.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-1',
+      target: '[data-tour="hiring-tab-pipeline"]',
+      title: 'Pipeline Tab',
+      content: 'Pipeline gives you a stage-by-stage board for one job at a time so decisions stay focused.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-2',
+      target: '[data-tour="hiring-pipeline-selector"]',
+      title: 'Choose the Job',
+      content: 'Select a role first. The board and metrics update to that job so stage movement is role-specific.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-3',
+      target: '[data-tour="hiring-pipeline-board"]',
+      title: 'Move Candidates by Stage',
+      content: 'Use the board to move candidates forward, reject when needed, and trigger next actions like interviews or offers.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-1',
+      target: '[data-tour="hiring-tab-candidates"]',
+      title: 'Candidates Tab',
+      content: 'Candidates is your master list across jobs with full visibility into each applicant.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-2',
+      target: '[data-tour="hiring-candidates-filters"]',
+      title: 'Search, Filter, Segment',
+      content: 'Use search plus job/stage/status filters to quickly isolate who needs action now.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-3',
+      target: '[data-tour="hiring-candidates-table"]',
+      title: 'Candidate Actions',
+      content: 'From each row, open actions to view profile, send assessment, move stages, schedule interviews, send offers, or reject.',
+      placement: 'top',
+    },
+    {
+      id: 'interviews-1',
+      target: '[data-tour="hiring-tab-interviews"]',
+      title: 'Interviews Tab',
+      content: 'Interviews centralizes scheduling and interview outcomes for every active hiring workflow.',
+      placement: 'bottom',
+    },
+    {
+      id: 'interviews-2',
+      target: '[data-tour="hiring-interviews-controls"]',
+      title: 'Plan & Filter Interviews',
+      content: 'Filter by interview status and switch between calendar/list to coordinate workload by date or queue.',
+      placement: 'bottom',
+    },
+    {
+      id: 'interviews-3',
+      target: '[data-tour="hiring-interviews-view"]',
+      title: 'Run the Interview Queue',
+      content: 'Review day-level schedules, update statuses (completed/no-show/cancelled), and keep candidates moving.',
+      placement: 'left',
+    },
+    {
+      id: 'offers-1',
+      target: '[data-tour="hiring-tab-offers"]',
+      title: 'Offers Tab',
+      content: 'Offers manages compensation proposals, approvals, and acceptance tracking in one place.',
+      placement: 'bottom',
+    },
+    {
+      id: 'offers-2',
+      target: '[data-tour="hiring-offers-controls"]',
+      title: 'Create & Filter Offers',
+      content: 'Create offers for qualified candidates and filter by status to focus on drafts, sent, and final outcomes.',
+      placement: 'bottom',
+    },
+    {
+      id: 'offers-3',
+      target: '[data-tour="hiring-offers-table"]',
+      title: 'Offer Lifecycle',
+      content: 'Track salary/start/expiry fields and use row actions to send, accept, decline, rescind, or review details.',
+      placement: 'top',
+    },
+    {
+      id: 'templates-1',
+      target: '[data-tour="hiring-tab-templates"]',
+      title: 'Templates',
+      content: 'Reuse email templates for consistent outreach and faster communication.',
+      placement: 'bottom',
+    },
+    {
+      id: 'analytics-1',
+      target: '[data-tour="hiring-tab-analytics"]',
+      title: 'Analytics',
+      content: 'Measure funnel performance, identify bottlenecks, and improve hiring outcomes.',
       placement: 'bottom',
     },
   ],
@@ -248,19 +397,23 @@ export const employeeResultsTour: TourDefinition = {
   ],
 };
 
+const BUILTIN_TOURS: TourDefinition[] = [
+  adminDashboardTour,
+  adminUsersTour,
+  adminAssessmentsTour,
+  adminWorkMatrixTour,
+  adminHiringLockedTour,
+  adminHiringUnlockedTour,
+  employeeLoginTour,
+  employeeAssessmentTour,
+  employeeResultsTour,
+];
+
 export function HelpTourProvider({ children }: { children: React.ReactNode }) {
   const [activeTour, setActiveTour] = useState<TourDefinition | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedTours, setCompletedTours] = useState<Set<string>>(new Set());
-  const [availableTours, setAvailableTours] = useState<TourDefinition[]>([
-    adminDashboardTour,
-    adminUsersTour,
-    adminAssessmentsTour,
-    adminWorkMatrixTour,
-    employeeLoginTour,
-    employeeAssessmentTour,
-    employeeResultsTour,
-  ]);
+  const [availableTours, setAvailableTours] = useState<TourDefinition[]>(BUILTIN_TOURS);
 
   // Load completed tours from localStorage
   useEffect(() => {
@@ -281,6 +434,17 @@ export function HelpTourProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Failed to save tour progress:', e);
     }
+  }, []);
+
+  // Keep built-in tours in sync (useful during HMR/live edits).
+  useEffect(() => {
+    setAvailableTours((prev) => {
+      const byId = new Map(prev.map((tour) => [tour.id, tour]));
+      BUILTIN_TOURS.forEach((tour) => {
+        byId.set(tour.id, tour);
+      });
+      return Array.from(byId.values());
+    });
   }, []);
 
   const startTour = useCallback((tourId: string) => {

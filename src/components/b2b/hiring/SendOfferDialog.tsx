@@ -23,16 +23,27 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileCheck, DollarSign } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
+export interface OfferCandidateOption {
+  applicationId: string;
+  candidateId: string | null;
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+}
+
 interface SendOfferDialogProps {
   applicationId: string | null;
   candidateId: string | null;
   candidateName: string;
   candidateEmail: string;
+  companyName: string;
   jobTitle: string;
   companyId: string;
   open: boolean;
   onClose: () => void;
   onSent: () => void;
+  candidateOptions?: OfferCandidateOption[];
+  requireCandidateSelection?: boolean;
 }
 
 export default function SendOfferDialog({
@@ -40,12 +51,16 @@ export default function SendOfferDialog({
   candidateId,
   candidateName,
   candidateEmail,
+  companyName,
   jobTitle,
   companyId,
   open,
   onClose,
   onSent,
+  candidateOptions = [],
+  requireCandidateSelection = false,
 }: SendOfferDialogProps) {
+  const [selectedApplicationId, setSelectedApplicationId] = useState('');
   const [salary, setSalary] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [bonus, setBonus] = useState('');
@@ -59,19 +74,38 @@ export default function SendOfferDialog({
 
   useEffect(() => {
     if (open) {
+      setSelectedApplicationId(applicationId || '');
       // Set defaults
       const defaultStart = addDays(new Date(), 14);
       const defaultExpiry = addDays(new Date(), 7);
       setStartDate(format(defaultStart, 'yyyy-MM-dd'));
       setExpiresAt(format(defaultExpiry, 'yyyy-MM-dd'));
     }
-  }, [open]);
+  }, [open, applicationId]);
+
+  const selectedCandidateOption =
+    candidateOptions.find((option) => option.applicationId === selectedApplicationId) || null;
+
+  const resolvedApplicationId = applicationId || selectedCandidateOption?.applicationId || null;
+  const resolvedCandidateId = candidateId || selectedCandidateOption?.candidateId || null;
+  const resolvedCandidateName = candidateName || selectedCandidateOption?.candidateName || 'Candidate';
+  const resolvedCandidateEmail = candidateEmail || selectedCandidateOption?.candidateEmail || '';
+  const resolvedJobTitle = jobTitle || selectedCandidateOption?.jobTitle || '';
 
   const handleSend = async () => {
-    if (!salary || !applicationId) {
+    if (requireCandidateSelection && !selectedCandidateOption) {
+      toast({
+        title: 'Select a candidate',
+        description: 'Please select a candidate to create an offer.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!salary || !resolvedApplicationId) {
       toast({
         title: 'Missing information',
-        description: 'Please enter the salary amount.',
+        description: 'Please select a candidate and enter the salary amount.',
         variant: 'destructive',
       });
       return;
@@ -83,8 +117,8 @@ export default function SendOfferDialog({
       const { data: offer, error } = await supabase
         .from('offers')
         .insert({
-          application_id: applicationId,
-          job_title: jobTitle,
+          application_id: resolvedApplicationId,
+          job_title: resolvedJobTitle,
           salary: parseFloat(salary),
           salary_currency: currency,
           bonus: bonus ? parseFloat(bonus) : null,
@@ -109,11 +143,11 @@ export default function SendOfferDialog({
       }
 
       // Log activity
-      if (candidateId) {
+      if (resolvedCandidateId) {
         await supabase.from('candidate_activities').insert({
           company_id: companyId,
-          candidate_id: candidateId,
-          application_id: applicationId,
+          candidate_id: resolvedCandidateId,
+          application_id: resolvedApplicationId,
           activity_type: 'offer_sent',
           title: 'Offer sent',
           description: `Offer sent: $${parseFloat(salary).toLocaleString()} ${currency}`,
@@ -126,38 +160,47 @@ export default function SendOfferDialog({
       }
 
       // Send email notification if enabled
-      if (sendEmail && candidateEmail) {
+      if (sendEmail && resolvedCandidateEmail) {
         try {
-          await supabase.functions.invoke('send-email', {
+          const salaryValue = parseFloat(salary);
+          const bonusValue = bonus ? parseFloat(bonus) : null;
+          const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-offer-email', {
             body: {
-              to: candidateEmail,
-              subject: `Job Offer: ${jobTitle}`,
-              html: `
-                <h2>Congratulations!</h2>
-                <p>Dear ${candidateName},</p>
-                <p>We are pleased to extend an offer for the position of <strong>${jobTitle}</strong>.</p>
-                <h3>Offer Details:</h3>
-                <ul>
-                  <li><strong>Base Salary:</strong> $${parseFloat(salary).toLocaleString()} ${currency}</li>
-                  ${bonus ? `<li><strong>Signing Bonus:</strong> $${parseFloat(bonus).toLocaleString()} ${currency}</li>` : ''}
-                  ${equity ? `<li><strong>Equity:</strong> ${equity}</li>` : ''}
-                  ${startDate ? `<li><strong>Start Date:</strong> ${format(new Date(startDate), 'MMMM d, yyyy')}</li>` : ''}
-                </ul>
-                ${expiresAt ? `<p><em>This offer expires on ${format(new Date(expiresAt), 'MMMM d, yyyy')}.</em></p>` : ''}
-                ${notes ? `<p><strong>Additional Notes:</strong><br>${notes}</p>` : ''}
-                <p>Please review the offer and let us know your decision.</p>
-                <p>Best regards,<br>The Hiring Team</p>
-              `,
+              to: resolvedCandidateEmail,
+              candidateName: resolvedCandidateName,
+              companyName,
+              jobTitle: resolvedJobTitle,
+              salary: salaryValue,
+              currency,
+              bonus: bonusValue,
+              equity: equity.trim() || null,
+              startDate: startDate ? format(new Date(startDate), 'MMMM d, yyyy') : null,
+              offerExpires: expiresAt ? format(new Date(expiresAt), 'MMMM d, yyyy') : null,
+              notes: notes.trim() || null,
             },
           });
+
+          if (emailError || (emailResponse && typeof emailResponse === 'object' && 'error' in emailResponse)) {
+            const message = emailError?.message || (emailResponse as { error?: string }).error || 'Failed to send offer email';
+            toast({
+              title: 'Offer created, but email failed',
+              description: message,
+              variant: 'destructive',
+            });
+          }
         } catch (emailErr) {
           console.error('Failed to send email:', emailErr);
+          toast({
+            title: 'Offer created, but email failed',
+            description: 'Could not send the offer email to the candidate.',
+            variant: 'destructive',
+          });
         }
       }
 
       toast({
         title: 'Offer sent',
-        description: `Offer sent to ${candidateName}`,
+        description: `Offer sent to ${resolvedCandidateName}`,
       });
 
       // Reset form
@@ -181,6 +224,7 @@ export default function SendOfferDialog({
   };
 
   const handleClose = () => {
+    setSelectedApplicationId('');
     setSalary('');
     setBonus('');
     setEquity('');
@@ -197,11 +241,38 @@ export default function SendOfferDialog({
             Send Offer
           </DialogTitle>
           <DialogDescription>
-            Create and send an offer to {candidateName} for {jobTitle}
+            {resolvedCandidateName && resolvedJobTitle
+              ? `Create and send an offer to ${resolvedCandidateName} for ${resolvedJobTitle}`
+              : 'Select a candidate and create an offer'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {requireCandidateSelection && (
+            <div className="space-y-2">
+              <Label>Select Candidate</Label>
+              <Select value={selectedApplicationId} onValueChange={setSelectedApplicationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a candidate..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidateOptions.map((option) => (
+                    <SelectItem key={option.applicationId} value={option.applicationId}>
+                      {option.candidateName} - {option.jobTitle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {requireCandidateSelection && selectedCandidateOption && (
+            <div className="rounded-md border border-border bg-muted/20 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">Role:</span>{' '}
+              <span className="font-medium">{selectedCandidateOption.jobTitle}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2 space-y-2">
               <Label htmlFor="salary">Base Salary *</Label>

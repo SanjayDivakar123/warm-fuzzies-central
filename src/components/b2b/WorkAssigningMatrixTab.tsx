@@ -8,6 +8,7 @@ import { TaskAssignmentOutput } from './matrix/TaskAssignmentOutput';
 import { TaskHistoryPanel } from './matrix/TaskHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { Brain, ListTodo, History } from 'lucide-react';
+import { useHelpTour } from '@/contexts/HelpTourContext';
 
 interface Task {
   id: string;
@@ -36,6 +37,7 @@ interface Assignment {
 
 export function WorkAssigningMatrixTab() {
   const { company } = useCompany();
+  const { activeTour, currentStepIndex } = useHelpTour();
   const [activeTab, setActiveTab] = useState('create');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
@@ -47,6 +49,21 @@ export function WorkAssigningMatrixTab() {
       fetchTasks();
     }
   }, [company?.id]);
+
+  useEffect(() => {
+    if (activeTour?.id !== 'admin-work-matrix') return;
+
+    // Keep internal matrix tabs aligned with each guided step.
+    if (currentStepIndex === 0 && activeTab !== 'create') {
+      setActiveTab('create');
+      return;
+    }
+    // Step 2 explains what comes next, but assignment stays unavailable
+    // until a task is created.
+    if (currentStepIndex === 2 && activeTab !== 'history') {
+      setActiveTab('history');
+    }
+  }, [activeTour?.id, currentStepIndex, activeTab]);
 
   const fetchTasks = async () => {
     if (!company?.id) return;
@@ -96,23 +113,28 @@ export function WorkAssigningMatrixTab() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="create" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-3" data-tour="matrix-tabs">
+              <TabsTrigger value="create" className="flex items-center gap-2" data-tour="matrix-tab-create">
                 <ListTodo className="h-4 w-4" />
                 Create Task
               </TabsTrigger>
-              <TabsTrigger value="assignment" className="flex items-center gap-2" disabled={!currentTask}>
+              <TabsTrigger value="assignment" className="flex items-center gap-2" disabled={!currentTask} data-tour="matrix-tab-assignment">
                 <Brain className="h-4 w-4" />
                 Assignment
                 {currentTask && <Badge variant="secondary" className="ml-1">1</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
+              <TabsTrigger value="history" className="flex items-center gap-2" data-tour="matrix-tab-history">
                 <History className="h-4 w-4" />
                 History
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="create" className="mt-6" data-tour="matrix-create">
+              <Card className="mb-4 border-primary/20 bg-primary/5" data-tour="matrix-assignment-explainer">
+                <CardContent className="py-3 text-sm text-center text-muted-foreground">
+                  After you create a task, the Assignment tab unlocks and shows AI recommendations for the best assignee.
+                </CardContent>
+              </Card>
               <TaskIntakeForm 
                 companyId={company.id} 
                 onTaskCreated={handleTaskCreated}

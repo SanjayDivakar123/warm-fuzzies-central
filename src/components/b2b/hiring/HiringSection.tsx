@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, 
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useHelpTour } from '@/contexts/HelpTourContext';
 
 // Import hiring sub-components
 import JobPostingsTab from './JobPostingsTab';
@@ -54,6 +55,7 @@ interface HiringSectionProps {
 type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics';
 
 export default function HiringSection({ company, companyUser }: HiringSectionProps) {
+  const { activeTour, currentStepIndex } = useHelpTour();
   const [activeTab, setActiveTab] = useState<HiringTab>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -68,6 +70,26 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const creditBalance = company.credit_balance || 0; // In dollars
   const hiringCost = 500; // $500 in dollars
   const hasEnoughCredits = creditBalance >= hiringCost;
+
+  useEffect(() => {
+    if (activeTour?.id !== 'admin-hiring-unlocked') return;
+
+    const stepId = activeTour.steps[currentStepIndex]?.id || '';
+    const tabByPrefix: Array<{ prefix: string; tab: HiringTab }> = [
+      { prefix: 'jobs-', tab: 'jobs' },
+      { prefix: 'pipeline-', tab: 'pipeline' },
+      { prefix: 'candidates-', tab: 'candidates' },
+      { prefix: 'interviews-', tab: 'interviews' },
+      { prefix: 'offers-', tab: 'offers' },
+      { prefix: 'templates-', tab: 'templates' },
+      { prefix: 'analytics-', tab: 'analytics' },
+    ];
+
+    const matched = tabByPrefix.find(({ prefix }) => stepId.startsWith(prefix));
+    if (matched && activeTab !== matched.tab) {
+      setActiveTab(matched.tab);
+    }
+  }, [activeTour, currentStepIndex, activeTab]);
 
   // Handle subscription with credits
   const handleSubscribeWithCredits = async () => {
@@ -136,7 +158,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   if (!hasHiringAccess) {
     return (
       <div className="space-y-6">
-        <Card className="border-2 border-primary/20">
+        <Card className="border-2 border-primary/20" data-tour="hiring-locked-overview">
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Lock className="h-8 w-8 text-primary" />
@@ -197,7 +219,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             </div>
 
             {/* Pricing */}
-            <div className="border-t pt-6">
+            <div className="border-t pt-6" data-tour="hiring-pricing">
               <div className="text-center space-y-4">
                 <div>
                   <p className="text-3xl font-bold">$500<span className="text-base font-normal text-muted-foreground">/month</span></p>
@@ -328,31 +350,31 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
         {/* Keep the nav bar position fixed across sub-tabs */}
         <div className="mb-2">
           <TabsList className="grid grid-cols-7 w-full justify-start">
-            <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-jobs">
               <Briefcase className="h-4 w-4" />
               <span className="hidden sm:inline">Jobs</span>
             </TabsTrigger>
-            <TabsTrigger value="pipeline" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="pipeline" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-pipeline">
               <GitBranch className="h-4 w-4" />
               <span className="hidden sm:inline">Pipeline</span>
             </TabsTrigger>
-            <TabsTrigger value="candidates" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="candidates" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-candidates">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Candidates</span>
             </TabsTrigger>
-            <TabsTrigger value="interviews" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="interviews" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-interviews">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Interviews</span>
             </TabsTrigger>
-            <TabsTrigger value="offers" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="offers" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-offers">
               <FileCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Offers</span>
             </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="templates" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-templates">
               <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">Templates</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-1.5 px-3">
+            <TabsTrigger value="analytics" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-analytics">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>

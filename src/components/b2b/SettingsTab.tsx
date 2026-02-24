@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,8 @@ import AddCreditsModal from "./AddCreditsModal";
 import HiringSubscriptionSettings from "./HiringSubscriptionSettings";
 // Integrations infrastructure is kept, but hidden via feature flag
 const INTEGRATIONS_ENABLED = false;
+// Reports infrastructure is kept, but hidden via feature flag
+const REPORTS_ENABLED = false;
 import IntegrationsSettings from "./admin/IntegrationsSettings";
 import ApiKeyManagement from "./admin/ApiKeyManagement";
 import ScheduledReportsManager from "./admin/ScheduledReportsManager";
@@ -65,9 +67,30 @@ interface SettingsTabProps {
   onSettingsSaved?: () => void;
   scrollToSection?: string | null;
   onScrollComplete?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  registerSaveHandler?: (handler: () => Promise<boolean>) => void;
 }
 
-export default function SettingsTab({ company, onSettingsSaved, scrollToSection, onScrollComplete }: SettingsTabProps) {
+export default function SettingsTab({
+  company,
+  onSettingsSaved,
+  scrollToSection,
+  onScrollComplete,
+  onDirtyChange,
+  registerSaveHandler,
+}: SettingsTabProps) {
+  type SaveableSettings = {
+    logoUrl: string;
+    logoUrlDark: string;
+    primaryColor: string;
+    secondaryColor: string;
+    subdomain: string;
+    customDomain: string;
+    customDomainEnabled: boolean;
+    googleSsoEnabled: boolean;
+    googleWorkspaceDomain: string;
+  };
+
   const [logoUrl, setLogoUrl] = useState(company.logo_url || "");
   const [logoUrlDark, setLogoUrlDark] = useState(company.logo_url_dark || "");
   const [primaryColor, setPrimaryColor] = useState(company.primary_color);
@@ -89,6 +112,40 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [lastSavedSettings, setLastSavedSettings] = useState<SaveableSettings>({
+    logoUrl: company.logo_url || "",
+    logoUrlDark: company.logo_url_dark || "",
+    primaryColor: company.primary_color,
+    secondaryColor: company.secondary_color,
+    subdomain: company.subdomain,
+    customDomain: company.custom_domain || "",
+    customDomainEnabled: company.custom_domain_enabled,
+    googleSsoEnabled: company.google_sso_enabled || false,
+    googleWorkspaceDomain: company.google_workspace_domain || "",
+  });
+
+  const currentSettings: SaveableSettings = {
+    logoUrl,
+    logoUrlDark,
+    primaryColor,
+    secondaryColor,
+    subdomain,
+    customDomain,
+    customDomainEnabled,
+    googleSsoEnabled,
+    googleWorkspaceDomain: googleWorkspaceDomain || "",
+  };
+
+  const hasUnsavedChanges =
+    currentSettings.logoUrl !== lastSavedSettings.logoUrl ||
+    currentSettings.logoUrlDark !== lastSavedSettings.logoUrlDark ||
+    currentSettings.primaryColor !== lastSavedSettings.primaryColor ||
+    currentSettings.secondaryColor !== lastSavedSettings.secondaryColor ||
+    currentSettings.subdomain !== lastSavedSettings.subdomain ||
+    currentSettings.customDomain !== lastSavedSettings.customDomain ||
+    currentSettings.customDomainEnabled !== lastSavedSettings.customDomainEnabled ||
+    currentSettings.googleSsoEnabled !== lastSavedSettings.googleSsoEnabled ||
+    currentSettings.googleWorkspaceDomain !== lastSavedSettings.googleWorkspaceDomain;
 
   // Fetch credit balance from company record
   useEffect(() => {
@@ -96,6 +153,35 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
     setCreditBalance(company.credit_balance || 0);
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
+
+  useEffect(() => {
+    setLastSavedSettings({
+      logoUrl: company.logo_url || "",
+      logoUrlDark: company.logo_url_dark || "",
+      primaryColor: company.primary_color,
+      secondaryColor: company.secondary_color,
+      subdomain: company.subdomain,
+      customDomain: company.custom_domain || "",
+      customDomainEnabled: company.custom_domain_enabled,
+      googleSsoEnabled: company.google_sso_enabled || false,
+      googleWorkspaceDomain: company.google_workspace_domain || "",
+    });
+  }, [
+    company.id,
+    company.logo_url,
+    company.logo_url_dark,
+    company.primary_color,
+    company.secondary_color,
+    company.subdomain,
+    company.custom_domain,
+    company.custom_domain_enabled,
+    company.google_sso_enabled,
+    company.google_workspace_domain,
+  ]);
+
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onDirtyChange]);
 
   // Fetch current admin's notification preference
   useEffect(() => {
@@ -262,7 +348,7 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaving(true);
     try {
       const { error } = await supabase
@@ -282,6 +368,18 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
 
       if (error) throw error;
 
+      setLastSavedSettings({
+        logoUrl,
+        logoUrlDark,
+        primaryColor,
+        secondaryColor,
+        subdomain,
+        customDomain,
+        customDomainEnabled,
+        googleSsoEnabled,
+        googleWorkspaceDomain: googleWorkspaceDomain || "",
+      });
+
       toast({
         title: "Settings saved",
         description: "Your company settings have been updated.",
@@ -291,21 +389,42 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
       if (onSettingsSaved) {
         onSettingsSaved();
       }
+      return true;
     } catch (error: any) {
       toast({
         title: "Error saving settings",
         description: error.message,
         variant: "destructive",
       });
+      return false;
     } finally {
       setSaving(false);
     }
-  };
+  }, [
+    logoUrl,
+    logoUrlDark,
+    primaryColor,
+    secondaryColor,
+    subdomain,
+    customDomain,
+    customDomainEnabled,
+    googleSsoEnabled,
+    googleWorkspaceDomain,
+    company.id,
+    onSettingsSaved,
+    toast,
+  ]);
+
+  useEffect(() => {
+    if (registerSaveHandler) {
+      registerSaveHandler(handleSave);
+    }
+  }, [registerSaveHandler, handleSave]);
 
   return (
     <div className="space-y-4">
       <Tabs defaultValue="branding" className="space-y-4">
-        <TabsList className={"grid w-full grid-cols-4 lg:w-auto lg:inline-flex"}>
+        <TabsList className={"grid w-full grid-cols-3 lg:w-auto lg:inline-flex"}>
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4 hidden sm:inline" />
             Branding
@@ -324,11 +443,22 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
             <Key className="h-4 w-4 hidden sm:inline" />
             API
           </TabsTrigger>
-          <TabsTrigger value="reports" className="gap-2">
-            <Calendar className="h-4 w-4 hidden sm:inline" />
-            Reports
-          </TabsTrigger>
+          {REPORTS_ENABLED && (
+            <TabsTrigger value="reports" className="gap-2">
+              <Calendar className="h-4 w-4 hidden sm:inline" />
+              Reports
+            </TabsTrigger>
+          )}
         </TabsList>
+
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-in fade-in zoom-in-95 duration-300">
+            <Button onClick={handleSave} disabled={saving} className="gap-2 shadow-lg border border-white/60">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Settings
+            </Button>
+          </div>
+        )}
 
         <TabsContent value="branding" className="space-y-4">
       <Card className="border-0 shadow-sm">
@@ -709,46 +839,6 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
       {/* Payment Method */}
       <PaymentMethodCard company={company} />
 
-      {/* Wallet / Credit Balance */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-medium">
-            <Wallet className="h-5 w-5" />
-            Wallet
-          </CardTitle>
-          <CardDescription>Your credit balance for inviting users</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
-              <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
-              {loadingBalance ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              ) : (
-                <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Credits are applied to your account and deducted before charging your card on file.
-            </p>
-            <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Credits
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Button 
-        onClick={handleSave} 
-        disabled={saving} 
-        className="w-full text-white hover:opacity-90"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-      >
-        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Save All Settings
-      </Button>
-
       {/* Danger Zone - Delete Company */}
       <Card className="border-destructive/30 shadow-sm">
         <CardHeader className="pb-4">
@@ -825,18 +915,31 @@ export default function SettingsTab({ company, onSettingsSaved, scrollToSection,
               <Key className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">API Access Coming Soon</h3>
-            <p className="text-muted-foreground max-w-md">
-              We're working on providing API access for seamless integration with your existing tools and workflows. Stay tuned!
+            <p className="text-muted-foreground max-w-2xl mb-6">
+              We are building secure API access so your team can automate hiring workflows, sync employee activity, and connect Role Color Finder data to your internal tools.
             </p>
+            <div className="w-full max-w-2xl rounded-lg border bg-muted/30 p-4 text-left space-y-3">
+              <p className="text-sm font-medium">What you will be able to do</p>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+                <li>Create and manage users, invitations, and team assignments programmatically.</li>
+                <li>Pull assessment outcomes, engagement events, and report-ready activity data.</li>
+                <li>Use scoped keys, optional expiration dates, and audit visibility for better governance.</li>
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                Planned integrations include HRIS, ATS, and analytics platforms via secure token-based authentication.
+              </p>
+            </div>
           </div>
           {/* Hidden for now - uncomment when ready:
           <ApiKeyManagement companyId={company.id} />
           */}
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
-          <ScheduledReportsManager companyId={company.id} />
-        </TabsContent>
+        {REPORTS_ENABLED && (
+          <TabsContent value="reports" className="space-y-4">
+            <ScheduledReportsManager companyId={company.id} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Delete Company Modal */}

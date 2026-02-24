@@ -30,12 +30,16 @@ function TourTooltipInner() {
     }
 
     const updatePosition = () => {
+      const padding = 16;
+      const arrowSize = 12;
+      const tooltipWidth = Math.min(tooltipRef.current?.offsetWidth ?? 350, window.innerWidth - padding * 2);
+      const tooltipHeight = tooltipRef.current?.offsetHeight ?? 220;
       const target = document.querySelector(currentStep.target);
       if (!target) {
         // If target not found, show tooltip in center
         setPosition({
-          top: window.innerHeight / 2 - 100,
-          left: window.innerWidth / 2 - 175,
+          top: Math.max(padding, window.innerHeight / 2 - tooltipHeight / 2),
+          left: Math.max(padding, window.innerWidth / 2 - tooltipWidth / 2),
           arrowPosition: 'top',
         });
         setTargetRect(null);
@@ -44,11 +48,6 @@ function TourTooltipInner() {
 
       const rect = target.getBoundingClientRect();
       setTargetRect(rect);
-
-      const tooltipWidth = 350;
-      const tooltipHeight = 180;
-      const padding = 16;
-      const arrowSize = 12;
 
       let top = 0;
       let left = 0;
@@ -92,12 +91,14 @@ function TourTooltipInner() {
     };
 
     updatePosition();
+    const rafId = window.requestAnimationFrame(updatePosition);
     
     // Update on scroll/resize
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
 
     return () => {
+      window.cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', updatePosition, true);
       window.removeEventListener('resize', updatePosition);
     };
@@ -133,6 +134,26 @@ function TourTooltipInner() {
   const totalSteps = activeTour.steps.length;
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === totalSteps - 1;
+  const isHiringWalkthrough = activeTour.id === 'admin-hiring-unlocked';
+
+  let displayCurrentStep = currentStepIndex + 1;
+  let displayTotalSteps = totalSteps;
+  let miniStepIndex = currentStepIndex;
+  let miniStepTotal = totalSteps;
+
+  if (isHiringWalkthrough) {
+    const tabOrder = ['jobs', 'pipeline', 'candidates', 'interviews', 'offers', 'templates', 'analytics'];
+    const stepPrefix = currentStep.id.split('-')[0];
+    const tabIndex = tabOrder.indexOf(stepPrefix);
+    if (tabIndex >= 0) {
+      displayCurrentStep = tabIndex + 1;
+      displayTotalSteps = tabOrder.length;
+
+      const pageSteps = activeTour.steps.filter((step) => step.id.startsWith(`${stepPrefix}-`));
+      miniStepTotal = pageSteps.length;
+      miniStepIndex = Math.max(0, pageSteps.findIndex((step) => step.id === currentStep.id));
+    }
+  }
 
   const arrowClasses = {
     top: 'before:absolute before:-top-2 before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-b-background',
@@ -170,7 +191,7 @@ function TourTooltipInner() {
       <Card
         ref={tooltipRef}
         className={cn(
-          'fixed z-[10000] w-[350px] shadow-2xl border-2 border-primary/20 animate-in fade-in-0 zoom-in-95 duration-200',
+          'fixed z-[10000] w-[min(350px,calc(100vw-2rem))] shadow-2xl border-2 border-primary/20 animate-in fade-in-0 zoom-in-95 duration-200',
           arrowClasses[position.arrowPosition]
         )}
         style={{
@@ -203,27 +224,27 @@ function TourTooltipInner() {
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             {/* Step indicator */}
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: totalSteps }).map((_, i) => (
+            <div className="flex items-center gap-1.5 min-w-0">
+              {Array.from({ length: miniStepTotal }).map((_, i) => (
                 <div
                   key={i}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
-                    i === currentStepIndex
+                    i === miniStepIndex
                       ? 'w-4 bg-primary'
                       : 'w-1.5 bg-muted-foreground/30'
                   )}
                 />
               ))}
               <span className="ml-2 text-xs text-muted-foreground">
-                {currentStepIndex + 1}/{totalSteps}
+                {displayCurrentStep}/{displayTotalSteps}
               </span>
             </div>
 
             {/* Navigation buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto shrink-0">
               {!isFirstStep && (
                 <Button variant="ghost" size="sm" onClick={prevStep} className="h-7 px-2">
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" />

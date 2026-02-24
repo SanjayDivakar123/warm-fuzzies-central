@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MONTHLY_RATE_CENTS = 2000; // $20.00 per user per month
+const MONTHLY_RATE_DOLLARS = 20.0; // $20.00 per user per month
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -93,8 +93,8 @@ serve(async (req) => {
           continue;
         }
 
-        const totalCharge = activeUsers * MONTHLY_RATE_CENTS;
-        const creditBalance = company.credit_balance || 0;
+        const totalCharge = Number((activeUsers * MONTHLY_RATE_DOLLARS).toFixed(2));
+        const creditBalance = Number((company.credit_balance || 0).toFixed(2));
         
         let creditsUsed = 0;
         let cardCharged = 0;
@@ -109,7 +109,7 @@ serve(async (req) => {
         if (creditBalance >= totalCharge) {
           // Fully covered by credits
           creditsUsed = totalCharge;
-          const newBalance = creditBalance - totalCharge;
+          const newBalance = Number((creditBalance - totalCharge).toFixed(2));
           
           await supabase
             .from("companies")
@@ -141,10 +141,32 @@ serve(async (req) => {
             });
           }
 
-          cardCharged = totalCharge - creditsUsed;
+          cardCharged = Number((totalCharge - creditsUsed).toFixed(2));
 
           // Charge card for remainder
-          if (cardCharged > 0 && company.stripe_customer_id) {
+          if (cardCharged > 0) {
+            if (!company.stripe_customer_id) {
+              logStep("No Stripe customer ID on file", { companyId: company.id });
+              await supabase.from("billing_transactions").insert({
+                company_id: company.id,
+                type: "monthly_billing_failed",
+                amount: cardCharged,
+                description: `Monthly billing failed - no Stripe customer ID`
+              });
+
+              results.push({
+                companyId: company.id,
+                companyName: company.name,
+                activeUsers,
+                totalCharge,
+                creditsUsed,
+                cardCharged: 0,
+                success: false,
+                error: "No Stripe customer ID"
+              });
+              continue;
+            }
+
             const paymentMethods = await stripe.paymentMethods.list({
               customer: company.stripe_customer_id,
               type: "card",
@@ -152,7 +174,7 @@ serve(async (req) => {
 
             if (paymentMethods.data.length > 0) {
               const paymentIntent = await stripe.paymentIntents.create({
-                amount: cardCharged,
+                amount: Math.round(cardCharged * 100),
                 currency: "usd",
                 customer: company.stripe_customer_id,
                 payment_method: paymentMethods.data[0].id,

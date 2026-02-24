@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { HelpCircle, Play, RotateCcw, CheckCircle2, BookOpen } from 'lucide-react';
 import { useHelpTour, TourDefinition } from '@/contexts/HelpTourContext';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface HelpButtonProps {
   /** Filter to only show certain tours */
@@ -24,6 +25,19 @@ interface HelpButtonProps {
   iconOnly?: boolean;
 }
 
+const TOUR_TAB_BY_ID: Record<string, string> = {
+  'admin-dashboard-overview': 'overview',
+  'admin-users-management': 'users',
+  'admin-assessments-overview': 'assessments',
+  'admin-work-matrix': 'matrix',
+  'admin-hiring-locked': 'hiring',
+  'admin-hiring-unlocked': 'hiring',
+};
+
+const TOUR_DISPLAY_STEP_COUNT: Record<string, number> = {
+  'admin-hiring-unlocked': 7,
+};
+
 export function HelpButton({ 
   tourFilter, 
   className, 
@@ -31,16 +45,49 @@ export function HelpButton({
   iconOnly = false 
 }: HelpButtonProps) {
   const { availableTours, startTour, hasCompletedTour, resetTourProgress, isActive } = useHelpTour();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const filteredTours = tourFilter 
     ? availableTours.filter(tourFilter) 
     : availableTours;
 
+  const waitForTarget = (selector: string, timeoutMs = 3000): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const startedAt = Date.now();
+      const timer = window.setInterval(() => {
+        if (document.querySelector(selector)) {
+          window.clearInterval(timer);
+          resolve(true);
+          return;
+        }
+        if (Date.now() - startedAt >= timeoutMs) {
+          window.clearInterval(timer);
+          resolve(false);
+        }
+      }, 100);
+    });
+  };
+
   const handleStartTour = (tourId: string) => {
     setOpen(false);
-    // Small delay to allow dropdown to close
-    setTimeout(() => startTour(tourId), 100);
+    const selectedTour = availableTours.find((tour) => tour.id === tourId);
+    const firstStepTarget = selectedTour?.steps[0]?.target;
+    const targetTab = TOUR_TAB_BY_ID[tourId];
+    if (targetTab) {
+      // Notify dashboard to switch tabs immediately, then keep URL in sync.
+      window.dispatchEvent(
+        new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: targetTab } })
+      );
+      navigate(`/b2b/company-portal?tab=${targetTab}`);
+    }
+    // Allow route/tab transition, then wait briefly for the first step element to exist.
+    window.setTimeout(async () => {
+      if (firstStepTarget) {
+        await waitForTarget(firstStepTarget);
+      }
+      startTour(tourId);
+    }, targetTab ? 250 : 100);
   };
 
   const handleResetTour = (tourId: string, e: React.MouseEvent) => {
@@ -85,6 +132,7 @@ export function HelpButton({
         
         {filteredTours.map((tour) => {
           const isCompleted = hasCompletedTour(tour.id);
+          const displayedStepCount = TOUR_DISPLAY_STEP_COUNT[tour.id] ?? tour.steps.length;
           
           return (
             <DropdownMenuItem
@@ -114,7 +162,7 @@ export function HelpButton({
                     </Button>
                   )}
                   <Badge variant="secondary" className="text-xs">
-                    {tour.steps.length} steps
+                    {displayedStepCount} steps
                   </Badge>
                 </div>
               </div>
