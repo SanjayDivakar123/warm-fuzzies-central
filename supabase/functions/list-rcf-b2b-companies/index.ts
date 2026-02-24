@@ -60,7 +60,7 @@ serve(async (req) => {
       await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, subdomain, admin_email, created_at, seats_purchased")
+          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance")
           .order("created_at", { ascending: false }),
         supabase.from("company_users").select("company_id, role, status"),
       ]);
@@ -118,6 +118,7 @@ serve(async (req) => {
         admin_email: company.admin_email,
         created_at: company.created_at,
         seats_purchased: company.seats_purchased,
+        credit_balance: company.credit_balance || 0,
         ...stats,
       };
     });
