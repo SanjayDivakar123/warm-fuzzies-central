@@ -420,9 +420,9 @@ export default function HiringCandidatesTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="hiring-candidates-overview">
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-tour="hiring-candidates-filters">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -489,12 +489,12 @@ export default function HiringCandidatesTab({
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground" data-tour="hiring-candidates-results">
         Showing {filteredApplications.length} of {applications.length} candidates
       </div>
 
       {/* Candidates Table */}
-      <Card>
+      <Card data-tour="hiring-candidates-table">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

@@ -253,9 +253,9 @@ export default function InterviewsTab({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="hiring-interviews-overview">
       {/* Header with stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="hiring-interviews-stats">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
@@ -300,7 +300,7 @@ export default function InterviewsTab({
       </div>
 
       {/* Filters */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4" data-tour="hiring-interviews-controls">
         <div className="flex items-center gap-3">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
             <SelectTrigger className="w-[150px]">
@@ -332,6 +332,7 @@ export default function InterviewsTab({
       </div>
 
       {/* Calendar/List View */}
+      <div data-tour="hiring-interviews-view">
       {viewMode === 'calendar' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar */}
@@ -407,6 +408,7 @@ export default function InterviewsTab({
           </CardContent>
         </Card>
       )}
+      </div>
 
       <ScheduleInterviewDialog
         applicationId={null}

@@ -449,9 +449,9 @@ export default function JobPostingsTab({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="hiring-jobs-overview">
       {/* Stats & Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4" data-tour="hiring-jobs-filters">
         <div className="flex flex-wrap gap-2">
           <Button
             variant={statusFilter === 'all' ? 'default' : 'outline'}
@@ -479,7 +479,7 @@ export default function JobPostingsTab({
 
       {/* Jobs Grid */}
       {filteredJobs.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed" data-tour="hiring-jobs-list">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Briefcase className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-medium mb-2">No job postings yet</h3>
@@ -495,7 +495,7 @@ export default function JobPostingsTab({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-tour="hiring-jobs-list">
           {filteredJobs.map(job => {
             const statusConfig = STATUS_CONFIG[job.status];
             const StatusIcon = statusConfig.icon;

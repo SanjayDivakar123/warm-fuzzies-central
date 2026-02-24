@@ -167,6 +167,155 @@ export const adminWorkMatrixTour: TourDefinition = {
   ],
 };
 
+export const adminHiringLockedTour: TourDefinition = {
+  id: 'admin-hiring-locked',
+  name: 'Hiring Platform (Locked)',
+  description: 'See hiring features and how to unlock access',
+  steps: [
+    {
+      id: 'hiring-overview',
+      target: '[data-tour="hiring-locked-overview"]',
+      title: 'Hiring Platform Overview',
+      content: 'This is your hiring workspace. It includes ATS tools for jobs, candidates, pipeline stages, interviews, offers, templates, and analytics.',
+      placement: 'bottom',
+    },
+    {
+      id: 'unlock-access',
+      target: '[data-tour="hiring-pricing"]',
+      title: 'Unlock Premium Hiring',
+      content: 'To unlock Hiring, subscribe from this section. After activation, you will get full access to all hiring tabs and workflows.',
+      placement: 'top',
+    },
+  ],
+};
+
+export const adminHiringUnlockedTour: TourDefinition = {
+  id: 'admin-hiring-unlocked',
+  name: 'Hiring Platform Walkthrough',
+  description: 'Walk through each hiring tab and what it does',
+  steps: [
+    {
+      id: 'jobs-1',
+      target: '[data-tour="hiring-tab-jobs"]',
+      title: 'Jobs',
+      content: 'Start in Jobs. This is your command center for creating roles and tracking posting health.',
+      placement: 'bottom',
+    },
+    {
+      id: 'jobs-2',
+      target: '[data-tour="hiring-jobs-filters"]',
+      title: 'Jobs Filters & Status',
+      content: 'Use status filters to focus on open, draft, paused, or closed roles. This helps prioritize active hiring.',
+      placement: 'bottom',
+    },
+    {
+      id: 'jobs-3',
+      target: '[data-tour="hiring-jobs-list"]',
+      title: 'Job Cards & Actions',
+      content: 'Open a job card menu to jump to Pipeline/Candidates, publish or pause roles, copy application links, and edit details.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-1',
+      target: '[data-tour="hiring-tab-pipeline"]',
+      title: 'Pipeline Tab',
+      content: 'Pipeline gives you a stage-by-stage board for one job at a time so decisions stay focused.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-2',
+      target: '[data-tour="hiring-pipeline-selector"]',
+      title: 'Choose the Job',
+      content: 'Select a role first. The board and metrics update to that job so stage movement is role-specific.',
+      placement: 'bottom',
+    },
+    {
+      id: 'pipeline-3',
+      target: '[data-tour="hiring-pipeline-board"]',
+      title: 'Move Candidates by Stage',
+      content: 'Use the board to move candidates forward, reject when needed, and trigger next actions like interviews or offers.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-1',
+      target: '[data-tour="hiring-tab-candidates"]',
+      title: 'Candidates Tab',
+      content: 'Candidates is your master list across jobs with full visibility into each applicant.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-2',
+      target: '[data-tour="hiring-candidates-filters"]',
+      title: 'Search, Filter, Segment',
+      content: 'Use search plus job/stage/status filters to quickly isolate who needs action now.',
+      placement: 'bottom',
+    },
+    {
+      id: 'candidates-3',
+      target: '[data-tour="hiring-candidates-table"]',
+      title: 'Candidate Actions',
+      content: 'From each row, open actions to view profile, send assessment, move stages, schedule interviews, send offers, or reject.',
+      placement: 'top',
+    },
+    {
+      id: 'interviews-1',
+      target: '[data-tour="hiring-tab-interviews"]',
+      title: 'Interviews Tab',
+      content: 'Interviews centralizes scheduling and interview outcomes for every active hiring workflow.',
+      placement: 'bottom',
+    },
+    {
+      id: 'interviews-2',
+      target: '[data-tour="hiring-interviews-controls"]',
+      title: 'Plan & Filter Interviews',
+      content: 'Filter by interview status and switch between calendar/list to coordinate workload by date or queue.',
+      placement: 'bottom',
+    },
+    {
+      id: 'interviews-3',
+      target: '[data-tour="hiring-interviews-view"]',
+      title: 'Run the Interview Queue',
+      content: 'Review day-level schedules, update statuses (completed/no-show/cancelled), and keep candidates moving.',
+      placement: 'left',
+    },
+    {
+      id: 'offers-1',
+      target: '[data-tour="hiring-tab-offers"]',
+      title: 'Offers Tab',
+      content: 'Offers manages compensation proposals, approvals, and acceptance tracking in one place.',
+      placement: 'bottom',
+    },
+    {
+      id: 'offers-2',
+      target: '[data-tour="hiring-offers-controls"]',
+      title: 'Create & Filter Offers',
+      content: 'Create offers for qualified candidates and filter by status to focus on drafts, sent, and final outcomes.',
+      placement: 'bottom',
+    },
+    {
+      id: 'offers-3',
+      target: '[data-tour="hiring-offers-table"]',
+      title: 'Offer Lifecycle',
+      content: 'Track salary/start/expiry fields and use row actions to send, accept, decline, rescind, or review details.',
+      placement: 'top',
+    },
+    {
+      id: 'templates-1',
+      target: '[data-tour="hiring-tab-templates"]',
+      title: 'Templates',
+      content: 'Reuse email templates for consistent outreach and faster communication.',
+      placement: 'bottom',
+    },
+    {
+      id: 'analytics-1',
+      target: '[data-tour="hiring-tab-analytics"]',
+      title: 'Analytics',
+      content: 'Measure funnel performance, identify bottlenecks, and improve hiring outcomes.',
+      placement: 'bottom',
+    },
+  ],
+};
+
 // Employee Tours
 export const employeeLoginTour: TourDefinition = {
   id: 'employee-login',
@@ -257,6 +406,8 @@ export function HelpTourProvider({ children }: { children: React.ReactNode }) {
     adminUsersTour,
     adminAssessmentsTour,
     adminWorkMatrixTour,
+    adminHiringLockedTour,
+    adminHiringUnlockedTour,
     employeeLoginTour,
     employeeAssessmentTour,
     employeeResultsTour,

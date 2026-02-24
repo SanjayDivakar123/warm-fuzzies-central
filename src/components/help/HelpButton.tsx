@@ -30,6 +30,8 @@ const TOUR_TAB_BY_ID: Record<string, string> = {
   'admin-users-management': 'users',
   'admin-assessments-overview': 'assessments',
   'admin-work-matrix': 'matrix',
+  'admin-hiring-locked': 'hiring',
+  'admin-hiring-unlocked': 'hiring',
 };
 
 export function HelpButton({ 

@@ -95,6 +95,13 @@ function B2BDashboardContent() {
     window.location.href = '/b2b';
   };
 
+  const activateTab = (nextTab: string) => {
+    setActiveTab(nextTab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    setSearchParams(nextParams, { replace: true });
+  };
+
   const handleTabChange = (nextTab: string) => {
     if (nextTab === activeTab) return;
     if (activeTab === 'settings' && settingsDirty) {
@@ -102,20 +109,14 @@ function B2BDashboardContent() {
       setShowUnsavedDialog(true);
       return;
     }
-    setActiveTab(nextTab);
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('tab', nextTab);
-    setSearchParams(nextParams, { replace: true });
+    activateTab(nextTab);
   };
 
   const handleDiscardAndLeave = () => {
     setSettingsDirty(false);
     setShowUnsavedDialog(false);
     if (pendingTab) {
-      setActiveTab(pendingTab);
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set('tab', pendingTab);
-      setSearchParams(nextParams, { replace: true });
+      activateTab(pendingTab);
       setPendingTab(null);
     }
   };
@@ -135,20 +136,17 @@ function B2BDashboardContent() {
     setSettingsDirty(false);
     setShowUnsavedDialog(false);
     if (pendingTab) {
-      setActiveTab(pendingTab);
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set('tab', pendingTab);
-      setSearchParams(nextParams, { replace: true });
+      activateTab(pendingTab);
       setPendingTab(null);
     }
   };
 
   useEffect(() => {
     const requestedTab = searchParams.get('tab');
-    if (requestedTab && GUIDE_TABS.has(requestedTab) && requestedTab !== activeTab) {
-      setActiveTab(requestedTab);
+    if (requestedTab && GUIDE_TABS.has(requestedTab)) {
+      setActiveTab(prev => (prev === requestedTab ? prev : requestedTab));
     }
-  }, [searchParams, activeTab]);
+  }, [searchParams]);
 
   useEffect(() => {
     const onGuideTabChange = (event: Event) => {
@@ -291,6 +289,10 @@ function B2BDashboardContent() {
   // Get company colors for styling
   const primaryColor = company.primary_color || '#22c55e';
   const secondaryColor = company.secondary_color || '#16a34a';
+  const hasHiringAccess = Boolean(
+    company.hiring_subscription_enabled &&
+    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing')
+  );
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -340,7 +342,12 @@ function B2BDashboardContent() {
             </Button>
             {/* Help Button */}
             <HelpButton 
-              tourFilter={(tour) => tour.id.startsWith('admin-')}
+              tourFilter={(tour) => {
+                if (!tour.id.startsWith('admin-')) return false;
+                if (tour.id === 'admin-hiring-locked') return !hasHiringAccess;
+                if (tour.id === 'admin-hiring-unlocked') return hasHiringAccess;
+                return true;
+              }}
               size="sm"
               iconOnly
             />
@@ -394,9 +401,18 @@ function B2BDashboardContent() {
           <>
         {/* Inject dynamic styles for active tabs using company colors */}
         <style>{`
+          .b2b-tab {
+            transition: none !important;
+            border-width: 2px !important;
+            border-style: solid !important;
+            border-color: transparent !important;
+            border-image: none !important;
+            box-shadow: none !important;
+          }
           .b2b-tab[data-state=active] {
             background: linear-gradient(135deg, var(--b2b-primary, #22c55e), var(--b2b-secondary, #16a34a)) !important;
             color: white !important;
+            box-shadow: none !important;
           }
           .b2b-tab:hover:not([data-state=active]) {
             background-color: hsl(var(--b2b-secondary-hsl, 142 76% 36%) / 0.1) !important;
@@ -409,7 +425,7 @@ function B2BDashboardContent() {
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="overview" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Overview
                 </TabsTrigger>
@@ -417,7 +433,7 @@ function B2BDashboardContent() {
               {(permissions.canManageUsers || permissions.canViewUsers) && (
                 <TabsTrigger 
                   value="users" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Users
                 </TabsTrigger>
@@ -425,7 +441,7 @@ function B2BDashboardContent() {
               {(permissions.canManageCandidates || permissions.canViewCandidates) && (
                 <TabsTrigger 
                   value="hiring" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Hiring
                 </TabsTrigger>
@@ -433,7 +449,7 @@ function B2BDashboardContent() {
               {permissions.canViewAssessments && (
                 <TabsTrigger 
                   value="assessments" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Assessments
                 </TabsTrigger>
@@ -441,7 +457,7 @@ function B2BDashboardContent() {
               {permissions.canManageReminders && (
                 <TabsTrigger 
                   value="reminders" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Reminders
                 </TabsTrigger>
@@ -449,7 +465,7 @@ function B2BDashboardContent() {
               {permissions.canUseWorkMatrix && (
                 <TabsTrigger 
                   value="matrix" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Work Matrix
                 </TabsTrigger>
@@ -457,7 +473,7 @@ function B2BDashboardContent() {
               {permissions.canManageSettings && (
                 <TabsTrigger 
                   value="roles" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Roles
                 </TabsTrigger>
@@ -465,7 +481,7 @@ function B2BDashboardContent() {
               {permissions.canViewOverview && (
                 <TabsTrigger 
                   value="analytics" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Analytics
                 </TabsTrigger>
@@ -473,7 +489,7 @@ function B2BDashboardContent() {
               {permissions.canManageSettings && (
                 <TabsTrigger 
                   value="settings" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-colors flex-shrink-0"
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Settings
                 </TabsTrigger>
@@ -487,25 +503,25 @@ function B2BDashboardContent() {
             )}
           </div>
 
-          <TabsContent value="overview" className="mt-0 break-words">
+          <TabsContent value="overview" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <OverviewTab company={company} />
           </TabsContent>
 
-          <TabsContent value="users" className="mt-0 break-words">
+          <TabsContent value="users" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <UsersTab 
               company={company} 
               readOnly={!permissions.canManageUsers}
             />
           </TabsContent>
 
-          <TabsContent value="hiring" className="mt-0 break-words">
+          <TabsContent value="hiring" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <HiringSection 
               company={company}
               companyUser={companyUser}
             />
           </TabsContent>
 
-          <TabsContent value="assessments" className="mt-0 break-words">
+          <TabsContent value="assessments" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <AssessmentsTab 
               company={company} 
               onSettingsSaved={refreshCompany}
@@ -516,19 +532,19 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="reminders" className="mt-0 break-words">
+          <TabsContent value="reminders" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <RemindersHistoryTab company={company} />
           </TabsContent>
 
-          <TabsContent value="matrix" className="mt-0 break-words">
+          <TabsContent value="matrix" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <WorkAssigningMatrixTab />
           </TabsContent>
 
-          <TabsContent value="roles" className="mt-0 break-words">
+          <TabsContent value="roles" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <RolesTab company={company} />
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-0 break-words">
+          <TabsContent value="settings" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <SettingsTab 
               company={company} 
               onSettingsSaved={refreshCompany}
@@ -539,7 +555,7 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-0 break-words">
+          <TabsContent value="analytics" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <AdvancedAnalyticsDashboard companyId={company.id} />
           </TabsContent>
         </Tabs>

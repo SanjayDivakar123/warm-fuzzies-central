@@ -302,9 +302,9 @@ export default function HiringPipelineView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="hiring-pipeline-overview">
       {/* Job Selector */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4" data-tour="hiring-pipeline-selector">
         <Select value={selectedJobId || ''} onValueChange={onSelectJob}>
           <SelectTrigger className="w-[300px]">
             <SelectValue placeholder="Select a job..." />
@@ -325,6 +325,7 @@ export default function HiringPipelineView({
         )}
       </div>
 
+      <div data-tour="hiring-pipeline-board">
       {loading && selectedJobId ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -438,6 +439,7 @@ export default function HiringPipelineView({
           </CardContent>
         </Card>
       )}
+      </div>
       <SendEmailDialog
         candidateId={emailCandidate?.id || null}
         candidateName={emailCandidate?.name || ''}
