@@ -397,21 +397,23 @@ export const employeeResultsTour: TourDefinition = {
   ],
 };
 
+const BUILTIN_TOURS: TourDefinition[] = [
+  adminDashboardTour,
+  adminUsersTour,
+  adminAssessmentsTour,
+  adminWorkMatrixTour,
+  adminHiringLockedTour,
+  adminHiringUnlockedTour,
+  employeeLoginTour,
+  employeeAssessmentTour,
+  employeeResultsTour,
+];
+
 export function HelpTourProvider({ children }: { children: React.ReactNode }) {
   const [activeTour, setActiveTour] = useState<TourDefinition | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedTours, setCompletedTours] = useState<Set<string>>(new Set());
-  const [availableTours, setAvailableTours] = useState<TourDefinition[]>([
-    adminDashboardTour,
-    adminUsersTour,
-    adminAssessmentsTour,
-    adminWorkMatrixTour,
-    adminHiringLockedTour,
-    adminHiringUnlockedTour,
-    employeeLoginTour,
-    employeeAssessmentTour,
-    employeeResultsTour,
-  ]);
+  const [availableTours, setAvailableTours] = useState<TourDefinition[]>(BUILTIN_TOURS);
 
   // Load completed tours from localStorage
   useEffect(() => {
@@ -432,6 +434,17 @@ export function HelpTourProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Failed to save tour progress:', e);
     }
+  }, []);
+
+  // Keep built-in tours in sync (useful during HMR/live edits).
+  useEffect(() => {
+    setAvailableTours((prev) => {
+      const byId = new Map(prev.map((tour) => [tour.id, tour]));
+      BUILTIN_TOURS.forEach((tour) => {
+        byId.set(tour.id, tour);
+      });
+      return Array.from(byId.values());
+    });
   }, []);
 
   const startTour = useCallback((tourId: string) => {

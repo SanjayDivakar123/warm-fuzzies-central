@@ -134,6 +134,26 @@ function TourTooltipInner() {
   const totalSteps = activeTour.steps.length;
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === totalSteps - 1;
+  const isHiringWalkthrough = activeTour.id === 'admin-hiring-unlocked';
+
+  let displayCurrentStep = currentStepIndex + 1;
+  let displayTotalSteps = totalSteps;
+  let miniStepIndex = currentStepIndex;
+  let miniStepTotal = totalSteps;
+
+  if (isHiringWalkthrough) {
+    const tabOrder = ['jobs', 'pipeline', 'candidates', 'interviews', 'offers', 'templates', 'analytics'];
+    const stepPrefix = currentStep.id.split('-')[0];
+    const tabIndex = tabOrder.indexOf(stepPrefix);
+    if (tabIndex >= 0) {
+      displayCurrentStep = tabIndex + 1;
+      displayTotalSteps = tabOrder.length;
+
+      const pageSteps = activeTour.steps.filter((step) => step.id.startsWith(`${stepPrefix}-`));
+      miniStepTotal = pageSteps.length;
+      miniStepIndex = Math.max(0, pageSteps.findIndex((step) => step.id === currentStep.id));
+    }
+  }
 
   const arrowClasses = {
     top: 'before:absolute before:-top-2 before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-b-background',
@@ -204,27 +224,27 @@ function TourTooltipInner() {
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             {/* Step indicator */}
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: totalSteps }).map((_, i) => (
+            <div className="flex items-center gap-1.5 min-w-0">
+              {Array.from({ length: miniStepTotal }).map((_, i) => (
                 <div
                   key={i}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
-                    i === currentStepIndex
+                    i === miniStepIndex
                       ? 'w-4 bg-primary'
                       : 'w-1.5 bg-muted-foreground/30'
                   )}
                 />
               ))}
               <span className="ml-2 text-xs text-muted-foreground">
-                {currentStepIndex + 1}/{totalSteps}
+                {displayCurrentStep}/{displayTotalSteps}
               </span>
             </div>
 
             {/* Navigation buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto shrink-0">
               {!isFirstStep && (
                 <Button variant="ghost" size="sm" onClick={prevStep} className="h-7 px-2">
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" />

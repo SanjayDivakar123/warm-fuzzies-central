@@ -34,6 +34,10 @@ const TOUR_TAB_BY_ID: Record<string, string> = {
   'admin-hiring-unlocked': 'hiring',
 };
 
+const TOUR_DISPLAY_STEP_COUNT: Record<string, number> = {
+  'admin-hiring-unlocked': 7,
+};
+
 export function HelpButton({ 
   tourFilter, 
   className, 
@@ -128,6 +132,7 @@ export function HelpButton({
         
         {filteredTours.map((tour) => {
           const isCompleted = hasCompletedTour(tour.id);
+          const displayedStepCount = TOUR_DISPLAY_STEP_COUNT[tour.id] ?? tour.steps.length;
           
           return (
             <DropdownMenuItem
@@ -157,7 +162,7 @@ export function HelpButton({
                     </Button>
                   )}
                   <Badge variant="secondary" className="text-xs">
-                    {tour.steps.length} steps
+                    {displayedStepCount} steps
                   </Badge>
                 </div>
               </div>
