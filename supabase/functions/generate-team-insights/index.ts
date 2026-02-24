@@ -43,9 +43,9 @@ serve(async (req) => {
       );
     }
 
-    // Build the analysis prompt
+    // Build a compact prompt payload to reduce generation latency.
     const teamSummary = teamMembers.map((m: TeamMember, i: number) => {
-      const scoresSummary = `Yellow(Executor):${m.scores.yellow}, Red(Motivator):${m.scores.red}, Green(Organizer):${m.scores.green}, Blue(Innovator):${m.scores.blue}`;
+      const scoresSummary = `Y:${m.scores.yellow}, R:${m.scores.red}, G:${m.scores.green}, B:${m.scores.blue}`;
       const totalScore = m.scores.yellow + m.scores.red + m.scores.green + m.scores.blue;
       const percentages = {
         yellow: Math.round((m.scores.yellow / totalScore) * 100),
@@ -53,16 +53,22 @@ serve(async (req) => {
         green: Math.round((m.scores.green / totalScore) * 100),
         blue: Math.round((m.scores.blue / totalScore) * 100),
       };
+      const rankedColors = Object.entries(percentages)
+        .sort(([, a], [, b]) => b - a)
+        .map(([color]) => color);
+      const topTwo = rankedColors.slice(0, 2).join(", ");
+      const compactSkills = (m.skills || []).slice(0, 6).join(", ") || "None";
       
       return `${i + 1}. Email: ${m.email}
-   - Current Job Role: ${m.jobRole || 'Not assigned'}
-   - Skills: ${m.skills?.join(', ') || 'None listed'}
+   - Role: ${m.jobRole || 'Not assigned'}
+   - Skills: ${compactSkills}
    - Dominant Color: ${m.dominantColor} (${m.colorLabel})
-   - Score Distribution: ${scoresSummary}
-   - Percentages: Yellow:${percentages.yellow}%, Red:${percentages.red}%, Green:${percentages.green}%, Blue:${percentages.blue}%`;
+   - Scores: ${scoresSummary}
+   - Top Colors: ${topTwo}
+   - Percentages: Y:${percentages.yellow}%, R:${percentages.red}%, G:${percentages.green}%, B:${percentages.blue}%`;
     }).join('\n\n');
 
-    const systemPrompt = `You are an expert organizational psychologist and leadership consultant specializing in team dynamics, role-person fit analysis, and leadership style assessment.
+    const systemPrompt = `You are an expert organizational psychologist and leadership consultant.
 
 You analyze teams using a color-based leadership assessment framework:
 - Yellow (Executor): Action-oriented, results-driven, decisive, competitive, quick decision-makers
@@ -70,29 +76,23 @@ You analyze teams using a color-based leadership assessment framework:
 - Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers, process-focused
 - Blue (Innovator): Creative, visionary, strategic, big-picture thinkers, future-focused
 
-IMPORTANT LEADERSHIP INSIGHT: The best leaders typically have Red and/or Yellow as their PRIMARY or SECONDARY colors. These colors represent the action-taking (Yellow) and people-inspiring (Red) qualities essential for effective leadership. When evaluating leadership potential, prioritize candidates with Red+Yellow combinations or those with Red or Yellow as their secondary color.
+Leadership insight: leadership potential is highest when Red and/or Yellow are primary or secondary colors.
 
-Your task is to provide DEEP, PERSONALIZED analysis for each team member, examining:
-1. How their leadership style matches or conflicts with their job role
-2. Their specific strengths in their current position
-3. Areas where their style might create friction with their responsibilities
-4. Concrete, actionable advice for improvement
-5. Their leadership potential based on their Red/Yellow color presence
+Be specific, concise, and role-aware. Use concrete reasons from the provided scores and role.
+Return only valid JSON.`;
 
-Be specific and reference their actual scores and role. Avoid generic advice.`;
-
-    const userPrompt = `Analyze this team's leadership profiles and provide DETAILED individual analysis:
+    const userPrompt = `Analyze this team's leadership profiles.
 
 TEAM MEMBERS:
 ${teamSummary}
 
-Provide a comprehensive analysis in the following JSON format. For memberInsights, be VERY specific about the leadership-role match for each person:
+Return this JSON shape exactly:
 
 {
-  "overallAnalysis": "3-4 sentence comprehensive summary of the team's composition, dynamics, and potential",
-  "teamDynamics": "2-3 sentences about how the team members' different styles interact and complement each other",
-  "teamStrengths": ["4-5 specific strengths based on the team's color distribution and role mix"],
-  "teamChallenges": ["3-4 potential challenges or gaps in the team's composition"],
+  "overallAnalysis": "2-3 sentence summary of team composition and implications",
+  "teamDynamics": "1-2 sentences about collaboration dynamics",
+  "teamStrengths": ["4 specific strengths"],
+  "teamChallenges": ["3-4 potential gaps/challenges"],
   "memberInsights": [
     {
       "email": "member email",
@@ -100,19 +100,19 @@ Provide a comprehensive analysis in the following JSON format. For memberInsight
       "currentRole": "their current job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
-      "matchPercentage": "A number between 0-100 representing how well the person's leadership style matches their job role. Be precise - Excellent=85-100, Good=70-84, Moderate=50-69, Mismatch=0-49. Calculate based on how well their color profile aligns with role requirements.",
-      "matchAnalysis": "4-5 sentences deeply analyzing whether this person is a MATCH for their role. Explain specifically WHY their dominant color and score distribution makes them suited or unsuited for this position. If they're not a great match, explain what role would be a STRONGER match for them and why. Be direct about fit quality.",
-      "leadershipPotential": "Rate as 'High', 'Moderate', or 'Limited' based on Red/Yellow presence. If Red or Yellow is their primary or secondary color, leadership potential is High. Otherwise assess based on their specific color mix.",
-      "leadershipStyle": "2-3 sentences describing their leadership approach based on their score distribution",
-      "workplaceContribution": "2 sentences about what unique value they bring to the team",
-      "strengths": ["3-4 specific strengths this person brings based on their color profile and role"],
-      "developmentAreas": ["2-3 specific areas where they could grow given their role requirements"],
-      "potentialChallenges": "1-2 sentences about challenges they might face in their role due to their style",
-      "suggestedRoles": ["If fit is moderate/mismatch: 2-3 STRONGER matching roles for this person. If fit is good/excellent: 2-3 complementary responsibilities they could excel at"],
+      "matchPercentage": "0-100 using these bands: excellent 85-100, good 70-84, moderate 50-69, mismatch 0-49",
+      "matchAnalysis": "2-3 sentences explaining role fit with specific score evidence",
+      "leadershipPotential": "High|Moderate|Limited (High when Red/Yellow is primary or secondary unless strong counter-evidence)",
+      "leadershipStyle": "1-2 sentences",
+      "workplaceContribution": "1-2 sentences",
+      "strengths": ["3 specific strengths"],
+      "developmentAreas": ["2-3 growth areas"],
+      "potentialChallenges": "1 concise sentence",
+      "suggestedRoles": ["2-3 stronger alternative roles if fit is moderate/mismatch, otherwise 2-3 complementary responsibilities"],
       "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness"
     }
   ],
-  "recommendations": ["5-6 strategic recommendations for team optimization, collaboration improvements, and role adjustments"]
+  "recommendations": ["4-5 strategic recommendations"]
 }
 
 Role-leadership style alignment guidelines:
@@ -135,13 +135,14 @@ Return ONLY the JSON object, no additional text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.3,
-        max_tokens: 8000,
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_tokens: 3000,
       }),
     });
 

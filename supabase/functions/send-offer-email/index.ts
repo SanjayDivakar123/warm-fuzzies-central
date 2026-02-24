@@ -9,12 +9,13 @@ interface SendOfferEmailRequest {
   candidateName: string;
   companyName: string;
   jobTitle: string;
-  salary: number;
+  salary?: number | null;
   currency: string;
   bonus?: number | null;
   equity?: string | null;
   startDate?: string | null;
   offerExpires?: string | null;
+  probationPeriod?: string | null;
   notes?: string | null;
 }
 
@@ -37,11 +38,13 @@ const buildOfferEmailHtml = (payload: SendOfferEmailRequest) => {
   const candidateName = escapeHtml(payload.candidateName || "Candidate");
   const companyName = escapeHtml(payload.companyName || "Our Company");
   const jobTitle = escapeHtml(payload.jobTitle || "the position");
-  const salary = escapeHtml(formatMoney(payload.salary, payload.currency));
+  const hasSalary = typeof payload.salary === "number" && payload.salary > 0;
+  const salary = hasSalary ? escapeHtml(formatMoney(payload.salary as number, payload.currency)) : null;
   const bonus = payload.bonus ? escapeHtml(formatMoney(payload.bonus, payload.currency)) : null;
   const equity = payload.equity ? escapeHtml(payload.equity) : null;
   const startDate = payload.startDate ? escapeHtml(payload.startDate) : null;
   const offerExpires = payload.offerExpires ? escapeHtml(payload.offerExpires) : null;
+  const probationPeriod = payload.probationPeriod ? escapeHtml(payload.probationPeriod) : null;
   const notes = payload.notes ? escapeHtml(payload.notes) : null;
 
   return `<!DOCTYPE html>
@@ -71,10 +74,13 @@ const buildOfferEmailHtml = (payload: SendOfferEmailRequest) => {
                 </p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e5e7eb; border-radius:10px; margin:0 0 20px;">
-                  <tr>
+                  ${salary ? `<tr>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; width:40%; color:#6b7280; font-size:13px;">Base Salary</td>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:14px; font-weight:600;">${salary} ${escapeHtml(payload.currency)}</td>
-                  </tr>
+                  </tr>` : `<tr>
+                    <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; width:40%; color:#6b7280; font-size:13px;">Compensation</td>
+                    <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:14px; font-weight:600;">Equity-only / unpaid role</td>
+                  </tr>`}
                   ${bonus ? `<tr>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Signing Bonus</td>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:14px;">${bonus} ${escapeHtml(payload.currency)}</td>
@@ -82,6 +88,10 @@ const buildOfferEmailHtml = (payload: SendOfferEmailRequest) => {
                   ${equity ? `<tr>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Equity</td>
                     <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:14px;">${equity}</td>
+                  </tr>` : ""}
+                  ${probationPeriod ? `<tr>
+                    <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; color:#6b7280; font-size:13px;">Probationary Period</td>
+                    <td style="padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:14px;">${probationPeriod}</td>
                   </tr>` : ""}
                   ${startDate ? `<tr>
                     <td style="padding:14px 16px; ${offerExpires ? "border-bottom:1px solid #e5e7eb;" : ""} color:#6b7280; font-size:13px;">Proposed Start Date</td>
@@ -132,7 +142,7 @@ Deno.serve(async (req) => {
   try {
     const payload = (await req.json()) as SendOfferEmailRequest;
 
-    if (!payload.to || !payload.candidateName || !payload.companyName || !payload.salary || !payload.currency) {
+    if (!payload.to || !payload.candidateName || !payload.companyName || !payload.currency) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

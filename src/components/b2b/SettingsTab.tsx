@@ -301,20 +301,14 @@ export default function SettingsTab({
 
       if (mode === "light") {
         setLogoUrl(newLogoUrl);
-        await supabase.from("companies").update({ logo_url: newLogoUrl }).eq("id", company.id);
       } else {
         setLogoUrlDark(newLogoUrl);
-        await supabase.from("companies").update({ logo_url_dark: newLogoUrl }).eq("id", company.id);
       }
 
       toast({
         title: "Logo uploaded",
-        description: `Your ${mode} mode logo has been updated`,
+        description: `Your ${mode} mode logo is ready. Click Save Settings to apply changes.`,
       });
-
-      if (onSettingsSaved) {
-        onSettingsSaved();
-      }
     } catch (error: any) {
       console.error("Upload error:", error);
       toast({
@@ -333,19 +327,13 @@ export default function SettingsTab({
   const handleRemoveLogo = async (mode: "light" | "dark") => {
     if (mode === "light") {
       setLogoUrl("");
-      await supabase.from("companies").update({ logo_url: "" }).eq("id", company.id);
     } else {
       setLogoUrlDark("");
-      await supabase.from("companies").update({ logo_url_dark: "" }).eq("id", company.id);
     }
-
-    if (onSettingsSaved) {
-      onSettingsSaved();
-      toast({
-        title: "Logo removed",
-        description: `Your ${mode} mode logo has been removed`,
-      });
-    }
+    toast({
+      title: "Logo removed",
+      description: `Your ${mode} mode logo removal is pending. Click Save Settings to apply changes.`,
+    });
   };
 
   const handleSave = useCallback(async () => {

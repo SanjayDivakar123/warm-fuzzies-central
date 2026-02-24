@@ -44,9 +44,9 @@ export default function InsightPaywallModal({
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      // In a real implementation, this would integrate with Stripe
-      // For now, simulate adding credits (feature flag approach)
-      const success = await addInsightCredits(companyId, selectedPackage);
+      // Purchase flow validates wallet/card payment in the edge function before credits are added.
+      const selectedPrice = packages.find((pkg) => pkg.credits === selectedPackage)?.price ?? selectedPackage;
+      const success = await addInsightCredits(companyId, selectedPackage, selectedPrice);
       
       if (success) {
         toast({
@@ -77,7 +77,7 @@ export default function InsightPaywallModal({
             Free Insights Limit Reached
           </DialogTitle>
           <DialogDescription>
-            You've used all 3 free AI insights this month. Purchase credits to continue.
+            You've used all free AI insights this month. Purchase extra credits to continue.
           </DialogDescription>
         </DialogHeader>
 

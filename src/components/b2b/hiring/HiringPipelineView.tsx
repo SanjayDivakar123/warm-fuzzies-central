@@ -81,6 +81,8 @@ export default function HiringPipelineView({
   const [loading, setLoading] = useState(true);
   const [movingCandidate, setMovingCandidate] = useState<string | null>(null);
   const [emailCandidate, setEmailCandidate] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [draggedApplication, setDraggedApplication] = useState<{ applicationId: string; fromStageId: string | null } | null>(null);
+  const [dropTargetStageId, setDropTargetStageId] = useState<string | null>(null);
   
   const { toast } = useToast();
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
@@ -262,6 +264,27 @@ export default function HiringPipelineView({
     }
   };
 
+  const handleDragStart = (applicationId: string, fromStageId: string | null) => {
+    if (!isHROrAdmin || movingCandidate) return;
+    setDraggedApplication({ applicationId, fromStageId });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedApplication(null);
+    setDropTargetStageId(null);
+  };
+
+  const handleDropOnStage = async (toStageId: string) => {
+    if (!draggedApplication) return;
+
+    const { applicationId, fromStageId } = draggedApplication;
+    setDraggedApplication(null);
+    setDropTargetStageId(null);
+
+    if (fromStageId === toStageId) return;
+    await moveCandidate(applicationId, toStageId, fromStageId);
+  };
+
   const getApplicationsForStage = (stageId: string) => {
     return applications.filter(app => app.current_stage_id === stageId);
   };
@@ -350,22 +373,29 @@ export default function HiringPipelineView({
                   </CardHeader>
                   <CardContent className="space-y-2 max-h-[60vh] overflow-y-auto">
                     {getUnstagedApplications().map(app => (
-                      <CandidateCard
+                      <div
                         key={app.id}
-                        application={app}
-                        stages={stages}
-                        isMoving={movingCandidate === app.id}
-                        onMove={(toStageId) => moveCandidate(app.id, toStageId, null)}
-                        onReject={() => rejectCandidate(app.id)}
-                        onScheduleInterview={onNavigateToInterviews}
-                        onSendOffer={onNavigateToOffers}
-                        onSendEmail={() => setEmailCandidate({
-                          id: app.candidate.id,
-                          name: app.candidate.full_name || 'Candidate',
-                          email: app.candidate.email,
-                        })}
-                        canManage={isHROrAdmin}
-                      />
+                        draggable={isHROrAdmin && movingCandidate !== app.id}
+                        onDragStart={() => handleDragStart(app.id, null)}
+                        onDragEnd={handleDragEnd}
+                        className={isHROrAdmin ? 'cursor-grab active:cursor-grabbing' : ''}
+                      >
+                        <CandidateCard
+                          application={app}
+                          stages={stages}
+                          isMoving={movingCandidate === app.id}
+                          onMove={(toStageId) => moveCandidate(app.id, toStageId, null)}
+                          onReject={() => rejectCandidate(app.id)}
+                          onScheduleInterview={onNavigateToInterviews}
+                          onSendOffer={onNavigateToOffers}
+                          onSendEmail={() => setEmailCandidate({
+                            id: app.candidate.id,
+                            name: app.candidate.full_name || 'Candidate',
+                            email: app.candidate.email,
+                          })}
+                          canManage={isHROrAdmin}
+                        />
+                      </div>
                     ))}
                   </CardContent>
                 </Card>
@@ -380,7 +410,7 @@ export default function HiringPipelineView({
 
               return (
                 <div key={stage.id} className="w-72 flex-shrink-0">
-                  <Card>
+                  <Card className={dropTargetStageId === stage.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -397,32 +427,66 @@ export default function HiringPipelineView({
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-2 max-h-[60vh] overflow-y-auto">
+                    <CardContent
+                      className="space-y-2 max-h-[60vh] overflow-y-auto"
+                      onDragOver={(e) => {
+                        if (!isHROrAdmin) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (dropTargetStageId !== stage.id) {
+                          setDropTargetStageId(stage.id);
+                        }
+                      }}
+                      onDragEnter={(e) => {
+                        if (!isHROrAdmin) return;
+                        e.preventDefault();
+                        setDropTargetStageId(stage.id);
+                      }}
+                      onDragLeave={(e) => {
+                        if (!isHROrAdmin) return;
+                        const related = e.relatedTarget as Node | null;
+                        if (!related || !e.currentTarget.contains(related)) {
+                          setDropTargetStageId(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        if (!isHROrAdmin) return;
+                        e.preventDefault();
+                        handleDropOnStage(stage.id);
+                      }}
+                    >
                       {stageApps.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           No candidates
                         </p>
                       ) : (
                         stageApps.map(app => (
-                          <CandidateCard
+                          <div
                             key={app.id}
-                            application={app}
-                            stages={stages}
-                            currentStageIndex={index}
-                            isMoving={movingCandidate === app.id}
-                            onMoveNext={nextStage ? () => moveCandidate(app.id, nextStage.id, stage.id) : undefined}
-                            onMovePrev={prevStage ? () => moveCandidate(app.id, prevStage.id, stage.id) : undefined}
-                            onMove={(toStageId) => moveCandidate(app.id, toStageId, stage.id)}
-                            onReject={() => rejectCandidate(app.id)}
-                            onScheduleInterview={onNavigateToInterviews}
-                            onSendOffer={onNavigateToOffers}
-                            onSendEmail={() => setEmailCandidate({
-                              id: app.candidate.id,
-                              name: app.candidate.full_name || 'Candidate',
-                              email: app.candidate.email,
-                            })}
-                            canManage={isHROrAdmin}
-                          />
+                            draggable={isHROrAdmin && movingCandidate !== app.id}
+                            onDragStart={() => handleDragStart(app.id, stage.id)}
+                            onDragEnd={handleDragEnd}
+                            className={isHROrAdmin ? 'cursor-grab active:cursor-grabbing' : ''}
+                          >
+                            <CandidateCard
+                              application={app}
+                              stages={stages}
+                              currentStageIndex={index}
+                              isMoving={movingCandidate === app.id}
+                              onMoveNext={nextStage ? () => moveCandidate(app.id, nextStage.id, stage.id) : undefined}
+                              onMovePrev={prevStage ? () => moveCandidate(app.id, prevStage.id, stage.id) : undefined}
+                              onMove={(toStageId) => moveCandidate(app.id, toStageId, stage.id)}
+                              onReject={() => rejectCandidate(app.id)}
+                              onScheduleInterview={onNavigateToInterviews}
+                              onSendOffer={onNavigateToOffers}
+                              onSendEmail={() => setEmailCandidate({
+                                id: app.candidate.id,
+                                name: app.candidate.full_name || 'Candidate',
+                                email: app.candidate.email,
+                              })}
+                              canManage={isHROrAdmin}
+                            />
+                          </div>
                         ))
                       )}
                     </CardContent>
