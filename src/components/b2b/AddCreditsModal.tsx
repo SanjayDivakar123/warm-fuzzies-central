@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Wallet, Tag, Check, X } from "lucide-react";
+import { Loader2, Plus, Wallet, Tag, Check, X, AlertTriangle, CreditCard } from "lucide-react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 interface AddCreditsModalProps {
   open: boolean;
@@ -28,6 +29,22 @@ interface AddCreditsModalProps {
 const VALID_PROMO_CODES: Record<string, { discount: number; description: string }> = {
   "LEADERSWELCOME": { discount: 100, description: "100% off - Free credits!" },
 };
+
+function formatPaymentFailureDetails(rawMessage: string | null) {
+  const fallback = "Your card could not be charged.";
+  const message = (rawMessage || fallback).trim();
+  const codeMatch = message.match(/\(([^)]+)\)\s*$/);
+  const declineCode = codeMatch?.[1] || null;
+  const baseMessage = codeMatch ? message.replace(/\s*\([^)]+\)\s*$/, "").trim() : message;
+
+  return {
+    heading: "Payment Unsuccessful",
+    primaryReason: baseMessage || fallback,
+    declineCode,
+    recommendation:
+      "No credits were added. Please update your payment method and try the purchase again.",
+  };
+}
 
 export default function AddCreditsModal({
   open,
@@ -42,6 +59,8 @@ export default function AddCreditsModal({
   const [promoError, setPromoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [paymentFailureMessage, setPaymentFailureMessage] = useState<string | null>(null);
+  const [updatingPaymentMethod, setUpdatingPaymentMethod] = useState(false);
   const { toast } = useToast();
 
   const appliedPromo = promoApplied ? VALID_PROMO_CODES[promoApplied] : null;
@@ -126,9 +145,33 @@ export default function AddCreditsModal({
       onCreditsAdded();
       onClose();
     } catch (error: any) {
+      let errorMessage = "Failed to process credit purchase. Please try again.";
+
+      if (error instanceof FunctionsHttpError) {
+        const payload = await error.context.json().catch(() => null);
+        if (payload?.error) {
+          errorMessage = payload.error;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      const normalizedMessage = errorMessage.toLowerCase();
+      const isPaymentFailure =
+        normalizedMessage.includes("payment") ||
+        normalizedMessage.includes("card") ||
+        normalizedMessage.includes("stripe") ||
+        normalizedMessage.includes("declin") ||
+        normalizedMessage.includes("insufficient") ||
+        normalizedMessage.includes("requires_action");
+
+      if (isPaymentFailure) {
+        setPaymentFailureMessage(errorMessage);
+      }
+
       toast({
         title: "Error adding credits",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -142,7 +185,41 @@ export default function AddCreditsModal({
     setPromoApplied(null);
     setPromoError(null);
     setShowConfirmDialog(false);
+    setPaymentFailureMessage(null);
+    setUpdatingPaymentMethod(false);
     onClose();
+  };
+
+  const handleUpdatePaymentMethod = async () => {
+    setUpdatingPaymentMethod(true);
+    try {
+      const successUrl = new URL(window.location.href);
+      successUrl.searchParams.set("payment_setup", "success");
+
+      const cancelUrl = new URL(window.location.href);
+      cancelUrl.searchParams.set("payment_setup", "cancelled");
+
+      const { data, error } = await supabase.functions.invoke("manage-payment-method", {
+        body: {
+          company_id: companyId,
+          action: "setup_payment_method",
+          success_url: successUrl.toString(),
+          cancel_url: cancelUrl.toString(),
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.url) throw new Error("Could not open payment method setup.");
+
+      window.location.href = data.url;
+    } catch (error: any) {
+      toast({
+        title: "Unable to update payment method",
+        description: error?.message || "Please try again from the Billing section.",
+        variant: "destructive",
+      });
+      setUpdatingPaymentMethod(false);
+    }
   };
 
   return (
@@ -282,6 +359,53 @@ export default function AddCreditsModal({
               {loading ? "Processing..." : "Confirm Purchase"}
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(paymentFailureMessage)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPaymentFailureMessage(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          {(() => {
+            const details = formatPaymentFailureDetails(paymentFailureMessage);
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    {details.heading}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-3 text-sm">
+                      <p className="text-foreground/90">{details.primaryReason}</p>
+                      {details.declineCode && (
+                        <div className="inline-flex items-center rounded-md border bg-muted/40 px-2.5 py-1 text-xs font-medium">
+                          Decline code: {details.declineCode}
+                        </div>
+                      )}
+                      <p className="text-muted-foreground">{details.recommendation}</p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={updatingPaymentMethod}>Close</AlertDialogCancel>
+                  <Button onClick={handleUpdatePaymentMethod} disabled={updatingPaymentMethod}>
+                    {updatingPaymentMethod ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 mr-2" />
+                    )}
+                    Update Payment Method
+                  </Button>
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
         </AlertDialogContent>
       </AlertDialog>
     </Dialog>

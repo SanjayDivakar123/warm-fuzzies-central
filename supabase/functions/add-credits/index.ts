@@ -7,6 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return typeof str === "string" && uuidRegex.test(str);
@@ -21,10 +28,7 @@ serve(async (req) => {
     // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -42,10 +46,7 @@ serve(async (req) => {
     } = await supabaseAuth.auth.getUser();
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Invalid token" }, 401);
     }
 
     const body = await req.json();
@@ -53,27 +54,18 @@ serve(async (req) => {
 
     // Validate inputs
     if (!company_id || !isValidUUID(company_id)) {
-      return new Response(JSON.stringify({ error: "Invalid company ID" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Invalid company ID" }, 400);
     }
 
     if (!amount || typeof amount !== "number" || amount <= 0) {
-      return new Response(JSON.stringify({ error: "Invalid amount" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Invalid amount" }, 400);
     }
 
     if (
       charge_amount !== undefined &&
       (typeof charge_amount !== "number" || charge_amount < 0 || charge_amount > amount)
     ) {
-      return new Response(JSON.stringify({ error: "Invalid charge amount" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Invalid charge amount" }, 400);
     }
 
     console.log("Adding credits:", { company_id, amount, user_id: user.id });
@@ -92,10 +84,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (adminError || !adminCheck) {
-      return new Response(JSON.stringify({ error: "Forbidden: You must be a company admin" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Forbidden: You must be a company admin" }, 403);
     }
 
     // Get current balance + Stripe metadata
@@ -106,10 +95,7 @@ serve(async (req) => {
       .single();
 
     if (companyError || !company) {
-      return new Response(JSON.stringify({ error: "Company not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Company not found" }, 404);
     }
 
     const chargeAmount = Number(((charge_amount ?? amount) as number).toFixed(2));
@@ -120,10 +106,7 @@ serve(async (req) => {
     if (chargeAmount > 0) {
       const stripeSecret = Deno.env.get("STRIPE_SECRET");
       if (!stripeSecret) {
-        return new Response(JSON.stringify({ error: "Stripe is not configured" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "Stripe is not configured" }, 500);
       }
 
       const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
@@ -151,38 +134,62 @@ serve(async (req) => {
         }
       }
 
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: "card",
+      const customer = await stripe.customers.retrieve(customerId, {
+        expand: ["invoice_settings.default_payment_method"],
       });
 
-      if (paymentMethods.data.length === 0) {
-        return new Response(JSON.stringify({ error: "No payment method on file" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      let paymentMethodId: string | null = null;
+      if (!("deleted" in customer) && customer.invoice_settings?.default_payment_method) {
+        const defaultPm = customer.invoice_settings.default_payment_method;
+        paymentMethodId = typeof defaultPm === "string" ? defaultPm : defaultPm.id;
       }
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(chargeAmount * 100),
-        currency: "usd",
-        customer: customerId,
-        payment_method: paymentMethods.data[0].id,
-        off_session: true,
-        confirm: true,
-        description: `Wallet credit purchase for ${company.name}: $${chargeAmount.toFixed(2)}`,
-        metadata: {
-          company_id: company.id,
-          type: "wallet_credit_purchase",
-          credits_added: creditAmount.toFixed(2),
-        },
-      });
+      if (!paymentMethodId) {
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: customerId,
+          type: "card",
+        });
+        paymentMethodId = paymentMethods.data[0]?.id ?? null;
+      }
+
+      if (!paymentMethodId) {
+        return jsonResponse({ error: "No payment method on file", payment_failed: true }, 402);
+      }
+
+      let paymentIntent: Stripe.PaymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(chargeAmount * 100),
+          currency: "usd",
+          customer: customerId,
+          payment_method: paymentMethodId,
+          off_session: true,
+          confirm: true,
+          description: `Wallet credit purchase for ${company.name}: $${chargeAmount.toFixed(2)}`,
+          metadata: {
+            company_id: company.id,
+            type: "wallet_credit_purchase",
+            credits_added: creditAmount.toFixed(2),
+          },
+        });
+      } catch (paymentError: any) {
+        const declineCode = paymentError?.decline_code ? ` (${paymentError.decline_code})` : "";
+        const providerMessage =
+          paymentError?.message || "Card payment failed. Please update your payment method and try again.";
+        return jsonResponse(
+          {
+            error: `${providerMessage}${declineCode}`,
+            payment_failed: true,
+          },
+          402
+        );
+      }
 
       if (paymentIntent.status !== "succeeded") {
-        return new Response(JSON.stringify({ error: `Payment failed with status ${paymentIntent.status}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(
+          { error: `Payment failed with status ${paymentIntent.status}`, payment_failed: true },
+          402
+        );
       }
 
       chargedPaymentIntentId = paymentIntent.id;
@@ -238,22 +245,16 @@ serve(async (req) => {
 
     console.log("Credits added successfully. New balance:", newBalance);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        previousBalance: company.credit_balance || 0,
-        amountAdded: creditAmount,
-        chargeAmount,
-        chargedPaymentIntentId,
-        newBalance,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({
+      success: true,
+      previousBalance: company.credit_balance || 0,
+      amountAdded: creditAmount,
+      chargeAmount,
+      chargedPaymentIntentId,
+      newBalance,
+    });
   } catch (error) {
     console.error("Error:", error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: (error as Error).message }, 500);
   }
 });
