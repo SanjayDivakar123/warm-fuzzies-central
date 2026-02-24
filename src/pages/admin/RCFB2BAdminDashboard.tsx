@@ -10,6 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Building2, Loader2, Mail, RefreshCw, Search, Shield, Users } from "lucide-react";
 
 const ALLOWED_SUPER_ADMIN_EMAILS = [
@@ -24,6 +34,7 @@ interface CompanySummary {
   memberCount: number;
   ownerCount: number;
   adminLevelCount: number;
+  credit_balance: number;
 }
 
 interface CompanyUserRow {
@@ -48,6 +59,12 @@ const getErrorMessage = (error: unknown) => {
   return "Unexpected error";
 };
 
+const formatUsdFromCents = (amountCents: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format((amountCents || 0) / 100);
+
 export default function RCFB2BAdminDashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -63,8 +80,13 @@ export default function RCFB2BAdminDashboard() {
   const [platformUsers, setPlatformUsers] = useState<PlatformUserRow[]>([]);
   const [platformUsersLoading, setPlatformUsersLoading] = useState(false);
   const [platformSearch, setPlatformSearch] = useState("");
-  const [platformFilter, setPlatformFilter] = useState<"all" | "owners" | "admin_level">("all");
+  const [platformFilter, setPlatformFilter] = useState<"all" | "owners" | "admin_level" | "non_b2b">("all");
   const [sendingResetTo, setSendingResetTo] = useState<string | null>(null);
+  const [billingCompanyId, setBillingCompanyId] = useState<string>("");
+  const [billingAmountUsd, setBillingAmountUsd] = useState<string>("");
+  const [billingDescription, setBillingDescription] = useState<string>("");
+  const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
+  const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
 
   const isAllowed = ALLOWED_SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
 
@@ -128,6 +150,7 @@ export default function RCFB2BAdminDashboard() {
           search: platformSearch,
           owners_only: platformFilter === "owners",
           admin_level_only: platformFilter === "admin_level",
+          non_b2b_only: platformFilter === "non_b2b",
         },
       });
       if (error) throw error;
@@ -164,6 +187,61 @@ export default function RCFB2BAdminDashboard() {
       });
     } finally {
       setSendingResetTo(null);
+    }
+  };
+
+  const handleCompanyBillingAction = async (action: "charge_card" | "add_free_credits") => {
+    const selectedId = billingCompanyId || selectedCompanyId;
+    const amountUsd = Number(billingAmountUsd);
+    const amountCents = Math.round(amountUsd * 100);
+
+    if (!selectedId) {
+      toast({
+        title: "Select a company",
+        description: "Please select a company before running a billing action.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Enter a positive dollar amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBillingLoadingAction(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("rcf-company-billing-admin", {
+        body: {
+          company_id: selectedId,
+          action,
+          amount_cents: amountCents,
+          description: billingDescription.trim() || undefined,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: action === "charge_card" ? "Card charged + credits added" : "Free credits added",
+        description: `${formatUsdFromCents(amountCents)} applied successfully.`,
+      });
+
+      setBillingAmountUsd("");
+      setBillingDescription("");
+      await fetchCompanies();
+    } catch (error: unknown) {
+      toast({
+        title: action === "charge_card" ? "Charge failed" : "Credit update failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setBillingLoadingAction(null);
     }
   };
 
@@ -231,6 +309,64 @@ export default function RCFB2BAdminDashboard() {
           </TabsList>
 
           <TabsContent value="companies">
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle>Billing Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                  <Select value={billingCompanyId} onValueChange={setBillingCompanyId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Amount in USD"
+                    value={billingAmountUsd}
+                    onChange={(event) => setBillingAmountUsd(event.target.value)}
+                  />
+                  <Input
+                    placeholder="Optional description"
+                    value={billingDescription}
+                    onChange={(event) => setBillingDescription(event.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      disabled={billingLoadingAction !== null}
+                      onClick={() => setPendingBillingAction("charge_card")}
+                    >
+                      {billingLoadingAction === "charge_card" ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : null}
+                      Charge Card
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      disabled={billingLoadingAction !== null}
+                      onClick={() => setPendingBillingAction("add_free_credits")}
+                    >
+                      {billingLoadingAction === "add_free_credits" ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : null}
+                      Add Free Credits
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>All B2B Companies</CardTitle>
@@ -251,28 +387,37 @@ export default function RCFB2BAdminDashboard() {
                           <TableHead>Members</TableHead>
                           <TableHead>Owners</TableHead>
                           <TableHead>Admin-Level</TableHead>
+                          <TableHead>Credits</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {companies.map((company) => (
-                          <TableRow
-                            key={company.id}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              setSelectedCompanyId(company.id);
-                              setActiveTab("company-users");
-                            }}
-                          >
+                          <TableRow key={company.id}>
                             <TableCell className="font-medium">{company.name}</TableCell>
                             <TableCell>{company.subdomain}</TableCell>
                             <TableCell>{company.memberCount}</TableCell>
                             <TableCell>{company.ownerCount}</TableCell>
                             <TableCell>{company.adminLevelCount}</TableCell>
+                            <TableCell>{formatUsdFromCents(company.credit_balance)}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedCompanyId(company.id);
+                                  setBillingCompanyId(company.id);
+                                  setActiveTab("company-users");
+                                }}
+                              >
+                                View Users
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                         {companies.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                               No companies found.
                             </TableCell>
                           </TableRow>
@@ -393,7 +538,7 @@ export default function RCFB2BAdminDashboard() {
                   </div>
                   <Select
                     value={platformFilter}
-                    onValueChange={(value) => setPlatformFilter(value as "all" | "owners" | "admin_level")}
+                    onValueChange={(value) => setPlatformFilter(value as "all" | "owners" | "admin_level" | "non_b2b")}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -402,6 +547,7 @@ export default function RCFB2BAdminDashboard() {
                       <SelectItem value="all">All users</SelectItem>
                       <SelectItem value="owners">B2B owners only</SelectItem>
                       <SelectItem value="admin_level">B2B admin-level only</SelectItem>
+                      <SelectItem value="non_b2b">Non-B2B users only</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button onClick={fetchPlatformUsers} disabled={platformUsersLoading}>
@@ -482,6 +628,66 @@ export default function RCFB2BAdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <AlertDialog
+          open={pendingBillingAction !== null}
+          onOpenChange={(open) => {
+            if (!open && !billingLoadingAction) setPendingBillingAction(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pendingBillingAction === "charge_card" ? "Confirm Card Charge" : "Confirm Free Credit Addition"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to{" "}
+                <span className="font-medium">
+                  {pendingBillingAction === "charge_card" ? "charge the card on file and add credits" : "add free credits"}
+                </span>{" "}
+                for{" "}
+                <span className="font-medium">
+                  {(companies.find((company) => company.id === (billingCompanyId || selectedCompanyId))?.name) || "selected company"}
+                </span>
+                .
+                <br />
+                <br />
+                Amount:{" "}
+                <span className="font-medium">
+                  {formatUsdFromCents(Math.round(Number(billingAmountUsd || 0) * 100))}
+                </span>
+                {billingDescription.trim() ? (
+                  <>
+                    <br />
+                    Description: <span className="font-medium">{billingDescription.trim()}</span>
+                  </>
+                ) : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={billingLoadingAction !== null}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={pendingBillingAction === null || billingLoadingAction !== null}
+                onClick={async () => {
+                  if (!pendingBillingAction) return;
+                  await handleCompanyBillingAction(pendingBillingAction);
+                  setPendingBillingAction(null);
+                }}
+              >
+                {billingLoadingAction !== null ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : pendingBillingAction === "charge_card" ? (
+                  "Confirm Charge"
+                ) : (
+                  "Confirm Add Credits"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

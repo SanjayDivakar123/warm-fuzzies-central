@@ -21,6 +21,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   X,
   AlertCircle,
   CreditCard,
@@ -139,6 +141,10 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [jobRoleInput, setJobRoleInput] = useState<Record<string, string>>({});
   const [showJobChangeConfirmed, setShowJobChangeConfirmed] = useState(false);
   const jobChangeConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const teamMembersCardRef = useRef<HTMLDivElement | null>(null);
+  const usersTableScrollRef = useRef<HTMLDivElement | null>(null);
+  const [hasScrolledFromTop, setHasScrolledFromTop] = useState(false);
+  const [isTeamMembersVisible, setIsTeamMembersVisible] = useState(false);
   const { toast } = useToast();
   const { permissions } = useCompany();
 
@@ -155,6 +161,31 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       if (jobChangeConfirmTimerRef.current) {
         clearTimeout(jobChangeConfirmTimerRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateFloatingScrollerVisibility = () => {
+      const cardElement = teamMembersCardRef.current;
+      if (!cardElement) return;
+
+      const rect = cardElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const isVisible = rect.top < viewportHeight - 40 && rect.bottom > 120;
+      const pageScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const movedDownFromTop = pageScrollY > 40;
+
+      setIsTeamMembersVisible(isVisible);
+      setHasScrolledFromTop(movedDownFromTop);
+    };
+
+    updateFloatingScrollerVisibility();
+    window.addEventListener('resize', updateFloatingScrollerVisibility);
+    document.addEventListener('scroll', updateFloatingScrollerVisibility, true);
+
+    return () => {
+      window.removeEventListener('resize', updateFloatingScrollerVisibility);
+      document.removeEventListener('scroll', updateFloatingScrollerVisibility, true);
     };
   }, []);
 
@@ -1085,6 +1116,47 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     setNewSkillInput("");
   };
 
+  const scrollUsersTable = (direction: 'left' | 'right') => {
+    const outerContainer = usersTableScrollRef.current;
+    if (!outerContainer) {
+      console.warn('[UsersTabScroller] Missing users table container ref.');
+      return;
+    }
+
+    const innerScroller = outerContainer.querySelector('div.relative.w-full.overflow-auto') as HTMLDivElement | null;
+    const tableContainer = innerScroller ?? outerContainer;
+    const maxScrollLeft = tableContainer.scrollWidth - tableContainer.clientWidth;
+    const beforeScrollLeft = tableContainer.scrollLeft;
+
+    const scrollAmount = Math.max(320, Math.floor(tableContainer.clientWidth * 0.6));
+    console.info('[UsersTabScroller] Click', {
+      direction,
+      usingInnerScroller: Boolean(innerScroller),
+      clientWidth: tableContainer.clientWidth,
+      scrollWidth: tableContainer.scrollWidth,
+      maxScrollLeft,
+      beforeScrollLeft,
+      scrollAmount,
+    });
+
+    if (maxScrollLeft <= 0) {
+      console.warn('[UsersTabScroller] No horizontal overflow detected. Nothing to scroll.');
+      return;
+    }
+
+    tableContainer.scrollBy({
+      left: direction === 'right' ? scrollAmount : -scrollAmount,
+      behavior: 'smooth',
+    });
+
+    window.setTimeout(() => {
+      console.info('[UsersTabScroller] After click', {
+        direction,
+        afterScrollLeft: tableContainer.scrollLeft,
+      });
+    }, 220);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -1175,7 +1247,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         {/* Email Template Customizer */}
         <EmailTemplateCustomizer company={company} onUpdate={onCompanyUpdate || (() => {})} />
 
-        <Card className="border-0 shadow-sm" data-tour="users-table">
+        <Card ref={teamMembersCardRef} className="border-0 shadow-sm" data-tour="users-table">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="text-lg font-medium">Team Members</CardTitle>
@@ -1253,8 +1325,8 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden sm:block overflow-x-auto">
-            <Table>
+            <div ref={usersTableScrollRef} className="hidden sm:block overflow-x-scroll users-table-scroll">
+            <Table className="min-w-[1400px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">
@@ -1879,6 +1951,35 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
             </div>
           </CardContent>
         </Card>
+
+        <div
+          className={`hidden sm:flex fixed bottom-5 left-1/2 -translate-x-1/2 z-50 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all duration-300 ${
+            hasScrolledFromTop && isTeamMembersVisible
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 w-9 p-0"
+            onClick={() => scrollUsersTable('left')}
+            aria-label="Scroll users table left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 w-9 p-0"
+            onClick={() => scrollUsersTable('right')}
+            aria-label="Scroll users table right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Mobile User Detail Modal */}
         <UserDetailModal

@@ -75,6 +75,7 @@ serve(async (req) => {
     const search = (body?.search || "").toString().trim().toLowerCase();
     const ownersOnly = Boolean(body?.owners_only);
     const adminLevelOnly = Boolean(body?.admin_level_only);
+    const nonB2BOnly = Boolean(body?.non_b2b_only);
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
@@ -154,6 +155,7 @@ serve(async (req) => {
       .filter((entry) => {
         if (ownersOnly && !entry.is_b2b_owner) return false;
         if (adminLevelOnly && !entry.is_b2b_admin_level) return false;
+        if (nonB2BOnly && entry.b2b_company_count > 0) return false;
         if (search && !(entry.email || "").toLowerCase().includes(search)) return false;
         return true;
       })

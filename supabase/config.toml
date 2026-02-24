@@ -158,3 +158,6 @@ verify_jwt = true
 
 [functions.send-rcf-password-reset]
 verify_jwt = true
+
+[functions.rcf-company-billing-admin]
+verify_jwt = true
