@@ -37,6 +37,8 @@ import MobileBottomNav from '@/components/b2b/MobileBottomNav';
 import GlobalSearch from '@/components/b2b/GlobalSearch';
 import UserProfileSheet from '@/components/b2b/UserProfileSheet';
 
+const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'settings']);
+
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
   const { company, companyUser, loading, isAdmin, permissions, refreshCompany } = useCompany();
@@ -101,6 +103,9 @@ function B2BDashboardContent() {
       return;
     }
     setActiveTab(nextTab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    setSearchParams(nextParams, { replace: true });
   };
 
   const handleDiscardAndLeave = () => {
@@ -108,6 +113,9 @@ function B2BDashboardContent() {
     setShowUnsavedDialog(false);
     if (pendingTab) {
       setActiveTab(pendingTab);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', pendingTab);
+      setSearchParams(nextParams, { replace: true });
       setPendingTab(null);
     }
   };
@@ -128,9 +136,32 @@ function B2BDashboardContent() {
     setShowUnsavedDialog(false);
     if (pendingTab) {
       setActiveTab(pendingTab);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', pendingTab);
+      setSearchParams(nextParams, { replace: true });
       setPendingTab(null);
     }
   };
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab');
+    if (requestedTab && GUIDE_TABS.has(requestedTab) && requestedTab !== activeTab) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams, activeTab]);
+
+  useEffect(() => {
+    const onGuideTabChange = (event: Event) => {
+      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
+      if (!tab || !GUIDE_TABS.has(tab)) return;
+      handleTabChange(tab);
+    };
+
+    window.addEventListener('rcf:b2b-guide-tab-change', onGuideTabChange as EventListener);
+    return () => {
+      window.removeEventListener('rcf:b2b-guide-tab-change', onGuideTabChange as EventListener);
+    };
+  }, [handleTabChange]);
 
   useEffect(() => {
     const seatsAdded = searchParams.get('seats_added');

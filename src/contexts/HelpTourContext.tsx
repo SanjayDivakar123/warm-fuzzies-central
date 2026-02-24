@@ -126,7 +126,7 @@ export const adminAssessmentsTour: TourDefinition = {
       target: '[data-tour="team-insights"]',
       title: 'AI Team Insights',
       content: 'Get AI-powered analysis of your team\'s strengths, collaboration tips, and growth opportunities.',
-      placement: 'bottom',
+      placement: 'left',
     },
     {
       id: 'individual-results',
@@ -145,21 +145,21 @@ export const adminWorkMatrixTour: TourDefinition = {
   steps: [
     {
       id: 'create-task',
-      target: '[data-tour="matrix-create"]',
+      target: '[data-tour="matrix-tab-create"]',
       title: 'Create a Task',
       content: 'Start by describing the task, setting importance and urgency levels, and selecting required skills.',
       placement: 'bottom',
     },
     {
       id: 'ai-assignment',
-      target: '[data-tour="matrix-assignment"]',
-      title: 'AI Recommendations',
-      content: 'Our AI analyzes team members\' RoleColors, skills, and workload to suggest the best person for each task.',
+      target: '[data-tour="matrix-assignment-explainer"]',
+      title: 'What Happens Next',
+      content: 'Once you create a task, the Assignment tab unlocks. That screen shows AI recommendations based on RoleColor, skills, and workload.',
       placement: 'bottom',
     },
     {
       id: 'task-history',
-      target: '[data-tour="matrix-history"]',
+      target: '[data-tour="matrix-tab-history"]',
       title: 'Assignment History',
       content: 'Track all past task assignments and their outcomes to improve future decisions.',
       placement: 'bottom',

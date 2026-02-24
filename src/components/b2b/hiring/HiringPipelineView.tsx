@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import SendEmailDialog from './SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -79,6 +80,7 @@ export default function HiringPipelineView({
   const [applications, setApplications] = useState<CandidateWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [movingCandidate, setMovingCandidate] = useState<string | null>(null);
+  const [emailCandidate, setEmailCandidate] = useState<{ id: string; name: string; email: string } | null>(null);
   
   const { toast } = useToast();
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
@@ -147,7 +149,9 @@ export default function HiringPipelineView({
           )
         `)
         .eq('job_posting_id', jobId)
-        .is('withdrawn_at', null);
+        .is('withdrawn_at', null)
+        .is('rejected_at', null)
+        .is('hired_at', null);
 
       if (appsError) throw appsError;
       setApplications(appsData as CandidateWithDetails[] || []);
@@ -198,7 +202,11 @@ export default function HiringPipelineView({
       if (toStage?.is_final_stage) {
         await supabase
           .from('candidate_applications')
-          .update({ hired_at: new Date().toISOString() })
+          .update({
+            hired_at: new Date().toISOString(),
+            rejected_at: null,
+            rejection_reason: null,
+          })
           .eq('id', applicationId);
       }
 
@@ -230,6 +238,7 @@ export default function HiringPipelineView({
         .update({
           rejection_reason: reason || 'Did not meet criteria',
           rejected_at: new Date().toISOString(),
+          hired_at: null,
         })
         .eq('id', applicationId);
 
@@ -347,8 +356,13 @@ export default function HiringPipelineView({
                         isMoving={movingCandidate === app.id}
                         onMove={(toStageId) => moveCandidate(app.id, toStageId, null)}
                         onReject={() => rejectCandidate(app.id)}
-                            onScheduleInterview={onNavigateToInterviews}
-                            onSendOffer={onNavigateToOffers}
+                        onScheduleInterview={onNavigateToInterviews}
+                        onSendOffer={onNavigateToOffers}
+                        onSendEmail={() => setEmailCandidate({
+                          id: app.candidate.id,
+                          name: app.candidate.full_name || 'Candidate',
+                          email: app.candidate.email,
+                        })}
                         canManage={isHROrAdmin}
                       />
                     ))}
@@ -401,6 +415,11 @@ export default function HiringPipelineView({
                             onReject={() => rejectCandidate(app.id)}
                             onScheduleInterview={onNavigateToInterviews}
                             onSendOffer={onNavigateToOffers}
+                            onSendEmail={() => setEmailCandidate({
+                              id: app.candidate.id,
+                              name: app.candidate.full_name || 'Candidate',
+                              email: app.candidate.email,
+                            })}
                             canManage={isHROrAdmin}
                           />
                         ))
@@ -419,6 +438,15 @@ export default function HiringPipelineView({
           </CardContent>
         </Card>
       )}
+      <SendEmailDialog
+        candidateId={emailCandidate?.id || null}
+        candidateName={emailCandidate?.name || ''}
+        candidateEmail={emailCandidate?.email || ''}
+        companyName={company.name}
+        companyId={company.id}
+        open={!!emailCandidate}
+        onClose={() => setEmailCandidate(null)}
+      />
     </div>
   );
 }
@@ -435,6 +463,7 @@ interface CandidateCardProps {
   onReject: () => void;
   onScheduleInterview?: () => void;
   onSendOffer?: () => void;
+  onSendEmail?: () => void;
   canManage: boolean;
 }
 
@@ -449,6 +478,7 @@ function CandidateCard({
   onReject,
   onScheduleInterview,
   onSendOffer,
+  onSendEmail,
   canManage,
 }: CandidateCardProps) {
   const candidate = application.candidate;
@@ -464,10 +494,6 @@ function CandidateCard({
       return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
     return email.slice(0, 2).toUpperCase();
-  }
-
-  function handleSendEmail() {
-    window.location.href = `mailto:${candidate.email}`;
   }
 
   return (
@@ -552,7 +578,7 @@ function CandidateCard({
                   <FileCheck className="h-4 w-4 mr-2" />
                   Send Offer
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendEmail}>
+                <DropdownMenuItem onClick={onSendEmail}>
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </DropdownMenuItem>

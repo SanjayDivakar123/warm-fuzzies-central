@@ -25,11 +25,11 @@ interface HelpButtonProps {
   iconOnly?: boolean;
 }
 
-const TOUR_ROUTE_BY_ID: Record<string, string> = {
-  'admin-dashboard-overview': '/b2b/company-portal?tab=overview',
-  'admin-users-management': '/b2b/company-portal?tab=users',
-  'admin-assessments-overview': '/b2b/company-portal?tab=assessments',
-  'admin-work-matrix': '/b2b/company-portal?tab=matrix',
+const TOUR_TAB_BY_ID: Record<string, string> = {
+  'admin-dashboard-overview': 'overview',
+  'admin-users-management': 'users',
+  'admin-assessments-overview': 'assessments',
+  'admin-work-matrix': 'matrix',
 };
 
 export function HelpButton({ 
@@ -46,14 +46,42 @@ export function HelpButton({
     ? availableTours.filter(tourFilter) 
     : availableTours;
 
+  const waitForTarget = (selector: string, timeoutMs = 3000): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const startedAt = Date.now();
+      const timer = window.setInterval(() => {
+        if (document.querySelector(selector)) {
+          window.clearInterval(timer);
+          resolve(true);
+          return;
+        }
+        if (Date.now() - startedAt >= timeoutMs) {
+          window.clearInterval(timer);
+          resolve(false);
+        }
+      }, 100);
+    });
+  };
+
   const handleStartTour = (tourId: string) => {
     setOpen(false);
-    const targetRoute = TOUR_ROUTE_BY_ID[tourId];
-    if (targetRoute) {
-      navigate(targetRoute);
+    const selectedTour = availableTours.find((tour) => tour.id === tourId);
+    const firstStepTarget = selectedTour?.steps[0]?.target;
+    const targetTab = TOUR_TAB_BY_ID[tourId];
+    if (targetTab) {
+      // Notify dashboard to switch tabs immediately, then keep URL in sync.
+      window.dispatchEvent(
+        new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: targetTab } })
+      );
+      navigate(`/b2b/company-portal?tab=${targetTab}`);
     }
-    // Small delay to allow dropdown to close
-    setTimeout(() => startTour(tourId), targetRoute ? 300 : 100);
+    // Allow route/tab transition, then wait briefly for the first step element to exist.
+    window.setTimeout(async () => {
+      if (firstStepTarget) {
+        await waitForTarget(firstStepTarget);
+      }
+      startTour(tourId);
+    }, targetTab ? 250 : 100);
   };
 
   const handleResetTour = (tourId: string, e: React.MouseEvent) => {

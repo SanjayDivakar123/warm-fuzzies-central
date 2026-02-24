@@ -30,12 +30,16 @@ function TourTooltipInner() {
     }
 
     const updatePosition = () => {
+      const padding = 16;
+      const arrowSize = 12;
+      const tooltipWidth = Math.min(tooltipRef.current?.offsetWidth ?? 350, window.innerWidth - padding * 2);
+      const tooltipHeight = tooltipRef.current?.offsetHeight ?? 220;
       const target = document.querySelector(currentStep.target);
       if (!target) {
         // If target not found, show tooltip in center
         setPosition({
-          top: window.innerHeight / 2 - 100,
-          left: window.innerWidth / 2 - 175,
+          top: Math.max(padding, window.innerHeight / 2 - tooltipHeight / 2),
+          left: Math.max(padding, window.innerWidth / 2 - tooltipWidth / 2),
           arrowPosition: 'top',
         });
         setTargetRect(null);
@@ -44,11 +48,6 @@ function TourTooltipInner() {
 
       const rect = target.getBoundingClientRect();
       setTargetRect(rect);
-
-      const tooltipWidth = 350;
-      const tooltipHeight = 180;
-      const padding = 16;
-      const arrowSize = 12;
 
       let top = 0;
       let left = 0;
@@ -92,12 +91,14 @@ function TourTooltipInner() {
     };
 
     updatePosition();
+    const rafId = window.requestAnimationFrame(updatePosition);
     
     // Update on scroll/resize
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
 
     return () => {
+      window.cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', updatePosition, true);
       window.removeEventListener('resize', updatePosition);
     };
@@ -170,7 +171,7 @@ function TourTooltipInner() {
       <Card
         ref={tooltipRef}
         className={cn(
-          'fixed z-[10000] w-[350px] shadow-2xl border-2 border-primary/20 animate-in fade-in-0 zoom-in-95 duration-200',
+          'fixed z-[10000] w-[min(350px,calc(100vw-2rem))] shadow-2xl border-2 border-primary/20 animate-in fade-in-0 zoom-in-95 duration-200',
           arrowClasses[position.arrowPosition]
         )}
         style={{

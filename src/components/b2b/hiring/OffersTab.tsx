@@ -35,6 +35,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -55,6 +65,7 @@ import {
 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { format, addDays } from 'date-fns';
+import SendOfferDialog, { OfferCandidateOption } from './SendOfferDialog';
 
 type Offer = Database['public']['Tables']['offers']['Row'];
 type OfferStatus = Database['public']['Enums']['offer_status'];
@@ -79,6 +90,16 @@ interface OffersTabProps {
   companyUser: { id: string; role: string } | null;
 }
 
+interface PendingOfferAction {
+  offerId: string;
+  action: 'status' | 'delete';
+  nextStatus?: OfferStatus;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  destructive?: boolean;
+}
+
 const OFFER_STATUS_CONFIG: Record<OfferStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string; icon: React.ReactNode }> = {
   draft: { variant: 'outline', label: 'Draft', icon: <FileText className="h-4 w-4" /> },
   sent: { variant: 'default', label: 'Sent', icon: <Send className="h-4 w-4" /> },
@@ -93,10 +114,12 @@ export default function OffersTab({
   companyUser,
 }: OffersTabProps) {
   const [offers, setOffers] = useState<OfferWithDetails[]>([]);
+  const [offerCandidateOptions, setOfferCandidateOptions] = useState<OfferCandidateOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<OfferWithDetails | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingOfferAction | null>(null);
   const [statusFilter, setStatusFilter] = useState<OfferStatus | 'all'>('all');
 
   const { toast } = useToast();
@@ -126,10 +149,36 @@ export default function OffersTab({
       // Get applications for those jobs
       const { data: appsData } = await supabase
         .from('candidate_applications')
-        .select('id')
+        .select(`
+          id,
+          candidate_id,
+          hired_at,
+          rejected_at,
+          withdrawn_at,
+          candidate:candidates (
+            id,
+            full_name,
+            email
+          ),
+          job_posting:job_postings (
+            id,
+            title
+          )
+        `)
         .in('job_posting_id', jobIds);
 
-      const appIds = appsData?.map(a => a.id) || [];
+      const appIds = appsData?.map((a: any) => a.id) || [];
+
+      const options = (appsData || [])
+        .filter((app: any) => !app.hired_at && !app.rejected_at && !app.withdrawn_at && app.candidate?.email)
+        .map((app: any) => ({
+          applicationId: app.id,
+          candidateId: app.candidate_id,
+          candidateName: app.candidate?.full_name || app.candidate?.email?.split('@')[0] || 'Candidate',
+          candidateEmail: app.candidate.email,
+          jobTitle: app.job_posting?.title || 'Unknown Role',
+        }));
+      setOfferCandidateOptions(options);
 
       if (appIds.length === 0) {
         setOffers([]);
@@ -175,13 +224,15 @@ export default function OffersTab({
   const updateOfferStatus = async (offerId: string, status: OfferStatus) => {
     try {
       const updates: any = { status };
+      const now = new Date().toISOString();
       
       if (status === 'sent') {
-        updates.sent_at = new Date().toISOString();
+        updates.sent_at = now;
       } else if (status === 'accepted') {
-        updates.accepted_at = new Date().toISOString();
+        updates.responded_at = now;
+        updates.signed_at = now;
       } else if (status === 'declined') {
-        updates.declined_at = new Date().toISOString();
+        updates.responded_at = now;
       }
 
       const { error } = await supabase
@@ -202,7 +253,11 @@ export default function OffersTab({
         if (offer) {
           await supabase
             .from('candidate_applications')
-            .update({ hired_at: new Date().toISOString() })
+            .update({
+              hired_at: new Date().toISOString(),
+              rejected_at: null,
+              rejection_reason: null,
+            })
             .eq('id', offer.application_id);
         }
       }
@@ -218,8 +273,6 @@ export default function OffersTab({
   };
 
   const deleteOffer = async (offerId: string) => {
-    if (!confirm('Are you sure you want to delete this offer?')) return;
-
     try {
       const { error } = await supabase
         .from('offers')
@@ -240,6 +293,48 @@ export default function OffersTab({
         description: err.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const requestStatusUpdate = (offer: OfferWithDetails, status: OfferStatus) => {
+    const candidateName = offer.candidate_application?.candidate?.full_name || 'this candidate';
+    const statusLabel = OFFER_STATUS_CONFIG[status].label;
+    setPendingAction({
+      offerId: offer.id,
+      action: 'status',
+      nextStatus: status,
+      title: `Confirm ${statusLabel}`,
+      description: `Are you sure you want to mark the offer for ${candidateName} as ${statusLabel.toLowerCase()}?`,
+      confirmLabel: `Mark ${statusLabel}`,
+      destructive: status === 'declined' || status === 'rescinded',
+    });
+  };
+
+  const requestDeleteOffer = (offer: OfferWithDetails) => {
+    const candidateName = offer.candidate_application?.candidate?.full_name || 'this candidate';
+    setPendingAction({
+      offerId: offer.id,
+      action: 'delete',
+      title: 'Delete Offer',
+      description: `Are you sure you want to delete the offer for ${candidateName}? This action cannot be undone.`,
+      confirmLabel: 'Delete Offer',
+      destructive: true,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+
+    const actionToRun = pendingAction;
+    setPendingAction(null);
+
+    if (actionToRun.action === 'status' && actionToRun.nextStatus) {
+      await updateOfferStatus(actionToRun.offerId, actionToRun.nextStatus);
+      return;
+    }
+
+    if (actionToRun.action === 'delete') {
+      await deleteOffer(actionToRun.offerId);
     }
   };
 
@@ -356,7 +451,7 @@ export default function OffersTab({
         </Select>
 
         {isHROrAdmin && (
-          <Button onClick={() => setShowCreateDialog(true)}>
+          <Button onClick={() => setShowCreateDialog(true)} disabled={offerCandidateOptions.length === 0}>
             <Plus className="h-4 w-4 mr-2" />
             Create Offer
           </Button>
@@ -459,18 +554,18 @@ export default function OffersTab({
                             {isHROrAdmin && (
                               <>
                                 {offer.status === 'draft' && (
-                                  <DropdownMenuItem onClick={() => updateOfferStatus(offer.id, 'sent')}>
+                                  <DropdownMenuItem onClick={() => requestStatusUpdate(offer, 'sent')}>
                                     <Send className="h-4 w-4 mr-2" />
                                     Mark as Sent
                                   </DropdownMenuItem>
                                 )}
                                 {offer.status === 'sent' && (
                                   <>
-                                    <DropdownMenuItem onClick={() => updateOfferStatus(offer.id, 'accepted')}>
+                                    <DropdownMenuItem onClick={() => requestStatusUpdate(offer, 'accepted')}>
                                       <CheckCircle className="h-4 w-4 mr-2" />
                                       Mark Accepted
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => updateOfferStatus(offer.id, 'declined')}>
+                                    <DropdownMenuItem onClick={() => requestStatusUpdate(offer, 'declined')}>
                                       <XCircle className="h-4 w-4 mr-2" />
                                       Mark Declined
                                     </DropdownMenuItem>
@@ -483,9 +578,9 @@ export default function OffersTab({
                                     Edit
                                   </DropdownMenuItem>
                                 )}
-                                {offer.status === 'draft' && (
+                                {['draft', 'accepted', 'declined', 'rescinded'].includes(offer.status) && (
                                   <DropdownMenuItem 
-                                    onClick={() => deleteOffer(offer.id)}
+                                    onClick={() => requestDeleteOffer(offer)}
                                     className="text-destructive"
                                   >
                                     <Trash className="h-4 w-4 mr-2" />
@@ -494,7 +589,7 @@ export default function OffersTab({
                                 )}
                                 {offer.status === 'sent' && (
                                   <DropdownMenuItem 
-                                    onClick={() => updateOfferStatus(offer.id, 'rescinded')}
+                                    onClick={() => requestStatusUpdate(offer, 'rescinded')}
                                     className="text-destructive"
                                   >
                                     <XCircle className="h-4 w-4 mr-2" />
@@ -515,22 +610,23 @@ export default function OffersTab({
         </CardContent>
       </Card>
 
-      {/* Create Dialog (placeholder) */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Offer</DialogTitle>
-            <DialogDescription>
-              To create an offer, go to the Pipeline or Candidates tab and select "Send Offer" from a candidate's menu.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SendOfferDialog
+        applicationId={null}
+        candidateId={null}
+        candidateName=""
+        candidateEmail=""
+        companyName={company.name}
+        jobTitle=""
+        companyId={company.id}
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSent={() => {
+          fetchOffers();
+          setShowCreateDialog(false);
+        }}
+        candidateOptions={offerCandidateOptions}
+        requireCandidateSelection
+      />
 
       {/* View Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
@@ -628,6 +724,24 @@ export default function OffersTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingAction} onOpenChange={(isOpen) => !isOpen && setPendingAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingAction?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{pendingAction?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={pendingAction?.destructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+            >
+              {pendingAction?.confirmLabel || 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

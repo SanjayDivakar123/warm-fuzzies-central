@@ -46,6 +46,7 @@ import {
   Download,
   UserPlus,
   ClipboardCheck,
+  RotateCcw,
 } from 'lucide-react';
 import AddCandidateDialog from './AddCandidateDialog';
 import CandidateProfileDialog from './CandidateProfileDialog';
@@ -234,6 +235,7 @@ export default function HiringCandidatesTab({
         .update({
           rejection_reason: 'Rejected by HR',
           rejected_at: new Date().toISOString(),
+          hired_at: null,
         })
         .eq('id', applicationId);
 
@@ -242,6 +244,59 @@ export default function HiringCandidatesTab({
       toast({
         title: 'Candidate rejected',
         description: 'The candidate has been marked as rejected.',
+      });
+
+      fetchApplications();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const unrejectCandidate = async (applicationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('candidate_applications')
+        .update({
+          rejected_at: null,
+          rejection_reason: null,
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Candidate restored',
+        description: 'The candidate has been moved back to the active pipeline.',
+      });
+
+      fetchApplications();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const unhireCandidate = async (applicationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('candidate_applications')
+        .update({
+          hired_at: null,
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Candidate unhired',
+        description: 'The candidate has been moved back to the active pipeline.',
       });
 
       fetchApplications();
@@ -580,7 +635,7 @@ export default function HiringCandidatesTab({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {isHROrAdmin && !app.hired_at && !app.rejected_at && (
+                      {isHROrAdmin && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -599,38 +654,58 @@ export default function HiringCandidatesTab({
                               <Eye className="h-4 w-4 mr-2" />
                               View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setAssessmentApp(app)}>
-                              <ClipboardCheck className="h-4 w-4 mr-2" />
-                              Send Assessment
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setMoveStageApp(app)}>
-                              <ArrowRightLeft className="h-4 w-4 mr-2" />
-                              Move Stage
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInterviewApp(app)}>
-                              <Calendar className="h-4 w-4 mr-2" />
-                              Schedule Interview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setOfferApp(app)}>
-                              <FileCheck className="h-4 w-4 mr-2" />
-                              Send Offer
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setEmailCandidate({
-                              id: app.candidate.id,
-                              name: app.candidate.full_name || 'Candidate',
-                              email: app.candidate.email,
-                            })}>
-                              <Mail className="h-4 w-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => rejectCandidate(app.id)}
-                              className="text-destructive"
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Reject
-                            </DropdownMenuItem>
+
+                            {!app.hired_at && !app.rejected_at ? (
+                              <>
+                                <DropdownMenuItem onClick={() => setAssessmentApp(app)}>
+                                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                                  Send Assessment
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setMoveStageApp(app)}>
+                                  <ArrowRightLeft className="h-4 w-4 mr-2" />
+                                  Move Stage
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setInterviewApp(app)}>
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Schedule Interview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setOfferApp(app)}>
+                                  <FileCheck className="h-4 w-4 mr-2" />
+                                  Send Offer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setEmailCandidate({
+                                  id: app.candidate.id,
+                                  name: app.candidate.full_name || 'Candidate',
+                                  email: app.candidate.email,
+                                })}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => rejectCandidate(app.id)}
+                                  className="text-destructive"
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reject
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <>
+                                {app.rejected_at && (
+                                  <DropdownMenuItem onClick={() => unrejectCandidate(app.id)}>
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Unreject (Return to Pipeline)
+                                  </DropdownMenuItem>
+                                )}
+                                {app.hired_at && (
+                                  <DropdownMenuItem onClick={() => unhireCandidate(app.id)}>
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Unhire (Return to Pipeline)
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -678,6 +753,7 @@ export default function HiringCandidatesTab({
         candidateId={emailCandidate?.id || null}
         candidateName={emailCandidate?.name || ''}
         candidateEmail={emailCandidate?.email || ''}
+        companyName={company.name}
         companyId={company.id}
         open={!!emailCandidate}
         onClose={() => setEmailCandidate(null)}

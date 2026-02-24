@@ -167,3 +167,6 @@ verify_jwt = true
 
 [functions.send-offer-email]
 verify_jwt = true
+
+[functions.send-candidate-email]
+verify_jwt = true
