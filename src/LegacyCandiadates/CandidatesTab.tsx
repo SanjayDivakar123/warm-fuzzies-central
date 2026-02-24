@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Users, UserPlus, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet, FileText, Upload } from 'lucide-react';
+import { Users, UserPlus, UserX, Link2, Search, MoreHorizontal, Eye, UserCheck, Archive, Trash2, Sparkles, ExternalLink, Copy, Loader2, FileSpreadsheet, FileText, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import InviteCandidateModal from '@/components/b2b/InviteCandidateModal';
@@ -31,6 +31,7 @@ interface Candidate {
   fit_analysis: any;
   resume_url: string | null;
   created_at: string;
+  converted_to_employee_id?: string | null;
 }
 
 interface ApplicationLink {
@@ -223,6 +224,30 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
     } else {
       toast({ title: 'Candidate archived' });
       fetchCandidates();
+    }
+  };
+
+  const handleUnhireCandidate = async (candidate: Candidate) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('unhire-candidate', {
+        body: { candidateId: candidate.id },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Candidate unhired',
+        description: data?.message || `${candidate.full_name || candidate.email} was moved back to candidates.`,
+      });
+
+      fetchCandidates();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An error occurred while unhiring.';
+      toast({
+        title: 'Failed to unhire candidate',
+        description: message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -587,6 +612,15 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
                                 <DropdownMenuSeparator />
                               </>
                             )}
+                            {candidate.status === 'hired' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleUnhireCandidate(candidate)}>
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Unhire
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem onClick={() => handleArchiveCandidate(candidate)}>
                               <Archive className="h-4 w-4 mr-2" />
                               Archive
@@ -634,6 +668,10 @@ export default function CandidatesTab({ company }: CandidatesTabProps) {
         }}
         onHire={(c) => {
           handleHireCandidate(c);
+          setMobileSelectedCandidate(null);
+        }}
+        onUnhire={(c) => {
+          handleUnhireCandidate(c);
           setMobileSelectedCandidate(null);
         }}
         onArchive={(c) => {

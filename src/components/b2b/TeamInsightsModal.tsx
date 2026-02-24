@@ -554,7 +554,7 @@ export default function TeamInsightsModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 [&>button]:top-2 [&>button]:right-2">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-start justify-between gap-4">
             <div>

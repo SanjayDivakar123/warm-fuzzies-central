@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Eye, 
   UserCheck, 
+  UserX,
   Archive, 
   Trash2, 
   Sparkles, 
@@ -61,6 +62,7 @@ interface CandidateDetailModalProps {
   onViewFitAnalysis: (candidate: Candidate) => void;
   onAnalyzeFit: (candidate: Candidate) => void;
   onHire: (candidate: Candidate) => void;
+  onUnhire: (candidate: Candidate) => void;
   onArchive: (candidate: Candidate) => void;
   onDelete: (candidate: Candidate) => void;
   onUploadResume: (candidateId: string) => void;
@@ -75,6 +77,7 @@ export default function CandidateDetailModal({
   onViewFitAnalysis,
   onAnalyzeFit,
   onHire,
+  onUnhire,
   onArchive,
   onDelete,
   onUploadResume,
@@ -253,6 +256,22 @@ export default function CandidateDetailModal({
                 >
                   <UserCheck className="h-4 w-4" />
                   Hire
+                </Button>
+              )}
+
+              {/* Unhire */}
+              {candidate.status === 'hired' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onUnhire(candidate);
+                    onOpenChange(false);
+                  }}
+                  className="gap-2 text-amber-600 hover:bg-amber-50"
+                >
+                  <UserX className="h-4 w-4" />
+                  Unhire
                 </Button>
               )}
 
