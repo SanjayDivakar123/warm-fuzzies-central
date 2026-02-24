@@ -313,6 +313,13 @@ export const adminHiringUnlockedTour: TourDefinition = {
       content: 'Measure funnel performance, identify bottlenecks, and improve hiring outcomes.',
       placement: 'bottom',
     },
+    {
+      id: 'legacy-1',
+      target: '[data-tour="hiring-tab-legacy"]',
+      title: 'Legacy',
+      content: 'Use the legacy candidates workspace when you need the original candidate management flow and historical operations.',
+      placement: 'bottom',
+    },
   ],
 };
 

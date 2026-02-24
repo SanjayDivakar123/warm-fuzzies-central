@@ -142,7 +142,7 @@ function TourTooltipInner() {
   let miniStepTotal = totalSteps;
 
   if (isHiringWalkthrough) {
-    const tabOrder = ['jobs', 'pipeline', 'candidates', 'interviews', 'offers', 'templates', 'analytics'];
+    const tabOrder = ['jobs', 'pipeline', 'candidates', 'interviews', 'offers', 'templates', 'analytics', 'legacy'];
     const stepPrefix = currentStep.id.split('-')[0];
     const tabIndex = tabOrder.indexOf(stepPrefix);
     if (tabIndex >= 0) {

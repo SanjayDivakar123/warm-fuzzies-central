@@ -35,7 +35,7 @@ const TOUR_TAB_BY_ID: Record<string, string> = {
 };
 
 const TOUR_DISPLAY_STEP_COUNT: Record<string, number> = {
-  'admin-hiring-unlocked': 7,
+  'admin-hiring-unlocked': 8,
 };
 
 export function HelpButton({ 
