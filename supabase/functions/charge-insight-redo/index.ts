@@ -7,11 +7,50 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const INSIGHT_REDO_PRICE_CENTS = 500; // $5.00
+const INSIGHT_REDO_PRICE_USD = 5; // $5.00
+const INSIGHT_REDO_PRICE_CENTS = INSIGHT_REDO_PRICE_USD * 100;
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CHARGE-INSIGHT-REDO] ${step}${detailsStr}`);
+};
+
+const getCurrentMonthUtc = () => {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+const incrementInsightUsageCount = async (
+  supabase: ReturnType<typeof createClient>,
+  companyId: string,
+) => {
+  const currentMonth = getCurrentMonthUtc();
+  const { data: usageRow, error: usageFetchError } = await supabase
+    .from("companies")
+    .select("insight_usage_count, insight_usage_month")
+    .eq("id", companyId)
+    .single();
+
+  if (usageFetchError) {
+    throw new Error("Failed to load current insight usage");
+  }
+
+  const existingCount =
+    usageRow?.insight_usage_month === currentMonth
+      ? Number(usageRow?.insight_usage_count || 0)
+      : 0;
+
+  const { error: usageUpdateError } = await supabase
+    .from("companies")
+    .update({
+      insight_usage_count: existingCount + 1,
+      insight_usage_month: currentMonth,
+    })
+    .eq("id", companyId);
+
+  if (usageUpdateError) {
+    throw new Error("Failed to update insight usage count");
+  }
 };
 
 serve(async (req) => {
@@ -51,13 +90,48 @@ serve(async (req) => {
 
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, insight_credits")
+      .select("id, name, admin_email, stripe_customer_id, insight_credits, credit_balance")
       .eq("id", company_id)
       .single();
 
     if (companyError || !company) throw new Error("Company not found");
 
-    // Prefer consuming purchased insight credits first.
+    // Consume wallet credits first so company credit balance reflects each paid re-do.
+    const availableWalletCredits = Number(company.credit_balance || 0);
+    if (availableWalletCredits >= INSIGHT_REDO_PRICE_USD) {
+      const updatedCreditBalance = Number(
+        (availableWalletCredits - INSIGHT_REDO_PRICE_USD).toFixed(2)
+      );
+
+      const { error: walletUpdateError } = await supabase
+        .from("companies")
+        .update({ credit_balance: updatedCreditBalance })
+        .eq("id", company_id);
+
+      if (walletUpdateError) throw new Error("Failed to apply wallet credits");
+
+      await supabase.from("billing_transactions").insert({
+        company_id: company_id,
+        type: "insight_redo_wallet",
+        amount: INSIGHT_REDO_PRICE_USD,
+        description: "Insight re-do charged to wallet credits ($5.00)",
+      });
+
+      await incrementInsightUsageCount(supabase, company_id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        charged: false,
+        usedWalletCredits: true,
+        remainingWalletCredits: updatedCreditBalance,
+        amountCharged: INSIGHT_REDO_PRICE_USD,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Fall back to purchased insight credits if wallet balance is not enough.
     if ((company.insight_credits || 0) > 0) {
       const newInsightCredits = (company.insight_credits || 0) - 1;
       const { error: updateError } = await supabase
@@ -71,14 +145,17 @@ serve(async (req) => {
         company_id: company_id,
         type: "insight_redo_credit",
         amount: 0,
-        description: "Insight re-do paid using 1 insight credit",
+        description: "Insight re-do paid using 1 purchased insight credit",
       });
+
+      await incrementInsightUsageCount(supabase, company_id);
 
       return new Response(JSON.stringify({
         success: true,
         charged: false,
         usedCredits: true,
         remainingInsightCredits: newInsightCredits,
+        amountCharged: 0,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -145,17 +222,19 @@ serve(async (req) => {
     await supabase.from("billing_transactions").insert({
       company_id: company_id,
       type: "insight_redo_card",
-      amount: INSIGHT_REDO_PRICE_CENTS,
+      amount: INSIGHT_REDO_PRICE_USD,
       stripe_payment_intent_id: paymentIntent.id,
       description: "Insight re-do charged to card on file ($5.00)",
     });
+
+    await incrementInsightUsageCount(supabase, company_id);
 
     logStep("Charge succeeded", { companyId: company_id, paymentIntentId: paymentIntent.id });
 
     return new Response(JSON.stringify({
       success: true,
       charged: true,
-      amountCharged: INSIGHT_REDO_PRICE_CENTS,
+      amountCharged: INSIGHT_REDO_PRICE_USD,
       paymentIntentId: paymentIntent.id,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

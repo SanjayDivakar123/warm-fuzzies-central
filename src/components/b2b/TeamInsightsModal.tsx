@@ -101,6 +101,7 @@ interface TeamInsightsModalProps {
   onClose: () => void;
   teamMembers: TeamMember[];
   companyId: string;
+  onBillingUpdated?: () => void;
 }
 
 const colorInfo: Record<string, { label: string; color: string; bgLight: string; description: string }> = {
@@ -151,6 +152,7 @@ export default function TeamInsightsModal({
   onClose,
   teamMembers,
   companyId,
+  onBillingUpdated,
 }: TeamInsightsModalProps) {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<InsightData | null>(null);
@@ -164,6 +166,8 @@ export default function TeamInsightsModal({
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
   const [processingPaidRedo, setProcessingPaidRedo] = useState(false);
   const { toast } = useToast();
+
+  const toDisplayLimit = (used: number) => Math.max(3, used);
 
   const currentTeamHash = generateTeamHash(teamMembers);
   const hasMatchingCachedTeam = !!cachedHash && cachedHash === currentTeamHash;
@@ -398,8 +402,8 @@ export default function TeamInsightsModal({
       setInsights(data.insights as unknown as InsightData);
       setCachedHash(data.team_hash || null);
       toast({
-        title: 'Insights refreshed',
-        description: 'No team changes detected. Showing the same saved insights.',
+        title: 'Insights re-do complete',
+        description: 'Your insights have been refreshed successfully.',
       });
     } catch (err: any) {
       console.error('Error replaying cached insights:', err);
@@ -431,6 +435,17 @@ export default function TeamInsightsModal({
         return;
       }
       if (data?.error) throw new Error(data.error);
+
+      const refreshedUsage = await getInsightUsage(companyId);
+      const previousUsed = usage?.used ?? 0;
+      const nextUsed = Math.max(refreshedUsage.used, previousUsed + 1);
+      setUsage({
+        ...refreshedUsage,
+        used: nextUsed,
+        limit: toDisplayLimit(nextUsed),
+        remaining: Math.max(0, 3 - nextUsed),
+      });
+      onBillingUpdated?.();
 
       if (hasMatchingCachedTeam) {
         await replayCachedInsights();
@@ -539,7 +554,7 @@ export default function TeamInsightsModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 [&>button]:top-2 [&>button]:right-2">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1001,6 +1016,7 @@ export default function TeamInsightsModal({
         onClose={() => setShowPaywall(false)}
         onPurchaseComplete={() => {
           setShowPaywall(false);
+          onBillingUpdated?.();
           generateInsights();
         }}
         companyId={companyId}

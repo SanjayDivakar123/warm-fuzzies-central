@@ -27,6 +27,7 @@ interface SendAssessmentDialogProps {
   candidateName: string;
   candidateEmail: string;
   jobTitle: string;
+  companyName: string;
   companyId: string;
   open: boolean;
   onClose: () => void;
@@ -60,6 +61,7 @@ export default function SendAssessmentDialog({
   candidateName,
   candidateEmail,
   jobTitle,
+  companyName,
   companyId,
   open,
   onClose,
@@ -119,35 +121,49 @@ export default function SendAssessmentDialog({
 
       // Send email notification
       try {
-        const assessmentUrl = `${window.location.origin}/candidate-assessment?code=${inviteCode}`;
+        // Candidate assessment route is nested under the company portal.
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('subdomain')
+          .eq('id', companyId)
+          .single();
+
+        if (companyError) throw companyError;
+
+        const companySubdomain = companyData?.subdomain;
+        if (!companySubdomain) {
+          throw new Error('Company subdomain is missing.');
+        }
+
+        const baseOrigin = window.location.origin.includes('localhost')
+          ? 'https://rolecolorfinder.com'
+          : window.location.origin;
+        const assessmentUrl = `${baseOrigin}/company/${companySubdomain}/candidate/${inviteCode}`;
         
-        await supabase.functions.invoke('send-email', {
+        const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-assessment-email', {
           body: {
             to: candidateEmail,
-            subject: `RoleColor Assessment Invitation${jobTitle ? ` - ${jobTitle}` : ''}`,
-            html: `
-              <h2>You're Invited to Complete Your RoleColor Assessment</h2>
-              <p>Hello ${candidateName},</p>
-              <p>As part of our hiring process${jobTitle ? ` for the <strong>${jobTitle}</strong> position` : ''}, we'd like you to complete a RoleColor personality assessment.</p>
-              <p>This assessment will help us understand your work style and how you'd fit with our team.</p>
-              <h3>Assessment Details:</h3>
-              <ul>
-                <li><strong>Type:</strong> ${assessmentCategory.charAt(0).toUpperCase() + assessmentCategory.slice(1)} Assessment</li>
-                <li><strong>Questions:</strong> ${assessmentType === '25q' ? '25' : '50'} questions</li>
-                <li><strong>Duration:</strong> Approximately ${assessmentType === '25q' ? '10-15' : '20-30'} minutes</li>
-              </ul>
-              <p style="margin: 24px 0;">
-                <a href="${assessmentUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                  Start Assessment
-                </a>
-              </p>
-              <p>Or use this code: <strong>${inviteCode}</strong></p>
-              <p>Best regards,<br>The Hiring Team</p>
-            `,
+            candidateName,
+            companyName,
+            jobTitle,
+            assessmentCategory,
+            assessmentType,
+            idealRoleColor: idealRoleColor || null,
+            inviteCode,
+            assessmentUrl,
           },
         });
+
+        if (emailError || (emailResponse && typeof emailResponse === 'object' && 'error' in emailResponse)) {
+          throw new Error(emailError?.message || (emailResponse as { error?: string }).error || 'Failed to send assessment email');
+        }
       } catch (emailErr) {
         console.error('Failed to send email:', emailErr);
+        toast({
+          title: 'Assessment created, but email failed',
+          description: emailErr instanceof Error ? emailErr.message : 'Could not send assessment invitation email.',
+          variant: 'destructive',
+        });
       }
 
       toast({

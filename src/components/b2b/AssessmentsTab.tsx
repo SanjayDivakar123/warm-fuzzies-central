@@ -598,6 +598,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
         open={showInsightsModal}
         onClose={() => setShowInsightsModal(false)}
         companyId={company.id}
+        onBillingUpdated={onSettingsSaved}
         teamMembers={completedAssessments
           .filter(a => a.results?.scores && a.results?.dominantColor)
           .map(a => ({

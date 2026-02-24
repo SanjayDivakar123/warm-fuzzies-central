@@ -39,6 +39,7 @@ interface SendOfferDialogProps {
   companyName: string;
   jobTitle: string;
   companyId: string;
+  createdByCompanyUserId?: string | null;
   open: boolean;
   onClose: () => void;
   onSent: () => void;
@@ -54,6 +55,7 @@ export default function SendOfferDialog({
   companyName,
   jobTitle,
   companyId,
+  createdByCompanyUserId = null,
   open,
   onClose,
   onSent,
@@ -67,6 +69,7 @@ export default function SendOfferDialog({
   const [equity, setEquity] = useState('');
   const [startDate, setStartDate] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [probationPeriod, setProbationPeriod] = useState('');
   const [notes, setNotes] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [sending, setSending] = useState(false);
@@ -91,6 +94,28 @@ export default function SendOfferDialog({
   const resolvedCandidateName = candidateName || selectedCandidateOption?.candidateName || 'Candidate';
   const resolvedCandidateEmail = candidateEmail || selectedCandidateOption?.candidateEmail || '';
   const resolvedJobTitle = jobTitle || selectedCandidateOption?.jobTitle || '';
+  const hasEquity = equity.trim().length > 0;
+  const hasSalaryInput = salary.trim().length > 0;
+  const parsedSalary = hasSalaryInput ? parseFloat(salary) : 0;
+  const hasBaseSalary = hasSalaryInput && !Number.isNaN(parsedSalary) && parsedSalary > 0;
+  const canSubmitCompensation = hasBaseSalary || hasEquity;
+
+  const parseProbationPeriodInDays = (value: string): number | null => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return null;
+
+    const match = trimmed.match(/^(\d+)\s*(day|days|week|weeks|month|months)$/);
+    if (!match) return null;
+
+    const amount = Number.parseInt(match[1], 10);
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+
+    const unit = match[2];
+    if (unit.startsWith('day')) return amount;
+    if (unit.startsWith('week')) return amount * 7;
+    if (unit.startsWith('month')) return amount * 30;
+    return null;
+  };
 
   const handleSend = async () => {
     if (requireCandidateSelection && !selectedCandidateOption) {
@@ -102,10 +127,10 @@ export default function SendOfferDialog({
       return;
     }
 
-    if (!salary || !resolvedApplicationId) {
+    if (!resolvedApplicationId || !canSubmitCompensation) {
       toast({
         title: 'Missing information',
-        description: 'Please select a candidate and enter the salary amount.',
+        description: 'Please select a candidate and provide a base salary or equity.',
         variant: 'destructive',
       });
       return;
@@ -113,19 +138,27 @@ export default function SendOfferDialog({
 
     setSending(true);
     try {
+      const composedNotes = [
+        notes.trim(),
+        probationPeriod.trim() ? `Probationary Period: ${probationPeriod.trim()}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
       // Create offer record
       const { data: offer, error } = await supabase
         .from('offers')
         .insert({
           application_id: resolvedApplicationId,
           job_title: resolvedJobTitle,
-          salary: parseFloat(salary),
+          created_by: createdByCompanyUserId,
+          salary: hasBaseSalary ? parsedSalary : 0,
           salary_currency: currency,
           bonus: bonus ? parseFloat(bonus) : null,
           equity: equity.trim() || null,
           start_date: startDate || null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-          candidate_notes: notes.trim() || null,
+          candidate_notes: composedNotes || null,
           status: 'draft',
           sent_at: sendEmail ? new Date().toISOString() : null,
         })
@@ -133,6 +166,41 @@ export default function SendOfferDialog({
         .single();
 
       if (error) throw error;
+
+      // Schedule probation reminder email for the specific admin who created this offer.
+      if (probationPeriod.trim()) {
+        const probationDays = parseProbationPeriodInDays(probationPeriod);
+
+        if (!createdByCompanyUserId || !startDate || probationDays === null) {
+          toast({
+            title: 'Offer created, reminder not scheduled',
+            description:
+              'To schedule an admin probation reminder, set Start Date and Probationary Period (e.g., "90 days", "12 weeks", "3 months").',
+            variant: 'destructive',
+          });
+        } else {
+          const reminderDate = new Date(startDate);
+          reminderDate.setDate(reminderDate.getDate() + probationDays);
+
+          const { error: reminderError } = await supabase.functions.invoke('create-probation-reminder', {
+            body: {
+              offerId: offer.id,
+              companyId,
+              adminCompanyUserId: createdByCompanyUserId,
+              probationPeriod: probationPeriod.trim(),
+              reminderAt: reminderDate.toISOString(),
+            },
+          });
+
+          if (reminderError) {
+            toast({
+              title: 'Offer created, reminder not scheduled',
+              description: reminderError.message || 'Could not schedule probation reminder email.',
+              variant: 'destructive',
+            });
+          }
+        }
+      }
 
       // Update the status to sent if sending email
       if (sendEmail) {
@@ -150,11 +218,15 @@ export default function SendOfferDialog({
           application_id: resolvedApplicationId,
           activity_type: 'offer_sent',
           title: 'Offer sent',
-          description: `Offer sent: $${parseFloat(salary).toLocaleString()} ${currency}`,
+          description: hasBaseSalary
+            ? `Offer sent: $${parsedSalary.toLocaleString()} ${currency}`
+            : 'Offer sent: Equity-only / unpaid role',
           metadata: {
             offer_id: offer.id,
-            salary,
+            salary: hasBaseSalary ? parsedSalary : null,
             currency,
+            equity: equity.trim() || null,
+            probation_period: probationPeriod.trim() || null,
           },
         });
       }
@@ -162,7 +234,7 @@ export default function SendOfferDialog({
       // Send email notification if enabled
       if (sendEmail && resolvedCandidateEmail) {
         try {
-          const salaryValue = parseFloat(salary);
+          const salaryValue = hasBaseSalary ? parsedSalary : null;
           const bonusValue = bonus ? parseFloat(bonus) : null;
           const { data: emailResponse, error: emailError } = await supabase.functions.invoke('send-offer-email', {
             body: {
@@ -176,6 +248,7 @@ export default function SendOfferDialog({
               equity: equity.trim() || null,
               startDate: startDate ? format(new Date(startDate), 'MMMM d, yyyy') : null,
               offerExpires: expiresAt ? format(new Date(expiresAt), 'MMMM d, yyyy') : null,
+              probationPeriod: probationPeriod.trim() || null,
               notes: notes.trim() || null,
             },
           });
@@ -207,6 +280,7 @@ export default function SendOfferDialog({
       setSalary('');
       setBonus('');
       setEquity('');
+      setProbationPeriod('');
       setNotes('');
       
       onSent();
@@ -228,6 +302,7 @@ export default function SendOfferDialog({
     setSalary('');
     setBonus('');
     setEquity('');
+    setProbationPeriod('');
     setNotes('');
     onClose();
   };
@@ -275,13 +350,13 @@ export default function SendOfferDialog({
 
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="salary">Base Salary *</Label>
+              <Label htmlFor="salary">Base Salary (Optional)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="salary"
                   type="number"
-                  placeholder="100000"
+                  placeholder="Leave blank for unpaid/equity-only roles"
                   value={salary}
                   onChange={(e) => setSalary(e.target.value)}
                   className="pl-9"
@@ -328,6 +403,18 @@ export default function SendOfferDialog({
                 placeholder="e.g., 0.5% vesting over 4 years"
                 value={equity}
                 onChange={(e) => setEquity(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="probationPeriod">Probationary Period (Optional)</Label>
+              <Input
+                id="probationPeriod"
+                placeholder="e.g., 90 days, 12 weeks, 3 months"
+                value={probationPeriod}
+                onChange={(e) => setProbationPeriod(e.target.value)}
               />
             </div>
           </div>
@@ -382,7 +469,7 @@ export default function SendOfferDialog({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={sending || !salary}>
+          <Button onClick={handleSend} disabled={sending || !canSubmitCompensation}>
             {sending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Send Offer
           </Button>

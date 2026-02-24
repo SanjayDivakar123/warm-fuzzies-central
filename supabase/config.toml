@@ -170,3 +170,9 @@ verify_jwt = true
 
 [functions.send-candidate-email]
 verify_jwt = true
+
+[functions.send-assessment-email]
+verify_jwt = true
+
+[functions.create-probation-reminder]
+verify_jwt = true

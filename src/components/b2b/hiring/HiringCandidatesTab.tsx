@@ -782,6 +782,7 @@ export default function HiringCandidatesTab({
         companyName={company.name}
         jobTitle={offerApp?.job_posting?.title || ''}
         companyId={company.id}
+        createdByCompanyUserId={companyUser?.id || null}
         open={!!offerApp}
         onClose={() => setOfferApp(null)}
         onSent={fetchApplications}
@@ -793,6 +794,7 @@ export default function HiringCandidatesTab({
         candidateName={assessmentApp?.candidate.full_name || 'Candidate'}
         candidateEmail={assessmentApp?.candidate.email || ''}
         jobTitle={assessmentApp?.job_posting?.title || ''}
+        companyName={company.name}
         companyId={company.id}
         open={!!assessmentApp}
         onClose={() => setAssessmentApp(null)}

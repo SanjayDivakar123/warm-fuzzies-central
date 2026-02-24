@@ -38,11 +38,13 @@ import InterviewsTab from './InterviewsTab';
 import OffersTab from './OffersTab';
 import EmailTemplatesTab from './EmailTemplatesTab';
 import HiringAnalyticsTab from './HiringAnalyticsTab';
+import LegacyCandidatesTab from './LegacyCandidatesTab';
 
 interface HiringSectionProps {
   company: { 
     id: string; 
     name: string;
+    subdomain?: string;
     credit_balance?: number;
     hiring_subscription_enabled?: boolean;
     hiring_subscription_status?: string;
@@ -52,7 +54,7 @@ interface HiringSectionProps {
   companyUser: { id: string; role: string } | null;
 }
 
-type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics';
+type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics' | 'legacy';
 
 export default function HiringSection({ company, companyUser }: HiringSectionProps) {
   const { activeTour, currentStepIndex } = useHelpTour();
@@ -83,6 +85,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       { prefix: 'offers-', tab: 'offers' },
       { prefix: 'templates-', tab: 'templates' },
       { prefix: 'analytics-', tab: 'analytics' },
+      { prefix: 'legacy-', tab: 'legacy' },
     ];
 
     const matched = tabByPrefix.find(({ prefix }) => stepId.startsWith(prefix));
@@ -349,7 +352,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HiringTab)}>
         {/* Keep the nav bar position fixed across sub-tabs */}
         <div className="mb-2">
-          <TabsList className="grid grid-cols-7 w-full justify-start">
+          <TabsList className="grid grid-cols-8 w-full justify-start">
             <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-jobs">
               <Briefcase className="h-4 w-4" />
               <span className="hidden sm:inline">Jobs</span>
@@ -377,6 +380,10 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             <TabsTrigger value="analytics" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-analytics">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="legacy" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-legacy">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Legacy</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -447,6 +454,10 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             company={company}
             companyUser={companyUser}
           />
+        </TabsContent>
+
+        <TabsContent value="legacy" className="mt-0">
+          <LegacyCandidatesTab company={company} />
         </TabsContent>
       </Tabs>
 

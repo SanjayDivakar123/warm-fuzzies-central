@@ -618,6 +618,7 @@ export default function OffersTab({
         companyName={company.name}
         jobTitle=""
         companyId={company.id}
+        createdByCompanyUserId={companyUser?.id || null}
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         onSent={() => {

@@ -11,7 +11,7 @@ interface InsightUsageMeterProps {
 }
 
 /**
- * Displays insight usage meter: "X / 3 free insights used this month"
+ * Displays insight usage meter with dynamic monthly usage denominator.
  */
 export function InsightUsageMeter({ companyId, onUsageChange, usageOverride = null, className = '' }: InsightUsageMeterProps) {
   const [usage, setUsage] = useState<InsightUsage | null>(null);
@@ -56,7 +56,7 @@ export function InsightUsageMeter({ companyId, onUsageChange, usageOverride = nu
           <span className="font-medium">AI Insights</span>
         </div>
         <span className={`ml-auto shrink-0 pl-2 font-medium tabular-nums ${isAtLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
-          {displayUsage.used} / {displayUsage.limit} free used
+          {displayUsage.used} / {displayUsage.limit} used
         </span>
       </div>
       <Progress 

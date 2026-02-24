@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail,
@@ -118,6 +124,7 @@ export default function CandidateActivityTimeline({
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteContent, setNoteContent] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   
   const { toast } = useToast();
 
@@ -325,7 +332,9 @@ export default function CandidateActivityTimeline({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View Details</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setSelectedActivity(activity)}>
+                                View Details
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -373,6 +382,61 @@ export default function CandidateActivityTimeline({
           </Button>
         )}
       </CardContent>
+
+      <Dialog
+        open={!!selectedActivity}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelectedActivity(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Activity Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedActivity && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Title</p>
+                <p className="font-medium">{selectedActivity.title}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground">Type</p>
+                <Badge variant="outline">{selectedActivity.activity_type.replace(/_/g, ' ')}</Badge>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground">When</p>
+                <p className="font-medium">{format(new Date(selectedActivity.created_at), 'PPpp')}</p>
+              </div>
+
+              {selectedActivity.performed_by_name && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Performed By</p>
+                  <p className="font-medium">{selectedActivity.performed_by_name}</p>
+                </div>
+              )}
+
+              {selectedActivity.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p className="whitespace-pre-wrap">{selectedActivity.description}</p>
+                </div>
+              )}
+
+              {selectedActivity.metadata && Object.keys(selectedActivity.metadata).length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Metadata</p>
+                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+                    {JSON.stringify(selectedActivity.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

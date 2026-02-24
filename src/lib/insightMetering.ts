@@ -10,6 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 const FREE_INSIGHTS_PER_MONTH = 3;
 
+function getDisplayLimit(usedThisMonth: number): number {
+  // Once paid insights are used, keep the meter denominator aligned (4/4, 5/5, ...).
+  return Math.max(FREE_INSIGHTS_PER_MONTH, usedThisMonth);
+}
+
 export interface InsightUsage {
   used: number;
   limit: number;
@@ -81,25 +86,15 @@ export async function getInsightUsage(companyId: string): Promise<InsightUsage> 
   }
 
   const remaining = Math.max(0, FREE_INSIGHTS_PER_MONTH - usedThisMonth);
-  const insightsPaidEnabled = company?.insights_paid_enabled ?? false;
   const insightCredits = company?.insight_credits ?? 0;
-  const allowPayPerInsight = company?.allow_pay_per_insight ?? false;
 
-  // Determine if user can generate
-  let canGenerate = remaining > 0;
-  let requiresPayment = false;
-
-  if (remaining === 0 && insightsPaidEnabled) {
-    // Over free limit, check if they can pay
-    if (insightCredits > 0 || allowPayPerInsight) {
-      canGenerate = true;
-      requiresPayment = true;
-    }
-  }
+  // Over free quota is only allowed when a paid insight credit exists.
+  const canGenerate = remaining > 0 || insightCredits > 0;
+  const requiresPayment = remaining === 0 && insightCredits <= 0;
 
   return {
     used: usedThisMonth,
-    limit: FREE_INSIGHTS_PER_MONTH,
+    limit: getDisplayLimit(usedThisMonth),
     remaining,
     canGenerate,
     requiresPayment,
@@ -115,31 +110,38 @@ export async function incrementInsightUsage(companyId: string): Promise<{ succes
   const usage = await getInsightUsage(companyId);
   
   if (!usage.canGenerate) {
-    return { success: false, needsPayment: usage.remaining === 0, usage };
+    return { success: false, needsPayment: usage.requiresPayment, usage };
   }
 
   const currentMonth = getCurrentMonth();
 
-  // If requires payment, decrement credits
-  if (usage.requiresPayment) {
-    try {
-      const { data: company } = await supabase
-        .from('companies')
-        .select('insight_credits')
-        .eq('id', companyId)
-        .single() as { data: Record<string, any> | null };
+  // Over free quota: require a paid insight credit and consume one.
+  if (usage.remaining === 0) {
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('insight_credits')
+      .eq('id', companyId)
+      .single() as { data: Record<string, any> | null; error: any };
 
-      if (company && company.insight_credits > 0) {
-        // Decrement credit
-        await supabase
-          .from('companies')
-          .update({ insight_credits: company.insight_credits - 1 } as any)
-          .eq('id', companyId);
-      }
-    } catch (err) {
-      console.warn('Error decrementing insight credits:', err);
+    if (companyError) {
+      console.warn('Error loading insight credits:', companyError.message || companyError);
+      return { success: false, needsPayment: true, usage };
     }
-    // Note: If allowPayPerInsight is true, we'd record charge intent here
+
+    const currentCredits = Number(company?.insight_credits || 0);
+    if (currentCredits <= 0) {
+      return { success: false, needsPayment: true, usage };
+    }
+
+    const { error: creditError } = await supabase
+      .from('companies')
+      .update({ insight_credits: currentCredits - 1 } as any)
+      .eq('id', companyId);
+
+    if (creditError) {
+      console.warn('Error decrementing insight credits:', creditError.message || creditError);
+      return { success: false, needsPayment: true, usage };
+    }
   }
 
   // Update usage count - if columns don't exist, continue anyway
@@ -160,13 +162,17 @@ export async function incrementInsightUsage(companyId: string): Promise<{ succes
     console.warn('Exception updating insight usage:', err);
   }
 
+  const nextUsed = usage.used + 1;
+  const nextRemaining = Math.max(0, FREE_INSIGHTS_PER_MONTH - nextUsed);
+
   return { 
     success: true, 
     needsPayment: false, 
     usage: {
       ...usage,
-      used: usage.used + 1,
-      remaining: Math.max(0, usage.remaining - 1),
+      used: nextUsed,
+      limit: getDisplayLimit(nextUsed),
+      remaining: nextRemaining,
     } 
   };
 }
@@ -174,19 +180,23 @@ export async function incrementInsightUsage(companyId: string): Promise<{ succes
 /**
  * Add insight credits to a company (for purchasing)
  */
-export async function addInsightCredits(companyId: string, credits: number): Promise<boolean> {
-  const { data: company } = await supabase
-    .from('companies')
-    .select('insight_credits')
-    .eq('id', companyId)
-    .single() as { data: Record<string, any> | null };
+export async function addInsightCredits(companyId: string, credits: number, purchaseAmountUsd?: number): Promise<boolean> {
+  const amountToCharge = Number.isFinite(purchaseAmountUsd as number)
+    ? Math.max(0, purchaseAmountUsd as number)
+    : credits;
 
-  const newCredits = (company?.insight_credits || 0) + credits;
+  const { data, error } = await supabase.functions.invoke('purchase-insight-credits', {
+    body: {
+      company_id: companyId,
+      credits,
+      amount_usd: amountToCharge,
+    },
+  });
 
-  const { error } = await supabase
-    .from('companies')
-    .update({ insight_credits: newCredits } as any)
-    .eq('id', companyId);
+  if (error || data?.error) {
+    console.warn('Failed to purchase insight credits:', error?.message || data?.error);
+    return false;
+  }
 
-  return !error;
+  return true;
 }

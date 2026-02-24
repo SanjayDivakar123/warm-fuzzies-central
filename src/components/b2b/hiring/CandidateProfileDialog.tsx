@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import {
   User,
@@ -32,6 +33,7 @@ import {
   Download,
   Loader2,
   Activity,
+  Award,
   MessageSquare,
   Linkedin,
   MapPin,
@@ -55,6 +57,7 @@ interface CandidateProfile {
   created_at: string | null;
   status: string;
   assessment_completed_at: string | null;
+  assessment_result_id: string | null;
 }
 
 interface Application {
@@ -82,11 +85,44 @@ interface CandidateProfileDialogProps {
   onClose: () => void;
 }
 
+interface AssessmentResult {
+  dominantColor: string;
+  scores: { yellow: number; red: number; green: number; blue: number };
+  totalQuestions: number;
+}
+
 const ROLECOLOR_COLORS: Record<string, string> = {
   Yellow: 'bg-yellow-500',
   Red: 'bg-red-500',
   Green: 'bg-green-500',
   Blue: 'bg-blue-500',
+};
+
+const COLOR_INFO: Record<string, { name: string; color: string; description: string; traits: string[] }> = {
+  yellow: {
+    name: 'Yellow - The Strategist',
+    color: '#EAB308',
+    description: 'Strategic thinkers who excel at planning, goal-setting, and driving results.',
+    traits: ['Results-oriented', 'Goal-driven', 'Strategic', 'Decisive'],
+  },
+  red: {
+    name: 'Red - The Connector',
+    color: '#EF4444',
+    description: 'Natural relationship builders who inspire and motivate others.',
+    traits: ['Charismatic', 'Inspiring', 'Empathetic', 'Collaborative'],
+  },
+  green: {
+    name: 'Green - The Analyst',
+    color: '#22C55E',
+    description: 'Detail-oriented professionals who value accuracy and systematic approaches.',
+    traits: ['Analytical', 'Methodical', 'Detail-focused', 'Quality-driven'],
+  },
+  blue: {
+    name: 'Blue - The Innovator',
+    color: '#3B82F6',
+    description: 'Creative visionaries who embrace change and innovative solutions.',
+    traits: ['Creative', 'Innovative', 'Visionary', 'Adaptable'],
+  },
 };
 
 export default function CandidateProfileDialog({
@@ -97,6 +133,7 @@ export default function CandidateProfileDialog({
 }: CandidateProfileDialogProps) {
   const [candidate, setCandidate] = useState<CandidateProfile | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -120,6 +157,24 @@ export default function CandidateProfileDialog({
 
       if (candidateError) throw candidateError;
       setCandidate(candidateData);
+      setAssessmentResult(null);
+
+      if (candidateData.assessment_result_id) {
+        const { data: resultData, error: resultError } = await supabase
+          .from('assessment_results')
+          .select('results')
+          .eq('id', candidateData.assessment_result_id)
+          .single();
+
+        if (!resultError && resultData) {
+          const results = resultData.results as any;
+          setAssessmentResult({
+            dominantColor: results?.dominantColor || '',
+            scores: results?.scores || { yellow: 0, red: 0, green: 0, blue: 0 },
+            totalQuestions: results?.totalQuestions || 0,
+          });
+        }
+      }
 
       // Fetch applications
       const { data: appsData } = await supabase
@@ -329,6 +384,86 @@ export default function CandidateProfileDialog({
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                     {candidate.notes}
                   </p>
+                </div>
+              </>
+            )}
+
+            {/* Assessments (only after completion) */}
+            {candidate.assessment_completed_at && assessmentResult && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="font-medium mb-3 flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Assessments
+                  </h3>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{
+                            backgroundColor: COLOR_INFO[assessmentResult.dominantColor]?.color || '#888',
+                          }}
+                        />
+                        {COLOR_INFO[assessmentResult.dominantColor]?.name || 'RoleColor Result'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {COLOR_INFO[assessmentResult.dominantColor]?.description}
+                      </p>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {COLOR_INFO[assessmentResult.dominantColor]?.traits.map((trait) => (
+                          <Badge
+                            key={trait}
+                            variant="secondary"
+                            style={{
+                              backgroundColor: `${COLOR_INFO[assessmentResult.dominantColor]?.color}20`,
+                              color: COLOR_INFO[assessmentResult.dominantColor]?.color,
+                              borderColor: `${COLOR_INFO[assessmentResult.dominantColor]?.color}40`,
+                            }}
+                          >
+                            {trait}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Score Breakdown</p>
+                        {Object.entries(assessmentResult.scores)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([color, score]) => {
+                            const percentage =
+                              assessmentResult.totalQuestions > 0
+                                ? (score / assessmentResult.totalQuestions) * 100
+                                : 0;
+                            return (
+                              <div key={color} className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="capitalize">{color}</span>
+                                  <span>{Math.round(percentage)}%</span>
+                                </div>
+                                <Progress
+                                  value={percentage}
+                                  className="h-2"
+                                  style={
+                                    {
+                                      '--progress-color': COLOR_INFO[color]?.color || '#888',
+                                    } as React.CSSProperties
+                                  }
+                                />
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        Completed: {new Date(candidate.assessment_completed_at).toLocaleDateString()}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
               </>
             )}

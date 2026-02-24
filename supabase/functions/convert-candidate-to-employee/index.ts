@@ -68,7 +68,8 @@ serve(async (req) => {
     }
 
     // Create employee record
-    const { data: employee, error: employeeError } = await supabase
+    let employee: Record<string, unknown> | null = null;
+    const { data: insertedEmployee, error: employeeError } = await supabase
       .from("company_users")
       .insert({
         company_id: candidate.company_id,
@@ -77,6 +78,7 @@ serve(async (req) => {
         job_role: candidate.position_title,
         role: "employee",
         status: "active",
+        skills: candidate.required_skills,
         assessment_category: candidate.assessment_category,
         assessment_type: candidate.assessment_type,
         assessment_result_id: candidate.assessment_result_id,
@@ -87,16 +89,64 @@ serve(async (req) => {
       .single();
 
     if (employeeError) {
-      // Check if employee already exists
+      // If a company user already exists for this email, sync and reuse that profile
       if (employeeError.code === "23505") {
+        const { data: existingUser, error: existingUserError } = await supabase
+          .from("company_users")
+          .select("id")
+          .eq("company_id", candidate.company_id)
+          .eq("email", candidate.email)
+          .maybeSingle();
+
+        if (existingUserError || !existingUser) {
+          console.error("Failed to fetch existing employee:", existingUserError);
+          return new Response(
+            JSON.stringify({ error: "This person already exists but could not be synchronized" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const { data: updatedEmployee, error: updateExistingError } = await supabase
+          .from("company_users")
+          .update({
+            full_name: candidate.full_name,
+            job_role: candidate.position_title,
+            role: "employee",
+            status: "active",
+            skills: candidate.required_skills,
+            assessment_category: candidate.assessment_category,
+            assessment_type: candidate.assessment_type,
+            assessment_result_id: candidate.assessment_result_id,
+            assessment_completed_at: candidate.assessment_completed_at,
+          })
+          .eq("id", existingUser.id)
+          .select()
+          .single();
+
+        if (updateExistingError || !updatedEmployee) {
+          console.error("Failed to sync existing employee:", updateExistingError);
+          return new Response(
+            JSON.stringify({ error: "Failed to synchronize existing employee record" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        employee = updatedEmployee as Record<string, unknown>;
+      } else {
+        console.error("Failed to create employee:", employeeError);
         return new Response(
-          JSON.stringify({ error: "This person is already an employee" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Failed to create employee record" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    } else {
+      employee = insertedEmployee as Record<string, unknown>;
+    }
+
+    if (!employee || typeof employee.id !== "string") {
       console.error("Failed to create employee:", employeeError);
       return new Response(
-        JSON.stringify({ error: "Failed to create employee record" }),
+        JSON.stringify({ error: "Employee creation returned invalid data" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -106,7 +156,7 @@ serve(async (req) => {
       .from("candidates")
       .update({
         status: "hired",
-        converted_to_employee_id: employee.id,
+        converted_to_employee_id: employee.id as string,
       })
       .eq("id", candidateId);
 
