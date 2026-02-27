@@ -62,17 +62,20 @@ serve(async (req) => {
       return `${i + 1}. ${m.email} | ${m.jobRole || "N/A"} | ${m.dominantColor || "blue"} (${m.colorLabel || "?"}) | ${scores} | ${skills}`;
     }).join("\n");
 
-    const systemPrompt = `You are an expert organizational psychologist and leadership consultant. Be concise — short outputs reduce latency.
+    const systemPrompt = `You are an expert organizational psychologist and leadership consultant.
 
-Color-based leadership framework:
-- Yellow (Executor): Action-oriented, results-driven, decisive
-- Red (Motivator): Inspiring, people-focused, relationship-builders
-- Green (Organizer): Structured, detail-oriented, systematic
-- Blue (Innovator): Creative, visionary, strategic
+You analyze teams using a color-based leadership assessment framework:
+- Yellow (Executor): Action-oriented, results-driven, decisive, competitive, quick decision-makers
+- Red (Motivator): Inspiring, people-focused, enthusiastic, relationship-builders, empathetic
+- Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers, process-focused
+- Blue (Innovator): Creative, visionary, strategic, big-picture thinkers, future-focused
 
-Leadership potential is highest when Red/Yellow are primary or secondary. Use concrete score evidence. Return only valid JSON.`;
+Leadership insight: leadership potential is highest when Red and/or Yellow are primary or secondary colors.
 
-    const userPrompt = `Analyze this team's leadership profiles. Be brief — 1 sentence per field where possible.
+Be specific, role-aware, and concrete with score-based evidence. Keep writing efficient, but preserve depth.
+Return only valid JSON.`;
+
+    const userPrompt = `Analyze this team's leadership profiles.
 
 TEAM MEMBERS:
 ${teamSummary}
@@ -80,40 +83,49 @@ ${teamSummary}
 Return this JSON shape exactly:
 
 {
-  "overallAnalysis": "1-2 sentence summary of team composition",
-  "teamDynamics": "1 sentence on collaboration dynamics",
-  "teamStrengths": ["3 specific strengths"],
-  "teamChallenges": ["3 potential gaps"],
+  "overallAnalysis": "2-3 sentence summary of team composition and implications",
+  "teamDynamics": "1-2 sentences about collaboration dynamics",
+  "teamStrengths": ["4 specific strengths"],
+  "teamChallenges": ["3-4 potential gaps/challenges"],
   "memberInsights": [
     {
       "email": "member email",
-      "name": "First name from email",
-      "currentRole": "their job role",
+      "name": "Extract a display name from email (capitalize first part before @)",
+      "currentRole": "their current job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
-      "matchPercentage": "0-100 (excellent 85+, good 70-84, moderate 50-69, mismatch <50)",
-      "matchAnalysis": "1-2 sentences on role fit with score evidence",
-      "leadershipStyle": "1 sentence",
-      "workplaceContribution": "1 sentence",
-      "strengths": ["2 key strengths"],
-      "developmentAreas": ["2 growth areas"],
-      "potentialChallenges": "1 short sentence",
-      "suggestedRoles": ["2 alternative roles if moderate/mismatch, else 2 complementary responsibilities"],
-      "actionableAdvice": "1 sentence of practical advice"
+      "matchPercentage": "0-100 using these bands: excellent 85-100, good 70-84, moderate 50-69, mismatch 0-49",
+      "matchAnalysis": "2-3 sentences explaining role fit with specific score evidence",
+      "leadershipPotential": "High|Moderate|Limited (High when Red/Yellow is primary or secondary unless strong counter-evidence)",
+      "leadershipStyle": "1-2 sentences",
+      "workplaceContribution": "1-2 sentences",
+      "strengths": ["3 specific strengths"],
+      "developmentAreas": ["2-3 growth areas"],
+      "potentialChallenges": "1 concise sentence",
+      "suggestedRoles": ["2-3 stronger alternative roles if fit is moderate/mismatch, otherwise 2-3 complementary responsibilities"],
+      "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness"
     }
   ],
-  "recommendations": ["3 strategic recommendations"]
+  "recommendations": ["4-5 strategic recommendations"]
 }
 
-Role alignment: Engineers/QA→Green/Blue; Designers→Blue/Yellow; PM/Admin→Green/Yellow; Sales/BD→Red/Yellow; HR/Support→Red/Green; Executives→Blue/Yellow; Data/Finance→Green/Blue.
+Role-leadership style alignment guidelines:
+- Engineers/QA/Tech: Green (systematic) or Blue (innovative) styles work well
+- Designers/Creative: Blue (creative) or Yellow (results-focused) styles work well
+- PM/Operations/Admin: Green (organized) or Yellow (action-oriented) styles work well
+- Sales/Marketing/BD: Red (people-focused) or Yellow (results-driven) styles work well
+- HR/Support/Customer Success: Red (relationship-building) or Green (systematic) styles work well
+- Founders/Executives: Blue (visionary) or Yellow (decisive) styles work well
+- Data Analysts/Finance: Green (detail-oriented) or Blue (strategic) styles work well
 
-IMPORTANT: memberInsights MUST have exactly ${teamMembers.length} entries — one per member. Keep each entry brief and balanced.
+IMPORTANT: memberInsights MUST have exactly ${teamMembers.length} entries — one per member listed above. Do not skip or omit anyone.
+Keep each entry reasonably concise, but maintain depth and specificity.
 
 Return ONLY the JSON object, no other text.`;
 
-    const OUTPUT_TOKENS_BASE = 800;
-    const OUTPUT_TOKENS_PER_MEMBER_TARGET = 260;
-    const OUTPUT_TOKENS_PER_MEMBER_MIN = 200;
+    const OUTPUT_TOKENS_BASE = 1100;
+    const OUTPUT_TOKENS_PER_MEMBER_TARGET = 360;
+    const OUTPUT_TOKENS_PER_MEMBER_MIN = 280;
     const MODEL_MAX_OUTPUT_TOKENS = 16000;
 
     const desiredTokenBudget =

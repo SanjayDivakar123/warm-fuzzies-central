@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -139,6 +140,14 @@ const fitScoreStyles: Record<string, { bg: string; text: string; icon: typeof Ch
   mismatch: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', icon: AlertTriangle },
 };
 
+const loadingStages = [
+  { label: 'Analyzing team data', progress: 18 },
+  { label: 'Comparing role-color patterns', progress: 38 },
+  { label: 'Calculating match scores', progress: 58 },
+  { label: 'Generating individual insights', progress: 78 },
+  { label: 'Finalizing recommendations', progress: 92 },
+];
+
 // Generate a hash of team members to detect changes (includes scores to detect assessment changes)
 function generateTeamHash(teamMembers: TeamMember[]): string {
   const sortedMembers = [...teamMembers].sort((a, b) => a.email.localeCompare(b.email));
@@ -167,6 +176,9 @@ export default function TeamInsightsModal({
   const [hasTeamChanges, setHasTeamChanges] = useState(false);
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
   const [processingPaidRedo, setProcessingPaidRedo] = useState(false);
+  const [loadingStageIndex, setLoadingStageIndex] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMode, setLoadingMode] = useState<'standard' | 'quick-replay'>('standard');
   const { toast } = useToast();
 
   const toDisplayLimit = (used: number) => Math.max(3, used);
@@ -217,6 +229,32 @@ export default function TeamInsightsModal({
       document.body.style.overflow = prevBodyOverflow || '';
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStageIndex(0);
+      setLoadingProgress(0);
+      setLoadingMode('standard');
+      return;
+    }
+
+    const stageDurationMs = loadingMode === 'quick-replay' ? 240 : 2200;
+    setLoadingStageIndex(0);
+    setLoadingProgress(loadingMode === 'quick-replay' ? 8 : loadingStages[0].progress);
+    let nextIndex = 0;
+    const intervalId = window.setInterval(() => {
+      nextIndex = Math.min(nextIndex + 1, loadingStages.length - 1);
+      setLoadingStageIndex(nextIndex);
+      const targetProgress = loadingStages[nextIndex].progress;
+      setLoadingProgress(
+        loadingMode === 'quick-replay'
+          ? Math.min(98, targetProgress + 6)
+          : targetProgress
+      );
+    }, stageDurationMs);
+
+    return () => window.clearInterval(intervalId);
+  }, [loading, loadingMode]);
 
   const loadCachedInsights = async () => {
     try {
@@ -353,6 +391,7 @@ export default function TeamInsightsModal({
       }
     }
     
+    setLoadingMode('standard');
     setLoading(true);
     setError(null);
 
@@ -441,21 +480,28 @@ export default function TeamInsightsModal({
   };
 
   const replayCachedInsights = async () => {
+    setLoadingMode('quick-replay');
     setLoading(true);
     setError(null);
 
     try {
-      // Keep a short loading period so redo feels intentional, then replay exact cached payload.
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      const { data, error: fetchError } = await supabase
+      // Simulate all loading stages quickly for cached replays.
+      const minVisualDurationMs = loadingStages.length * 240;
+      const fetchPromise = supabase
         .from('team_insights')
         .select('insights, team_hash')
         .eq('company_id', companyId)
         .single();
+      const [fetchResult] = await Promise.all([
+        fetchPromise,
+        new Promise((resolve) => setTimeout(resolve, minVisualDurationMs)),
+      ]);
+      const { data, error: fetchError } = fetchResult;
 
       if (fetchError) throw fetchError;
       if (!data?.insights) throw new Error('No cached insights found');
 
+      setLoadingProgress(100);
       setInsights(data.insights as unknown as InsightData);
       setCachedHash(data.team_hash || null);
       toast({
@@ -709,10 +755,29 @@ export default function TeamInsightsModal({
         <ScrollArea className="flex-1 px-6">
           <div className="py-4">
             {loading && (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="mx-auto max-w-xl py-16 space-y-5">
+                <div className="flex flex-col items-center justify-center gap-3">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-muted-foreground font-medium">Analyzing team leadership profiles...</p>
-                <p className="text-sm text-muted-foreground">This may take a moment</p>
+                  <p className="text-muted-foreground font-medium">{loadingStages[loadingStageIndex].label}...</p>
+                  <p className="text-sm text-muted-foreground">We are building your team insights now</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Progress</span>
+                    <span>{loadingProgress}%</span>
+                  </div>
+                  <Progress value={loadingProgress} className="h-2" />
+                </div>
+                <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                  {loadingStages.map((stage, idx) => (
+                    <div
+                      key={stage.label}
+                      className={`text-sm ${idx < loadingStageIndex ? 'text-foreground' : idx === loadingStageIndex ? 'text-primary' : 'text-muted-foreground'}`}
+                    >
+                      {idx < loadingStageIndex ? '✓' : idx === loadingStageIndex ? '•' : '○'} {stage.label}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
