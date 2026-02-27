@@ -45,6 +45,7 @@ import {
   AlertCircle,
   Sparkles,
   ChevronDown,
+  Clock,
   Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -162,15 +163,39 @@ export default function TeamInsightsModal({
   const [showPaywall, setShowPaywall] = useState(false);
   const [cachedHash, setCachedHash] = useState<string | null>(null);
   const [newMembersCount, setNewMembersCount] = useState(0);
+  const [removedMembersCount, setRemovedMembersCount] = useState(0);
   const [hasTeamChanges, setHasTeamChanges] = useState(false);
   const [showRedoConfirm, setShowRedoConfirm] = useState(false);
   const [processingPaidRedo, setProcessingPaidRedo] = useState(false);
   const { toast } = useToast();
 
   const toDisplayLimit = (used: number) => Math.max(3, used);
+  const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+  const getCoverageCounts = useCallback((cachedInsights: InsightData | null | undefined) => {
+    const cachedEmails = new Set(
+      (cachedInsights?.memberInsights || []).map((member) => normalizeEmail(member.email))
+    );
+    const currentEmails = new Set(
+      teamMembers.map((member) => normalizeEmail(member.email))
+    );
+
+    const notIncludedCount = teamMembers.filter(
+      (member) => !cachedEmails.has(normalizeEmail(member.email))
+    ).length;
+    const removedCount = (cachedInsights?.memberInsights || []).filter(
+      (member) => !currentEmails.has(normalizeEmail(member.email))
+    ).length;
+
+    return { notIncludedCount, removedCount };
+  }, [teamMembers]);
 
   const currentTeamHash = generateTeamHash(teamMembers);
-  const hasMatchingCachedTeam = !!cachedHash && cachedHash === currentTeamHash;
+  const hasMatchingCachedTeam =
+    !!cachedHash &&
+    cachedHash === currentTeamHash &&
+    newMembersCount === 0 &&
+    removedMembersCount === 0;
 
   // Load cached insights when modal opens
   useEffect(() => {
@@ -213,29 +238,22 @@ export default function TeamInsightsModal({
         setInsights(cachedInsights);
 
         const teamChanged = data.team_hash !== currentTeamHash;
-        setHasTeamChanges(teamChanged);
-
-        if (teamChanged) {
-          const cachedEmails = new Set(
-            (cachedInsights?.memberInsights || []).map((member) => member.email.toLowerCase())
-          );
-          const joinedCount = teamMembers.filter(
-            (member) => !cachedEmails.has(member.email.toLowerCase())
-          ).length;
-          setNewMembersCount(joinedCount);
-        } else {
-          setNewMembersCount(0);
-        }
+        const { notIncludedCount, removedCount } = getCoverageCounts(cachedInsights);
+        setNewMembersCount(notIncludedCount);
+        setRemovedMembersCount(removedCount);
+        setHasTeamChanges(teamChanged || notIncludedCount > 0 || removedCount > 0);
       } else {
         // No cached insights, generate new
         setHasTeamChanges(false);
         setNewMembersCount(0);
+        setRemovedMembersCount(0);
         generateInsights();
       }
     } catch (err) {
       console.error('Error loading insights:', err);
       setHasTeamChanges(false);
       setNewMembersCount(0);
+      setRemovedMembersCount(0);
       generateInsights();
     }
   };
@@ -299,13 +317,20 @@ export default function TeamInsightsModal({
           .single();
         
         if (cachedData && cachedData.team_hash === currentTeamHash) {
-          // Team unchanged - use cached insights without consuming usage
-          setInsights(cachedData.insights as unknown as InsightData);
-          toast({
-            title: 'Using cached insights',
-            description: 'Your team composition hasn\'t changed. Showing previously generated insights.',
-          });
-          return;
+          const cachedInsights = cachedData.insights as unknown as InsightData;
+          const { notIncludedCount, removedCount } = getCoverageCounts(cachedInsights);
+          if (notIncludedCount === 0 && removedCount === 0) {
+            // Team unchanged and cached insights cover everyone.
+            setInsights(cachedInsights);
+            setNewMembersCount(0);
+            setRemovedMembersCount(0);
+            setHasTeamChanges(false);
+            toast({
+              title: 'Using cached insights',
+              description: 'Your team composition hasn\'t changed. Showing previously generated insights.',
+            });
+            return;
+          }
         }
       } catch {
         // No cached data found, proceed with generation
@@ -364,9 +389,41 @@ export default function TeamInsightsModal({
       if (data?.error) throw new Error(data.error);
 
       const insightsData = data.insights as InsightData;
+
+      // Backfill any members the AI omitted so every team member has an entry
+      const returnedEmails = new Set(
+        (insightsData.memberInsights || []).map((m) => normalizeEmail(m.email))
+      );
+      const missing = teamMembers.filter(
+        (m) => !returnedEmails.has(normalizeEmail(m.email))
+      );
+      if (missing.length > 0) {
+        console.warn(`AI omitted ${missing.length} member(s), backfilling with defaults`);
+        for (const m of missing) {
+          const color = m.dominantColor?.toLowerCase() || 'blue';
+          insightsData.memberInsights.push({
+            email: m.email,
+            name: m.full_name || m.email.split('@')[0] || 'User',
+            currentRole: m.job_role || 'Not assigned',
+            dominantColor: color,
+            fitScore: 'moderate',
+            matchPercentage: 60,
+            matchAnalysis: 'This member was not fully analyzed due to response limits. Click Re-Do to regenerate a complete analysis.',
+            strengths: [],
+            developmentAreas: [],
+            suggestedRoles: [],
+            leadershipStyle: '',
+            workplaceContribution: '',
+            potentialChallenges: '',
+            actionableAdvice: '',
+          });
+        }
+      }
+
       setInsights(insightsData);
       setHasTeamChanges(false);
       setNewMembersCount(0);
+      setRemovedMembersCount(0);
       
       // Save to database for caching
       await saveInsights(insightsData);
@@ -610,9 +667,16 @@ export default function TeamInsightsModal({
                 <div className="text-sm">
                   <p className="font-medium">These insights are based on an earlier team snapshot.</p>
                   <p className="mt-1">
-                    {newMembersCount > 0
-                      ? `${newMembersCount} new employee${newMembersCount === 1 ? '' : 's'} joined after this analysis. Click Re-Do to include them.`
-                      : 'Your team data changed after this analysis. Click Re-Do when you are ready to refresh insights.'}
+                    {(() => {
+                      const parts: string[] = [];
+                      if (newMembersCount > 0)
+                        parts.push(`${newMembersCount} team member${newMembersCount === 1 ? ' is' : 's are'} not included in this analysis`);
+                      if (removedMembersCount > 0)
+                        parts.push(`${removedMembersCount} previously analyzed member${removedMembersCount === 1 ? ' is' : 's are'} no longer on the team`);
+                      if (parts.length > 0)
+                        return `${parts.join(', and ')}. Click Re-Do to refresh.`;
+                      return 'Your team data changed after this analysis. Click Re-Do when you are ready to refresh insights.';
+                    })()}
                   </p>
                 </div>
               </div>
@@ -748,8 +812,74 @@ export default function TeamInsightsModal({
                   </p>
                   
                   <div className="space-y-3">
-                    {insights.memberInsights.map((member, i) => {
-                      const memberData = teamMembers.find(m => m.email === member.email);
+                    {(() => {
+                      const analyzedEmails = new Set(
+                        insights.memberInsights.map((m) => normalizeEmail(m.email))
+                      );
+                      const unanalyzedMembers = teamMembers.filter(
+                        (m) => !analyzedEmails.has(normalizeEmail(m.email))
+                      );
+
+                      return [...insights.memberInsights.map((member) => {
+                        const memberData = teamMembers.find(
+                          (m) => normalizeEmail(m.email) === normalizeEmail(member.email)
+                        );
+                        return { type: 'analyzed' as const, member, memberData };
+                      }), ...unanalyzedMembers.map((m) => ({
+                        type: 'unanalyzed' as const,
+                        member: null,
+                        memberData: m,
+                      }))];
+                    })().map((entry, i) => {
+                      if (entry.type === 'unanalyzed') {
+                        const m = entry.memberData!;
+                        const memberColor = m.dominantColor?.toLowerCase() || 'blue';
+                        const colorData = colorInfo[memberColor] || colorInfo.blue;
+                        const displayName = getDisplayName(m.email, m.full_name);
+
+                        return (
+                          <Card key={`unanalyzed-${i}`} className={`overflow-hidden transition-all opacity-70 ${colorData.bgLight}`}>
+                            <div
+                              className="px-4 py-3 flex items-center justify-between"
+                              style={{ borderLeft: `4px solid ${colorData.color}` }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                                  style={{ backgroundColor: colorData.color }}
+                                >
+                                  {displayName.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-semibold">{displayName}</p>
+                                    <Badge
+                                      className="border-0 text-xs"
+                                      style={{ backgroundColor: colorData.color, color: 'white' }}
+                                    >
+                                      {colorData.label}
+                                    </Badge>
+                                    {m.job_role && (
+                                      <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                        <Briefcase className="h-3 w-3" />
+                                        {m.job_role}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground truncate lowercase">{m.email.trim()}</p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Not yet analyzed
+                              </Badge>
+                            </div>
+                          </Card>
+                        );
+                      }
+
+                      const member = entry.member!;
+                      const memberData = entry.memberData;
                       const memberColor = memberData?.dominantColor?.toLowerCase() || 'blue';
                       const colorData = colorInfo[memberColor] || colorInfo.blue;
                       const displayName = getDisplayName(member.email, memberData?.full_name || member.name);

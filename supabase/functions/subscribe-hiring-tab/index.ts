@@ -8,6 +8,54 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const addOneMonthAnchored = (current: Date, anchorDay: number) => {
+  const year = current.getUTCFullYear();
+  const month = current.getUTCMonth();
+  const hour = current.getUTCHours();
+  const minute = current.getUTCMinutes();
+  const second = current.getUTCSeconds();
+  const ms = current.getUTCMilliseconds();
+  const targetMonthDate = new Date(Date.UTC(year, month + 1, 1, hour, minute, second, ms));
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(targetMonthDate.getUTCFullYear(), targetMonthDate.getUTCMonth() + 1, 0, hour, minute, second, ms)
+  ).getUTCDate();
+  const day = Math.min(anchorDay, lastDayOfTargetMonth);
+  return new Date(
+    Date.UTC(
+      targetMonthDate.getUTCFullYear(),
+      targetMonthDate.getUTCMonth(),
+      day,
+      hour,
+      minute,
+      second,
+      ms
+    )
+  );
+};
+
+const getNextRenewalFromCompanyCreatedAt = (companyCreatedAtIso?: string) => {
+  if (!companyCreatedAtIso) {
+    const fallback = new Date();
+    fallback.setUTCMonth(fallback.getUTCMonth() + 1);
+    return fallback;
+  }
+
+  const companyCreatedAt = new Date(companyCreatedAtIso);
+  if (Number.isNaN(companyCreatedAt.getTime())) {
+    const fallback = new Date();
+    fallback.setUTCMonth(fallback.getUTCMonth() + 1);
+    return fallback;
+  }
+
+  const now = new Date();
+  const anchorDay = companyCreatedAt.getUTCDate();
+  let cursor = new Date(companyCreatedAt);
+  while (cursor <= now) {
+    cursor = addOneMonthAnchored(cursor, anchorDay);
+  }
+  return cursor;
+};
+
 serve(async (req) => {
   console.log("=== SUBSCRIBE TO HIRING TAB FUNCTION STARTED ===");
 
@@ -48,7 +96,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, credit_balance")
+      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at")
       .eq("id", companyId)
       .single();
 
@@ -56,6 +104,41 @@ serve(async (req) => {
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
     const hiringCost = 500.0; // $500.00 in dollars
+    const nextRenewalDate = getNextRenewalFromCompanyCreatedAt(company.created_at);
+    const normalizedName = (company.name ?? "").trim().toLowerCase().replace(/\s+/g, "");
+    const isInternalAdminCompany = normalizedName === "rolecolorfinderllc";
+
+    // Internal admin company gets the hiring platform for free
+    if (isInternalAdminCompany) {
+      const { error: freeUpdateError } = await supabase
+        .from("companies")
+        .update({
+          hiring_subscription_enabled: true,
+          hiring_subscription_status: "active",
+          hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
+          hiring_subscription_cancel_at_period_end: false,
+        })
+        .eq("id", companyId);
+
+      if (freeUpdateError) {
+        console.error("update_company_internal_free error", freeUpdateError);
+        return new Response(JSON.stringify({
+          error: "Failed to activate internal free hiring subscription",
+          step: "update_company_internal_free",
+          details: (freeUpdateError as any)?.message || freeUpdateError,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        subscriptionId: null,
+        status: "active",
+        internalFree: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // Handle credit-based payment
     if (useCredits) {
@@ -77,6 +160,8 @@ serve(async (req) => {
           credit_balance: newBalance,
           hiring_subscription_enabled: true,
           hiring_subscription_status: "active",
+          hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
+          hiring_subscription_cancel_at_period_end: false,
         })
         .eq("id", companyId);
 
@@ -176,6 +261,8 @@ serve(async (req) => {
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
+      billing_cycle_anchor: Math.floor(nextRenewalDate.getTime() / 1000),
+      proration_behavior: "create_prorations",
       payment_behavior: "error_if_incomplete", // Fail if payment can't be completed
       expand: ["latest_invoice.payment_intent"],
       metadata: { company_id: companyId, type: "hiring_subscription" },

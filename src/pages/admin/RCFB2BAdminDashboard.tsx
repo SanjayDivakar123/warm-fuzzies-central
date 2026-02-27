@@ -20,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Building2, Loader2, Mail, RefreshCw, Search, Shield, Users } from "lucide-react";
+import { Building2, FileText, Loader2, Mail, RefreshCw, Search, Shield, Users } from "lucide-react";
+import AdminCompanyStatementModal from "@/components/b2b/admin/AdminCompanyStatementModal";
 
 const ALLOWED_SUPER_ADMIN_EMAILS = [
   "sanjay@rolecolorfinder.com",
@@ -87,6 +88,7 @@ export default function RCFB2BAdminDashboard() {
   const [billingDescription, setBillingDescription] = useState<string>("");
   const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
   const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
+  const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string } | null>(null);
 
   const isAllowed = ALLOWED_SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
 
@@ -401,17 +403,28 @@ export default function RCFB2BAdminDashboard() {
                             <TableCell>{company.adminLevelCount}</TableCell>
                             <TableCell>{formatUsdFromCents(company.credit_balance)}</TableCell>
                             <TableCell>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedCompanyId(company.id);
-                                  setBillingCompanyId(company.id);
-                                  setActiveTab("company-users");
-                                }}
-                              >
-                                View Users
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setStatementModalCompany({ id: company.id, name: company.name })}
+                                  className="gap-1"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  View Statement
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedCompanyId(company.id);
+                                    setBillingCompanyId(company.id);
+                                    setActiveTab("company-users");
+                                  }}
+                                >
+                                  View Users
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -628,6 +641,13 @@ export default function RCFB2BAdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <AdminCompanyStatementModal
+          companyId={statementModalCompany?.id ?? ""}
+          companyName={statementModalCompany?.name ?? ""}
+          open={!!statementModalCompany}
+          onClose={() => setStatementModalCompany(null)}
+        />
 
         <AlertDialog
           open={pendingBillingAction !== null}

@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 interface TeamMember {
@@ -25,9 +27,18 @@ serve(async (req) => {
   }
 
   try {
-    const { companyId, teamMembers } = await req.json();
-    
-    if (!teamMembers || teamMembers.length === 0) {
+    let body: { companyId?: string; teamMembers?: TeamMember[] };
+    try {
+      body = await req.json();
+    } catch (parseErr) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const { companyId, teamMembers } = body;
+
+    if (!teamMembers || !Array.isArray(teamMembers) || teamMembers.length === 0) {
       return new Response(
         JSON.stringify({ error: "No team members provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,45 +54,25 @@ serve(async (req) => {
       );
     }
 
-    // Build a compact prompt payload to reduce generation latency.
+    // Compact payload to reduce input tokens and latency.
     const teamSummary = teamMembers.map((m: TeamMember, i: number) => {
-      const scoresSummary = `Y:${m.scores.yellow}, R:${m.scores.red}, G:${m.scores.green}, B:${m.scores.blue}`;
-      const totalScore = m.scores.yellow + m.scores.red + m.scores.green + m.scores.blue;
-      const percentages = {
-        yellow: Math.round((m.scores.yellow / totalScore) * 100),
-        red: Math.round((m.scores.red / totalScore) * 100),
-        green: Math.round((m.scores.green / totalScore) * 100),
-        blue: Math.round((m.scores.blue / totalScore) * 100),
-      };
-      const rankedColors = Object.entries(percentages)
-        .sort(([, a], [, b]) => b - a)
-        .map(([color]) => color);
-      const topTwo = rankedColors.slice(0, 2).join(", ");
-      const compactSkills = (m.skills || []).slice(0, 6).join(", ") || "None";
-      
-      return `${i + 1}. Email: ${m.email}
-   - Role: ${m.jobRole || 'Not assigned'}
-   - Skills: ${compactSkills}
-   - Dominant Color: ${m.dominantColor} (${m.colorLabel})
-   - Scores: ${scoresSummary}
-   - Top Colors: ${topTwo}
-   - Percentages: Y:${percentages.yellow}%, R:${percentages.red}%, G:${percentages.green}%, B:${percentages.blue}%`;
-    }).join('\n\n');
+      const s = m.scores ?? {};
+      const scores = `Y${s.yellow ?? 0}R${s.red ?? 0}G${s.green ?? 0}B${s.blue ?? 0}`;
+      const skills = (m.skills || []).slice(0, 4).join(", ") || "—";
+      return `${i + 1}. ${m.email} | ${m.jobRole || "N/A"} | ${m.dominantColor || "blue"} (${m.colorLabel || "?"}) | ${scores} | ${skills}`;
+    }).join("\n");
 
-    const systemPrompt = `You are an expert organizational psychologist and leadership consultant.
+    const systemPrompt = `You are an expert organizational psychologist and leadership consultant. Be concise — short outputs reduce latency.
 
-You analyze teams using a color-based leadership assessment framework:
-- Yellow (Executor): Action-oriented, results-driven, decisive, competitive, quick decision-makers
-- Red (Motivator): Inspiring, people-focused, enthusiastic, relationship-builders, empathetic
-- Green (Organizer): Structured, detail-oriented, reliable, systematic thinkers, process-focused
-- Blue (Innovator): Creative, visionary, strategic, big-picture thinkers, future-focused
+Color-based leadership framework:
+- Yellow (Executor): Action-oriented, results-driven, decisive
+- Red (Motivator): Inspiring, people-focused, relationship-builders
+- Green (Organizer): Structured, detail-oriented, systematic
+- Blue (Innovator): Creative, visionary, strategic
 
-Leadership insight: leadership potential is highest when Red and/or Yellow are primary or secondary colors.
+Leadership potential is highest when Red/Yellow are primary or secondary. Use concrete score evidence. Return only valid JSON.`;
 
-Be specific, concise, and role-aware. Use concrete reasons from the provided scores and role.
-Return only valid JSON.`;
-
-    const userPrompt = `Analyze this team's leadership profiles.
+    const userPrompt = `Analyze this team's leadership profiles. Be brief — 1 sentence per field where possible.
 
 TEAM MEMBERS:
 ${teamSummary}
@@ -89,44 +80,64 @@ ${teamSummary}
 Return this JSON shape exactly:
 
 {
-  "overallAnalysis": "2-3 sentence summary of team composition and implications",
-  "teamDynamics": "1-2 sentences about collaboration dynamics",
-  "teamStrengths": ["4 specific strengths"],
-  "teamChallenges": ["3-4 potential gaps/challenges"],
+  "overallAnalysis": "1-2 sentence summary of team composition",
+  "teamDynamics": "1 sentence on collaboration dynamics",
+  "teamStrengths": ["3 specific strengths"],
+  "teamChallenges": ["3 potential gaps"],
   "memberInsights": [
     {
       "email": "member email",
-      "name": "Extract a display name from email (capitalize first part before @)",
-      "currentRole": "their current job role",
+      "name": "First name from email",
+      "currentRole": "their job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
-      "matchPercentage": "0-100 using these bands: excellent 85-100, good 70-84, moderate 50-69, mismatch 0-49",
-      "matchAnalysis": "2-3 sentences explaining role fit with specific score evidence",
-      "leadershipPotential": "High|Moderate|Limited (High when Red/Yellow is primary or secondary unless strong counter-evidence)",
-      "leadershipStyle": "1-2 sentences",
-      "workplaceContribution": "1-2 sentences",
-      "strengths": ["3 specific strengths"],
-      "developmentAreas": ["2-3 growth areas"],
-      "potentialChallenges": "1 concise sentence",
-      "suggestedRoles": ["2-3 stronger alternative roles if fit is moderate/mismatch, otherwise 2-3 complementary responsibilities"],
-      "actionableAdvice": "1-2 sentences of specific, practical advice for this person to maximize their effectiveness"
+      "matchPercentage": "0-100 (excellent 85+, good 70-84, moderate 50-69, mismatch <50)",
+      "matchAnalysis": "1-2 sentences on role fit with score evidence",
+      "leadershipStyle": "1 sentence",
+      "workplaceContribution": "1 sentence",
+      "strengths": ["2 key strengths"],
+      "developmentAreas": ["2 growth areas"],
+      "potentialChallenges": "1 short sentence",
+      "suggestedRoles": ["2 alternative roles if moderate/mismatch, else 2 complementary responsibilities"],
+      "actionableAdvice": "1 sentence of practical advice"
     }
   ],
-  "recommendations": ["4-5 strategic recommendations"]
+  "recommendations": ["3 strategic recommendations"]
 }
 
-Role-leadership style alignment guidelines:
-- Engineers/QA/Tech: Green (systematic) or Blue (innovative) styles work well
-- Designers/Creative: Blue (creative) or Yellow (results-focused) styles work well
-- PM/Operations/Admin: Green (organized) or Yellow (action-oriented) styles work well
-- Sales/Marketing/BD: Red (people-focused) or Yellow (results-driven) styles work well
-- HR/Support/Customer Success: Red (relationship-building) or Green (systematic) styles work well
-- Founders/Executives: Blue (visionary) or Yellow (decisive) styles work well
-- Data Analysts/Finance: Green (detail-oriented) or Blue (strategic) styles work well
+Role alignment: Engineers/QA→Green/Blue; Designers→Blue/Yellow; PM/Admin→Green/Yellow; Sales/BD→Red/Yellow; HR/Support→Red/Green; Executives→Blue/Yellow; Data/Finance→Green/Blue.
 
-Return ONLY the JSON object, no additional text.`;
+IMPORTANT: memberInsights MUST have exactly ${teamMembers.length} entries — one per member. Keep each entry brief and balanced.
 
-    console.log("Calling OpenAI API for detailed team insights...");
+Return ONLY the JSON object, no other text.`;
+
+    const OUTPUT_TOKENS_BASE = 800;
+    const OUTPUT_TOKENS_PER_MEMBER_TARGET = 260;
+    const OUTPUT_TOKENS_PER_MEMBER_MIN = 200;
+    const MODEL_MAX_OUTPUT_TOKENS = 16000;
+
+    const desiredTokenBudget =
+      OUTPUT_TOKENS_BASE + (teamMembers.length * OUTPUT_TOKENS_PER_MEMBER_TARGET);
+    const tokenBudget = Math.min(MODEL_MAX_OUTPUT_TOKENS, desiredTokenBudget);
+    const effectivePerMemberBudget = Math.floor(
+      Math.max(0, tokenBudget - OUTPUT_TOKENS_BASE) / teamMembers.length
+    );
+
+    if (effectivePerMemberBudget < OUTPUT_TOKENS_PER_MEMBER_MIN) {
+      const maxMembersSupported = Math.floor(
+        (MODEL_MAX_OUTPUT_TOKENS - OUTPUT_TOKENS_BASE) / OUTPUT_TOKENS_PER_MEMBER_MIN
+      );
+      return new Response(
+        JSON.stringify({
+          error: `Team is too large for one insight run (${teamMembers.length} members). Please analyze up to ${maxMembersSupported} members at a time.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(
+      `Calling OpenAI API for detailed team insights (${teamMembers.length} members, ${tokenBudget} max_tokens, ~${effectivePerMemberBudget} per member)...`
+    );
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -142,7 +153,7 @@ Return ONLY the JSON object, no additional text.`;
         ],
         response_format: { type: "json_object" },
         temperature: 0.2,
-        max_tokens: 3000,
+        max_tokens: tokenBudget,
       }),
     });
 

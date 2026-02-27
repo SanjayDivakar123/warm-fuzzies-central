@@ -36,6 +36,7 @@ interface HiringSubscriptionSettingsProps {
   company: {
     id: string;
     name: string;
+    created_at?: string;
     hiring_subscription_enabled?: boolean;
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
@@ -48,10 +49,12 @@ export default function HiringSubscriptionSettings({
   company, 
   onSubscriptionUpdated 
 }: HiringSubscriptionSettingsProps) {
+  const PORTAL_COST_PER_USER = 20;
+
   type StatementRow = {
     id: string;
     created_at: string;
-    category: 'subscription' | 'charge' | 'extra_insight' | 'credit';
+    category: 'subscription' | 'charge' | 'extra_insight' | 'credit' | 'portal_cost';
     description: string;
     amount: number;
     source: 'transaction' | 'credit';
@@ -61,6 +64,8 @@ export default function HiringSubscriptionSettings({
   const [cancelling, setCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showStatementDialog, setShowStatementDialog] = useState(false);
+  const [showChargeDetailDialog, setShowChargeDetailDialog] = useState(false);
+  const [selectedStatementRow, setSelectedStatementRow] = useState<StatementRow | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
   const [statementRows, setStatementRows] = useState<StatementRow[]>([]);
   const [statementStartDate, setStatementStartDate] = useState<Date | null>(null);
@@ -70,10 +75,13 @@ export default function HiringSubscriptionSettings({
     charges: 0,
     subscriptions: 0,
     extraInsights: 0,
+    portalCost: 0,
     creditsApplied: 0,
     net: 0,
   });
   const { toast } = useToast();
+  const normalizedName = company.name?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
+  const isInternalAdminCompany = normalizedName === 'rolecolorfinderllc' || normalizedName === 'rolecolorfinder';
 
   const hasActiveSubscription = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
@@ -142,14 +150,20 @@ export default function HiringSubscriptionSettings({
   const getCategoryLabel = (category: StatementRow['category']) => {
     if (category === 'subscription') return 'Subscription';
     if (category === 'extra_insight') return 'Extra Insights';
+    if (category === 'portal_cost') return 'Portal Cost';
     if (category === 'credit') return 'Credits';
     return 'Charges';
+  };
+
+  const openChargeDetail = (row: StatementRow) => {
+    setSelectedStatementRow(row);
+    setShowChargeDetailDialog(true);
   };
 
   const loadMonthlyStatement = async () => {
     setStatementLoading(true);
     try {
-      const [txRes, creditRes] = await Promise.all([
+      const [txRes, creditRes, usedUsersRes] = await Promise.all([
         supabase
           .from('billing_transactions')
           .select('id, created_at, type, amount, description')
@@ -160,26 +174,31 @@ export default function HiringSubscriptionSettings({
           .select('id, created_at, amount, description, type')
           .eq('company_id', company.id)
           .order('created_at', { ascending: true }),
+        supabase
+          .from('company_users')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', company.id)
+          .neq('status', 'revoked'),
       ]);
 
       if (txRes.error) throw txRes.error;
       if (creditRes.error) throw creditRes.error;
+      if (usedUsersRes.error) throw usedUsersRes.error;
 
       const transactions = txRes.data || [];
       const credits = creditRes.data || [];
 
-      const firstHiringSubscriptionEvent = transactions.find((row) => {
-        const text = (row.description || '').toLowerCase();
-        return text.includes('hiring tab subscription') || text.includes('hiring tab subscription started');
-      });
-
-      const derivedStartDate = firstHiringSubscriptionEvent?.created_at
-        ? new Date(firstHiringSubscriptionEvent.created_at)
+      const derivedStartDate = company.created_at
+        ? new Date(company.created_at)
         : company.hiring_subscription_current_period_end
           ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
           : null;
 
       setStatementStartDate(derivedStartDate);
+
+      const usersUsed = Math.max(0, usedUsersRes.count || 0);
+      // Portal cost is free only for the internal admin company (RoleColorFinder); all others pay $20/user/month
+      const portalMonthlyCost = isInternalAdminCompany ? 0 : usersUsed * PORTAL_COST_PER_USER;
 
       const txRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
@@ -195,7 +214,7 @@ export default function HiringSubscriptionSettings({
           };
         });
 
-      const creditRows: StatementRow[] = credits
+      const creditRows: StatementRow[] = isInternalAdminCompany ? [] : credits
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
         .map((row) => ({
           id: `credit-${row.id}`,
@@ -206,7 +225,23 @@ export default function HiringSubscriptionSettings({
           source: 'credit',
         }));
 
-      const allRows = [...txRows, ...creditRows].sort(
+      const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
+      const portalCostRow: StatementRow = {
+        id: `portal-cost-${company.id}-${periodAnchorDate}`,
+        created_at: periodAnchorDate,
+        category: 'portal_cost',
+        description: isInternalAdminCompany
+          ? 'Overall Portal Cost (Internal Admin Company - No Charge)'
+          : `Overall Portal Cost (${usersUsed} user${usersUsed !== 1 ? 's' : ''} used × $${PORTAL_COST_PER_USER}/month)`,
+        amount: portalMonthlyCost,
+        source: 'transaction',
+      };
+
+      const rowsToInclude = [...txRows, ...creditRows, portalCostRow];
+      const allRows = (isInternalAdminCompany
+        ? rowsToInclude.filter((row) => row.category !== 'credit')
+        : rowsToInclude
+      ).sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -214,12 +249,13 @@ export default function HiringSubscriptionSettings({
         (acc, row) => {
           if (row.category === 'subscription') acc.subscriptions += row.amount;
           if (row.category === 'extra_insight') acc.extraInsights += row.amount;
+          if (row.category === 'portal_cost') acc.portalCost += row.amount;
           if (row.category === 'charge') acc.charges += row.amount;
           if (row.category === 'credit') acc.creditsApplied += row.amount;
           acc.net += row.amount;
           return acc;
         },
-        { charges: 0, subscriptions: 0, extraInsights: 0, creditsApplied: 0, net: 0 }
+        { charges: 0, subscriptions: 0, extraInsights: 0, portalCost: 0, creditsApplied: 0, net: 0 }
       );
 
       setStatementRows(allRows);
@@ -257,34 +293,8 @@ export default function HiringSubscriptionSettings({
       }
 
       setRenewalDateLoading(true);
-      const { data, error } = await supabase
-        .from('billing_transactions')
-        .select('created_at, description')
-        .eq('company_id', company.id)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error loading subscription start date:', error);
-        const fallbackStart = company.hiring_subscription_current_period_end
-          ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
-          : null;
-        setSubscriptionStartDate(
-          company.hiring_subscription_current_period_end
-            ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
-            : null
-        );
-        sessionStorage.setItem(storageKey, fallbackStart ? fallbackStart.toISOString() : "__NONE__");
-        setRenewalDateLoading(false);
-        return;
-      }
-
-      const firstSubscriptionEvent = (data || []).find((row) => {
-        const text = (row.description || '').toLowerCase();
-        return text.includes('hiring tab subscription') || text.includes('hiring tab subscription started');
-      });
-
-      if (firstSubscriptionEvent?.created_at) {
-        const start = new Date(firstSubscriptionEvent.created_at);
+      if (company.created_at) {
+        const start = new Date(company.created_at);
         setSubscriptionStartDate(start);
         sessionStorage.setItem(storageKey, start.toISOString());
       } else if (company.hiring_subscription_current_period_end) {
@@ -438,7 +448,7 @@ export default function HiringSubscriptionSettings({
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Monthly Subscription</span>
                   </div>
-                  <span className="font-semibold">$500/month</span>
+                  <span className="font-semibold">{isInternalAdminCompany ? '$0/month (Internal)' : '$500/month'}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
@@ -539,8 +549,10 @@ export default function HiringSubscriptionSettings({
 
                 <div className="flex items-center justify-between p-4 rounded-lg border">
                   <div>
-                    <p className="font-semibold">$500 per month</p>
-                    <p className="text-xs text-muted-foreground">Cancel anytime</p>
+                    <p className="font-semibold">{isInternalAdminCompany ? '$0 per month (Internal Admin)' : '$500 per month'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isInternalAdminCompany ? 'No charge for internal admin company' : 'Cancel anytime'}
+                    </p>
                   </div>
                   <Button onClick={handleSubscribe} disabled={subscribing}>
                     {subscribing ? (
@@ -555,8 +567,9 @@ export default function HiringSubscriptionSettings({
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Payment will be processed via Stripe. Billing credits will be applied first, 
-                  then your card on file will be charged.
+                  {isInternalAdminCompany
+                    ? 'Internal admin company billing is free and no credit charges are applied.'
+                    : 'Payment will be processed via Stripe. Billing credits will be applied first, then your card on file will be charged.'}
                 </p>
               </div>
             </>
@@ -592,14 +605,14 @@ export default function HiringSubscriptionSettings({
           <DialogHeader>
             <DialogTitle>Monthly Statement</DialogTitle>
             <DialogDescription>
-              Statement period starts from your Hiring pipeline subscription start date.
+              Statement period starts from your company creation date in the B2B portal.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Subscription Started</p>
+                <p className="text-xs text-muted-foreground">Billing Cycle Started</p>
                 <p className="text-sm font-medium">
                   {statementStartDate ? statementStartDate.toLocaleDateString() : 'Not available yet'}
                 </p>
@@ -616,7 +629,7 @@ export default function HiringSubscriptionSettings({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={`grid gap-3 sm:grid-cols-2 ${isInternalAdminCompany ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}>
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">Subscriptions</p>
                 <p className="text-sm font-semibold">{formatCurrency(statementTotals.subscriptions)}</p>
@@ -630,9 +643,15 @@ export default function HiringSubscriptionSettings({
                 <p className="text-sm font-semibold">{formatCurrency(statementTotals.extraInsights)}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
-                <p className="text-xs text-muted-foreground">Credits</p>
-                <p className="text-sm font-semibold">{formatCurrency(statementTotals.creditsApplied)}</p>
+                <p className="text-xs text-muted-foreground">Portal Cost</p>
+                <p className="text-sm font-semibold">{formatCurrency(statementTotals.portalCost)}</p>
               </div>
+              {!isInternalAdminCompany && (
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <p className="text-xs text-muted-foreground">Credits</p>
+                  <p className="text-sm font-semibold">{formatCurrency(statementTotals.creditsApplied)}</p>
+                </div>
+              )}
             </div>
 
             <div className="rounded-lg border">
@@ -654,17 +673,62 @@ export default function HiringSubscriptionSettings({
               ) : (
                 <div className="max-h-80 overflow-auto">
                   {statementRows.map((row) => (
-                    <div key={row.id} className="grid grid-cols-12 gap-2 border-b px-3 py-2 text-sm">
+                    <button
+                      key={row.id}
+                      type="button"
+                      onClick={() => openChargeDetail(row)}
+                      className="grid w-full grid-cols-12 gap-2 border-b px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40"
+                    >
                       <div className="col-span-3">{new Date(row.created_at).toLocaleDateString()}</div>
                       <div className="col-span-3">{getCategoryLabel(row.category)}</div>
                       <div className="col-span-4 truncate" title={row.description}>{row.description}</div>
                       <div className="col-span-2 text-right font-medium">{formatCurrency(row.amount)}</div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showChargeDetailDialog} onOpenChange={setShowChargeDetailDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Charge Details</DialogTitle>
+            <DialogDescription>
+              Detailed information for this statement item.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedStatementRow ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Date</p>
+                <p className="text-sm font-medium">
+                  {new Date(selectedStatementRow.created_at).toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Category</p>
+                <p className="text-sm font-medium">{getCategoryLabel(selectedStatementRow.category)}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Description</p>
+                <p className="text-sm font-medium">{selectedStatementRow.description}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Amount</p>
+                <p className="text-sm font-semibold">{formatCurrency(selectedStatementRow.amount)}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Source</p>
+                <p className="text-sm font-medium capitalize">{selectedStatementRow.source}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No charge selected.</p>
+          )}
         </DialogContent>
       </Dialog>
     </>
