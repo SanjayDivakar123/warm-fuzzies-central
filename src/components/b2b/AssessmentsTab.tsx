@@ -41,6 +41,13 @@ interface CompletedAssessment {
   };
 }
 
+interface InvitedPendingMember {
+  id: string;
+  email: string;
+  full_name: string | null;
+  job_role: string | null;
+}
+
 interface TeamStats {
   total: number;
   completed: number;
@@ -50,6 +57,7 @@ interface TeamStats {
 
 interface AssessmentsPayload {
   completedAssessments: CompletedAssessment[];
+  invitedPendingMembers: InvitedPendingMember[];
   teamStats: TeamStats;
 }
 
@@ -66,6 +74,14 @@ const colorLabels: Record<string, { label: string; bg: string; text: string }> =
 
 const buildAssessmentsPayload = (users: any[]): AssessmentsPayload => {
   const completedUsers = users.filter((u) => u.assessment_completed_at && u.assessment_result_id);
+  const invitedPendingMembers: InvitedPendingMember[] = users
+    .filter((u) => u.status === 'invited' && !u.assessment_completed_at)
+    .map((user) => ({
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name || null,
+      job_role: user.job_role || null,
+    }));
 
   const completedAssessments: CompletedAssessment[] = completedUsers.map((user) => {
     const resultRecord = Array.isArray(user.assessment_results)
@@ -105,6 +121,7 @@ const buildAssessmentsPayload = (users: any[]): AssessmentsPayload => {
 
   return {
     completedAssessments,
+    invitedPendingMembers,
     teamStats: { total, completed, pending, colorDistribution },
   };
 };
@@ -160,6 +177,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completedAssessments, setCompletedAssessments] = useState<CompletedAssessment[]>([]);
+  const [invitedPendingMembers, setInvitedPendingMembers] = useState<InvitedPendingMember[]>([]);
   const [teamStats, setTeamStats] = useState<TeamStats>({
     total: 0,
     completed: 0,
@@ -186,6 +204,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
 
     if (hasWarmCache) {
       setCompletedAssessments(cacheEntry.payload.completedAssessments);
+      setInvitedPendingMembers(cacheEntry.payload.invitedPendingMembers);
       setTeamStats(cacheEntry.payload.teamStats);
       setLoading(false);
     } else {
@@ -199,6 +218,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
     try {
       const payload = await fetchAssessmentsPayload(company.id);
       setCompletedAssessments(payload.completedAssessments);
+      setInvitedPendingMembers(payload.invitedPendingMembers);
       setTeamStats(payload.teamStats);
     } catch (error: any) {
       console.error('Error fetching assessments:', error);
@@ -599,6 +619,7 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
         onClose={() => setShowInsightsModal(false)}
         companyId={company.id}
         onBillingUpdated={onSettingsSaved}
+        pendingMembers={invitedPendingMembers}
         teamMembers={completedAssessments
           .filter(a => a.results?.scores && a.results?.dominantColor)
           .map(a => ({

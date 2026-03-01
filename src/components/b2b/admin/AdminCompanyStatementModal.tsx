@@ -111,7 +111,7 @@ export default function AdminCompanyStatementModal({
         const [companyRes, txRes, creditRes, usedUsersRes] = await Promise.all([
           supabase
             .from('companies')
-            .select('created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_current_period_end')
+            .select('created_at, seats_purchased, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_current_period_end')
             .eq('id', companyId)
             .single(),
           supabase
@@ -161,8 +161,11 @@ export default function AdminCompanyStatementModal({
             : periodEnd
         );
 
-        const usersUsed = Math.max(0, usedUsersRes.count || 0);
-        const portalMonthlyCost = isInternalAdminCompany ? 0 : usersUsed * PORTAL_COST_PER_USER;
+        const activeUsers = Math.max(0, usedUsersRes.count || 0);
+        const seatsPurchased = Math.max(2, company.seats_purchased || 2);
+        // Billed for whichever is greater: seats purchased or active users (minimum 2 seats = $40/mo)
+        const billableUsers = Math.max(activeUsers, seatsPurchased);
+        const portalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * PORTAL_COST_PER_USER;
 
         const txRows: StatementRow[] = transactions
           .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
@@ -195,7 +198,7 @@ export default function AdminCompanyStatementModal({
           category: 'portal_cost',
           description: isInternalAdminCompany
             ? 'Overall Portal Cost (Internal Admin Company - No Charge)'
-            : `Overall Portal Cost (${usersUsed} user${usersUsed !== 1 ? 's' : ''} used × $${PORTAL_COST_PER_USER}/month)`,
+            : `Overall Portal Cost (${billableUsers} seat${billableUsers !== 1 ? 's' : ''} × $${PORTAL_COST_PER_USER}/month${billableUsers > activeUsers ? ` — minimum ${seatsPurchased} purchased` : ''})`,
           amount: portalMonthlyCost,
           source: 'transaction',
         };

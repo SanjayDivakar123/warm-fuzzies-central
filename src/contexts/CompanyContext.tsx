@@ -122,6 +122,11 @@ const ROLE_PERMISSIONS: Record<CompanyUserRole, RolePermissions> = {
   },
 };
 
+interface CompanyWithUser {
+  company: Company;
+  companyUser: CompanyUser;
+}
+
 interface CompanyContextType {
   company: Company | null;
   companyUser: CompanyUser | null;
@@ -129,6 +134,8 @@ interface CompanyContextType {
   isAdmin: boolean;
   permissions: RolePermissions;
   refreshCompany: () => Promise<void>;
+  allCompanies: CompanyWithUser[];
+  switchCompany: (companyId: string) => void;
 }
 
 // Export context for direct access (e.g., when the hook would throw during HMR)
@@ -150,105 +157,137 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const { user } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [companyUser, setCompanyUser] = useState<CompanyUser | null>(null);
+  const [allCompanies, setAllCompanies] = useState<CompanyWithUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestedCompanyId, setRequestedCompanyId] = useState<string | null>(null);
+
+  const mapCompanyUser = (record: any): CompanyUser => ({
+    id: record.id,
+    company_id: record.company_id,
+    user_id: record.user_id ?? undefined,
+    email: record.email,
+    role: record.role as CompanyUserRole,
+    status: record.status,
+    invite_code: record.invite_code ?? undefined,
+    invited_at: record.invited_at ?? '',
+    joined_at: record.joined_at ?? undefined,
+    assessment_completed_at: record.assessment_completed_at ?? undefined,
+    assessment_result_id: record.assessment_result_id ?? undefined,
+  });
 
   const fetchCompanyData = async () => {
     if (!user || !user.email) {
       setCompany(null);
       setCompanyUser(null);
+      setAllCompanies([]);
       setLoading(false);
       return;
     }
 
     try {
-      // Fetch company user records (user might be admin of multiple companies)
-      // Query by user_id first, then also check by email for non-linked accounts
-      const { data: byUserId, error: userIdError } = await supabase
+      const { data: byUserId } = await supabase
         .from('company_users')
         .select('*')
         .eq('user_id', user.id);
 
-      const { data: byEmail, error: emailError } = await supabase
+      const { data: byEmail } = await supabase
         .from('company_users')
         .select('*')
         .ilike('email', user.email);
 
-      console.log('[CompanyContext] Fetching for user:', user.email, 'user_id:', user.id);
-      console.log('[CompanyContext] By user_id:', byUserId?.length, 'records', byUserId?.map(r => ({ role: r.role, status: r.status, id: r.id })));
-      console.log('[CompanyContext] By email:', byEmail?.length, 'records', byEmail?.map(r => ({ role: r.role, status: r.status, user_id: r.user_id, id: r.id })));
-
-      // Merge and deduplicate records (prefer user_id linked records)
       const userIdRecordIds = new Set(byUserId?.map(r => r.id) || []);
       const emailOnlyRecords = (byEmail || []).filter(r => !userIdRecordIds.has(r.id));
       const companyUserRecords = [...(byUserId || []), ...emailOnlyRecords];
 
-      // Sort: admin/hr/partner first, then active status, then most recent
-      companyUserRecords.sort((a, b) => {
-        // Non-employee roles come first
+      // Link unlinked email-matched records
+      for (const record of companyUserRecords) {
+        if (!record.user_id && record.email.toLowerCase() === user.email?.toLowerCase()) {
+          await supabase
+            .from('company_users')
+            .update({
+              user_id: user.id,
+              status: 'active',
+              joined_at: record.joined_at || new Date().toISOString(),
+            })
+            .eq('id', record.id);
+          record.user_id = user.id;
+          record.status = 'active';
+        }
+      }
+
+      // Keep only active/invited records with admin-level roles, plus any active records
+      const validRecords = companyUserRecords.filter(
+        (r) =>
+          (['admin', 'hr', 'partner'].includes(r.role) && ['active', 'invited'].includes(r.status)) ||
+          r.status === 'active'
+      );
+
+      // Deduplicate by company_id (one record per company, prefer admin roles)
+      const byCompanyId = new Map<string, any>();
+      for (const record of validRecords) {
+        const existing = byCompanyId.get(record.company_id);
+        if (!existing) {
+          byCompanyId.set(record.company_id, record);
+        } else {
+          const existingIsAdmin = ['admin', 'hr', 'partner'].includes(existing.role);
+          const newIsAdmin = ['admin', 'hr', 'partner'].includes(record.role);
+          if (newIsAdmin && !existingIsAdmin) {
+            byCompanyId.set(record.company_id, record);
+          }
+        }
+      }
+      const uniqueRecords = Array.from(byCompanyId.values());
+
+      // Sort: admin roles first, then by active status
+      uniqueRecords.sort((a, b) => {
         const aIsAdmin = ['admin', 'hr', 'partner'].includes(a.role);
         const bIsAdmin = ['admin', 'hr', 'partner'].includes(b.role);
         if (aIsAdmin && !bIsAdmin) return -1;
         if (!aIsAdmin && bIsAdmin) return 1;
-        // Active status comes first
         if (a.status === 'active' && b.status !== 'active') return -1;
         if (a.status !== 'active' && b.status === 'active') return 1;
         return 0;
       });
 
-      // Pick the first admin/hr/partner record (active or invited), or fall back to first active record
-      // Admin-level users don't need to complete an invite flow, so 'invited' status is OK for them
-      const adminRecord = companyUserRecords?.find(
-        (r) => ['admin', 'hr', 'partner'].includes(r.role) && ['active', 'invited'].includes(r.status)
-      );
-      const activeRecord = companyUserRecords?.find((r) => r.status === 'active');
-      const companyUserData = adminRecord || activeRecord || companyUserRecords?.[0];
-
-      console.log('[CompanyContext] All records after merge:', companyUserRecords?.length);
-      console.log('[CompanyContext] adminRecord:', adminRecord ? { role: adminRecord.role, status: adminRecord.status } : null);
-      console.log('[CompanyContext] Selected:', companyUserData ? { role: companyUserData.role, status: companyUserData.status } : null);
-
-      if (companyUserData) {
-        // If found by email but user_id not linked, link it now
-        if (!companyUserData.user_id && companyUserData.email.toLowerCase() === user.email?.toLowerCase()) {
-          await supabase
-            .from('company_users')
-            .update({ 
-              user_id: user.id, 
-              status: 'active',
-              joined_at: companyUserData.joined_at || new Date().toISOString()
-            })
-            .eq('id', companyUserData.id);
-          
-          // Update local data
-          companyUserData.user_id = user.id;
-          companyUserData.status = 'active';
-        }
-
-        // Map database role to our type
-        const mappedUser: CompanyUser = {
-          id: companyUserData.id,
-          company_id: companyUserData.company_id,
-          user_id: companyUserData.user_id ?? undefined,
-          email: companyUserData.email,
-          role: companyUserData.role as CompanyUserRole,
-          status: companyUserData.status,
-          invite_code: companyUserData.invite_code ?? undefined,
-          invited_at: companyUserData.invited_at ?? '',
-          joined_at: companyUserData.joined_at ?? undefined,
-          assessment_completed_at: companyUserData.assessment_completed_at ?? undefined,
-          assessment_result_id: companyUserData.assessment_result_id ?? undefined,
-        };
-        setCompanyUser(mappedUser);
-
-        // Fetch company details
-        const { data: companyData, error: companyError } = await supabase
+      if (uniqueRecords.length > 0) {
+        // Fetch all company details at once
+        const companyIds = uniqueRecords.map((r) => r.company_id);
+        const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('*')
-          .eq('id', companyUserData.company_id)
-          .single();
+          .in('id', companyIds);
 
-        if (companyError) throw companyError;
-        setCompany(companyData);
+        if (companiesError) throw companiesError;
+
+        const companyMap = new Map((companiesData || []).map((c) => [c.id, c]));
+
+        const all: CompanyWithUser[] = [];
+        for (const record of uniqueRecords) {
+          const comp = companyMap.get(record.company_id);
+          if (comp) {
+            all.push({ company: comp, companyUser: mapCompanyUser(record) });
+          }
+        }
+        setAllCompanies(all);
+
+        // Priority: URL-requested > in-memory requested > localStorage persisted > first in list
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCompanyId = urlParams.get('company');
+        const storageKey = `rcf_selected_company_${user.id}`;
+        const storedCompanyId = localStorage.getItem(storageKey);
+        const preferredId = requestedCompanyId || urlCompanyId || storedCompanyId || null;
+        const match = preferredId ? all.find((c) => c.company.id === preferredId) : null;
+        const selected = match || all[0];
+
+        setCompany(selected.company);
+        setCompanyUser(selected.companyUser);
+        localStorage.setItem(storageKey, selected.company.id);
+
+        if (requestedCompanyId) setRequestedCompanyId(null);
+      } else {
+        setAllCompanies([]);
+        setCompany(null);
+        setCompanyUser(null);
       }
     } catch (error) {
       console.error('Error fetching company data:', error);
@@ -257,16 +296,26 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     }
   };
 
+  const switchCompany = (companyId: string) => {
+    const match = allCompanies.find((c) => c.company.id === companyId);
+    if (match) {
+      setRequestedCompanyId(companyId);
+      setCompany(match.company);
+      setCompanyUser(match.companyUser);
+      if (user?.id) {
+        localStorage.setItem(`rcf_selected_company_${user.id}`, companyId);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchCompanyData();
   }, [user]);
 
-  // Get permissions based on role
-  const permissions = companyUser 
-    ? ROLE_PERMISSIONS[companyUser.role] 
+  const permissions = companyUser
+    ? ROLE_PERMISSIONS[companyUser.role]
     : ROLE_PERMISSIONS.employee;
 
-  // isAdmin now means any admin-level role (admin, hr, or partner)
   const isAdmin = companyUser?.role !== 'employee';
 
   const value = {
@@ -276,6 +325,8 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     isAdmin,
     permissions,
     refreshCompany: fetchCompanyData,
+    allCompanies,
+    switchCompany,
   };
 
   return (

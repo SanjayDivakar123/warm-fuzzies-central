@@ -58,6 +58,7 @@ interface InProgressAssessment {
 
 interface CompanyAccess {
   id: string;
+  companyId: string;
   role: 'admin' | 'hr' | 'partner' | 'employee';
   status: 'invited' | 'active' | 'revoked';
   companyName: string;
@@ -183,6 +184,7 @@ const Dashboard = () => {
           const company = cu.companies as { id: string; name: string; subdomain: string };
           return {
             id: cu.id,
+            companyId: company.id,
             role: cu.role as 'admin' | 'hr' | 'partner' | 'employee',
             status: cu.status as 'invited' | 'active' | 'revoked',
             companyName: company.name,
@@ -995,7 +997,7 @@ const Dashboard = () => {
                                     <Badge className={`mt-1 border-0 ${getRoleBadge(company.role).color}`}>{getRoleBadge(company.role).label}</Badge>
                                   </div>
                                 </div>
-                                <Button onClick={() => navigate('/b2b/company-portal')} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 w-full sm:w-auto">
+                                <Button onClick={() => navigate(`/b2b/company-portal?company=${company.companyId}`)} className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 w-full sm:w-auto">
                                   <Building2 className="w-4 h-4 mr-2" />
                                   {company.role === 'admin' ? 'Admin Dashboard' : company.role === 'hr' ? 'HR Portal' : 'Partner Portal'}
                                 </Button>

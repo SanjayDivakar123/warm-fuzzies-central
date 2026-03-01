@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { logAuditEvent, AUDIT_ACTIONS, AUDIT_ENTITIES } from '@/lib/auditLogger';
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
 import BulkImportModal from './BulkImportModal';
 import ScheduleReminderModal from './ScheduleReminderModal';
@@ -412,6 +413,13 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         description: `Invitation sent to ${newUserEmail}${billingMsg}`,
       });
 
+      logAuditEvent({
+        companyId: company.id,
+        action: AUDIT_ACTIONS.USER_INVITED,
+        entityType: AUDIT_ENTITIES.USER,
+        details: { email: newUserEmail },
+      });
+
       setNewUserEmail("");
       fetchUsers();
       if (onCompanyUpdate) onCompanyUpdate(); // Refresh company data to update credit balance
@@ -469,6 +477,14 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       const { error } = await supabase.from("company_users").update({ status: "revoked" }).eq("id", userId);
 
       if (error) throw error;
+
+      logAuditEvent({
+        companyId: company.id,
+        action: AUDIT_ACTIONS.USER_REVOKED,
+        entityType: AUDIT_ENTITIES.USER,
+        entityId: userId,
+        details: { email: userToRevoke?.email, full_name: userToRevoke?.full_name },
+      });
 
       // Calculate and apply pro-rated refund for active employees
       if (userToRevoke?.role === 'employee' && userToRevoke?.status === 'active') {

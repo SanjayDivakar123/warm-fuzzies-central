@@ -13,6 +13,7 @@ import {
   Calendar,
   CreditCard,
   Sparkles,
+  ArrowDown,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -37,6 +38,7 @@ interface HiringSubscriptionSettingsProps {
     id: string;
     name: string;
     created_at?: string;
+    seats_purchased?: number;
     hiring_subscription_enabled?: boolean;
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
@@ -61,6 +63,7 @@ export default function HiringSubscriptionSettings({
   };
 
   const [subscribing, setSubscribing] = useState(false);
+  const [noPaymentMethod, setNoPaymentMethod] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showStatementDialog, setShowStatementDialog] = useState(false);
@@ -196,9 +199,12 @@ export default function HiringSubscriptionSettings({
 
       setStatementStartDate(derivedStartDate);
 
-      const usersUsed = Math.max(0, usedUsersRes.count || 0);
+      const activeUsers = Math.max(0, usedUsersRes.count || 0);
+      const seatsPurchased = Math.max(2, company.seats_purchased || 2);
+      // Billed for whichever is greater: seats purchased or active users (minimum 2 seats = $40/mo)
+      const billableUsers = Math.max(activeUsers, seatsPurchased);
       // Portal cost is free only for the internal admin company (RoleColorFinder); all others pay $20/user/month
-      const portalMonthlyCost = isInternalAdminCompany ? 0 : usersUsed * PORTAL_COST_PER_USER;
+      const portalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * PORTAL_COST_PER_USER;
 
       const txRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
@@ -232,7 +238,7 @@ export default function HiringSubscriptionSettings({
         category: 'portal_cost',
         description: isInternalAdminCompany
           ? 'Overall Portal Cost (Internal Admin Company - No Charge)'
-          : `Overall Portal Cost (${usersUsed} user${usersUsed !== 1 ? 's' : ''} used × $${PORTAL_COST_PER_USER}/month)`,
+          : `Overall Portal Cost (${billableUsers} seat${billableUsers !== 1 ? 's' : ''} × $${PORTAL_COST_PER_USER}/month${billableUsers > activeUsers ? ` — minimum ${seatsPurchased} purchased` : ''})`,
         amount: portalMonthlyCost,
         source: 'transaction',
       };
@@ -274,12 +280,6 @@ export default function HiringSubscriptionSettings({
 
   useEffect(() => {
     const loadSubscriptionStartDate = async () => {
-      if (!hasActiveSubscription) {
-        setSubscriptionStartDate(null);
-        setRenewalDateLoading(false);
-        return;
-      }
-
       const storageKey = `rcf_hiring_subscription_start_date_${company.id}`;
       const cachedStartDate = sessionStorage.getItem(storageKey);
       if (cachedStartDate) {
@@ -314,18 +314,58 @@ export default function HiringSubscriptionSettings({
     };
 
     loadSubscriptionStartDate();
-  }, [company.id, company.hiring_subscription_current_period_end, hasActiveSubscription]);
+  }, [company.id, company.hiring_subscription_current_period_end]);
 
   const handleSubscribe = async () => {
     setSubscribing(true);
+    setNoPaymentMethod(false);
     try {
       const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
         body: { companyId: company.id },
       });
 
-      if (error) throw error;
+      // Parse error body from edge function for actionable messages
+      if (error) {
+        let payload: any = null;
+        try {
+          payload = await (error as any).context?.json?.();
+        } catch {}
+        const step = payload?.step || data?.step;
+        const msg = payload?.error || data?.error || error.message;
 
-      // Redirect to Stripe checkout
+        if (step === 'no_default_payment_method' || msg?.toLowerCase().includes('payment method')) {
+          setNoPaymentMethod(true);
+          // Scroll to payment method card so user can add one
+          setTimeout(() => {
+            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+          toast({
+            title: 'No payment method on file',
+            description: 'Please add a payment method below before subscribing.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Subscription failed',
+            description: msg || 'Failed to start subscription',
+            variant: 'destructive',
+          });
+        }
+        setSubscribing(false);
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: 'Subscription failed',
+          description: data.error,
+          variant: 'destructive',
+        });
+        setSubscribing(false);
+        return;
+      }
+
+      // Redirect to Stripe checkout if URL provided
       if (data?.url) {
         window.location.href = data.url;
       }
@@ -407,7 +447,6 @@ export default function HiringSubscriptionSettings({
         <CardContent>
           <Button
             variant="outline"
-            disabled={!hasActiveSubscription}
             onClick={() => {
               setShowStatementDialog(true);
               loadMonthlyStatement();
@@ -415,11 +454,6 @@ export default function HiringSubscriptionSettings({
           >
             View Statement
           </Button>
-          {!hasActiveSubscription && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Statement details become available after your Hiring tab subscription is active.
-            </p>
-          )}
         </CardContent>
       </Card>
 
@@ -565,6 +599,26 @@ export default function HiringSubscriptionSettings({
                     )}
                   </Button>
                 </div>
+
+                {noPaymentMethod && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-destructive">No payment method on file</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Add a payment method in the <strong>Payment Method</strong> section below, then try subscribing again.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                        Go to Payment Method
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-xs text-muted-foreground">
                   {isInternalAdminCompany

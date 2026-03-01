@@ -13,7 +13,10 @@ import { motion } from 'framer-motion';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { Navbar } from '@/components/navigation/Navbar';
 
-const PROMO_CODE = 'LEADERSWELCOME';
+const PROMO_CODES = new Set([
+  'LEADERSWELCOME',
+  'RCFINTERNAL',
+]);
 
 export default function B2B() {
   const [companyName, setCompanyName] = useState('');
@@ -27,50 +30,18 @@ export default function B2B() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Check if user already has company access
+  // Pre-fill admin email when user is available
   useEffect(() => {
-    const checkExistingAccess = async () => {
-      if (!user) {
-        setCheckingAccess(false);
-        return;
-      }
-
-      const userEmail = user.email || '';
-
-      const { data: companyUser } = await supabase
-        .from('company_users')
-        .select('id, user_id, email, status')
-        .in('status', ['active', 'invited'])
-        .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
-        .limit(1)
-        .maybeSingle();
-
-      if (companyUser && !companyUser.user_id && companyUser.email?.toLowerCase() === userEmail.toLowerCase()) {
-        await supabase
-          .from('company_users')
-          .update({
-            user_id: user.id,
-            status: 'active',
-            joined_at: new Date().toISOString(),
-          })
-          .eq('id', companyUser.id);
-      }
-
-      if (companyUser) {
-        // User already has company access, redirect to dashboard
-        navigate('/b2b/company-portal');
-        return;
-      }
-
-      // Pre-fill admin email
-      if (user.email && !adminEmail) {
-        setAdminEmail(user.email);
-      }
+    if (!user) {
       setCheckingAccess(false);
-    };
+      return;
+    }
 
-    checkExistingAccess();
-  }, [user, navigate]);
+    if (user.email && !adminEmail) {
+      setAdminEmail(user.email);
+    }
+    setCheckingAccess(false);
+  }, [user]);
 
   const generateSubdomain = (name: string) => {
     return name
@@ -80,7 +51,7 @@ export default function B2B() {
       .substring(0, 63);
   };
 
-  const isPromoValid = promoCode.toUpperCase().trim() === PROMO_CODE;
+  const isPromoValid = PROMO_CODES.has(promoCode.toUpperCase().trim());
   const seatCount = parseInt(seats) || 2;
   const totalPrice = isPromoValid ? 0 : seatCount * 20;
 
@@ -141,7 +112,8 @@ export default function B2B() {
           description: `Promo code applied! Your portal is ready.`,
         });
 
-        navigate('/b2b/company-portal');
+        const newCompanyId = data?.company?.id;
+        navigate(newCompanyId ? `/b2b/company-portal?company=${newCompanyId}` : '/b2b/company-portal');
         return;
       }
 
@@ -375,7 +347,14 @@ export default function B2B() {
                           type="number"
                           min="2"
                           value={seats}
-                          onChange={(e) => setSeats(e.target.value)}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (isNaN(val) || val < 2) {
+                              setSeats('2');
+                            } else {
+                              setSeats(String(val));
+                            }
+                          }}
                           required
                           className="h-12 bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
                         />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logAuditEvent, AUDIT_ENTITIES } from '@/lib/auditLogger';
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,13 @@ interface TeamMember {
   };
 }
 
+interface PendingTeamMember {
+  id: string;
+  email: string;
+  full_name: string | null;
+  job_role: string | null;
+}
+
 interface MemberInsight {
   email: string;
   name?: string;
@@ -102,6 +110,7 @@ interface TeamInsightsModalProps {
   open: boolean;
   onClose: () => void;
   teamMembers: TeamMember[];
+  pendingMembers?: PendingTeamMember[];
   companyId: string;
   onBillingUpdated?: () => void;
 }
@@ -161,6 +170,7 @@ export default function TeamInsightsModal({
   open,
   onClose,
   teamMembers,
+  pendingMembers = [],
   companyId,
   onBillingUpdated,
 }: TeamInsightsModalProps) {
@@ -466,6 +476,13 @@ export default function TeamInsightsModal({
       
       // Save to database for caching
       await saveInsights(insightsData);
+
+      logAuditEvent({
+        companyId,
+        action: 'generate_insights',
+        entityType: AUDIT_ENTITIES.USER,
+        details: { member_count: String(teamMembers.length) },
+      });
     } catch (err: any) {
       console.error('Error generating insights:', err);
       setError(err.message || 'Failed to generate insights');
@@ -728,6 +745,21 @@ export default function TeamInsightsModal({
               </div>
             </div>
           )}
+          {pendingMembers.length > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">
+                    {pendingMembers.length} invited team member{pendingMembers.length === 1 ? '' : 's'} {pendingMembers.length === 1 ? 'has' : 'have'} not completed the assessment yet.
+                  </p>
+                  <p className="mt-1">
+                    Their individual analysis is locked until they complete the assessment. Re-Do insights after completion to include them.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Re-Do confirmation when team hasn't changed */}
@@ -877,6 +909,50 @@ export default function TeamInsightsModal({
                   </p>
                   
                   <div className="space-y-3">
+                    {pendingMembers.map((member) => {
+                      const displayName = getDisplayName(member.email, member.full_name);
+
+                      return (
+                        <Card
+                          key={`pending-${member.id}`}
+                          className="relative overflow-hidden border-dashed bg-muted/30 pointer-events-none select-none"
+                        >
+                          <div className="blur-[1px]">
+                            <div className="px-4 py-3 flex items-center justify-between border-l-4 border-l-muted-foreground/40">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 bg-muted-foreground/70">
+                                  {displayName.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-semibold">{displayName}</p>
+                                    <Badge variant="secondary" className="text-xs">
+                                      Assessment Pending
+                                    </Badge>
+                                    {member.job_role && (
+                                      <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                        <Briefcase className="h-3 w-3" />
+                                        {member.job_role}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground truncate lowercase">{member.email.trim()}</p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Insights Locked
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-background/45">
+                            <span className="rounded-md border bg-background/90 px-2 py-1 text-xs font-medium text-muted-foreground">
+                              Complete assessment to unlock
+                            </span>
+                          </div>
+                        </Card>
+                      );
+                    })}
                     {(() => {
                       const analyzedEmails = new Set(
                         insights.memberInsights.map((m) => normalizeEmail(m.email))

@@ -60,7 +60,7 @@ serve(async (req) => {
     const description = (body?.description || "").toString().trim();
 
     if (!isValidUUID(companyId)) throw new Error("Invalid company_id");
-    if (!["add_free_credits", "charge_card"].includes(action)) {
+    if (!["add_free_credits", "charge_card", "remove_credits"].includes(action)) {
       throw new Error("Invalid action");
     }
     if (!Number.isInteger(amountCents) || amountCents <= 0) {
@@ -80,7 +80,7 @@ serve(async (req) => {
     const currentBalance = company.credit_balance || 0;
 
     if (action === "add_free_credits") {
-      const newBalance = currentBalance + amountCents;
+      const newBalance = currentBalance + amountCents / 100;
 
       const { error: updateError } = await supabase
         .from("companies")
@@ -90,12 +90,73 @@ serve(async (req) => {
 
       await supabase.from("billing_credits").insert({
         company_id: companyId,
-        amount: amountCents,
+        amount: amountCents / 100,
         type: "super_admin_free_credit",
         description:
           description || `Super-admin free credit: $${(amountCents / 100).toFixed(2)}`,
         created_by: user.id,
       });
+
+      // Audit log (fire-and-forget)
+      supabase.from('audit_logs').insert({
+        company_id: companyId,
+        user_id: user.id,
+        user_email: user.email,
+        action: 'credits_added',
+        entity_type: 'billing',
+        details: {
+          amount: (amountCents / 100).toFixed(2),
+          type: 'free_credit',
+          description: description || null,
+        },
+      }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          action,
+          amount_cents: amountCents,
+          previous_balance_cents: currentBalance,
+          new_balance_cents: newBalance,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (action === "remove_credits") {
+      const removeAmount = amountCents / 100;
+      const newBalance = Math.max(0, currentBalance - removeAmount);
+
+      const { error: updateError } = await supabase
+        .from("companies")
+        .update({ credit_balance: newBalance })
+        .eq("id", companyId);
+      if (updateError) throw updateError;
+
+      await supabase.from("billing_credits").insert({
+        company_id: companyId,
+        amount: -removeAmount,
+        type: "super_admin_credit_removal",
+        description:
+          description || `Super-admin credit removal: -$${removeAmount.toFixed(2)}`,
+        created_by: user.id,
+      });
+
+      // Audit log (fire-and-forget)
+      supabase.from('audit_logs').insert({
+        company_id: companyId,
+        user_id: user.id,
+        user_email: user.email,
+        action: 'credits_removed',
+        entity_type: 'billing',
+        details: {
+          amount: (amountCents / 100).toFixed(2),
+          description: description || null,
+        },
+      }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
 
       return new Response(
         JSON.stringify({
@@ -169,7 +230,7 @@ serve(async (req) => {
       throw new Error(`Payment failed with status: ${paymentIntent.status}`);
     }
 
-    const newBalance = currentBalance + amountCents;
+    const newBalance = currentBalance + amountCents / 100;
     const { error: updateError } = await supabase
       .from("companies")
       .update({ credit_balance: newBalance })
@@ -187,12 +248,27 @@ serve(async (req) => {
 
     await supabase.from("billing_credits").insert({
       company_id: companyId,
-      amount: amountCents,
+      amount: amountCents / 100,
       type: "super_admin_paid_credit",
       description:
         description || `Credits added from manual card charge: $${(amountCents / 100).toFixed(2)}`,
       created_by: user.id,
     });
+
+    // Audit log (fire-and-forget)
+    supabase.from('audit_logs').insert({
+      company_id: companyId,
+      user_id: user.id,
+      user_email: user.email,
+      action: 'payment',
+      entity_type: 'billing',
+      details: {
+        amount: (amountCents / 100).toFixed(2),
+        type: 'card_charge',
+        description: description || null,
+        payment_intent_id: paymentIntent.id,
+      },
+    }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
 
     return new Response(
       JSON.stringify({

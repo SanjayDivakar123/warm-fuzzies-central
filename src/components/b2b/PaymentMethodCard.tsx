@@ -125,7 +125,7 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
 
   if (isUnlimited) {
     return (
-      <Card>
+      <Card id="payment-method-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
@@ -145,7 +145,7 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
   }
 
   return (
-    <Card>
+    <Card id="payment-method-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />

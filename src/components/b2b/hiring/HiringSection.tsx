@@ -139,7 +139,44 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
         body: { companyId: company.id, useCredits: false },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Parse the actual error body from the edge function
+        let payload: any = null;
+        try { payload = await (error as any).context?.json?.(); } catch {}
+        const step = payload?.step || data?.step;
+        const msg = payload?.error || data?.error || error.message;
+
+        if (step === 'no_default_payment_method' || msg?.toLowerCase().includes('payment method')) {
+          toast({
+            title: 'No payment method on file',
+            description: 'Add a payment method in Settings → Subscriptions before subscribing.',
+            variant: 'destructive',
+          });
+          // Navigate to Settings tab, then to subscriptions sub-tab
+          window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+          setTimeout(() => {
+            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 400);
+        } else {
+          toast({
+            title: 'Subscription failed',
+            description: msg || 'Failed to start subscription process',
+            variant: 'destructive',
+          });
+        }
+        setSubscribing(false);
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: 'Subscription failed',
+          description: data.error,
+          variant: 'destructive',
+        });
+        setSubscribing(false);
+        return;
+      }
 
       // Redirect to Stripe checkout
       if (data?.url) {

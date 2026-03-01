@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield, Search } from 'lucide-react';
+import { Building2, Users, ClipboardList, Settings as SettingsIcon, Loader2, LogOut, Brain, CalendarClock, Moon, Sun, Monitor, UserSearch, BarChart3, Target, Shield, Search, ChevronDown, Plus, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import OverviewTab from '@/components/b2b/OverviewTab';
@@ -30,21 +30,30 @@ import AdvancedAnalyticsDashboard from '@/components/b2b/analytics/AdvancedAnaly
 import RolesTab from '@/components/b2b/RolesTab';
 import EmployeeTasksView from '@/components/b2b/EmployeeTasksView';
 import KeyboardShortcutsModal from '@/components/b2b/KeyboardShortcutsModal';
+import CreditNotificationModal from '@/components/b2b/CreditNotificationModal';
 import { useKeyboardShortcuts, B2B_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
 import MobileBottomNav from '@/components/b2b/MobileBottomNav';
 import GlobalSearch from '@/components/b2b/GlobalSearch';
 import UserProfileSheet from '@/components/b2b/UserProfileSheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'settings']);
 
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
-  const { company, companyUser, loading, isAdmin, permissions, refreshCompany } = useCompany();
+  const { company, companyUser, loading, isAdmin, permissions, refreshCompany, allCompanies, switchCompany } = useCompany();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme, resolvedTheme } = useB2BTheme();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
@@ -58,6 +67,10 @@ function B2BDashboardContent() {
   const [pendingTab, setPendingTab] = useState<string | null>(null);
   const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
   const [settingsSaveHandler, setSettingsSaveHandler] = useState<(() => Promise<boolean>) | null>(null);
+  const [creditNotifications, setCreditNotifications] = useState<{ id: string; amount: number; description: string | null }[]>([]);
+  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const switchingCompanyIdRef = useRef<string | null>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -79,6 +92,88 @@ function B2BDashboardContent() {
 
   // Auto-start dashboard tour for first-time admins (hook must be called unconditionally)
   useAutoStartTour('admin-dashboard-overview', 1500, !loading && !!company && isAdmin);
+
+  // Clear the switching overlay once the new company has fully loaded into context
+  useEffect(() => {
+    if (switching && switchingCompanyIdRef.current && company?.id === switchingCompanyIdRef.current) {
+      switchingCompanyIdRef.current = null;
+      setSwitching(false);
+    }
+  }, [company?.id, switching]);
+
+  // When arriving with ?company=<id>, switch to the correct company then clean up the URL.
+  // This runs before the dashboard content renders to avoid flashing the wrong company.
+  useEffect(() => {
+    const companyParam = searchParams.get('company');
+    if (!companyParam) return;
+
+    if (loading) return; // wait for context to finish loading
+
+    const found = allCompanies.find((c) => c.company.id === companyParam);
+    if (found) {
+      if (found.company.id !== company?.id) {
+        switchCompany(companyParam);
+        // Don't clean URL yet — wait until company.id matches (next render)
+        return;
+      }
+      // Company is now correct — clean up the URL
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('company');
+      setSearchParams(nextParams, { replace: true });
+    } else {
+      // Company not in list yet (e.g. just created) — refresh to fetch it
+      refreshCompany();
+    }
+  }, [loading, searchParams, company?.id, allCompanies]);
+
+  // Check for unseen super-admin credit additions and show celebration modal.
+  // Runs whenever the active company changes (including dropdown switches).
+  useEffect(() => {
+    if (!company?.id) return;
+
+    let cancelled = false;
+
+    const checkUnseenCredits = async () => {
+      try {
+        const storageKey = `rcf_seen_credit_ids_${company.id}`;
+        const seenIds: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+        const { data, error } = await supabase
+          .from('billing_credits')
+          .select('id, amount, description, type')
+          .eq('company_id', company.id)
+          .in('type', ['super_admin_free_credit', 'super_admin_paid_credit'])
+          .gt('amount', 0)
+          .order('created_at', { ascending: true });
+
+        if (cancelled || error || !data?.length) return;
+
+        const unseen = data.filter((c) => !seenIds.includes(c.id));
+        if (!unseen.length) return;
+
+        setCreditNotifications(unseen.map((c) => ({
+          id: c.id,
+          amount: c.amount,
+          description: c.description ?? null,
+        })));
+        setShowCreditModal(true);
+      } catch {
+        // non-critical — silently ignore
+      }
+    };
+
+    checkUnseenCredits();
+    return () => { cancelled = true; };
+  }, [company?.id]);
+
+  const handleCreditModalClose = () => {
+    setShowCreditModal(false);
+    if (!company?.id) return;
+    const storageKey = `rcf_seen_credit_ids_${company.id}`;
+    const seenIds: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const allSeen = [...new Set([...seenIds, ...creditNotifications.map((n) => n.id)])];
+    localStorage.setItem(storageKey, JSON.stringify(allSeen));
+  };
 
   // Get role display label
   const getRoleLabel = (role: string) => {
@@ -234,7 +329,11 @@ function B2BDashboardContent() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [activeTab, settingsDirty]);
 
-  if (loading) {
+  // Keep showing spinner if we're still waiting for the requested company to resolve
+  const requestedCompanyId = searchParams.get('company');
+  const awaitingSwitch = !loading && requestedCompanyId && company?.id !== requestedCompanyId;
+
+  if (loading || awaitingSwitch) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -252,9 +351,14 @@ function B2BDashboardContent() {
               You don't have access to any company portal yet.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-3">
             <Button onClick={() => window.location.href = '/b2b'} className="w-full">
-              Create Company
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Company
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = '/b2b/signin'} className="w-full">
+              <Building2 className="h-4 w-4 mr-2" />
+              Sign in to Existing Company
             </Button>
           </CardContent>
         </Card>
@@ -295,7 +399,17 @@ function B2BDashboardContent() {
   );
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30 relative">
+      {/* Seamless company-switch overlay */}
+      {switching && (
+        <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-9 w-9 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
+            <p className="text-sm text-muted-foreground font-medium">Switching company…</p>
+          </div>
+        </div>
+      )}
+
       {/* Clean header with company color accent */}
       <header 
         className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" 
@@ -303,28 +417,77 @@ function B2BDashboardContent() {
         style={{ borderBottomColor: `${primaryColor}30` }}
       >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            {(() => {
-              // Determine which logo to show based on current theme
-              const logoToShow = resolvedTheme === 'dark' && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
-              
-              
-              if (logoToShow) {
+          <div className="flex items-center gap-1">
+            {/* Logo - always links back to main site */}
+            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
+              {(() => {
+                const logoToShow = resolvedTheme === 'dark' && company.logo_url_dark ? company.logo_url_dark : company.logo_url;
+                if (logoToShow) {
+                  return (
+                    <img
+                      src={logoToShow}
+                      alt={`${company.name} logo`}
+                      className="h-8 w-auto object-contain"
+                    />
+                  );
+                }
                 return (
-                  <img 
-                    src={logoToShow} 
-                    alt={`${company.name} logo`}
-                    className="h-8 w-auto object-contain"
-                  />
+                  <div className="h-8 w-8 rounded-lg bg-foreground/5 flex items-center justify-center">
+                    <Building2 className="h-4 w-4 text-foreground/60" />
+                  </div>
                 );
-              }
-              return (
-                <div className="h-8 w-8 rounded-lg bg-foreground/5 flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-foreground/60" />
-                </div>
-              );
-            })()}
-          </Link>
+              })()}
+            </Link>
+
+            <span className="text-border mx-1 hidden sm:inline">|</span>
+
+            {/* Company switcher dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-1.5 px-2 hover:bg-muted/50 h-auto py-1.5 text-muted-foreground">
+                  <span className="text-sm font-medium max-w-[180px] truncate">{company.name}</span>
+                  <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                {allCompanies.map((item) => (
+                  <DropdownMenuItem
+                    key={item.company.id}
+                    onClick={() => {
+                      if (item.company.id !== company.id) {
+                        switchingCompanyIdRef.current = item.company.id;
+                        setSwitching(true);
+                        switchCompany(item.company.id);
+                        activateTab('overview');
+                      }
+                    }}
+                    className="flex items-center gap-3 py-2.5 cursor-pointer"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-3.5 w-3.5 text-foreground/60" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.company.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{item.companyUser.role}</p>
+                    </div>
+                    {item.company.id === company.id && (
+                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => navigate('/b2b')}
+                  className="flex items-center gap-3 py-2.5 cursor-pointer text-primary"
+                >
+                  <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">Create New Company</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <div className="flex items-center gap-2">
             {/* Search Button */}
             <Button
@@ -599,6 +762,13 @@ function B2BDashboardContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Credit Notification Modal */}
+      <CreditNotificationModal
+        open={showCreditModal}
+        onClose={handleCreditModalClose}
+        notifications={creditNotifications}
+      />
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />

@@ -66,6 +66,12 @@ const formatUsdFromCents = (amountCents: number) =>
     currency: "USD",
   }).format((amountCents || 0) / 100);
 
+const formatUsd = (amount: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount || 0);
+
 export default function RCFB2BAdminDashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -86,8 +92,9 @@ export default function RCFB2BAdminDashboard() {
   const [billingCompanyId, setBillingCompanyId] = useState<string>("");
   const [billingAmountUsd, setBillingAmountUsd] = useState<string>("");
   const [billingDescription, setBillingDescription] = useState<string>("");
-  const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
-  const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | null>(null);
+  const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
+  const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
+  const [selectedBillingAction, setSelectedBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits">("add_free_credits");
   const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string } | null>(null);
 
   const isAllowed = ALLOWED_SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
@@ -192,7 +199,7 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
-  const handleCompanyBillingAction = async (action: "charge_card" | "add_free_credits") => {
+  const handleCompanyBillingAction = async (action: "charge_card" | "add_free_credits" | "remove_credits") => {
     const selectedId = billingCompanyId || selectedCompanyId;
     const amountUsd = Number(billingAmountUsd);
     const amountCents = Math.round(amountUsd * 100);
@@ -229,8 +236,8 @@ export default function RCFB2BAdminDashboard() {
       if (data?.error) throw new Error(data.error);
 
       toast({
-        title: action === "charge_card" ? "Card charged + credits added" : "Free credits added",
-        description: `${formatUsdFromCents(amountCents)} applied successfully.`,
+        title: action === "charge_card" ? "Card charged + credits added" : action === "remove_credits" ? "Credits removed" : "Free credits added",
+        description: `${formatUsdFromCents(amountCents)} ${action === "remove_credits" ? "removed from" : "applied to"} wallet successfully.`,
       });
 
       setBillingAmountUsd("");
@@ -238,7 +245,7 @@ export default function RCFB2BAdminDashboard() {
       await fetchCompanies();
     } catch (error: unknown) {
       toast({
-        title: action === "charge_card" ? "Charge failed" : "Credit update failed",
+        title: action === "charge_card" ? "Charge failed" : action === "remove_credits" ? "Credit removal failed" : "Credit update failed",
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -316,7 +323,7 @@ export default function RCFB2BAdminDashboard() {
                 <CardTitle>Billing Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
                   <Select value={billingCompanyId} onValueChange={setBillingCompanyId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select company" />
@@ -342,29 +349,29 @@ export default function RCFB2BAdminDashboard() {
                     value={billingDescription}
                     onChange={(event) => setBillingDescription(event.target.value)}
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      disabled={billingLoadingAction !== null}
-                      onClick={() => setPendingBillingAction("charge_card")}
-                    >
-                      {billingLoadingAction === "charge_card" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : null}
-                      Charge Card
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      disabled={billingLoadingAction !== null}
-                      onClick={() => setPendingBillingAction("add_free_credits")}
-                    >
-                      {billingLoadingAction === "add_free_credits" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : null}
-                      Add Free Credits
-                    </Button>
-                  </div>
+                  <Select
+                    value={selectedBillingAction}
+                    onValueChange={(v) => setSelectedBillingAction(v as typeof selectedBillingAction)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="add_free_credits">Add Free Credits</SelectItem>
+                      <SelectItem value="charge_card">Charge Card</SelectItem>
+                      <SelectItem value="remove_credits">Remove Credits</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant={selectedBillingAction === "remove_credits" ? "destructive" : "default"}
+                    disabled={billingLoadingAction !== null}
+                    onClick={() => setPendingBillingAction(selectedBillingAction)}
+                  >
+                    {billingLoadingAction !== null ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    Execute
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -401,7 +408,7 @@ export default function RCFB2BAdminDashboard() {
                             <TableCell>{company.memberCount}</TableCell>
                             <TableCell>{company.ownerCount}</TableCell>
                             <TableCell>{company.adminLevelCount}</TableCell>
-                            <TableCell>{formatUsdFromCents(company.credit_balance)}</TableCell>
+                            <TableCell>{formatUsd(company.credit_balance)}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
                                 <Button
@@ -658,12 +665,12 @@ export default function RCFB2BAdminDashboard() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {pendingBillingAction === "charge_card" ? "Confirm Card Charge" : "Confirm Free Credit Addition"}
+                {pendingBillingAction === "charge_card" ? "Confirm Card Charge" : pendingBillingAction === "remove_credits" ? "Confirm Credit Removal" : "Confirm Free Credit Addition"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 You are about to{" "}
                 <span className="font-medium">
-                  {pendingBillingAction === "charge_card" ? "charge the card on file and add credits" : "add free credits"}
+                  {pendingBillingAction === "charge_card" ? "charge the card on file and add credits" : pendingBillingAction === "remove_credits" ? "remove credits from the wallet" : "add free credits"}
                 </span>{" "}
                 for{" "}
                 <span className="font-medium">
@@ -701,6 +708,8 @@ export default function RCFB2BAdminDashboard() {
                   </>
                 ) : pendingBillingAction === "charge_card" ? (
                   "Confirm Charge"
+                ) : pendingBillingAction === "remove_credits" ? (
+                  "Confirm Remove Credits"
                 ) : (
                   "Confirm Add Credits"
                 )}

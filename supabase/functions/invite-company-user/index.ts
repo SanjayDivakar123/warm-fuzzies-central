@@ -502,6 +502,23 @@ serve(async (req) => {
       console.error('Slack DM error (non-fatal):', slackError);
     }
 
+    // Log the invite action to audit_logs (fire-and-forget)
+    supabase.from('audit_logs').insert({
+      company_id,
+      user_id: user.id,
+      user_email: user.email,
+      action: 'invite',
+      entity_type: 'user',
+      entity_id: invitedUser.id,
+      details: {
+        email: email.toLowerCase().trim(),
+        full_name: full_name || null,
+        role: invitedUser.role,
+      },
+    }).then(({ error }) => {
+      if (error) console.error('Audit log insert failed (non-fatal):', error.message);
+    });
+
     return new Response(JSON.stringify({ 
       user: invitedUser, 
       emailSent,

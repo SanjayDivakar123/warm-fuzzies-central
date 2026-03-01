@@ -241,7 +241,6 @@ serve(async (req) => {
       recurring: { interval: "month" },
       product_data: {
         name: "RoleColorFinder Hiring Tab",
-        description: "Premium Hiring & ATS features for your B2B portal",
       },
     });
 

@@ -13,6 +13,7 @@ export default function B2BPaymentSuccess() {
   const [status, setStatus] = useState<PaymentStatus>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [newCompanyId, setNewCompanyId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,6 +54,7 @@ export default function B2BPaymentSuccess() {
 
       setStatus('creating');
       setCompanyName(data.companyName || 'Your company');
+      if (data.companyId) setNewCompanyId(data.companyId);
 
       // Small delay for UX
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -64,9 +66,13 @@ export default function B2BPaymentSuccess() {
         description: `${data.companyName} is ready to use.`,
       });
 
+      const portalUrl = data.companyId
+        ? `/b2b/company-portal?company=${data.companyId}`
+        : '/b2b/company-portal';
+
       // Auto-redirect after 3 seconds
       setTimeout(() => {
-        navigate('/b2b/company-portal');
+        navigate(portalUrl);
       }, 3000);
 
     } catch (error: any) {
@@ -123,7 +129,7 @@ export default function B2BPaymentSuccess() {
             <p className="text-muted-foreground">
               {companyName} has been created. Redirecting to your dashboard...
             </p>
-            <Button onClick={() => navigate('/b2b/company-portal')} className="mt-4">
+            <Button onClick={() => navigate(newCompanyId ? `/b2b/company-portal?company=${newCompanyId}` : '/b2b/company-portal')} className="mt-4">
               Go to Dashboard Now
             </Button>
           </div>
