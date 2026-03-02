@@ -26,8 +26,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AlertTriangle, ShieldAlert, ExternalLink, CreditCard } from 'lucide-react';
 import { useHelpTour } from '@/contexts/HelpTourContext';
 
 // Import hiring sub-components
@@ -62,7 +70,13 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
-  const [showCreditConfirmDialog, setShowCreditConfirmDialog] = useState(false);
+
+  const [subscribeError, setSubscribeError] = useState<{
+    type: 'no_payment_method' | 'card_declined' | 'auth_required' | 'generic';
+    title: string;
+    description: string;
+    actionUrl?: string;
+  } | null>(null);
   const { toast } = useToast();
 
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
@@ -71,7 +85,8 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
 
   const creditBalance = company.credit_balance || 0; // In dollars
   const hiringCost = 500; // $500 in dollars
-  const hasEnoughCredits = creditBalance >= hiringCost;
+  const creditContribution = Math.min(creditBalance, hiringCost);
+  const cardCharge = hiringCost - creditContribution;
 
   useEffect(() => {
     if (activeTour?.id !== 'admin-hiring-unlocked') return;
@@ -94,101 +109,75 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
     }
   }, [activeTour, currentStepIndex, activeTab]);
 
-  // Handle subscription with credits
-  const handleSubscribeWithCredits = async () => {
-    setSubscribing(true);
-    setShowCreditConfirmDialog(false);
-    try {
-      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
-        body: { companyId: company.id, useCredits: true },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success!',
-        description: 'Hiring tab activated using billing credits.',
-      });
-
-      // Refresh the page to show the hiring tab
-      window.location.reload();
-    } catch (error: any) {
-      console.error('Error subscribing with credits:', error);
-      toast({
-        title: 'Subscription failed',
-        description: error.message || 'Failed to activate subscription',
-        variant: 'destructive',
-      });
-    } finally {
-      setSubscribing(false);
+  const classifySubscribeError = (msg: string, step?: string): typeof subscribeError => {
+    const m = (msg || '').toLowerCase();
+    if (step === 'no_default_payment_method' || m.includes('no payment method') || m.includes('no default payment')) {
+      return {
+        type: 'no_payment_method',
+        title: 'No Payment Method on File',
+        description: 'You need to add a payment method before subscribing. Go to Settings → Subscriptions to add a card.',
+      };
     }
+    if (step === 'card_declined' || m.includes('declined') || m.includes('insufficient funds')) {
+      return {
+        type: 'card_declined',
+        title: 'Transaction Declined',
+        description: 'Your card was declined. This may be due to insufficient funds, a frozen card, or your bank blocking the charge. Please update your payment method and try again.',
+      };
+    }
+    if (step === 'requires_authentication' || m.includes('requires') || m.includes('authentication')) {
+      return {
+        type: 'auth_required',
+        title: 'Card Requires Verification',
+        description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
+      };
+    }
+    return {
+      type: 'generic',
+      title: 'Subscription Failed',
+      description: msg || 'Something went wrong processing your subscription. Please try again or contact support.',
+    };
   };
 
-  // Handle subscription to hiring tab
   const handleSubscribe = async () => {
-    // Check if company has enough credits
-    if (hasEnoughCredits) {
-      setShowCreditConfirmDialog(true);
-      return;
-    }
-
-    // No credits, proceed to Stripe
+    if (subscribing) return;
     setSubscribing(true);
+    setSubscribeError(null);
     try {
       const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
-        body: { companyId: company.id, useCredits: false },
+        body: { companyId: company.id },
       });
 
       if (error) {
-        // Parse the actual error body from the edge function
         let payload: any = null;
         try { payload = await (error as any).context?.json?.(); } catch {}
         const step = payload?.step || data?.step;
         const msg = payload?.error || data?.error || error.message;
+        setSubscribeError(classifySubscribeError(msg, step));
+        return;
+      }
 
-        if (step === 'no_default_payment_method' || msg?.toLowerCase().includes('payment method')) {
-          toast({
-            title: 'No payment method on file',
-            description: 'Add a payment method in Settings → Subscriptions before subscribing.',
-            variant: 'destructive',
-          });
-          // Navigate to Settings tab, then to subscriptions sub-tab
-          window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
-          setTimeout(() => {
-            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 400);
-        } else {
-          toast({
-            title: 'Subscription failed',
-            description: msg || 'Failed to start subscription process',
-            variant: 'destructive',
-          });
-        }
-        setSubscribing(false);
+      if (data?.requiresAction) {
+        setSubscribeError({
+          type: 'auth_required',
+          title: 'Card Requires Verification',
+          description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
+          actionUrl: data.actionUrl,
+        });
         return;
       }
 
       if (data?.error) {
-        toast({
-          title: 'Subscription failed',
-          description: data.error,
-          variant: 'destructive',
-        });
-        setSubscribing(false);
+        setSubscribeError(classifySubscribeError(data.error, data.step));
         return;
       }
 
-      // Redirect to Stripe checkout
-      if (data?.url) {
-        window.location.href = data.url;
+      if (data?.success) {
+        window.location.reload();
       }
-    } catch (error: any) {
-      console.error('Error subscribing to hiring tab:', error);
-      toast({
-        title: 'Subscription failed',
-        description: error.message || 'Failed to start subscription process',
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      console.error('Error subscribing to hiring tab:', err);
+      setSubscribeError(classifySubscribeError(err.message || ''));
     } finally {
       setSubscribing(false);
     }
@@ -296,57 +285,68 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             </div>
 
             <p className="text-xs text-center text-muted-foreground">
-              {hasEnoughCredits 
-                ? `You have $${creditBalance.toFixed(2)} in billing credits. Credits will be used for this subscription.`
+              {creditContribution > 0
+                ? `$${creditContribution.toFixed(2)} in billing credits will be applied. Your card will be charged $${cardCharge.toFixed(2)}.`
                 : 'Payment will be processed securely via Stripe. Billing credits will be applied first if available.'
               }
             </p>
           </CardContent>
         </Card>
 
-        {/* Credit Confirmation Dialog */}
-        <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                Use Billing Credits?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Confirm using your billing credits to activate the Hiring tab.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-3 mt-2">
-              <p>
-                You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
-              </p>
-              <p>
-                The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
-              </p>
-              <div className="bg-muted p-3 rounded-lg text-sm">
-                <p className="font-medium text-foreground mb-1">After activation:</p>
-                <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
-              </div>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleSubscribeWithCredits}
-                disabled={subscribing}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {subscribing ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                    Processing...
-                  </>
+        {/* Subscribe Error Modal */}
+        <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                {subscribeError?.type === 'auth_required' ? (
+                  <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="h-5 w-5 text-amber-500" />
+                  </div>
                 ) : (
-                  'Use Credits'
+                  <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
                 )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <DialogTitle className="text-left">{subscribeError?.title}</DialogTitle>
+              </div>
+              <DialogDescription className="text-left text-sm leading-relaxed">
+                {subscribeError?.description}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 pt-2">
+              {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
+                <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Complete Bank Authentication
+                </Button>
+              )}
+              {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setSubscribeError(null);
+                    window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                    setTimeout(() => {
+                      document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 400);
+                  }}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Update Payment Method
+                </Button>
+              )}
+              <Button
+                variant={subscribeError?.type === 'auth_required' ? 'outline' : 'default'}
+                className="w-full"
+                onClick={() => setSubscribeError(null)}
+              >
+                {subscribeError?.type === 'auth_required' ? 'Dismiss' : 'Close'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     );
   }
@@ -498,49 +498,59 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
         </TabsContent>
       </Tabs>
 
-      {/* Credit Confirmation Dialog (for when already subscribed but want to manage) */}
-      <AlertDialog open={showCreditConfirmDialog} onOpenChange={setShowCreditConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              Use Billing Credits?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Confirm using your billing credits to activate the Hiring tab.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-3 mt-2">
-            <p>
-              You have <span className="font-semibold text-foreground">${creditBalance.toFixed(2)}</span> in billing credits available.
-            </p>
-            <p>
-              The Hiring tab subscription costs <span className="font-semibold text-foreground">$500.00/month</span>.
-            </p>
-            <div className="bg-muted p-3 rounded-lg text-sm">
-              <p className="font-medium text-foreground mb-1">After activation:</p>
-              <p>Remaining credits: <span className="font-semibold">${(creditBalance - hiringCost).toFixed(2)}</span></p>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={subscribing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleSubscribeWithCredits}
-              disabled={subscribing}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {subscribing ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                  Processing...
-                </>
+      {/* Subscribe Error Modal */}
+      <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              {subscribeError?.type === 'auth_required' ? (
+                <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-amber-500" />
+                </div>
               ) : (
-                'Use Credits'
+                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                </div>
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <DialogTitle className="text-left">{subscribeError?.title}</DialogTitle>
+            </div>
+            <DialogDescription className="text-left text-sm leading-relaxed">
+              {subscribeError?.description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-2">
+            {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
+              <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Complete Bank Authentication
+              </Button>
+            )}
+            {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setSubscribeError(null);
+                  window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                  setTimeout(() => {
+                    document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 400);
+                }}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Update Payment Method
+              </Button>
+            )}
+            <Button
+              variant={subscribeError?.type === 'auth_required' ? 'outline' : 'default'}
+              className="w-full"
+              onClick={() => setSubscribeError(null)}
+            >
+              {subscribeError?.type === 'auth_required' ? 'Dismiss' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

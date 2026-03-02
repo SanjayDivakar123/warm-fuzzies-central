@@ -231,7 +231,8 @@ export default function AddCreditsModal({
             Add Credits
           </DialogTitle>
           <DialogDescription>
-            Purchase wallet credits. Your card on file will be charged the purchase amount.
+            Purchase wallet credits. Your card on file will be charged the purchase amount.{" "}
+            <span className="text-destructive font-medium">Credits are non-refundable.</span>
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

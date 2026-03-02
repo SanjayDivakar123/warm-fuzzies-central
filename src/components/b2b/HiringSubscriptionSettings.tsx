@@ -41,6 +41,7 @@ interface HiringSubscriptionSettingsProps {
     name: string;
     created_at?: string;
     seats_purchased?: number;
+    credit_balance?: number;
     hiring_subscription_enabled?: boolean;
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
@@ -63,6 +64,11 @@ export default function HiringSubscriptionSettings({
     amount: number;
     source: 'transaction' | 'credit';
   };
+
+  const hiringCost = 500;
+  const creditBalance = typeof company.credit_balance === 'number' ? company.credit_balance : parseFloat((company.credit_balance as unknown as string) ?? '0');
+  const creditContribution = Math.min(creditBalance, hiringCost);
+  const cardCharge = hiringCost - creditContribution;
 
   const [subscribing, setSubscribing] = useState(false);
   const [noPaymentMethod, setNoPaymentMethod] = useState(false);
@@ -325,10 +331,14 @@ export default function HiringSubscriptionSettings({
   }, [company.id, company.hiring_subscription_current_period_end]);
 
   // Translate raw Stripe / edge-function messages into clean user-facing errors
-  const classifyError = (msg: string, step?: string): typeof subscribeError => {
+  const classifyError = (msg: string, step?: string): NonNullable<typeof subscribeError> => {
     const m = (msg || '').toLowerCase();
     if (step === 'no_default_payment_method' || m.includes('no payment method') || m.includes('no default payment')) {
-      return null; // handled separately via noPaymentMethod state
+      return {
+        type: 'card_declined',
+        title: 'No Payment Method on File',
+        description: 'No card is on file for this account. Please add a payment method below before subscribing.',
+      };
     }
     if (
       m.includes('requires additional user action') ||
@@ -344,17 +354,17 @@ export default function HiringSubscriptionSettings({
         description: 'Your bank requires additional verification before this payment can go through. Please update your payment method or contact your bank to allow this charge.',
       };
     }
-    if (m.includes('declined') || m.includes('insufficient funds') || m.includes('do_not_honor') || m.includes('frozen')) {
+    if (step === 'card_declined' || m.includes('declined') || m.includes('insufficient funds') || m.includes('do_not_honor') || m.includes('frozen')) {
       return {
         type: 'card_declined',
-        title: 'Card Issue',
-        description: 'There was a problem with your card on file. It may be declined, frozen, or have insufficient funds. Please update your payment method and try again.',
+        title: 'Transaction Declined',
+        description: 'Your card was declined. This may be due to insufficient funds, a frozen card, or your bank blocking the $500 charge. Please update your payment method and try again.',
       };
     }
     return {
       type: 'generic',
       title: 'Subscription Failed',
-      description: 'Something went wrong processing your subscription. Please try again or contact support if the issue persists.',
+      description: msg || 'Something went wrong processing your subscription. Please try again or contact support if the issue persists.',
     };
   };
 
@@ -367,26 +377,16 @@ export default function HiringSubscriptionSettings({
         body: { companyId: company.id },
       });
 
-      // Parse actual error body from edge function
       if (error) {
         let payload: any = null;
         try { payload = await (error as any).context?.json?.(); } catch {}
         const step = payload?.step || data?.step;
         const msg = payload?.error || data?.error || error.message || '';
-
-        if (step === 'no_default_payment_method' || msg.toLowerCase().includes('no payment method') || msg.toLowerCase().includes('no default payment')) {
-          setNoPaymentMethod(true);
-          setTimeout(() => {
-            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 100);
-        } else {
-          setSubscribeError(classifyError(msg, step));
-        }
+        setSubscribeError(classifyError(msg, step));
         setSubscribing(false);
         return;
       }
 
-      // 3DS / bank authentication required (new edge function response)
       if (data?.requiresAction) {
         setSubscribeError({
           type: 'auth_required',
@@ -399,28 +399,21 @@ export default function HiringSubscriptionSettings({
       }
 
       if (data?.error) {
-        const step = data.step;
-        const msg: string = data.error || '';
-        if (step === 'no_default_payment_method' || msg.toLowerCase().includes('no payment method')) {
-          setNoPaymentMethod(true);
-          setTimeout(() => {
-            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 100);
-        } else {
-          setSubscribeError(classifyError(msg, step));
-        }
+        setSubscribeError(classifyError(data.error, data.step));
         setSubscribing(false);
         return;
       }
 
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
+      if (data?.success) {
+        if (onSubscriptionUpdated) onSubscriptionUpdated();
+      } else {
+        setSubscribeError({
+          type: 'generic',
+          title: 'Subscription Failed',
+          description: 'Something went wrong processing your subscription. Please try again or contact support.',
+        });
       }
-
-      if (data?.success && onSubscriptionUpdated) {
-        onSubscriptionUpdated();
-      }
+      setSubscribing(false);
     } catch (error: any) {
       console.error('Error subscribing:', error);
       setSubscribeError(classifyError(error.message || ''));
@@ -671,7 +664,9 @@ export default function HiringSubscriptionSettings({
                 <p className="text-xs text-muted-foreground">
                   {isInternalAdminCompany
                     ? 'Internal admin company billing is free and no credit charges are applied.'
-                    : 'Payment will be processed via Stripe. Billing credits will be applied first, then your card on file will be charged.'}
+                    : creditContribution > 0
+                      ? `$${creditContribution.toFixed(2)} in billing credits will be applied. Your card will be charged $${cardCharge.toFixed(2)}.`
+                      : 'Payment will be processed via Stripe. Billing credits will be applied first if available.'}
                 </p>
               </div>
             </>

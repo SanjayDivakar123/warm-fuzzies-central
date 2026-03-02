@@ -31,8 +31,8 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Retrieve the checkout session
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    // Retrieve the checkout session (expand customer so we always have the ID)
+    const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["customer"] });
     console.log("Session status:", session.payment_status);
     console.log("Session metadata:", session.metadata);
 
@@ -84,6 +84,11 @@ serve(async (req) => {
       });
     }
 
+    // Capture the Stripe customer ID from the session so future billing calls use the right customer
+    const stripeCustomerId = typeof session.customer === "string"
+      ? session.customer
+      : (session.customer as any)?.id ?? null;
+
     // Create the company
     const { data: newCompany, error: companyError } = await supabase
       .from("companies")
@@ -93,6 +98,7 @@ serve(async (req) => {
         admin_email: admin_email,
         seats_purchased: parseInt(seats),
         assessment_type: assessment_type || "25q",
+        ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
       })
       .select()
       .single();
