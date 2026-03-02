@@ -325,18 +325,18 @@ serve(async (req) => {
       .neq("status", "revoked");
 
     // Special case: RoleColorFinder LLC has unlimited users
-    // All other companies are capped at 20,000 users max
+    // All other companies are only capped at the absolute 20,000 hard max.
+    // Invites beyond seats_purchased are allowed — charge-invite will handle billing.
     const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
     const maxSeatsAllowed = 20000;
-    const effectiveSeats = isUnlimitedCompany ? Infinity : Math.min(company.seats_purchased, maxSeatsAllowed);
+    const effectiveSeats = isUnlimitedCompany ? Infinity : maxSeatsAllowed;
 
     if (activeUsers && activeUsers.length >= effectiveSeats) {
       return new Response(
         JSON.stringify({
-          error: isUnlimitedCompany ? "No seats available" : "No seats available (maximum 20,000 users per company)",
+          error: "Maximum user limit reached (20,000 users per company)",
           errorCode: "NO_SEATS",
           seatsUsed: activeUsers.length,
-          seatsPurchased: company.seats_purchased,
           maxAllowed: isUnlimitedCompany ? null : maxSeatsAllowed,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -528,6 +528,10 @@ serve(async (req) => {
         usedCredits: chargeResult.usedCredits || false,
         amount: chargeAmount,
         proRatedAmount: chargeResult.proRatedAmount || chargeAmount,
+        withinPrePaidSeats: chargeResult.withinPrePaidSeats || false,
+        seatsUsed: chargeResult.seatsUsed ?? null,
+        seatsPurchased: chargeResult.seatsPurchased ?? null,
+        message: chargeResult.message || null,
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

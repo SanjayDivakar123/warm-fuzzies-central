@@ -271,15 +271,17 @@ export default function AdminCompanyStatementModal({
     if (!pendingDelete) return;
     setDeleting(true);
     try {
-      if (pendingDelete.source === 'transaction') {
-        const rawId = pendingDelete.id.replace(/^tx-/, '');
-        const { error } = await supabase.from('billing_transactions').delete().eq('id', rawId);
-        if (error) throw error;
-      } else {
-        const rawId = pendingDelete.id.replace(/^credit-/, '');
-        const { error } = await supabase.from('billing_credits').delete().eq('id', rawId);
-        if (error) throw error;
-      }
+      const rawId = pendingDelete.source === 'transaction'
+        ? pendingDelete.id.replace(/^tx-/, '')
+        : pendingDelete.id.replace(/^credit-/, '');
+
+      const { data, error } = await supabase.functions.invoke('delete-billing-entry', {
+        body: { entryId: rawId, source: pendingDelete.source },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
       toast({ title: 'Entry deleted', description: 'The statement entry has been removed.' });
       setPendingDelete(null);
       await loadStatement();

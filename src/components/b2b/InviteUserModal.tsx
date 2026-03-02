@@ -14,9 +14,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Sparkles, ChevronDown, ChevronUp, Brain } from 'lucide-react';
+import { Loader2, UserPlus, Sparkles, ChevronDown, ChevronUp, Brain, CreditCard, AlertCircle } from 'lucide-react';
 import { AssessmentCategory } from '@/lib/assessmentQuestionLoader';
 import RoleAnalysisCard from './RoleAnalysisCard';
+
+function navigateToPaymentSettings() {
+  window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+  setTimeout(() => {
+    document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 400);
+}
 
 interface InviteUserModalProps {
   open: boolean;
@@ -57,6 +64,7 @@ export default function InviteUserModal({
   const [loading, setLoading] = useState(false);
   const [suggestingCategory, setSuggestingCategory] = useState(false);
   const [showRoleAnalysis, setShowRoleAnalysis] = useState(false);
+  const [paymentError, setPaymentError] = useState<{ title: string; message: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -139,19 +147,25 @@ export default function InviteUserModal({
         }
         const errData = payload ?? data;
         if (errData?.errorCode === 'NEEDS_PAYMENT_METHOD' || errData?.needsPaymentMethod) {
-          toast({
+          setPaymentError({
             title: 'Payment method required',
-            description: 'Please add a payment method in Settings before inviting users.',
-            variant: 'destructive',
+            message: 'No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.',
+          });
+          setLoading(false);
+          return;
+        }
+        if (errData?.errorCode === 'CARD_DECLINED') {
+          setPaymentError({
+            title: 'Card declined',
+            message: errData?.error || 'Your card was declined. Please update your payment method in Settings and try again.',
           });
           setLoading(false);
           return;
         }
         if (errData?.errorCode === 'CHARGE_FAILED') {
-          toast({
+          setPaymentError({
             title: 'Payment failed',
-            description: errData?.error || 'Failed to charge for this seat. Please check your payment method.',
-            variant: 'destructive',
+            message: errData?.error || 'There was an issue charging your card. Please check your payment method in Settings.',
           });
           setLoading(false);
           return;
@@ -161,19 +175,25 @@ export default function InviteUserModal({
 
       if (data?.error) {
         if (data.errorCode === 'NEEDS_PAYMENT_METHOD' || data.needsPaymentMethod) {
-          toast({
+          setPaymentError({
             title: 'Payment method required',
-            description: 'Please add a payment method in Settings before inviting users.',
-            variant: 'destructive',
+            message: 'No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.',
+          });
+          setLoading(false);
+          return;
+        }
+        if (data.errorCode === 'CARD_DECLINED') {
+          setPaymentError({
+            title: 'Card declined',
+            message: data.error || 'Your card was declined. Please update your payment method in Settings and try again.',
           });
           setLoading(false);
           return;
         }
         if (data.errorCode === 'CHARGE_FAILED') {
-          toast({
+          setPaymentError({
             title: 'Payment failed',
-            description: data.error || 'Failed to charge for this seat. Please check your payment method.',
-            variant: 'destructive',
+            message: data.error || 'There was an issue charging your card. Please check your payment method in Settings.',
           });
           setLoading(false);
           return;
@@ -181,16 +201,21 @@ export default function InviteUserModal({
         throw new Error(data.error);
       }
 
-      const proRatedAmount = data.billing?.proRatedAmount;
+      const billing = data.billing;
+      const proRatedAmount = billing?.proRatedAmount;
       let billingMsg = '';
-      if (data.billing?.charged) {
+      if (billing?.charged) {
         billingMsg = proRatedAmount
           ? ` (Card charged $${(proRatedAmount / 100).toFixed(2)} pro-rated)`
           : ' (Card charged)';
-      } else if (data.billing?.usedCredits) {
+      } else if (billing?.usedCredits) {
         billingMsg = proRatedAmount
-          ? ` (Used $${(proRatedAmount / 100).toFixed(2)} credit pro-rated)`
+          ? ` (Used $${(proRatedAmount / 100).toFixed(2)} billing credit)`
           : ' (Used billing credit)';
+      } else if (billing?.withinPrePaidSeats) {
+        const used = (billing.seatsUsed ?? 0) + 1;
+        const total = billing.seatsPurchased ?? '?';
+        billingMsg = ` (Pre-paid seat ${used}/${total} — charges start after seat ${total})`;
       }
 
       toast({
@@ -224,10 +249,42 @@ export default function InviteUserModal({
     setAssessmentCategory('professional');
     setAssessmentType('25q');
     setShowRoleAnalysis(false);
+    setPaymentError(null);
     onClose();
   };
 
   return (
+    <>
+    {/* Payment error modal — overlays the invite modal */}
+    <Dialog open={!!paymentError} onOpenChange={(isOpen) => { if (!isOpen) setPaymentError(null); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            {paymentError?.title}
+          </DialogTitle>
+          <DialogDescription className="pt-1">
+            {paymentError?.message}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex gap-2 sm:justify-end">
+          <Button variant="outline" onClick={() => setPaymentError(null)}>
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              setPaymentError(null);
+              handleClose();
+              navigateToPaymentSettings();
+            }}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Go to Payment Settings
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="w-[95vw] max-w-5xl overflow-hidden">
         <DialogHeader>
@@ -387,5 +444,6 @@ export default function InviteUserModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

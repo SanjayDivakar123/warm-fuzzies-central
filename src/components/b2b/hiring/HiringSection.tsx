@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { hiringSubscribeLock } from '@/lib/hiringSubscribeLock';
+import { useHiringSubscribeInFlight } from '@/lib/hiringSubscribeLock';
+import { subscribeHiring } from '@/lib/subscribeHiring';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, 
@@ -12,7 +13,6 @@ import {
   Plus,
   Lock,
   Sparkles,
-  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,8 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle, ShieldAlert, ExternalLink, CreditCard } from 'lucide-react';
 import { useHelpTour } from '@/contexts/HelpTourContext';
 
@@ -70,7 +68,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const [activeTab, setActiveTab] = useState<HiringTab>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  const subscribing = useHiringSubscribeInFlight(company.id);
 
   const [subscribeError, setSubscribeError] = useState<{
     type: 'no_payment_method' | 'card_declined' | 'auth_required' | 'generic';
@@ -78,8 +76,6 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
     description: string;
     actionUrl?: string;
   } | null>(null);
-  const { toast } = useToast();
-
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
   const hasHiringAccess = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
@@ -119,6 +115,13 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
         description: 'You need to add a payment method before subscribing. Go to Settings → Subscriptions to add a card.',
       };
     }
+    if (step === 'already_processing' || m.includes('already being processed')) {
+      return {
+        type: 'generic',
+        title: 'Subscription Already Processing',
+        description: 'A subscription request is already in progress. Please wait a few seconds and try again.',
+      };
+    }
     if (step === 'card_declined' || m.includes('declined') || m.includes('insufficient funds')) {
       return {
         type: 'card_declined',
@@ -141,23 +144,9 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   };
 
   const handleSubscribe = async () => {
-    if (hiringSubscribeLock.inFlight) return;
-    hiringSubscribeLock.inFlight = true;
-    setSubscribing(true);
     setSubscribeError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
-        body: { companyId: company.id },
-      });
-
-      if (error) {
-        let payload: any = null;
-        try { payload = await (error as any).context?.json?.(); } catch {}
-        const step = payload?.step || data?.step;
-        const msg = payload?.error || data?.error || error.message;
-        setSubscribeError(classifySubscribeError(msg, step));
-        return;
-      }
+      const data = await subscribeHiring(company.id);
 
       if (data?.requiresAction) {
         setSubscribeError({
@@ -177,12 +166,10 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       if (data?.success) {
         window.location.reload();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error subscribing to hiring tab:', err);
-      setSubscribeError(classifySubscribeError(err.message || ''));
-    } finally {
-      hiringSubscribeLock.inFlight = false;
-      setSubscribing(false);
+      const message = err instanceof Error ? err.message : '';
+      setSubscribeError(classifySubscribeError(message));
     }
   };
 

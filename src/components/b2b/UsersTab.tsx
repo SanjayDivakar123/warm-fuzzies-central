@@ -142,6 +142,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [changingEmail, setChangingEmail] = useState(false);
   const [jobRoleInput, setJobRoleInput] = useState<Record<string, string>>({});
   const [showJobChangeConfirmed, setShowJobChangeConfirmed] = useState(false);
+  const [paymentError, setPaymentError] = useState<{ title: string; message: string } | null>(null);
   const jobChangeConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const teamMembersCardRef = useRef<HTMLDivElement | null>(null);
   const usersTableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -379,18 +380,23 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         }
         const errData = payload ?? data;
         if (errData?.errorCode === "NEEDS_PAYMENT_METHOD" || errData?.needsPaymentMethod) {
-          toast({
+          setPaymentError({
             title: "Payment method required",
-            description: "Please add a payment method in Settings before inviting users.",
-            variant: "destructive",
+            message: "No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.",
+          });
+          return;
+        }
+        if (errData?.errorCode === "CARD_DECLINED") {
+          setPaymentError({
+            title: "Card declined",
+            message: errData?.error || "Your card was declined. Please update your payment method in Settings and try again.",
           });
           return;
         }
         if (errData?.errorCode === "CHARGE_FAILED") {
-          toast({
+          setPaymentError({
             title: "Payment failed",
-            description: errData?.error || "Failed to charge for this seat. Please check your payment method.",
-            variant: "destructive",
+            message: errData?.error || "There was an issue charging your card. Please check your payment method in Settings.",
           });
           return;
         }
@@ -399,38 +405,46 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
 
       // Check if the response contains an error message
       if (data?.error) {
-        // Check if they need to add a payment method
         if (data.errorCode === "NEEDS_PAYMENT_METHOD" || data.needsPaymentMethod) {
-          toast({
+          setPaymentError({
             title: "Payment method required",
-            description: "Please add a payment method in Settings before inviting users.",
-            variant: "destructive",
+            message: "No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.",
           });
           return;
         }
-        // Check for charge failure
+        if (data.errorCode === "CARD_DECLINED") {
+          setPaymentError({
+            title: "Card declined",
+            message: data.error || "Your card was declined. Please update your payment method in Settings and try again.",
+          });
+          return;
+        }
         if (data.errorCode === "CHARGE_FAILED") {
-          toast({
+          setPaymentError({
             title: "Payment failed",
-            description: data.error || "Failed to charge for this seat. Please check your payment method.",
-            variant: "destructive",
+            message: data.error || "There was an issue charging your card. Please check your payment method in Settings.",
           });
           return;
         }
         throw new Error(data.error);
       }
 
-      // Show billing info if charged (now pro-rated)
-      const proRatedAmount = data.billing?.proRatedAmount;
+      // Show billing info in success toast
+      const billing = data.billing;
+      const proRatedAmount = billing?.proRatedAmount;
       let billingMsg = "";
-      if (data.billing?.charged) {
+      if (billing?.charged) {
         billingMsg = proRatedAmount 
           ? ` (Card charged $${(proRatedAmount / 100).toFixed(2)} pro-rated)` 
           : " (Card charged)";
-      } else if (data.billing?.usedCredits) {
+      } else if (billing?.usedCredits) {
         billingMsg = proRatedAmount 
-          ? ` (Used $${(proRatedAmount / 100).toFixed(2)} credit pro-rated)` 
+          ? ` (Used $${(proRatedAmount / 100).toFixed(2)} billing credit)` 
           : " (Used billing credit)";
+      } else if (billing?.withinPrePaidSeats) {
+        const used = (billing.seatsUsed ?? 0) + 1;
+        const total = billing.seatsPurchased ?? '?';
+        billingMsg = ` (Pre-paid seat ${used}/${total} — charges start after seat ${total})`;
       }
 
       toast({
@@ -1213,11 +1227,25 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">Invite New User</CardTitle>
-              {isUnlimitedCompany && (
+              {isUnlimitedCompany ? (
                 <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0">
                   ∞ Unlimited
                 </Badge>
-              )}
+              ) : (() => {
+                const seatsPurchased = company.seats_purchased ?? 0;
+                const activeCount = users.filter((u: any) => u.status !== 'revoked').length;
+                if (seatsPurchased > 0) {
+                  const withinPrePaid = activeCount < seatsPurchased;
+                  return (
+                    <Badge variant={withinPrePaid ? 'secondary' : 'outline'} className={withinPrePaid ? '' : 'border-amber-400 text-amber-700 bg-amber-50'}>
+                      {withinPrePaid
+                        ? `${activeCount}/${seatsPurchased} pre-paid seats used`
+                        : `${activeCount} users — charges apply`}
+                    </Badge>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -2297,6 +2325,36 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           </div>
         )}
       </div>
+
+      {/* Payment error modal */}
+      <AlertDialog open={!!paymentError} onOpenChange={(open) => { if (!open) setPaymentError(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              {paymentError?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {paymentError?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPaymentError(null)}>Close</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setPaymentError(null);
+                window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                setTimeout(() => {
+                  document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 400);
+              }}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Go to Payment Settings
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }

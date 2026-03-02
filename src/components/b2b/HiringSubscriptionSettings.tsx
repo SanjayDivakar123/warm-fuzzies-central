@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { hiringSubscribeLock } from '@/lib/hiringSubscribeLock';
+import { useHiringSubscribeInFlight } from '@/lib/hiringSubscribeLock';
+import { subscribeHiring } from '@/lib/subscribeHiring';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +72,7 @@ export default function HiringSubscriptionSettings({
   const creditContribution = Math.min(creditBalance, hiringCost);
   const cardCharge = hiringCost - creditContribution;
 
-  const [subscribing, setSubscribing] = useState(false);
+  const subscribing = useHiringSubscribeInFlight(company.id);
   const [noPaymentMethod, setNoPaymentMethod] = useState(false);
   const [subscribeError, setSubscribeError] = useState<{
     title: string;
@@ -289,11 +290,12 @@ export default function HiringSubscriptionSettings({
 
       setStatementRows(allRows);
       setStatementTotals(totals);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading monthly statement:', error);
+      const message = error instanceof Error ? error.message : 'Unable to load billing statement right now.';
       toast({
         title: 'Failed to load statement',
-        description: error.message || 'Unable to load billing statement right now.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -349,6 +351,13 @@ export default function HiringSubscriptionSettings({
         description: 'No card is on file for this account. Please add a payment method below before subscribing.',
       };
     }
+    if (step === 'already_processing' || m.includes('already being processed')) {
+      return {
+        type: 'generic',
+        title: 'Subscription Already Processing',
+        description: 'A subscription request is already in progress. Please wait a few seconds and try again.',
+      };
+    }
     if (
       m.includes('requires additional user action') ||
       m.includes('requires_action') ||
@@ -378,24 +387,10 @@ export default function HiringSubscriptionSettings({
   };
 
   const handleSubscribe = async () => {
-    if (hiringSubscribeLock.inFlight) return;
-    hiringSubscribeLock.inFlight = true;
-    setSubscribing(true);
     setNoPaymentMethod(false);
     setSubscribeError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
-        body: { companyId: company.id },
-      });
-
-      if (error) {
-        let payload: any = null;
-        try { payload = await (error as any).context?.json?.(); } catch {}
-        const step = payload?.step || data?.step;
-        const msg = payload?.error || data?.error || error.message || '';
-        setSubscribeError(classifyError(msg, step));
-        return;
-      }
+      const data = await subscribeHiring(company.id);
 
       if (data?.requiresAction) {
         setSubscribeError({
@@ -408,6 +403,9 @@ export default function HiringSubscriptionSettings({
       }
 
       if (data?.error) {
+        if (data.step === 'no_default_payment_method') {
+          setNoPaymentMethod(true);
+        }
         setSubscribeError(classifyError(data.error, data.step));
         return;
       }
@@ -421,12 +419,10 @@ export default function HiringSubscriptionSettings({
           description: 'Something went wrong processing your subscription. Please try again or contact support.',
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error subscribing:', error);
-      setSubscribeError(classifyError(error.message || ''));
-    } finally {
-      hiringSubscribeLock.inFlight = false;
-      setSubscribing(false);
+      const message = error instanceof Error ? error.message : '';
+      setSubscribeError(classifyError(message));
     }
   };
 
@@ -451,11 +447,12 @@ export default function HiringSubscriptionSettings({
       if (onSubscriptionUpdated) {
         onSubscriptionUpdated();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cancelling subscription:', error);
+      const message = error instanceof Error ? error.message : 'Failed to cancel subscription';
       toast({
         title: 'Cancellation failed',
-        description: error.message || 'Failed to cancel subscription',
+        description: message,
         variant: 'destructive',
       });
     } finally {

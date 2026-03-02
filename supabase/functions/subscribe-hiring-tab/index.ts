@@ -36,7 +36,9 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     const body = await req.json();
-    const { companyId, useCredits = false } = body;
+    const companyId = body?.companyId;
+    const rawRequestId = typeof body?.requestId === "string" ? body.requestId.trim() : "";
+    const requestId = rawRequestId || crypto.randomUUID();
 
     if (!companyId) throw new Error("companyId is required");
 
@@ -61,6 +63,8 @@ serve(async (req) => {
 
     if (companyError || !company) throw new Error("Company not found");
 
+    const responseHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
     // Block if an active subscription already exists — max 1 per company
     if (
       company.hiring_subscription_enabled &&
@@ -70,8 +74,42 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: "This company already has an active Hiring Tab subscription.",
         step: "already_subscribed",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }), { headers: responseHeaders, status: 400 });
     }
+
+    let lockAcquired = false;
+    let lockStatus: "processing" | "completed" | "failed" = "failed";
+    let lockTtlSeconds = 15;
+    let lockSubscriptionId: string | null = null;
+    let lockPaymentIntentId: string | null = null;
+    let lockError: string | null = null;
+
+    const { data: lockData, error: lockErrorResponse } = await supabase.rpc("acquire_hiring_subscription_lock", {
+      p_company_id: companyId,
+      p_request_id: requestId,
+      p_ttl_seconds: 120,
+    });
+
+    if (lockErrorResponse) {
+      console.error("Failed to acquire subscription lock:", lockErrorResponse);
+      return new Response(JSON.stringify({
+        error: "Unable to process subscription right now. Please try again.",
+        step: "acquire_lock_failed",
+      }), { headers: responseHeaders, status: 500 });
+    }
+
+    const currentLock = Array.isArray(lockData) ? lockData[0] : lockData;
+    if (!currentLock?.acquired) {
+      return new Response(JSON.stringify({
+        error: "A subscription request is already being processed. Please wait a few seconds and try again.",
+        step: "already_processing",
+        requestId: currentLock?.current_request_id ?? null,
+      }), { headers: responseHeaders, status: 409 });
+    }
+
+    lockAcquired = true;
+
+    try {
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
     const hiringCost = 500.0; // $500.00 in dollars
@@ -93,21 +131,24 @@ serve(async (req) => {
         .eq("id", companyId);
 
       if (freeUpdateError) {
+        lockError = "Failed to activate internal free hiring subscription";
         console.error("update_company_internal_free error", freeUpdateError);
         return new Response(JSON.stringify({
           error: "Failed to activate internal free hiring subscription",
           step: "update_company_internal_free",
           details: (freeUpdateError as any)?.message || freeUpdateError,
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+        }), { headers: responseHeaders, status: 400 });
       }
 
+      lockStatus = "completed";
+      lockTtlSeconds = 600;
       return new Response(JSON.stringify({
         success: true,
         subscriptionId: null,
         status: "active",
         internalFree: true,
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: responseHeaders,
         status: 200,
       });
     }
@@ -138,9 +179,9 @@ serve(async (req) => {
     if (!stripeSecret) throw new Error("Stripe configuration error");
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 
-    // Idempotency window: changes every 30 s so a button double-tap within that window
-    // is collapsed to a single Stripe request.
-    const idempotencyWindow = Math.floor(Date.now() / 30000);
+    // Request-scoped idempotency key base so retries of the same client request
+    // reuse the same Stripe operation and never double-charge.
+    const idempotencyKeyBase = `hiring-${companyId}-${requestId}`;
 
     // --- Resolve Stripe customer FIRST (before duplicate guard) ---
     // This ensures we have a valid customer ID to check for existing subscriptions,
@@ -156,7 +197,7 @@ serve(async (req) => {
           email: company.admin_email,
           name: company.name,
           metadata: { company_id: company.id },
-        }, { idempotencyKey: `cust-hiring-${companyId}-${idempotencyWindow}` });
+        }, { idempotencyKey: `cust-${idempotencyKeyBase}` });
         customerId = customer.id;
       }
       await supabase.from("companies").update({ stripe_customer_id: customerId }).eq("id", companyId);
@@ -195,12 +236,15 @@ serve(async (req) => {
             hiring_subscription_current_period_end: new Date(existingHiringSub.current_period_end * 1000).toISOString(),
             hiring_subscription_cancel_at_period_end: existingHiringSub.cancel_at_period_end,
           }).eq("id", companyId);
+          lockStatus = "completed";
+          lockTtlSeconds = 600;
+          lockSubscriptionId = existingHiringSub.id;
           return new Response(JSON.stringify({
             success: true,
             subscriptionId: existingHiringSub.id,
             status: existingHiringSub.status,
             alreadyExisted: true,
-          }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+          }), { headers: responseHeaders, status: 200 });
         }
 
         // Incomplete subscription exists (from failed payment) — cancel it to avoid duplicates
@@ -232,12 +276,13 @@ serve(async (req) => {
         .eq("id", companyId);
 
       if (updateError) {
+        lockError = "Failed to activate subscription";
         console.error("update_company (full credits) error", updateError);
         return new Response(JSON.stringify({
           error: "Failed to activate subscription",
           step: "update_company",
           details: (updateError as any)?.message || updateError,
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+        }), { headers: responseHeaders, status: 400 });
       }
 
       await supabase.from("billing_transactions").insert({
@@ -248,20 +293,22 @@ serve(async (req) => {
       });
 
       console.log("Subscription activated — fully covered by credits");
+      lockStatus = "completed";
+      lockTtlSeconds = 600;
       return new Response(JSON.stringify({
         success: true,
         message: "Subscription activated using billing credits",
         creditApplied: creditContribution,
         cardCharged: 0,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+      }), { headers: responseHeaders, status: 200 });
     }
 
     // --- Case B & C: Card must be charged (all or partial $500) ---
     // Credits are only deducted AFTER the card succeeds.
     //
-    // The price + subscription idempotency keys (30-second window) ensure that even if
-    // this function is called concurrently the card is charged AT MOST ONCE per window.
-    // The Stripe-level duplicate guard above handles cross-window retries.
+    // The price + subscription idempotency keys are request-scoped, so retries
+    // of the same request ID reuse the exact same Stripe operation.
+    // The Stripe-level duplicate guard above handles cross-request retries.
 
     // Find attached payment method (email-based fallback handles customer ID mismatches)
     let paymentMethods = await stripe.paymentMethods.list({ customer: customerId, type: "card" });
@@ -293,23 +340,20 @@ serve(async (req) => {
     }
 
     if (!defaultPM) {
+      lockError = "No payment method on file";
       return new Response(JSON.stringify({
         error: "No payment method on file. Please add a payment method first.",
         step: "no_default_payment_method",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }), { headers: responseHeaders, status: 400 });
     }
 
-    // Create $500/month price for recurring billing.
-    // The idempotency key is tied to the same time window as the subscription creation,
-    // so two concurrent calls in the same window share the same price ID. Without this,
-    // each call creates a unique price object — the subscription idempotency key then
-    // sees a mismatched request body and Stripe raises a conflict error on the second call.
+    // Create $500/month price for recurring billing using request-scoped idempotency.
     const price = await stripe.prices.create({
       currency: "usd",
       unit_amount: 50000,
       recurring: { interval: "month" },
       product_data: { name: "RoleColorFinder Hiring Tab" },
-    }, { idempotencyKey: `price-hiring-${companyId}-${idempotencyWindow}` });
+    }, { idempotencyKey: `price-${idempotencyKeyBase}` });
 
     // If partial credits apply, create a one-time coupon to reduce the first invoice.
     // Both the coupon and subscription use idempotency keys so concurrent calls
@@ -321,9 +365,9 @@ serve(async (req) => {
         currency: "usd",
         duration: "once",
         name: `Billing Credits ($${creditContribution.toFixed(2)})`,
-      }, { idempotencyKey: `coupon-hiring-${companyId}-${idempotencyWindow}` });
+      }, { idempotencyKey: `coupon-${idempotencyKeyBase}` });
       couponId = coupon.id;
-      console.log(`Coupon ${couponId} for $${creditContribution.toFixed(2)} (idempotency window ${idempotencyWindow})`);
+      console.log(`Coupon ${couponId} for $${creditContribution.toFixed(2)} (request ${requestId})`);
     }
 
     // Create the subscription. error_if_incomplete makes Stripe throw immediately on
@@ -338,34 +382,37 @@ serve(async (req) => {
         expand: ["latest_invoice.payment_intent"],
         metadata: { company_id: companyId, type: "hiring_subscription" },
         ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
-      }, { idempotencyKey: `sub-hiring-${companyId}-${idempotencyWindow}` });
+      }, { idempotencyKey: `sub-${idempotencyKeyBase}` });
     } catch (stripeErr: any) {
       // Card declined / insufficient funds / etc.
       if (stripeErr?.type === "StripeCardError" || stripeErr?.code === "card_declined" ||
           stripeErr?.decline_code || stripeErr?.param === "payment_method_data") {
+        lockError = "Card declined";
         return new Response(JSON.stringify({
           error: "Your card was declined. Please check your card details or update your payment method and try again.",
           step: "card_declined",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+        }), { headers: responseHeaders, status: 400 });
       }
       // 3DS / bank authentication required
       if (stripeErr?.payment_intent?.status === "requires_action" ||
           stripeErr?.code === "subscription_payment_intent_requires_action") {
         const pi = stripeErr.payment_intent;
         const actionUrl = pi?.next_action?.redirect_to_url?.url ?? pi?.next_action?.use_stripe_sdk?.stripe_js;
+        lockError = "Requires authentication";
         return new Response(JSON.stringify({
           success: false,
           requiresAction: true,
           actionUrl,
           clientSecret: pi?.client_secret,
           step: "requires_authentication",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+        }), { headers: responseHeaders, status: 200 });
       }
       console.error("Stripe subscription create error:", stripeErr);
+      lockError = stripeErr?.message || "Payment failed";
       return new Response(JSON.stringify({
         error: stripeErr?.message || "Payment could not be processed. Please update your payment method and try again.",
         step: "payment_failed",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }), { headers: responseHeaders, status: 400 });
     }
 
     const latestInvoice = typeof subscription.latest_invoice !== "string" ? subscription.latest_invoice : null;
@@ -384,17 +431,19 @@ serve(async (req) => {
           hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           hiring_subscription_cancel_at_period_end: false,
         }).eq("id", companyId);
+        lockError = "Requires authentication";
         return new Response(JSON.stringify({
           success: false, requiresAction: true, actionUrl,
           clientSecret: paymentIntent.client_secret, subscriptionId: subscription.id,
           step: "requires_authentication",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+        }), { headers: responseHeaders, status: 200 });
       }
       try { await stripe.subscriptions.cancel(subscription.id); } catch (_) {}
+      lockError = "Card declined";
       return new Response(JSON.stringify({
         error: "Your card was declined. Please check your card details or update your payment method and try again.",
         step: "card_declined",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }), { headers: responseHeaders, status: 400 });
     }
 
     // Card charge succeeded — now safe to deduct credits
@@ -422,23 +471,46 @@ serve(async (req) => {
       })
       .eq("id", companyId);
     if (subUpdateError) {
+      lockError = "Failed to update company with Stripe subscription";
       console.error("update_company_subscription error", subUpdateError);
       return new Response(JSON.stringify({
         error: "Failed to update company with Stripe subscription",
         step: "update_company_subscription",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+      }), { headers: responseHeaders, status: 400 });
     }
 
-    await supabase.from("billing_transactions").insert({
-      company_id: companyId,
-      type: "charge",
-      amount: cardCharge,
-      description: creditContribution > 0
-        ? `Hiring Tab subscription — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
-        : "Hiring Tab subscription (card on file)",
-      stripe_payment_intent_id: paymentIntent?.id,
-    });
+    if (!paymentIntent?.id) {
+      lockError = "Missing payment intent on successful subscription";
+      return new Response(JSON.stringify({
+        error: "Payment succeeded but no payment intent was returned.",
+        step: "missing_payment_intent",
+      }), { headers: responseHeaders, status: 400 });
+    }
 
+    const { error: chargeInsertError } = await supabase
+      .from("billing_transactions")
+      .upsert({
+        company_id: companyId,
+        type: "charge",
+        amount: cardCharge,
+        description: creditContribution > 0
+          ? `Hiring Tab subscription — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
+          : "Hiring Tab subscription (card on file)",
+        stripe_payment_intent_id: paymentIntent.id,
+      }, { onConflict: "stripe_payment_intent_id" });
+
+    if (chargeInsertError) {
+      lockError = "Failed to persist charge transaction";
+      return new Response(JSON.stringify({
+        error: "Failed to persist billing transaction.",
+        step: "insert_billing_transaction",
+      }), { headers: responseHeaders, status: 400 });
+    }
+
+    lockStatus = "completed";
+    lockTtlSeconds = 600;
+    lockSubscriptionId = subscription.id;
+    lockPaymentIntentId = paymentIntent.id;
     return new Response(JSON.stringify({
       success: true,
       subscriptionId: subscription.id,
@@ -446,10 +518,30 @@ serve(async (req) => {
       creditApplied: creditContribution,
       cardCharged: cardCharge,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: responseHeaders,
       status: 200,
     });
-  } catch (error) {
+    } finally {
+      if (lockAcquired) {
+        const { error: persistLockError } = await supabase
+          .from("hiring_subscription_request_locks")
+          .update({
+            status: lockStatus,
+            updated_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + lockTtlSeconds * 1000).toISOString(),
+            subscription_id: lockSubscriptionId,
+            payment_intent_id: lockPaymentIntentId,
+            last_error: lockStatus === "failed" ? (lockError ?? "Subscription failed") : null,
+          })
+          .eq("company_id", companyId)
+          .eq("request_id", requestId);
+
+        if (persistLockError) {
+          console.error("Failed to persist hiring subscription lock state:", persistLockError);
+        }
+      }
+    }
+  } catch (error: any) {
     console.error("Error creating hiring subscription:", error);
     return new Response(JSON.stringify({ 
       error: error.message 

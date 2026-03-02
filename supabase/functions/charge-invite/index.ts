@@ -106,13 +106,17 @@ serve(async (req) => {
     const seatsPurchased = company.seats_purchased || 0;
     logStep("Seat check", { activeUserCount, seatsPurchased });
 
-    // If the next user still fits within the pre-paid seat allocation, no charge needed
-    if ((activeUserCount ?? 0) < seatsPurchased) {
+    // If the next user still fits within the pre-paid seat allocation, no charge needed.
+    // seatsPurchased = 0 means no pre-paid seats configured; every invite proceeds to billing.
+    if (seatsPurchased > 0 && (activeUserCount ?? 0) < seatsPurchased) {
       logStep("Within pre-paid seats - no charge required", { activeUserCount, seatsPurchased });
       return new Response(JSON.stringify({
         success: true,
         charged: false,
         usedCredits: false,
+        withinPrePaidSeats: true,
+        seatsUsed: activeUserCount ?? 0,
+        seatsPurchased,
         message: `Within pre-paid seat allocation (${activeUserCount}/${seatsPurchased} seats used)`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -120,27 +124,33 @@ serve(async (req) => {
       });
     }
 
+    logStep("Beyond pre-paid seats — will attempt charge", { activeUserCount, seatsPurchased });
+
     // Calculate pro-rated charge amount for new user (beyond pre-paid seats)
-    const chargeAmount = calculateProRatedAmount();
-    const creditBalance = company.credit_balance || 0;
+    const chargeAmount = calculateProRatedAmount(); // in cents, e.g. 2000 = $20.00
+    // credit_balance is stored as dollars in the DB (e.g. 20.00 = $20.00)
+    const creditBalanceDollars = typeof company.credit_balance === "number"
+      ? company.credit_balance
+      : parseFloat((company.credit_balance as unknown as string) ?? "0");
+    const creditBalanceCents = Math.round(creditBalanceDollars * 100);
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    logStep("Charge amount calculated", { chargeAmount, creditBalance });
+    logStep("Charge amount calculated", { chargeAmountCents: chargeAmount, creditBalanceDollars, creditBalanceCents });
 
-    // Check if we can use credits
-    if (creditBalance >= chargeAmount) {
-      logStep("Using credit balance", { creditBalance, chargeAmount });
+    // Check if we can use credits (compare cents to cents)
+    if (creditBalanceCents >= chargeAmount) {
+      logStep("Using credit balance", { creditBalanceCents, chargeAmount });
 
-      // Deduct from credit balance
-      const newBalance = creditBalance - chargeAmount;
+      // Deduct from credit balance (stored as dollars)
+      const newBalanceDollars = creditBalanceDollars - chargeAmount / 100;
       const { error: updateError } = await supabase
         .from("companies")
-        .update({ credit_balance: newBalance })
+        .update({ credit_balance: newBalanceDollars })
         .eq("id", company_id);
 
       if (updateError) throw new Error("Failed to deduct credits");
 
-      // Record transaction
+      // Record transaction (amount in cents for consistency with other charge-invite transactions)
       await supabase.from("billing_transactions").insert({
         company_id: company_id,
         type: "user_addition_credits",
@@ -148,14 +158,14 @@ serve(async (req) => {
         description: `Pro-rated user charge ($${(chargeAmount / 100).toFixed(2)}) - used billing credits`
       });
 
-      logStep("Credits used successfully", { newBalance });
+      logStep("Credits used successfully", { newBalanceDollars });
 
       return new Response(JSON.stringify({ 
         success: true, 
         charged: false, 
         usedCredits: true,
         creditsUsed: chargeAmount,
-        newBalance,
+        newBalance: newBalanceDollars,
         proRatedAmount: chargeAmount
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -166,13 +176,13 @@ serve(async (req) => {
     // Need to charge via Stripe (partial credits + card)
     logStep("Charging via Stripe");
 
-    let creditsUsed = 0;
+    let creditsUsedCents = 0;
     let cardCharged = chargeAmount;
 
-    // Use any available credits first
-    if (creditBalance > 0) {
-      creditsUsed = creditBalance;
-      cardCharged = chargeAmount - creditBalance;
+    // Use any available credits first (partial offset)
+    if (creditBalanceCents > 0) {
+      creditsUsedCents = creditBalanceCents;
+      cardCharged = chargeAmount - creditBalanceCents;
 
       await supabase
         .from("companies")
@@ -182,11 +192,11 @@ serve(async (req) => {
       await supabase.from("billing_transactions").insert({
         company_id: company_id,
         type: "user_addition_credits",
-        amount: -creditBalance,
-        description: `Pro-rated user charge - used remaining credits ($${(creditBalance / 100).toFixed(2)})`
+        amount: -creditsUsedCents,
+        description: `Pro-rated user charge - used remaining credits ($${(creditBalanceDollars).toFixed(2)})`
       });
 
-      logStep("Used partial credits", { creditsUsed, cardCharged });
+      logStep("Used partial credits", { creditsUsedCents, cardCharged });
     }
 
     // Get or create Stripe customer
@@ -226,12 +236,13 @@ serve(async (req) => {
     if (paymentMethods.data.length === 0) {
       logStep("No payment method on file");
       return new Response(JSON.stringify({ 
-        success: false, 
+        success: false,
+        errorCode: "NEEDS_PAYMENT_METHOD",
         needsPaymentMethod: true,
-        message: "No payment method on file. Please add a payment method first." 
+        error: "No payment method on file. Please add a payment method in Settings before inviting users.",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 200,
       });
     }
 
@@ -239,25 +250,49 @@ serve(async (req) => {
     logStep("Payment method found", { paymentMethodId: defaultPaymentMethod });
 
     // Create and confirm payment intent for remaining amount
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: cardCharged,
-      currency: "usd",
-      customer: customerId,
-      payment_method: defaultPaymentMethod,
-      off_session: true,
-      confirm: true,
-      description: `Pro-rated user charge for ${company.name}`,
-      metadata: {
-        company_id: company.id,
-        type: "user_addition",
-        pro_rated_amount: cardCharged.toString()
-      }
-    });
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: cardCharged,
+        currency: "usd",
+        customer: customerId,
+        payment_method: defaultPaymentMethod,
+        off_session: true,
+        confirm: true,
+        description: `Pro-rated user charge for ${company.name}`,
+        metadata: {
+          company_id: company.id,
+          type: "user_addition",
+          pro_rated_amount: cardCharged.toString()
+        }
+      });
+    } catch (stripeError: any) {
+      // Stripe throws for card declines when off_session + confirm
+      const declineCode = stripeError?.decline_code || stripeError?.code || "card_declined";
+      logStep("Card declined by Stripe", { declineCode, message: stripeError?.message });
+      return new Response(JSON.stringify({
+        success: false,
+        errorCode: "CARD_DECLINED",
+        error: "Your card was declined. Please check your payment method in Settings.",
+        declineCode,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     logStep("Payment intent created", { paymentIntentId: paymentIntent.id, status: paymentIntent.status });
 
     if (paymentIntent.status !== "succeeded") {
-      throw new Error(`Payment failed with status: ${paymentIntent.status}`);
+      logStep("Payment not succeeded", { status: paymentIntent.status });
+      return new Response(JSON.stringify({
+        success: false,
+        errorCode: "CARD_DECLINED",
+        error: `Your card was declined. Please check your payment method in Settings.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     // Record transaction
@@ -274,8 +309,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       charged: true, 
-      usedCredits: creditsUsed > 0,
-      creditsUsed,
+      usedCredits: creditsUsedCents > 0,
+      creditsUsed: creditsUsedCents,
       amountCharged: cardCharged,
       totalAmount: chargeAmount,
       proRatedAmount: chargeAmount,
