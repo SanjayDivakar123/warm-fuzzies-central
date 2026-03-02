@@ -40,12 +40,14 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { companyId, enable } = body;
+    const { companyId, action } = body;
 
     if (!companyId) throw new Error("companyId is required");
-    if (typeof enable !== "boolean") throw new Error("enable must be a boolean");
+    if (!action || !['enable', 'cancel_subscription', 'remove_access'].includes(action)) {
+      throw new Error("action must be 'enable', 'cancel_subscription', or 'remove_access'");
+    }
 
-    console.log(`Super admin ${userEmail} attempting to ${enable ? 'enable' : 'disable'} hiring for company ${companyId}`);
+    console.log(`Super admin ${userEmail} attempting to ${action} hiring for company ${companyId}`);
 
     // Get company details
     const { data: company, error: companyError } = await supabase
@@ -61,8 +63,8 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 
-    if (enable) {
-      // ENABLE hiring platform access
+    if (action === 'enable') {
+      // ENABLE/GRANT hiring platform access
       // If they have a subscription that was cancelled, reactivate it
       if (company.hiring_subscription_id) {
         try {
@@ -135,13 +137,53 @@ serve(async (req) => {
           status: 200,
         });
       }
-    } else {
-      // DISABLE hiring platform access
+    } else if (action === 'cancel_subscription') {
+      // CANCEL SUBSCRIPTION - set to cancel at period end (keep access until then)
+      if (company.hiring_subscription_id) {
+        try {
+          // Set subscription to cancel at period end in Stripe
+          const subscription = await stripe.subscriptions.update(
+            company.hiring_subscription_id,
+            { cancel_at_period_end: true }
+          );
+          console.log("Set subscription to cancel at period end:", company.hiring_subscription_id);
+
+          // Update company to reflect cancellation scheduled
+          await supabase
+            .from("companies")
+            .update({
+              hiring_subscription_cancel_at_period_end: true,
+              hiring_subscription_current_period_end: subscription.current_period_end 
+                ? new Date(subscription.current_period_end * 1000).toISOString() 
+                : null,
+            })
+            .eq("id", companyId);
+
+          return new Response(JSON.stringify({ 
+            success: true,
+            action: "cancelled_at_period_end",
+            message: `Subscription will cancel at end of billing period for ${company.name}`,
+            periodEnd: subscription.current_period_end 
+              ? new Date(subscription.current_period_end * 1000).toISOString() 
+              : null,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } catch (stripeError) {
+          console.error("Error cancelling subscription:", stripeError);
+          throw new Error("Failed to cancel subscription in Stripe");
+        }
+      } else {
+        throw new Error("No active subscription to cancel");
+      }
+    } else if (action === 'remove_access') {
+      // REMOVE ACCESS IMMEDIATELY - disable now
       if (company.hiring_subscription_id) {
         try {
           // Cancel the subscription immediately in Stripe
           await stripe.subscriptions.cancel(company.hiring_subscription_id);
-          console.log("Cancelled Stripe subscription:", company.hiring_subscription_id);
+          console.log("Cancelled Stripe subscription immediately:", company.hiring_subscription_id);
         } catch (stripeError) {
           console.error("Error cancelling Stripe subscription:", stripeError);
           // Continue even if Stripe cancellation fails
@@ -149,28 +191,28 @@ serve(async (req) => {
       }
 
       // Update company to disable hiring immediately
-      // Set hiring_ever_subscribed to true so they see the resubscribe flow
       await supabase
         .from("companies")
         .update({
           hiring_subscription_enabled: false,
           hiring_subscription_status: "cancelled",
           hiring_subscription_cancel_at_period_end: false,
-          hiring_ever_subscribed: true, // Show resubscribe flow instead of full paywall
         })
         .eq("id", companyId);
 
-      console.log("Hiring platform disabled for company:", companyId);
+      console.log("Hiring platform disabled immediately for company:", companyId);
 
       return new Response(JSON.stringify({ 
         success: true,
-        action: "disabled",
-        message: `Hiring platform access disabled for ${company.name}`,
+        action: "removed",
+        message: `Hiring platform access removed immediately for ${company.name}`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
+
+    throw new Error("Invalid action specified");
   } catch (error) {
     console.error("Error toggling hiring access:", error);
     return new Response(JSON.stringify({ 

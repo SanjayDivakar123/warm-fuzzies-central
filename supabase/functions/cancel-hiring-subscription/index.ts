@@ -54,8 +54,60 @@ serve(async (req) => {
 
     if (companyError || !company) throw new Error("Company not found");
 
+    // Check if hiring is enabled
+    if (!company.hiring_subscription_enabled) {
+      throw new Error("Hiring platform is not currently enabled for this company");
+    }
+
+    // If no Stripe subscription exists (e.g., enabled by super admin)
     if (!company.hiring_subscription_id) {
-      throw new Error("No active hiring subscription found");
+      // Only super admin (cancelImmediately=true) can instantly disable
+      // Regular users should still have access until end of month
+      if (cancelImmediately) {
+        await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_enabled: false,
+            hiring_subscription_status: "cancelled",
+            hiring_subscription_cancel_at_period_end: false,
+            hiring_subscription_current_period_end: null,
+          })
+          .eq("id", companyId);
+
+        console.log("Hiring platform disabled immediately by super admin (no Stripe subscription):", companyId);
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          cancelledImmediately: true,
+          message: "Hiring platform access has been removed",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        // Regular user cancellation - give them access until end of current month
+        const now = new Date();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_cancel_at_period_end: true,
+            hiring_subscription_current_period_end: endOfMonth.toISOString(),
+          })
+          .eq("id", companyId);
+
+        console.log("Hiring platform set to cancel at end of month (no Stripe subscription):", companyId);
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          cancelAtPeriodEnd: true,
+          periodEnd: endOfMonth.toISOString(),
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     const stripeSecret = Deno.env.get("STRIPE_SECRET");
@@ -116,11 +168,17 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error("Error cancelling hiring subscription:", error);
+    
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    const isClientError = errorMessage.includes("not an admin") || 
+                         errorMessage.includes("not currently enabled") ||
+                         errorMessage.includes("required");
+    
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: errorMessage 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: isClientError ? 400 : 500,
     });
   }
 });

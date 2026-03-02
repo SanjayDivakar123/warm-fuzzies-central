@@ -132,7 +132,6 @@ serve(async (req) => {
           hiring_subscription_status: "active",
           hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
           hiring_subscription_cancel_at_period_end: false,
-          hiring_ever_subscribed: true,
         })
         .eq("id", companyId);
 
@@ -246,7 +245,6 @@ serve(async (req) => {
             hiring_subscription_id: existingHiringSub.id,
             hiring_subscription_current_period_end: new Date(existingHiringSub.current_period_end * 1000).toISOString(),
             hiring_subscription_cancel_at_period_end: existingHiringSub.cancel_at_period_end,
-            hiring_ever_subscribed: true,
           }).eq("id", companyId);
           lockStatus = "completed";
           lockTtlSeconds = 600;
@@ -284,7 +282,6 @@ serve(async (req) => {
           hiring_subscription_status: "active",
           hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
           hiring_subscription_cancel_at_period_end: false,
-          hiring_ever_subscribed: true,
         })
         .eq("id", companyId);
 
@@ -487,7 +484,6 @@ serve(async (req) => {
         hiring_subscription_id: subscription.id,
         hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         hiring_subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
-        hiring_ever_subscribed: true,
       })
       .eq("id", companyId);
     if (subUpdateError) {

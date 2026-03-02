@@ -82,6 +82,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
   } | null>(null);
   const [showUnlockedModal, setShowUnlockedModal] = useState(false);
   const [resubscribing, setResubscribing] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
   const hasHiringAccess = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
@@ -285,6 +286,28 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
       setSubscribeError(classifySubscribeError(message));
     } finally {
       setResubscribing(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setReactivating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resubscribe-hiring', {
+        body: { companyId: company.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.success && onSubscriptionUpdated) {
+        onSubscriptionUpdated();
+      }
+    } catch (err: unknown) {
+      console.error('Error reactivating subscription:', err);
+      const message = err instanceof Error ? err.message : '';
+      setSubscribeError(classifySubscribeError(message));
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -624,23 +647,6 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
 
   return (
     <div className="space-y-6">
-      {showCancellationWarning && (
-        <Card className="border-yellow-500/50 bg-yellow-500/5">
-          <CardContent className="pt-4">
-            <div className="flex items-start gap-3">
-              <Lock className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium text-sm">Subscription Ending</p>
-                <p className="text-sm text-muted-foreground">
-                  Your Hiring tab subscription will end on {new Date(company.hiring_subscription_current_period_end!).toLocaleDateString()}.
-                  You can reactivate it in Settings before it expires.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HiringTab)}>
         {/* Keep the nav bar position fixed across sub-tabs */}
         <div className="mb-2">
@@ -752,6 +758,45 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
           <LegacyCandidatesTab company={company} />
         </TabsContent>
       </Tabs>
+
+      {/* Subscription Ending Warning Banner */}
+      {showCancellationWarning && (
+        <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                  Subscription ending on {new Date(company.hiring_subscription_current_period_end!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
+                <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">
+                  You'll retain access until then. Reactivate in Settings to continue using the Hiring Platform.
+                </p>
+              </div>
+              {isHROrAdmin && (
+                <Button
+                  onClick={handleReactivateSubscription}
+                  disabled={reactivating}
+                  size="sm"
+                  variant="default"
+                  className="flex-shrink-0"
+                >
+                  {reactivating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Renewing...
+                    </>
+                  ) : (
+                    'Renew Subscription'
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Subscribe Error Modal */}
       <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>

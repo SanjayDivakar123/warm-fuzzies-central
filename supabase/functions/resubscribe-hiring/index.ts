@@ -48,18 +48,21 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, hiring_subscription_id, hiring_ever_subscribed, hiring_subscription_cancel_at_period_end")
+      .select("id, hiring_subscription_id, hiring_subscription_cancel_at_period_end, hiring_subscription_enabled, hiring_subscription_status")
       .eq("id", companyId)
       .single();
 
     if (companyError || !company) throw new Error("Company not found");
 
-    // Only allow resubscribe for companies that have subscribed before
-    if (!company.hiring_ever_subscribed) {
-      throw new Error("This company has never subscribed. Please use the regular subscription flow.");
-    }
+    console.log("Company state:", {
+      id: company.id,
+      has_subscription_id: !!company.hiring_subscription_id,
+      cancel_at_period_end: company.hiring_subscription_cancel_at_period_end,
+      enabled: company.hiring_subscription_enabled,
+      status: company.hiring_subscription_status,
+    });
 
-    // Check if they have an active subscription that's set to cancel
+    // Check if they have a subscription that's set to cancel at period end
     if (company.hiring_subscription_id && company.hiring_subscription_cancel_at_period_end) {
       // Reactivate by removing cancellation
       const stripeSecret = Deno.env.get("STRIPE_SECRET");
@@ -67,36 +70,68 @@ serve(async (req) => {
 
       const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 
-      // Update Stripe subscription to not cancel at period end
-      const subscription = await stripe.subscriptions.update(
-        company.hiring_subscription_id,
-        { cancel_at_period_end: false }
-      );
+      try {
+        // Update Stripe subscription to not cancel at period end
+        const subscription = await stripe.subscriptions.update(
+          company.hiring_subscription_id,
+          { cancel_at_period_end: false }
+        );
 
-      // Update company
-      await supabase
-        .from("companies")
-        .update({
-          hiring_subscription_cancel_at_period_end: false,
-          hiring_subscription_enabled: true,
-          hiring_subscription_status: subscription.status,
-        })
-        .eq("id", companyId);
+        console.log("Reactivated subscription in Stripe:", company.hiring_subscription_id);
 
-      console.log("Reactivated existing subscription:", company.hiring_subscription_id);
+        // Update company
+        await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_cancel_at_period_end: false,
+            hiring_subscription_enabled: true,
+            hiring_subscription_status: subscription.status,
+          })
+          .eq("id", companyId);
 
-      return new Response(JSON.stringify({ 
-        success: true,
-        reactivated: true,
-        subscriptionId: company.hiring_subscription_id,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+        console.log("Updated company record for reactivation");
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          reactivated: true,
+          subscriptionId: company.hiring_subscription_id,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } catch (stripeError: any) {
+        console.error("Stripe error during reactivation:", stripeError);
+        
+        // If Stripe subscription doesn't exist or is invalid, still update our DB
+        // This handles cases where Stripe subscription was deleted but we still have the ID
+        await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_cancel_at_period_end: false,
+            hiring_subscription_enabled: true,
+            hiring_subscription_status: "active",
+          })
+          .eq("id", companyId);
+
+        console.log("Updated company record despite Stripe error");
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          reactivated: true,
+          warning: "Subscription reactivated locally. Stripe sync may be needed.",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     // If no active subscription, they need to go through the regular subscribe flow
     // to create a new subscription (this will use their existing payment method)
+    console.log("Cannot resubscribe - no valid subscription state. Company state:", {
+      has_subscription_id: !!company.hiring_subscription_id,
+      cancel_at_period_end: company.hiring_subscription_cancel_at_period_end,
+    });
     throw new Error("No active subscription found. Please use the regular subscription flow to create a new subscription.");
 
   } catch (error) {

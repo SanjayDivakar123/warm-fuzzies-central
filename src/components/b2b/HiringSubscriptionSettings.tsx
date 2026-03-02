@@ -87,6 +87,7 @@ export default function HiringSubscriptionSettings({
   } | null>(null);
   const [showUnlockedModal, setShowUnlockedModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showStatementDialog, setShowStatementDialog] = useState(false);
   const [showRenewalDialog, setShowRenewalDialog] = useState(false);
@@ -617,6 +618,37 @@ export default function HiringSubscriptionSettings({
     }
   };
 
+  const handleReactivateSubscription = async () => {
+    setReactivating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resubscribe-hiring', {
+        body: { companyId: company.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: 'Subscription Reactivated',
+        description: 'Your subscription has been renewed and will continue at the next billing period.',
+      });
+
+      if (onSubscriptionUpdated) {
+        onSubscriptionUpdated();
+      }
+    } catch (error: unknown) {
+      console.error('Error reactivating subscription:', error);
+      const message = error instanceof Error ? error.message : 'Failed to reactivate subscription';
+      toast({
+        title: 'Reactivation failed',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setReactivating(false);
+    }
+  };
+
   const handleCancelSubscription = async () => {
     setCancelling(true);
     setShowCancelDialog(false);
@@ -629,11 +661,25 @@ export default function HiringSubscriptionSettings({
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      toast({
-        title: 'Subscription will be cancelled',
-        description: `Your Hiring tab access will end on ${data.periodEnd ? new Date(data.periodEnd).toLocaleDateString() : 'the end of the billing period'}`,
-      });
+      if (data?.cancelledImmediately) {
+        toast({
+          title: 'Hiring platform disabled',
+          description: data.message || 'Hiring platform access has been removed.',
+        });
+      } else if (data?.cancelAtPeriodEnd) {
+        const periodEndDate = data?.periodEnd ? new Date(data.periodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'the end of the billing period';
+        toast({
+          title: 'Subscription will be cancelled',
+          description: `Your Hiring tab access will continue until ${periodEndDate}. You can reactivate it anytime before then.`,
+        });
+      } else {
+        toast({
+          title: 'Subscription cancelled',
+          description: 'Your subscription has been cancelled.',
+        });
+      }
 
       if (onSubscriptionUpdated) {
         onSubscriptionUpdated();
@@ -753,14 +799,32 @@ export default function HiringSubscriptionSettings({
                 </div>
 
                 {isCancelling && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-yellow-600">Subscription Cancelling</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        You will lose access to the Hiring tab after {periodEnd?.toLocaleDateString()}.
-                      </p>
+                  <div className="space-y-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-yellow-600">Subscription Cancelling</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          You will lose access to the Hiring tab after {periodEnd?.toLocaleDateString()}.
+                        </p>
+                      </div>
                     </div>
+                    <Button
+                      onClick={handleReactivateSubscription}
+                      disabled={reactivating}
+                      size="sm"
+                      className="w-full"
+                      variant="outline"
+                    >
+                      {reactivating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Reactivating...
+                        </>
+                      ) : (
+                        'Renew Subscription'
+                      )}
+                    </Button>
                   </div>
                 )}
               </div>

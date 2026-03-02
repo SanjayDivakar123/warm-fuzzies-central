@@ -21,7 +21,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Building2, FileText, Loader2, Mail, RefreshCw, Search, Shield, Users } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Building2, Calendar, FileText, Loader2, Mail, MoreVertical, RefreshCw, Search, Shield, Users, XCircle } from "lucide-react";
 import AdminCompanyStatementModal from "@/components/b2b/admin/AdminCompanyStatementModal";
 
 const ALLOWED_SUPER_ADMIN_EMAILS = [
@@ -101,7 +108,11 @@ export default function RCFB2BAdminDashboard() {
   const [selectedBillingAction, setSelectedBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits">("add_free_credits");
   const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string } | null>(null);
   const [togglingHiringFor, setTogglingHiringFor] = useState<string | null>(null);
-  const [pendingHiringToggle, setPendingHiringToggle] = useState<{ companyId: string; companyName: string; currentlyEnabled: boolean } | null>(null);
+  const [pendingHiringToggle, setPendingHiringToggle] = useState<{ 
+    companyId: string; 
+    companyName: string; 
+    action: 'enable' | 'cancel_subscription' | 'remove_access';
+  } | null>(null);
 
   const isAllowed = ALLOWED_SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
 
@@ -260,13 +271,13 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
-  const toggleHiring = async (companyId: string, companyName: string, currentlyEnabled: boolean) => {
+  const toggleHiring = async (companyId: string, companyName: string, action: 'enable' | 'cancel_subscription' | 'remove_access') => {
     setTogglingHiringFor(companyId);
     try {
       const { data, error } = await supabase.functions.invoke("super-admin-toggle-hiring", {
         body: {
           companyId,
-          enable: !currentlyEnabled,
+          action,
         },
       });
       if (error) throw error;
@@ -274,13 +285,13 @@ export default function RCFB2BAdminDashboard() {
 
       toast({
         title: "Hiring Platform Updated",
-        description: data?.message || `Hiring platform ${!currentlyEnabled ? 'enabled' : 'disabled'} for ${companyName}`,
+        description: data?.message || "Hiring platform updated successfully",
       });
 
       await fetchCompanies();
     } catch (error: unknown) {
       toast({
-        title: "Failed to toggle hiring",
+        title: "Failed to update hiring",
         description: getErrorMessage(error) || "Could not update hiring platform access.",
         variant: "destructive",
       });
@@ -447,15 +458,100 @@ export default function RCFB2BAdminDashboard() {
                             <TableCell>{formatUsd(company.credit_balance)}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={company.hiring_subscription_enabled}
-                                  onCheckedChange={() => setPendingHiringToggle({ companyId: company.id, companyName: company.name, currentlyEnabled: company.hiring_subscription_enabled })}
-                                  disabled={togglingHiringFor === company.id}
-                                />
-                                {company.hiring_subscription_enabled && (
-                                  <Badge variant={company.hiring_subscription_status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                                    {company.hiring_subscription_status || 'active'}
-                                  </Badge>
+                                {company.hiring_subscription_enabled ? (
+                                  <>
+                                    <Badge 
+                                      variant={
+                                        company.hiring_subscription_cancel_at_period_end 
+                                          ? 'outline' 
+                                          : company.hiring_subscription_status === 'active' ? 'default' : 'secondary'
+                                      } 
+                                      className="text-xs"
+                                    >
+                                      {company.hiring_subscription_cancel_at_period_end 
+                                        ? 'cancelling' 
+                                        : company.hiring_subscription_status || 'active'}
+                                    </Badge>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          className="h-7 w-7"
+                                          disabled={togglingHiringFor === company.id}
+                                        >
+                                          <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        {company.hiring_subscription_cancel_at_period_end ? (
+                                          <>
+                                            <DropdownMenuItem
+                                              onClick={() => setPendingHiringToggle({ 
+                                                companyId: company.id, 
+                                                companyName: company.name, 
+                                                action: 'enable'
+                                              })}
+                                            >
+                                              <RefreshCw className="h-4 w-4 mr-2" />
+                                              Renew Subscription
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                              onClick={() => setPendingHiringToggle({ 
+                                                companyId: company.id, 
+                                                companyName: company.name, 
+                                                action: 'remove_access'
+                                              })}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              <XCircle className="h-4 w-4 mr-2" />
+                                              Revoke Access Now
+                                            </DropdownMenuItem>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <DropdownMenuItem
+                                              onClick={() => setPendingHiringToggle({ 
+                                                companyId: company.id, 
+                                                companyName: company.name, 
+                                                action: 'cancel_subscription'
+                                              })}
+                                            >
+                                              <Calendar className="h-4 w-4 mr-2" />
+                                              Cancel at Period End
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                              onClick={() => setPendingHiringToggle({ 
+                                                companyId: company.id, 
+                                                companyName: company.name, 
+                                                action: 'remove_access'
+                                              })}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              <XCircle className="h-4 w-4 mr-2" />
+                                              Remove Access Now
+                                            </DropdownMenuItem>
+                                          </>
+                                        )}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPendingHiringToggle({ 
+                                      companyId: company.id, 
+                                      companyName: company.name, 
+                                      action: 'enable'
+                                    })}
+                                    disabled={togglingHiringFor === company.id}
+                                  >
+                                    <Shield className="h-3.5 w-3.5 mr-1" />
+                                    Grant Access
+                                  </Button>
                                 )}
                                 {togglingHiringFor === company.id && (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -780,24 +876,27 @@ export default function RCFB2BAdminDashboard() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {pendingHiringToggle?.currentlyEnabled ? "Disable Hiring Platform" : "Enable Hiring Platform"}
+                {pendingHiringToggle?.action === 'enable' && "Grant Hiring Platform Access"}
+                {pendingHiringToggle?.action === 'cancel_subscription' && "Cancel Subscription"}
+                {pendingHiringToggle?.action === 'remove_access' && "Remove Access Immediately"}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                You are about to{" "}
-                <span className="font-semibold">
-                  {pendingHiringToggle?.currentlyEnabled ? "disable" : "enable"}
-                </span>{" "}
-                the Hiring Platform for{" "}
-                <span className="font-semibold">{pendingHiringToggle?.companyName}</span>.
+                <span className="font-semibold">{pendingHiringToggle?.companyName}</span>
                 <br />
                 <br />
-                {pendingHiringToggle?.currentlyEnabled ? (
+                {pendingHiringToggle?.action === 'enable' && (
+                  <span>
+                    This will grant access to the Hiring Platform and all ATS features for this company.
+                  </span>
+                )}
+                {pendingHiringToggle?.action === 'cancel_subscription' && (
+                  <span>
+                    This will schedule the subscription to cancel at the end of the current billing period. The company will retain access until then.
+                  </span>
+                )}
+                {pendingHiringToggle?.action === 'remove_access' && (
                   <span className="text-destructive">
                     This will immediately cancel their subscription and revoke access to all hiring features including job postings, applications, and the ATS pipeline.
-                  </span>
-                ) : (
-                  <span>
-                    This will enable access to the Hiring Platform and all ATS features for this company.
                   </span>
                 )}
               </AlertDialogDescription>
@@ -808,20 +907,22 @@ export default function RCFB2BAdminDashboard() {
                 disabled={!pendingHiringToggle || togglingHiringFor !== null}
                 onClick={async () => {
                   if (!pendingHiringToggle) return;
-                  await toggleHiring(pendingHiringToggle.companyId, pendingHiringToggle.companyName, pendingHiringToggle.currentlyEnabled);
+                  await toggleHiring(pendingHiringToggle.companyId, pendingHiringToggle.companyName, pendingHiringToggle.action);
                   setPendingHiringToggle(null);
                 }}
-                className={pendingHiringToggle?.currentlyEnabled ? "bg-destructive hover:bg-destructive/90" : ""}
+                className={pendingHiringToggle?.action === 'remove_access' ? "bg-destructive hover:bg-destructive/90" : ""}
               >
                 {togglingHiringFor !== null ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Processing...
                   </>
-                ) : pendingHiringToggle?.currentlyEnabled ? (
-                  "Confirm Disable"
                 ) : (
-                  "Confirm Enable"
+                  <>
+                    {pendingHiringToggle?.action === 'enable' && "Confirm Grant Access"}
+                    {pendingHiringToggle?.action === 'cancel_subscription' && "Confirm Cancel"}
+                    {pendingHiringToggle?.action === 'remove_access' && "Confirm Remove Access"}
+                  </>
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
