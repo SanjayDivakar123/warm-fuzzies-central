@@ -151,10 +151,8 @@ function mapBillingCredit(row: Record<string, any>): UnifiedActivity {
     },
     super_admin_credit_removal: {
       icon: TrendingDown,
-      message: `$${amountDollars} in credits removed from account`,
-      color: 'text-red-500',
-      badge: 'Credits Removed',
-      badgeColor: 'bg-red-100 text-red-700',
+      message: '',
+      color: '',
     },
     payment: {
       icon: CreditCard,
@@ -180,9 +178,12 @@ function mapBillingCredit(row: Record<string, any>): UnifiedActivity {
 
   const mapped = typeMap[row.type] || {
     icon: isRemoval ? TrendingDown : DollarSign,
-    message: row.description || `$${amountDollars} billing event`,
-    color: isRemoval ? 'text-red-500' : 'text-emerald-500',
+    message: isRemoval ? '' : (row.description || `$${amountDollars} billing event`),
+    color: isRemoval ? '' : 'text-emerald-500',
   };
+
+  // Skip removals entirely
+  if (!mapped.message) return null as unknown as UnifiedActivity;
 
   return {
     id: `bc-${row.id}`,
@@ -278,9 +279,9 @@ function mapAuditLog(row: Record<string, any>): UnifiedActivity {
     const keyAction = action === 'create' ? 'created an API key' : action === 'revoke' ? 'revoked an API key' : `${action} an API key`;
     return { id: `al-${row.id}`, icon: Key, message: `${userName} ${keyAction}`, color: 'text-gray-500', actorInitial: userName.charAt(0).toUpperCase(), actorLabel: user_email, created_at: row.created_at };
   }
+  // Billing events are handled exclusively via the billing_credits source to avoid duplicates
   if (entity_type === 'payment' || entity_type === 'billing') {
-    const amount = details.amount ? `$${details.amount}` : '';
-    return { id: `al-${row.id}`, icon: DollarSign, message: `${amount} billing event: ${action}`, color: 'text-emerald-500', actorInitial: '$', actorLabel: 'Billing', created_at: row.created_at };
+    return null as unknown as UnifiedActivity;
   }
   if (entity_type === 'user' && action === 'revoke') {
     const email = details.email || 'a user';
@@ -355,11 +356,13 @@ export default function ActivityFeed({ companyId, maxItems = 10, onViewAll }: Ac
           .order('joined_at', { ascending: false })
           .limit(fetchLimit),
 
-        // 5. Billing credits
+        // 5. Billing credits — additions only
         supabase
           .from('billing_credits')
           .select('id, amount, type, description, created_at')
           .eq('company_id', companyId)
+          .gt('amount', 0)
+          .not('type', 'in', '("super_admin_credit_removal")')
           .gte('created_at', sinceIso)
           .order('created_at', { ascending: false })
           .limit(fetchLimit),
@@ -384,9 +387,12 @@ export default function ActivityFeed({ companyId, maxItems = 10, onViewAll }: Ac
         }
       };
 
-      // Map audit logs
+      // Map audit logs (mapAuditLog returns null for billing events — those come from billing_credits)
       if (auditRes.status === 'fulfilled' && auditRes.value.data) {
-        auditRes.value.data.forEach((row) => addItem(mapAuditLog(row)));
+        auditRes.value.data.forEach((row) => {
+          const item = mapAuditLog(row);
+          if (item) addItem(item);
+        });
       }
 
       // Map user invites — skip if already present in audit_logs (same entity)
@@ -404,9 +410,12 @@ export default function ActivityFeed({ companyId, maxItems = 10, onViewAll }: Ac
         joinedRes.value.data.forEach((row) => addItem(mapUserJoined(row)));
       }
 
-      // Map billing credits
+      // Map billing credits (additions only — removals are filtered at the query and mapper level)
       if (creditsRes.status === 'fulfilled' && creditsRes.value.data) {
-        creditsRes.value.data.forEach((row) => addItem(mapBillingCredit(row)));
+        creditsRes.value.data.forEach((row) => {
+          const item = mapBillingCredit(row);
+          if (item) addItem(item);
+        });
       }
 
       // Map candidate activities

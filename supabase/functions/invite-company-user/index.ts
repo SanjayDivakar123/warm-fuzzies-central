@@ -309,10 +309,10 @@ serve(async (req) => {
       });
     }
 
-    // If user exists and is not revoked, return error
+    // If user exists and is not revoked, return error (200 so SDK doesn't swallow the body)
     if (existingUser && existingUser.status !== "revoked") {
       return new Response(JSON.stringify({ error: "User already invited" }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -339,7 +339,7 @@ serve(async (req) => {
           seatsPurchased: company.seats_purchased,
           maxAllowed: isUnlimitedCompany ? null : maxSeatsAllowed,
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -360,7 +360,7 @@ serve(async (req) => {
     console.log("Charge result:", chargeResult);
 
     if (!chargeResult.success) {
-      // Check if they need to add a payment method
+      // Return 200 with error body so the Supabase SDK doesn't swallow the details
       if (chargeResult.needsPaymentMethod) {
         return new Response(
           JSON.stringify({
@@ -368,7 +368,7 @@ serve(async (req) => {
             errorCode: "NEEDS_PAYMENT_METHOD",
             needsPaymentMethod: true,
           }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
@@ -377,7 +377,7 @@ serve(async (req) => {
           error: chargeResult.error || "Failed to process payment for invite",
           errorCode: "CHARGE_FAILED",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

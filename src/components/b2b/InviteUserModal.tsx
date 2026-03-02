@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import {
   Dialog,
   DialogContent,
@@ -130,7 +131,33 @@ export default function InviteUserModal({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Extract structured body from non-2xx edge function responses
+        let payload: Record<string, any> | null = null;
+        if (error instanceof FunctionsHttpError) {
+          payload = await error.context.json().catch(() => null);
+        }
+        const errData = payload ?? data;
+        if (errData?.errorCode === 'NEEDS_PAYMENT_METHOD' || errData?.needsPaymentMethod) {
+          toast({
+            title: 'Payment method required',
+            description: 'Please add a payment method in Settings before inviting users.',
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+        if (errData?.errorCode === 'CHARGE_FAILED') {
+          toast({
+            title: 'Payment failed',
+            description: errData?.error || 'Failed to charge for this seat. Please check your payment method.',
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+        throw new Error(payload?.error || error.message);
+      }
 
       if (data?.error) {
         if (data.errorCode === 'NEEDS_PAYMENT_METHOD' || data.needsPaymentMethod) {

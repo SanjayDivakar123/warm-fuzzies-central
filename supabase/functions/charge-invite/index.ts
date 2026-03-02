@@ -72,16 +72,16 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, credit_balance, stripe_customer_id")
+      .select("id, name, admin_email, credit_balance, stripe_customer_id, seats_purchased")
       .eq("id", company_id)
       .single();
 
     if (companyError || !company) throw new Error("Company not found");
 
-    logStep("Company found", { companyId: company.id, name: company.name, creditBalance: company.credit_balance });
+    logStep("Company found", { companyId: company.id, name: company.name, creditBalance: company.credit_balance, seatsPurchased: company.seats_purchased });
 
     // Check if company is unlimited (RoleColorFinderLLC)
-    if (company.name === "RoleColorFinderLLC") {
+    if (company.name === "RoleColorFinderLLC" || company.name === "RoleColorFinder LLC") {
       logStep("Unlimited company - no charge required");
       return new Response(JSON.stringify({ 
         success: true, 
@@ -94,7 +94,33 @@ serve(async (req) => {
       });
     }
 
-    // Calculate pro-rated charge amount for new user
+    // Count current non-revoked users to see if we're still within pre-paid seats
+    const { count: activeUserCount, error: countError } = await supabase
+      .from("company_users")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", company_id)
+      .neq("status", "revoked");
+
+    if (countError) throw new Error("Failed to count active users");
+
+    const seatsPurchased = company.seats_purchased || 0;
+    logStep("Seat check", { activeUserCount, seatsPurchased });
+
+    // If the next user still fits within the pre-paid seat allocation, no charge needed
+    if ((activeUserCount ?? 0) < seatsPurchased) {
+      logStep("Within pre-paid seats - no charge required", { activeUserCount, seatsPurchased });
+      return new Response(JSON.stringify({
+        success: true,
+        charged: false,
+        usedCredits: false,
+        message: `Within pre-paid seat allocation (${activeUserCount}/${seatsPurchased} seats used)`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Calculate pro-rated charge amount for new user (beyond pre-paid seats)
     const chargeAmount = calculateProRatedAmount();
     const creditBalance = company.credit_balance || 0;
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { hiringSubscribeLock } from '@/lib/hiringSubscribeLock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, 
@@ -140,7 +141,8 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   };
 
   const handleSubscribe = async () => {
-    if (subscribing) return;
+    if (hiringSubscribeLock.inFlight) return;
+    hiringSubscribeLock.inFlight = true;
     setSubscribing(true);
     setSubscribeError(null);
     try {
@@ -179,6 +181,7 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       console.error('Error subscribing to hiring tab:', err);
       setSubscribeError(classifySubscribeError(err.message || ''));
     } finally {
+      hiringSubscribeLock.inFlight = false;
       setSubscribing(false);
     }
   };

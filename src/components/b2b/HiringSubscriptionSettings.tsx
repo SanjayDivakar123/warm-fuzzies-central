@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { hiringSubscribeLock } from '@/lib/hiringSubscribeLock';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -220,7 +221,7 @@ export default function HiringSubscriptionSettings({
       // Portal cost is free only for the internal admin company (RoleColorFinder); all others pay $20/user/month
       const portalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * PORTAL_COST_PER_USER;
 
-      const txRows: StatementRow[] = transactions
+      const allTxRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
         .map((row) => {
           const category = getStatementCategory(row.type, row.description);
@@ -230,19 +231,27 @@ export default function HiringSubscriptionSettings({
             category,
             description: row.description || row.type,
             amount: row.amount || 0,
-            source: 'transaction',
+            source: 'transaction' as const,
           };
         });
 
+      // Deduplicate hiring tab subscription rows — only show the most recent successful payment
+      const subRows = allTxRows.filter((r) => r.category === 'subscription');
+      const nonSubRows = allTxRows.filter((r) => r.category !== 'subscription');
+      const dedupedSubRows = subRows.length > 0
+        ? [subRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]]
+        : [];
+      const txRows = [...nonSubRows, ...dedupedSubRows];
+
       const creditRows: StatementRow[] = isInternalAdminCompany ? [] : credits
-        .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
+        .filter((row) => (!derivedStartDate || new Date(row.created_at) >= derivedStartDate) && row.amount > 0)
         .map((row) => ({
           id: `credit-${row.id}`,
           created_at: row.created_at,
-          category: 'credit',
+          category: 'credit' as const,
           description: row.description || row.type || 'Credit adjustment',
-          amount: row.amount || 0,
-          source: 'credit',
+          amount: -(row.amount || 0), // credits are deductions — they reduce what the company owes
+          source: 'credit' as const,
         }));
 
       const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
@@ -369,6 +378,8 @@ export default function HiringSubscriptionSettings({
   };
 
   const handleSubscribe = async () => {
+    if (hiringSubscribeLock.inFlight) return;
+    hiringSubscribeLock.inFlight = true;
     setSubscribing(true);
     setNoPaymentMethod(false);
     setSubscribeError(null);
@@ -383,7 +394,6 @@ export default function HiringSubscriptionSettings({
         const step = payload?.step || data?.step;
         const msg = payload?.error || data?.error || error.message || '';
         setSubscribeError(classifyError(msg, step));
-        setSubscribing(false);
         return;
       }
 
@@ -394,13 +404,11 @@ export default function HiringSubscriptionSettings({
           description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
           actionUrl: data.actionUrl,
         });
-        setSubscribing(false);
         return;
       }
 
       if (data?.error) {
         setSubscribeError(classifyError(data.error, data.step));
-        setSubscribing(false);
         return;
       }
 
@@ -413,10 +421,11 @@ export default function HiringSubscriptionSettings({
           description: 'Something went wrong processing your subscription. Please try again or contact support.',
         });
       }
-      setSubscribing(false);
     } catch (error: any) {
       console.error('Error subscribing:', error);
       setSubscribeError(classifyError(error.message || ''));
+    } finally {
+      hiringSubscribeLock.inFlight = false;
       setSubscribing(false);
     }
   };

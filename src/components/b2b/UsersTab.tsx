@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { logAuditEvent, AUDIT_ACTIONS, AUDIT_ENTITIES } from '@/lib/auditLogger';
 import EmailTemplateCustomizer from './EmailTemplateCustomizer';
 import BulkImportModal from './BulkImportModal';
@@ -370,7 +371,31 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Extract structured body from non-2xx edge function responses
+        let payload: Record<string, any> | null = null;
+        if (error instanceof FunctionsHttpError) {
+          payload = await error.context.json().catch(() => null);
+        }
+        const errData = payload ?? data;
+        if (errData?.errorCode === "NEEDS_PAYMENT_METHOD" || errData?.needsPaymentMethod) {
+          toast({
+            title: "Payment method required",
+            description: "Please add a payment method in Settings before inviting users.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (errData?.errorCode === "CHARGE_FAILED") {
+          toast({
+            title: "Payment failed",
+            description: errData?.error || "Failed to charge for this seat. Please check your payment method.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(payload?.error || error.message);
+      }
 
       // Check if the response contains an error message
       if (data?.error) {

@@ -55,11 +55,23 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at")
+      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_id")
       .eq("id", companyId)
       .single();
 
     if (companyError || !company) throw new Error("Company not found");
+
+    // Block if an active subscription already exists — max 1 per company
+    if (
+      company.hiring_subscription_enabled &&
+      company.hiring_subscription_id &&
+      (company.hiring_subscription_status === "active" || company.hiring_subscription_status === "trialing")
+    ) {
+      return new Response(JSON.stringify({
+        error: "This company already has an active Hiring Tab subscription.",
+        step: "already_subscribed",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+    }
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
     const hiringCost = 500.0; // $500.00 in dollars
@@ -102,14 +114,107 @@ serve(async (req) => {
 
     // --- Billing split: credits first, card for the remainder ---
     // credit_balance is stored as DECIMAL; ensure it's a JS number
-    const creditBalance = typeof company.credit_balance === "number"
-      ? company.credit_balance
-      : parseFloat((company.credit_balance as unknown as string) ?? "0");
+    const rawCreditBalance = company.credit_balance;
+    const creditBalance = typeof rawCreditBalance === "number"
+      ? rawCreditBalance
+      : parseFloat((rawCreditBalance as unknown as string) ?? "0");
 
     // How much of the $500 can credits cover (capped at $500)?
     const creditContribution = Number(Math.min(creditBalance, hiringCost).toFixed(2));
     // How much still needs to go on the card?
     const cardCharge = Number((hiringCost - creditContribution).toFixed(2));
+
+    console.log("Billing calculation:", {
+      companyId,
+      rawCreditBalance,
+      creditBalance,
+      creditContribution,
+      cardCharge,
+      hiringCost,
+    });
+
+    // Initialise Stripe once — reused for duplicate guard and subscription creation
+    const stripeSecret = Deno.env.get("STRIPE_SECRET");
+    if (!stripeSecret) throw new Error("Stripe configuration error");
+    const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+
+    // Idempotency window: changes every 30 s so a button double-tap within that window
+    // is collapsed to a single Stripe request.
+    const idempotencyWindow = Math.floor(Date.now() / 30000);
+
+    // --- Resolve Stripe customer FIRST (before duplicate guard) ---
+    // This ensures we have a valid customer ID to check for existing subscriptions,
+    // even if the company record doesn't have stripe_customer_id yet.
+    let customerId = company.stripe_customer_id;
+
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: company.admin_email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: company.admin_email,
+          name: company.name,
+          metadata: { company_id: company.id },
+        }, { idempotencyKey: `cust-hiring-${companyId}-${idempotencyWindow}` });
+        customerId = customer.id;
+      }
+      await supabase.from("companies").update({ stripe_customer_id: customerId }).eq("id", companyId);
+    }
+
+    // --- Stripe-level duplicate guard ---
+    // Check Stripe directly for existing hiring subscriptions on this customer.
+    // This protects against double charges in several scenarios:
+    //   1. A previous call charged the card but the DB update failed.
+    //   2. Two concurrent calls both pass the DB guard before either writes back.
+    //   3. Multiple browser tabs / network retries.
+    if (cardCharge > 0) {
+      const [activeSubs, trialingSubs, incompleteSubs] = await Promise.all([
+        stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 }),
+        stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 10 }),
+        stripe.subscriptions.list({ customer: customerId, status: "incomplete", limit: 10 }),
+      ]);
+      const existingHiringSub = [
+        ...activeSubs.data,
+        ...trialingSubs.data,
+        ...incompleteSubs.data,
+      ].find(
+        (sub) =>
+          sub.metadata?.company_id === companyId &&
+          sub.metadata?.type === "hiring_subscription"
+      );
+
+      if (existingHiringSub) {
+        if (existingHiringSub.status === "active" || existingHiringSub.status === "trialing") {
+          console.log("Stripe-level duplicate guard triggered — existing active sub found:", existingHiringSub.id);
+          // Sync DB to match Stripe reality and return success without charging again
+          await supabase.from("companies").update({
+            hiring_subscription_enabled: true,
+            hiring_subscription_status: existingHiringSub.status,
+            hiring_subscription_id: existingHiringSub.id,
+            hiring_subscription_current_period_end: new Date(existingHiringSub.current_period_end * 1000).toISOString(),
+            hiring_subscription_cancel_at_period_end: existingHiringSub.cancel_at_period_end,
+          }).eq("id", companyId);
+          return new Response(JSON.stringify({
+            success: true,
+            subscriptionId: existingHiringSub.id,
+            status: existingHiringSub.status,
+            alreadyExisted: true,
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+        }
+
+        // Incomplete subscription exists (from failed payment) — cancel it to avoid duplicates
+        // before attempting a new subscription with fresh payment
+        if (existingHiringSub.status === "incomplete") {
+          console.log("Found incomplete hiring subscription, cancelling before retry:", existingHiringSub.id);
+          try {
+            await stripe.subscriptions.cancel(existingHiringSub.id);
+          } catch (cancelErr) {
+            console.error("Failed to cancel incomplete subscription:", cancelErr);
+          }
+        }
+      }
+    }
 
     // --- Case A: Credits cover the full $500 (no card needed) ---
     if (cardCharge === 0) {
@@ -152,68 +257,15 @@ serve(async (req) => {
     }
 
     // --- Case B & C: Card must be charged (all or partial $500) ---
-    // We continue below to charge the card. Credits are only deducted AFTER the card succeeds.
+    // Credits are only deducted AFTER the card succeeds.
+    //
+    // The price + subscription idempotency keys (30-second window) ensure that even if
+    // this function is called concurrently the card is charged AT MOST ONCE per window.
+    // The Stripe-level duplicate guard above handles cross-window retries.
 
-    const stripeSecret = Deno.env.get("STRIPE_SECRET");
-    if (!stripeSecret) throw new Error("Stripe configuration error");
+    // Find attached payment method (email-based fallback handles customer ID mismatches)
+    let paymentMethods = await stripe.paymentMethods.list({ customer: customerId, type: "card" });
 
-    const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
-
-    // Get or create Stripe customer
-    let customerId = company.stripe_customer_id;
-
-    if (!customerId) {
-      const customers = await stripe.customers.list({ email: company.admin_email, limit: 1 });
-      
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-      } else {
-        const customer = await stripe.customers.create({
-          email: company.admin_email,
-          name: company.name,
-          metadata: { company_id: company.id }
-        });
-        customerId = customer.id;
-      }
-
-      // Save customer ID
-      await supabase
-        .from("companies")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", companyId);
-    }
-
-    // Create the $500/month price used for all recurring billing
-    const price = await stripe.prices.create({
-      currency: "usd",
-      unit_amount: 50000, // $500.00 in cents
-      recurring: { interval: "month" },
-      product_data: { name: "RoleColorFinder Hiring Tab" },
-    });
-
-    // If the customer has partial credits, create a one-time coupon so Stripe only
-    // charges the card for the remainder. The coupon is `duration: once` so subsequent
-    // monthly renewals are billed at the full $500.
-    let couponId: string | null = null;
-    if (creditContribution > 0) {
-      const coupon = await stripe.coupons.create({
-        amount_off: Math.round(creditContribution * 100), // cents
-        currency: "usd",
-        duration: "once",
-        name: `Billing Credits ($${creditContribution.toFixed(2)})`,
-      });
-      couponId = coupon.id;
-      console.log(`Created coupon ${couponId} for $${creditContribution.toFixed(2)} credit contribution`);
-    }
-
-    // Find any attached payment method. If the stored customer has no card, search all customers
-    // for this email — handles the case where the card was set up against a different Stripe customer.
-    let paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: "card",
-    });
-
-    // Fallback 1: scan other Stripe customers with the same email
     if (paymentMethods.data.length === 0) {
       console.log("No card on stored customer, scanning all email-matched customers...");
       const emailCustomers = await stripe.customers.list({ email: company.admin_email, limit: 10 });
@@ -230,39 +282,52 @@ serve(async (req) => {
       }
     }
 
-    // Fallback 2: check the customer's invoice_settings.default_payment_method
-    // (covers cards set as the customer default but not returned by paymentMethods.list)
-    let defaultPM: string | null = null;
-    if (paymentMethods.data.length > 0) {
-      defaultPM = paymentMethods.data[0].id;
-    } else {
+    let defaultPM: string | null = paymentMethods.data.length > 0 ? paymentMethods.data[0].id : null;
+    if (!defaultPM) {
       try {
         const customerObj = await stripe.customers.retrieve(customerId) as any;
-        const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
-        const sourceDefault = customerObj?.default_source;
-        if (invoiceDefault) {
-          console.log("Using invoice_settings.default_payment_method as fallback:", invoiceDefault);
-          defaultPM = typeof invoiceDefault === "string" ? invoiceDefault : invoiceDefault.id;
-        } else if (sourceDefault) {
-          console.log("Using default_source as fallback:", sourceDefault);
-          defaultPM = typeof sourceDefault === "string" ? sourceDefault : sourceDefault.id;
-        }
-      } catch (e) {
-        console.error("Failed to retrieve customer for fallback PM check:", e);
-      }
+        const inv = customerObj?.invoice_settings?.default_payment_method;
+        const src = customerObj?.default_source;
+        defaultPM = (typeof inv === "string" ? inv : inv?.id) ?? (typeof src === "string" ? src : src?.id) ?? null;
+      } catch (_) {}
     }
 
     if (!defaultPM) {
-      console.error("no payment method on file for any customer matching", company.admin_email);
       return new Response(JSON.stringify({
         error: "No payment method on file. Please add a payment method first.",
         step: "no_default_payment_method",
-        details: { customerId },
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
     }
 
-    // Use error_if_incomplete so Stripe immediately throws on card decline rather than
-    // creating an incomplete subscription we'd have to clean up manually.
+    // Create $500/month price for recurring billing.
+    // The idempotency key is tied to the same time window as the subscription creation,
+    // so two concurrent calls in the same window share the same price ID. Without this,
+    // each call creates a unique price object — the subscription idempotency key then
+    // sees a mismatched request body and Stripe raises a conflict error on the second call.
+    const price = await stripe.prices.create({
+      currency: "usd",
+      unit_amount: 50000,
+      recurring: { interval: "month" },
+      product_data: { name: "RoleColorFinder Hiring Tab" },
+    }, { idempotencyKey: `price-hiring-${companyId}-${idempotencyWindow}` });
+
+    // If partial credits apply, create a one-time coupon to reduce the first invoice.
+    // Both the coupon and subscription use idempotency keys so concurrent calls
+    // produce the same Stripe objects and the card is charged only once.
+    let couponId: string | null = null;
+    if (creditContribution > 0) {
+      const coupon = await stripe.coupons.create({
+        amount_off: Math.round(creditContribution * 100),
+        currency: "usd",
+        duration: "once",
+        name: `Billing Credits ($${creditContribution.toFixed(2)})`,
+      }, { idempotencyKey: `coupon-hiring-${companyId}-${idempotencyWindow}` });
+      couponId = coupon.id;
+      console.log(`Coupon ${couponId} for $${creditContribution.toFixed(2)} (idempotency window ${idempotencyWindow})`);
+    }
+
+    // Create the subscription. error_if_incomplete makes Stripe throw immediately on
+    // card decline rather than leaving an incomplete subscription to clean up.
     let subscription: Stripe.Subscription;
     try {
       subscription = await stripe.subscriptions.create({
@@ -272,13 +337,10 @@ serve(async (req) => {
         payment_behavior: "error_if_incomplete",
         expand: ["latest_invoice.payment_intent"],
         metadata: { company_id: companyId, type: "hiring_subscription" },
-        // Apply one-time credit coupon if the customer has partial credits
         ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
-      });
+      }, { idempotencyKey: `sub-hiring-${companyId}-${idempotencyWindow}` });
     } catch (stripeErr: any) {
-      // Card failed — clean up the coupon so it's not left dangling
-      if (couponId) { try { await stripe.coupons.del(couponId); } catch (_) {} }
-      // Card declined / insufficient funds / do_not_honor etc.
+      // Card declined / insufficient funds / etc.
       if (stripeErr?.type === "StripeCardError" || stripeErr?.code === "card_declined" ||
           stripeErr?.decline_code || stripeErr?.param === "payment_method_data") {
         return new Response(JSON.stringify({
@@ -286,7 +348,7 @@ serve(async (req) => {
           step: "card_declined",
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
       }
-      // 3DS / authentication required
+      // 3DS / bank authentication required
       if (stripeErr?.payment_intent?.status === "requires_action" ||
           stripeErr?.code === "subscription_payment_intent_requires_action") {
         const pi = stripeErr.payment_intent;
@@ -299,7 +361,6 @@ serve(async (req) => {
           step: "requires_authentication",
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
       }
-      // Any other Stripe error (network, config, etc.)
       console.error("Stripe subscription create error:", stripeErr);
       return new Response(JSON.stringify({
         error: stripeErr?.message || "Payment could not be processed. Please update your payment method and try again.",
@@ -309,10 +370,9 @@ serve(async (req) => {
 
     const latestInvoice = typeof subscription.latest_invoice !== "string" ? subscription.latest_invoice : null;
     const paymentIntent = latestInvoice && typeof latestInvoice.payment_intent !== "string"
-      ? latestInvoice.payment_intent
-      : null;
+      ? latestInvoice.payment_intent : null;
 
-    // Catch any incomplete state that slipped through (shouldn't happen with error_if_incomplete)
+    // Catch any incomplete state that slipped through
     if (subscription.status === "incomplete") {
       if (paymentIntent?.status === "requires_action") {
         const actionUrl = (paymentIntent as any)?.next_action?.redirect_to_url?.url
@@ -325,11 +385,8 @@ serve(async (req) => {
           hiring_subscription_cancel_at_period_end: false,
         }).eq("id", companyId);
         return new Response(JSON.stringify({
-          success: false,
-          requiresAction: true,
-          actionUrl,
-          clientSecret: paymentIntent.client_secret,
-          subscriptionId: subscription.id,
+          success: false, requiresAction: true, actionUrl,
+          clientSecret: paymentIntent.client_secret, subscriptionId: subscription.id,
           step: "requires_authentication",
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
       }
@@ -340,7 +397,7 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
     }
 
-    // Card charge succeeded — now it's safe to deduct credits
+    // Card charge succeeded — now safe to deduct credits
     if (creditContribution > 0) {
       const newBalance = Number((creditBalance - creditContribution).toFixed(2));
       await supabase.from("companies").update({ credit_balance: newBalance }).eq("id", companyId);
@@ -350,10 +407,10 @@ serve(async (req) => {
         amount: creditContribution,
         description: `Billing credits applied to Hiring Tab subscription ($${creditContribution.toFixed(2)} of $500.00)`,
       });
-      console.log(`Deducted $${creditContribution.toFixed(2)} in credits after successful card charge`);
+      console.log(`Deducted $${creditContribution.toFixed(2)} credits after successful card charge`);
     }
 
-    // Save subscription to company
+    // Save subscription
     const { error: subUpdateError } = await supabase
       .from("companies")
       .update({
@@ -369,21 +426,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: "Failed to update company with Stripe subscription",
         step: "update_company_subscription",
-        details: (subUpdateError as any)?.message || subUpdateError,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
     }
 
-    // Record the card charge (only the amount actually charged to the card)
-    const { error: txErr } = await supabase.from("billing_transactions").insert({
+    await supabase.from("billing_transactions").insert({
       company_id: companyId,
       type: "charge",
       amount: cardCharge,
       description: creditContribution > 0
-        ? `Hiring Tab subscription — card charged $${cardCharge.toFixed(2)} ($${creditContribution.toFixed(2)} covered by credits)`
+        ? `Hiring Tab subscription — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
         : "Hiring Tab subscription (card on file)",
       stripe_payment_intent_id: paymentIntent?.id,
     });
-    if (txErr) console.error("Billing transaction insert error:", txErr);
 
     return new Response(JSON.stringify({
       success: true,
