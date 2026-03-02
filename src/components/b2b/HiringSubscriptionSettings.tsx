@@ -59,6 +59,7 @@ export default function HiringSubscriptionSettings({
   company, 
   onSubscriptionUpdated 
 }: HiringSubscriptionSettingsProps) {
+  const INTERNAL_COMPANY_ID = '0f03753c-ea99-4236-9f8c-16324b92f257';
   const PORTAL_COST_PER_USER = 20;
 
   type StatementRow = {
@@ -117,8 +118,7 @@ export default function HiringSubscriptionSettings({
     net: 0,
   });
   const { toast } = useToast();
-  const normalizedName = company.name?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
-  const isInternalAdminCompany = normalizedName === 'rolecolorfinderllc' || normalizedName === 'rolecolorfinder';
+  const isInternalAdminCompany = company.id === INTERNAL_COMPANY_ID;
 
   const hasActiveSubscription = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
@@ -424,6 +424,10 @@ export default function HiringSubscriptionSettings({
         },
         { charges: 0, subscriptions: 0, extraInsights: 0, portalCost: 0, creditsApplied: 0, net: 0 }
       );
+
+      if (isInternalAdminCompany) {
+        totals.net = 0;
+      }
 
       setStatementRows(allRows);
       setStatementTotals(totals);
@@ -1196,7 +1200,9 @@ export default function HiringSubscriptionSettings({
           <div className="flex-1 overflow-auto space-y-4 pr-1">
             {renewalEstimate && !renewalEstimateLoading && (() => {
               const availableCredits = Number(company.credit_balance || 0);
-              const netChargeAfterCredits = Math.max(0, renewalEstimate.totalCharge - availableCredits);
+              const netChargeAfterCredits = isInternalAdminCompany
+                ? 0
+                : Math.max(0, renewalEstimate.totalCharge - availableCredits);
               
               return (
                 <div className="space-y-6">

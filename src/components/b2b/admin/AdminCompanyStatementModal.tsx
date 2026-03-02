@@ -35,6 +35,7 @@ type StatementRow = {
 interface AdminCompanyStatementModalProps {
   companyId: string;
   companyName: string;
+  initialView?: 'statement' | 'renewal';
   open: boolean;
   onClose: () => void;
 }
@@ -111,9 +112,11 @@ const getNextRenewalFromStart = (startDate: Date) => {
 export default function AdminCompanyStatementModal({
   companyId,
   companyName,
+  initialView = 'statement',
   open,
   onClose,
 }: AdminCompanyStatementModalProps) {
+  const INTERNAL_COMPANY_ID = '0f03753c-ea99-4236-9f8c-16324b92f257';
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [statementRows, setStatementRows] = useState<StatementRow[]>([]);
@@ -127,12 +130,18 @@ export default function AdminCompanyStatementModal({
   });
   const [statementStartDate, setStatementStartDate] = useState<Date | null>(null);
   const [renewalDate, setRenewalDate] = useState<Date | null>(null);
+  const [activeView, setActiveView] = useState<'statement' | 'renewal'>(initialView);
+  const [renewalPreview, setRenewalPreview] = useState({
+    portalCost: 0,
+    hiringCost: 0,
+    total: 0,
+    willRenewHiring: false,
+  });
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<StatementRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const normalizedName = companyName?.trim().toLowerCase().replace(/\s+/g, '') ?? '';
-  const isInternalAdminCompany = normalizedName === 'rolecolorfinderllc' || normalizedName === 'rolecolorfinder';
+  const isInternalAdminCompany = companyId === INTERNAL_COMPANY_ID;
 
   const loadStatement = async () => {
     setLoading(true);
@@ -183,6 +192,7 @@ export default function AdminCompanyStatementModal({
       const hasActiveSubscription =
         company?.hiring_subscription_enabled &&
         (company?.hiring_subscription_status === 'active' || company?.hiring_subscription_status === 'trialing');
+      const hasCancelledAtPeriodEnd = !!company?.hiring_subscription_cancel_at_period_end;
       const periodEnd = company?.hiring_subscription_current_period_end
         ? new Date(company.hiring_subscription_current_period_end)
         : null;
@@ -281,6 +291,13 @@ export default function AdminCompanyStatementModal({
       const hasMonthlyBillingRow = txRows.some((row) => row.description.toLowerCase().includes('monthly billing'));
       const baseSeatsPurchased = Math.max(2, company.seats_purchased || 2);
       const basePortalMonthlyCost = isInternalAdminCompany ? 0 : baseSeatsPurchased * 20;
+      const hiringRenewalCost = isInternalAdminCompany ? 0 : (hasActiveSubscription && !hasCancelledAtPeriodEnd ? 500 : 0);
+      setRenewalPreview({
+        portalCost: basePortalMonthlyCost,
+        hiringCost: hiringRenewalCost,
+        total: basePortalMonthlyCost + hiringRenewalCost,
+        willRenewHiring: hiringRenewalCost > 0,
+      });
       const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
       const basePortalCostRow: StatementRow | null = hasMonthlyBillingRow
         ? null
@@ -319,6 +336,10 @@ export default function AdminCompanyStatementModal({
         { charges: 0, subscriptions: 0, extraInsights: 0, portalCost: 0, creditsApplied: 0, net: 0 }
       );
 
+      if (isInternalAdminCompany) {
+        totals.net = 0;
+      }
+
       setStatementRows(allRows);
       setStatementTotals(totals);
     } catch (error: any) {
@@ -337,6 +358,12 @@ export default function AdminCompanyStatementModal({
     if (!open || !companyId) return;
     loadStatement();
   }, [open, companyId, companyName, isInternalAdminCompany]);
+
+  useEffect(() => {
+    if (open) {
+      setActiveView(initialView);
+    }
+  }, [initialView, open]);
 
   const handleDelete = async () => {
     if (!pendingDelete) return;
@@ -376,7 +403,77 @@ export default function AdminCompanyStatementModal({
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={activeView === 'statement' ? 'default' : 'outline'}
+              onClick={() => setActiveView('statement')}
+            >
+              View Statement
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={activeView === 'renewal' ? 'default' : 'outline'}
+              onClick={() => setActiveView('renewal')}
+            >
+              View Renewal Statement
+            </Button>
+          </div>
+
           <div className="flex-1 overflow-auto space-y-4 pr-1">
+            {activeView === 'renewal' ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Next Renewal Date</p>
+                    <p className="text-sm font-medium">
+                      {renewalDate ? renewalDate.toLocaleDateString() : 'Not available yet'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Recurring Total</p>
+                    <p className="text-sm font-medium">{formatCurrency(renewalPreview.total)}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Hiring Renewal Status</p>
+                    <p className="text-sm font-medium">
+                      {renewalPreview.willRenewHiring ? 'Will renew' : 'Not scheduled to renew'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border">
+                  <div className="grid grid-cols-12 gap-2 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground">
+                    <div className="col-span-8">Renewal Line Item</div>
+                    <div className="col-span-4 text-right">Amount</div>
+                  </div>
+                  <div className="divide-y">
+                    <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center">
+                      <div className="col-span-8 text-muted-foreground">Base Portal Cost (monthly recurring)</div>
+                      <div className="col-span-4 text-right font-semibold">{formatCurrency(renewalPreview.portalCost)}</div>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center">
+                      <div className="col-span-8 text-muted-foreground">
+                        Hiring Subscription (monthly recurring)
+                        {!renewalPreview.willRenewHiring ? ' — cancellation scheduled' : ''}
+                      </div>
+                      <div className="col-span-4 text-right font-semibold">{formatCurrency(renewalPreview.hiringCost)}</div>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center bg-muted/20">
+                      <div className="col-span-8 font-medium">Projected Renewal Total</div>
+                      <div className="col-span-4 text-right font-bold">{formatCurrency(renewalPreview.total)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Billing credits on the company wallet are applied first at renewal time before any card charge.
+                </p>
+              </>
+            ) : (
+              <>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border p-3">
                 <p className="text-xs text-muted-foreground">Billing Cycle Started</p>
@@ -529,6 +626,8 @@ export default function AdminCompanyStatementModal({
                 </div>
               )}
             </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

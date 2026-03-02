@@ -8,6 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const isFutureDate = (value: string | null | undefined) => {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() > Date.now();
+};
+
 serve(async (req) => {
   console.log("=== RESUBSCRIBE HIRING FUNCTION STARTED ===");
 
@@ -48,7 +55,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, hiring_subscription_id, hiring_subscription_cancel_at_period_end, hiring_subscription_enabled, hiring_subscription_status")
+      .select("id, hiring_subscription_id, hiring_subscription_cancel_at_period_end, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_current_period_end")
       .eq("id", companyId)
       .single();
 
@@ -60,10 +67,30 @@ serve(async (req) => {
       cancel_at_period_end: company.hiring_subscription_cancel_at_period_end,
       enabled: company.hiring_subscription_enabled,
       status: company.hiring_subscription_status,
+      current_period_end: company.hiring_subscription_current_period_end,
     });
 
-    // Check if they have a subscription that's set to cancel at period end
-    if (company.hiring_subscription_id && company.hiring_subscription_cancel_at_period_end) {
+    if (!company.hiring_subscription_cancel_at_period_end) {
+      if (
+        company.hiring_subscription_enabled &&
+        (company.hiring_subscription_status === "active" || company.hiring_subscription_status === "trialing")
+      ) {
+        return new Response(JSON.stringify({
+          success: true,
+          reactivated: false,
+          alreadyActive: true,
+          message: "Subscription is already active.",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      throw new Error("No cancellation is currently scheduled for this subscription.");
+    }
+
+    // Case 1: Stripe-backed subscription set to cancel at period end
+    if (company.hiring_subscription_id) {
       // Reactivate by removing cancellation
       const stripeSecret = Deno.env.get("STRIPE_SECRET");
       if (!stripeSecret) throw new Error("Stripe configuration error");
@@ -126,13 +153,37 @@ serve(async (req) => {
       }
     }
 
+    // Case 2: No Stripe subscription id (credits/local access path)
+    // If still inside the current paid period, simply remove cancel_at_period_end.
+    if (isFutureDate(company.hiring_subscription_current_period_end)) {
+      await supabase
+        .from("companies")
+        .update({
+          hiring_subscription_cancel_at_period_end: false,
+          hiring_subscription_enabled: true,
+          hiring_subscription_status: company.hiring_subscription_status === "trialing" ? "trialing" : "active",
+        })
+        .eq("id", companyId);
+
+      return new Response(JSON.stringify({
+        success: true,
+        reactivated: true,
+        noImmediateCharge: true,
+        nextRenewalDate: company.hiring_subscription_current_period_end,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     // If no active subscription, they need to go through the regular subscribe flow
-    // to create a new subscription (this will use their existing payment method)
+    // to create a new subscription (this may charge card/credits immediately)
     console.log("Cannot resubscribe - no valid subscription state. Company state:", {
       has_subscription_id: !!company.hiring_subscription_id,
       cancel_at_period_end: company.hiring_subscription_cancel_at_period_end,
+      current_period_end: company.hiring_subscription_current_period_end,
     });
-    throw new Error("No active subscription found. Please use the regular subscription flow to create a new subscription.");
+    throw new Error("Current billing period has ended. Please use the regular subscription flow to create a new subscription.");
 
   } catch (error) {
     console.error("Error resubscribing to hiring:", error);

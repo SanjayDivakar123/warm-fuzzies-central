@@ -48,7 +48,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, hiring_subscription_id, hiring_subscription_enabled")
+      .select("id, hiring_subscription_id, hiring_subscription_enabled, hiring_subscription_current_period_end")
       .eq("id", companyId)
       .single();
 
@@ -85,24 +85,30 @@ serve(async (req) => {
           status: 200,
         });
       } else {
-        // Regular user cancellation - give them access until end of current month
+        // Regular user cancellation - keep access until end of current billing period
         const now = new Date();
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        const existingPeriodEnd = company.hiring_subscription_current_period_end
+          ? new Date(company.hiring_subscription_current_period_end)
+          : null;
+        const hasFuturePeriodEnd = !!existingPeriodEnd && !Number.isNaN(existingPeriodEnd.getTime()) && existingPeriodEnd.getTime() > now.getTime();
+        const periodEnd = hasFuturePeriodEnd
+          ? existingPeriodEnd
+          : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
         await supabase
           .from("companies")
           .update({
             hiring_subscription_cancel_at_period_end: true,
-            hiring_subscription_current_period_end: endOfMonth.toISOString(),
+            hiring_subscription_current_period_end: periodEnd.toISOString(),
           })
           .eq("id", companyId);
 
-        console.log("Hiring platform set to cancel at end of month (no Stripe subscription):", companyId);
+        console.log("Hiring platform set to cancel at end of billing period (no Stripe subscription):", companyId);
 
         return new Response(JSON.stringify({ 
           success: true,
           cancelAtPeriodEnd: true,
-          periodEnd: endOfMonth.toISOString(),
+          periodEnd: periodEnd.toISOString(),
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,

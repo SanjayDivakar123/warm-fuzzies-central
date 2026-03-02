@@ -106,7 +106,7 @@ export default function RCFB2BAdminDashboard() {
   const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
   const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
   const [selectedBillingAction, setSelectedBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits">("add_free_credits");
-  const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string } | null>(null);
+  const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string; initialView?: 'statement' | 'renewal' } | null>(null);
   const [togglingHiringFor, setTogglingHiringFor] = useState<string | null>(null);
   const [pendingHiringToggle, setPendingHiringToggle] = useState<{ 
     companyId: string; 
@@ -563,12 +563,19 @@ export default function RCFB2BAdminDashboard() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setStatementModalCompany({ id: company.id, name: company.name })}
+                                  onClick={() => setStatementModalCompany({ id: company.id, name: company.name, initialView: 'statement' })}
                                   className="gap-1"
                                 >
                                   <FileText className="h-3.5 w-3.5" />
                                   View Statement
                                 </Button>
+                                {/* <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setStatementModalCompany({ id: company.id, name: company.name, initialView: 'renewal' })}
+                                >
+                                  View Renewal Statement
+                                </Button> */}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -801,6 +808,7 @@ export default function RCFB2BAdminDashboard() {
         <AdminCompanyStatementModal
           companyId={statementModalCompany?.id ?? ""}
           companyName={statementModalCompany?.name ?? ""}
+          initialView={statementModalCompany?.initialView ?? 'statement'}
           open={!!statementModalCompany}
           onClose={() => setStatementModalCompany(null)}
         />

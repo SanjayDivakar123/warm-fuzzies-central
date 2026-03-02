@@ -440,6 +440,78 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
               </CardContent>
             </Card>
           </div>
+
+          <Dialog open={subscribing || resubscribing} onOpenChange={() => {}}>
+            <DialogContent
+              className="max-w-sm [&>button]:hidden"
+              onEscapeKeyDown={(event) => event.preventDefault()}
+              onPointerDownOutside={(event) => event.preventDefault()}
+              onInteractOutside={(event) => event.preventDefault()}
+            >
+              <DialogHeader>
+                <DialogTitle>Processing Subscription</DialogTitle>
+                <DialogDescription>
+                  Please wait while we process your subscription. Do not close this window.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  {subscribeError?.type === 'auth_required' ? (
+                    <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                      <ShieldAlert className="h-5 w-5 text-amber-500" />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    </div>
+                  )}
+                  <DialogTitle className="text-left">{subscribeError?.title}</DialogTitle>
+                </div>
+                <DialogDescription className="text-left text-sm leading-relaxed">
+                  {subscribeError?.description}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 pt-2">
+                {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
+                  <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Complete Bank Authentication
+                  </Button>
+                )}
+                {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setSubscribeError(null);
+                      window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                      setTimeout(() => {
+                        document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 400);
+                    }}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Update Payment Method
+                  </Button>
+                )}
+                <Button
+                  variant={subscribeError?.type === 'auth_required' ? 'outline' : 'default'}
+                  className="w-full"
+                  onClick={() => setSubscribeError(null)}
+                >
+                  {subscribeError?.type === 'auth_required' ? 'Dismiss' : 'Close'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       );
     }
