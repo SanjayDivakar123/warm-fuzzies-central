@@ -154,8 +154,11 @@ export default function SettingsTab({
     setLoadingBalance(false);
   }, [company.id, company.credit_balance]);
 
+  // Reset all form fields AND the saved baseline whenever the active company changes.
+  // Without this, switching companies leaves stale state from the previous company,
+  // causing a false dirty flag and saving the wrong subdomain to the new company.
   useEffect(() => {
-    setLastSavedSettings({
+    const fresh = {
       logoUrl: company.logo_url || "",
       logoUrlDark: company.logo_url_dark || "",
       primaryColor: company.primary_color,
@@ -165,19 +168,18 @@ export default function SettingsTab({
       customDomainEnabled: company.custom_domain_enabled,
       googleSsoEnabled: company.google_sso_enabled || false,
       googleWorkspaceDomain: company.google_workspace_domain || "",
-    });
-  }, [
-    company.id,
-    company.logo_url,
-    company.logo_url_dark,
-    company.primary_color,
-    company.secondary_color,
-    company.subdomain,
-    company.custom_domain,
-    company.custom_domain_enabled,
-    company.google_sso_enabled,
-    company.google_workspace_domain,
-  ]);
+    };
+    setLogoUrl(fresh.logoUrl);
+    setLogoUrlDark(fresh.logoUrlDark);
+    setPrimaryColor(fresh.primaryColor);
+    setSecondaryColor(fresh.secondaryColor);
+    setSubdomain(fresh.subdomain);
+    setCustomDomain(fresh.customDomain);
+    setCustomDomainEnabled(fresh.customDomainEnabled);
+    setGoogleSsoEnabled(fresh.googleSsoEnabled);
+    setGoogleWorkspaceDomain(fresh.googleWorkspaceDomain);
+    setLastSavedSettings(fresh);
+  }, [company.id]); // keyed only on id — fires exactly once per company switch
 
   useEffect(() => {
     onDirtyChange?.(hasUnsavedChanges);

@@ -244,30 +244,66 @@ serve(async (req) => {
       },
     });
 
-    // Ensure default payment method exists
-    const retrievedCustomer = await stripe.customers.retrieve(customerId);
-    // @ts-ignore
-    const defaultPM = (retrievedCustomer as any)?.invoice_settings?.default_payment_method;
-    if (!defaultPM) {
-      console.error("no default payment method for customer", customerId);
+    // Find any attached payment method (list is more reliable than invoice_settings.default_payment_method
+    // because Stripe Checkout Setup mode attaches the card but doesn't always set it as the invoice default)
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+      type: "card",
+    });
+
+    if (paymentMethods.data.length === 0) {
+      console.error("no payment method on file for customer", customerId);
       return new Response(JSON.stringify({
-        error: "No default payment method on file",
+        error: "No payment method on file. Please add a payment method first.",
         step: "no_default_payment_method",
         details: { customerId },
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
     }
 
+    const defaultPM = paymentMethods.data[0].id;
+
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
+      default_payment_method: defaultPM,
       billing_cycle_anchor: Math.floor(nextRenewalDate.getTime() / 1000),
       proration_behavior: "create_prorations",
-      payment_behavior: "error_if_incomplete", // Fail if payment can't be completed
+      // "default_incomplete" lets us handle 3DS/requires_action instead of immediately erroring
+      payment_behavior: "default_incomplete",
       expand: ["latest_invoice.payment_intent"],
       metadata: { company_id: companyId, type: "hiring_subscription" },
     });
 
-    // Update company with subscription details regardless of status
+    const latestInvoice = typeof subscription.latest_invoice !== "string" ? subscription.latest_invoice : null;
+    const paymentIntent = latestInvoice && typeof latestInvoice.payment_intent !== "string"
+      ? latestInvoice.payment_intent
+      : null;
+
+    // If the card requires 3DS authentication, return the action URL so the frontend can redirect
+    if (paymentIntent?.status === "requires_action" || paymentIntent?.status === "requires_source_action") {
+      const actionUrl = (paymentIntent as any)?.next_action?.redirect_to_url?.url
+        ?? (paymentIntent as any)?.next_action?.use_stripe_sdk?.stripe_js;
+
+      // Save the incomplete subscription so we can activate it after auth completes
+      await supabase.from("companies").update({
+        hiring_subscription_id: subscription.id,
+        hiring_subscription_status: subscription.status,
+        hiring_subscription_enabled: false,
+        hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        hiring_subscription_cancel_at_period_end: false,
+      }).eq("id", companyId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        requiresAction: true,
+        actionUrl,
+        clientSecret: paymentIntent.client_secret,
+        subscriptionId: subscription.id,
+        step: "requires_authentication",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+    }
+
+    // Payment succeeded or is in trialing — save subscription
     const { error: subUpdateError } = await supabase
       .from("companies")
       .update({
@@ -287,15 +323,13 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
     }
 
-    // Record charge attempt (in dollars). If payment failed, this is still useful audit.
+    // Record charge
     const { error: txErr } = await supabase.from("billing_transactions").insert({
       company_id: companyId,
       type: "charge",
       amount: 500.0,
       description: "Hiring Tab subscription (card on file)",
-      stripe_payment_intent_id: subscription.latest_invoice && typeof subscription.latest_invoice !== "string"
-        ? (subscription.latest_invoice.payment_intent as any)?.id
-        : undefined,
+      stripe_payment_intent_id: paymentIntent?.id,
     });
     if (txErr) console.error("Billing transaction insert error:", txErr);
 

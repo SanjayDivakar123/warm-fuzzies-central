@@ -14,6 +14,8 @@ import {
   CreditCard,
   Sparkles,
   ArrowDown,
+  ShieldAlert,
+  ExternalLink,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -64,6 +66,12 @@ export default function HiringSubscriptionSettings({
 
   const [subscribing, setSubscribing] = useState(false);
   const [noPaymentMethod, setNoPaymentMethod] = useState(false);
+  const [subscribeError, setSubscribeError] = useState<{
+    title: string;
+    description: string;
+    actionUrl?: string;
+    type: 'auth_required' | 'card_declined' | 'generic';
+  } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showStatementDialog, setShowStatementDialog] = useState(false);
@@ -316,66 +324,106 @@ export default function HiringSubscriptionSettings({
     loadSubscriptionStartDate();
   }, [company.id, company.hiring_subscription_current_period_end]);
 
+  // Translate raw Stripe / edge-function messages into clean user-facing errors
+  const classifyError = (msg: string, step?: string): typeof subscribeError => {
+    const m = (msg || '').toLowerCase();
+    if (step === 'no_default_payment_method' || m.includes('no payment method') || m.includes('no default payment')) {
+      return null; // handled separately via noPaymentMethod state
+    }
+    if (
+      m.includes('requires additional user action') ||
+      m.includes('requires_action') ||
+      m.includes('paymentintent') ||
+      m.includes('requires authentication') ||
+      m.includes('3d secure') ||
+      step === 'requires_authentication'
+    ) {
+      return {
+        type: 'auth_required',
+        title: 'Card Requires Verification',
+        description: 'Your bank requires additional verification before this payment can go through. Please update your payment method or contact your bank to allow this charge.',
+      };
+    }
+    if (m.includes('declined') || m.includes('insufficient funds') || m.includes('do_not_honor') || m.includes('frozen')) {
+      return {
+        type: 'card_declined',
+        title: 'Card Issue',
+        description: 'There was a problem with your card on file. It may be declined, frozen, or have insufficient funds. Please update your payment method and try again.',
+      };
+    }
+    return {
+      type: 'generic',
+      title: 'Subscription Failed',
+      description: 'Something went wrong processing your subscription. Please try again or contact support if the issue persists.',
+    };
+  };
+
   const handleSubscribe = async () => {
     setSubscribing(true);
     setNoPaymentMethod(false);
+    setSubscribeError(null);
     try {
       const { data, error } = await supabase.functions.invoke('subscribe-hiring-tab', {
         body: { companyId: company.id },
       });
 
-      // Parse error body from edge function for actionable messages
+      // Parse actual error body from edge function
       if (error) {
         let payload: any = null;
-        try {
-          payload = await (error as any).context?.json?.();
-        } catch {}
+        try { payload = await (error as any).context?.json?.(); } catch {}
         const step = payload?.step || data?.step;
-        const msg = payload?.error || data?.error || error.message;
+        const msg = payload?.error || data?.error || error.message || '';
 
-        if (step === 'no_default_payment_method' || msg?.toLowerCase().includes('payment method')) {
+        if (step === 'no_default_payment_method' || msg.toLowerCase().includes('no payment method') || msg.toLowerCase().includes('no default payment')) {
           setNoPaymentMethod(true);
-          // Scroll to payment method card so user can add one
           setTimeout(() => {
             document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 100);
-          toast({
-            title: 'No payment method on file',
-            description: 'Please add a payment method below before subscribing.',
-            variant: 'destructive',
-          });
         } else {
-          toast({
-            title: 'Subscription failed',
-            description: msg || 'Failed to start subscription',
-            variant: 'destructive',
-          });
+          setSubscribeError(classifyError(msg, step));
         }
         setSubscribing(false);
         return;
       }
 
-      if (data?.error) {
-        toast({
-          title: 'Subscription failed',
-          description: data.error,
-          variant: 'destructive',
+      // 3DS / bank authentication required (new edge function response)
+      if (data?.requiresAction) {
+        setSubscribeError({
+          type: 'auth_required',
+          title: 'Card Requires Verification',
+          description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
+          actionUrl: data.actionUrl,
         });
         setSubscribing(false);
         return;
       }
 
-      // Redirect to Stripe checkout if URL provided
+      if (data?.error) {
+        const step = data.step;
+        const msg: string = data.error || '';
+        if (step === 'no_default_payment_method' || msg.toLowerCase().includes('no payment method')) {
+          setNoPaymentMethod(true);
+          setTimeout(() => {
+            document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        } else {
+          setSubscribeError(classifyError(msg, step));
+        }
+        setSubscribing(false);
+        return;
+      }
+
       if (data?.url) {
         window.location.href = data.url;
+        return;
+      }
+
+      if (data?.success && onSubscriptionUpdated) {
+        onSubscriptionUpdated();
       }
     } catch (error: any) {
       console.error('Error subscribing:', error);
-      toast({
-        title: 'Subscription failed',
-        description: error.message || 'Failed to start subscription',
-        variant: 'destructive',
-      });
+      setSubscribeError(classifyError(error.message || ''));
       setSubscribing(false);
     }
   };
@@ -630,6 +678,63 @@ export default function HiringSubscriptionSettings({
           )}
         </CardContent>
       </Card>
+
+      {/* Subscription Error Modal */}
+      <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              {subscribeError?.type === 'auth_required' ? (
+                <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-amber-500" />
+                </div>
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                </div>
+              )}
+              <DialogTitle className="text-left">{subscribeError?.title}</DialogTitle>
+            </div>
+            <DialogDescription className="text-left text-sm leading-relaxed">
+              {subscribeError?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 pt-2">
+            {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
+              <Button
+                className="w-full"
+                onClick={() => { window.location.href = subscribeError.actionUrl!; }}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Complete Bank Authentication
+              </Button>
+            )}
+            {subscribeError?.type === 'card_declined' && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setSubscribeError(null);
+                  setTimeout(() => {
+                    document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
+                }}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Update Payment Method
+              </Button>
+            )}
+            <Button
+              variant={subscribeError?.type === 'auth_required' ? 'outline' : 'default'}
+              className="w-full"
+              onClick={() => setSubscribeError(null)}
+            >
+              {subscribeError?.type === 'auth_required' ? 'Dismiss' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

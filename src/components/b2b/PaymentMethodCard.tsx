@@ -68,18 +68,19 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
   // Check for payment setup success in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('payment_setup') === 'success') {
-      toast({
-        title: 'Payment method updated',
-        description: 'Your payment method has been successfully saved.',
-      });
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
-      // Refresh payment method
-      fetchPaymentMethod();
-    } else if (params.get('payment_setup') === 'cancelled') {
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
+    const paymentSetup = params.get('payment_setup');
+    if (paymentSetup === 'success' || paymentSetup === 'cancelled') {
+      if (paymentSetup === 'success') {
+        toast({
+          title: 'Payment method saved',
+          description: 'Your payment method has been successfully added.',
+        });
+        fetchPaymentMethod();
+      }
+      // Remove only payment_setup from URL, preserve other params (tab, company, etc.)
+      params.delete('payment_setup');
+      const remaining = params.toString();
+      window.history.replaceState({}, '', remaining ? `${window.location.pathname}?${remaining}` : window.location.pathname);
     }
   }, []);
 
@@ -93,8 +94,8 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
         body: {
           company_id: company.id,
           action: 'setup_payment_method',
-          success_url: `${window.location.origin}/b2b/dashboard?payment_setup=success`,
-          cancel_url: `${window.location.origin}/b2b/dashboard?payment_setup=cancelled`
+          success_url: `${window.location.origin}/b2b/company-portal?company=${company.id}&tab=settings&payment_setup=success`,
+          cancel_url: `${window.location.origin}/b2b/company-portal?company=${company.id}&tab=settings&payment_setup=cancelled`
         }
       });
 
