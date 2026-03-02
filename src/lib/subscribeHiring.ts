@@ -24,7 +24,15 @@ type EdgeErrorPayload = {
   actionUrl?: string;
 };
 
+const inFlightSubscribeRequests = new Map<string, Promise<SubscribeHiringResult>>();
+
 export const subscribeHiring = async (companyId: string): Promise<SubscribeHiringResult> => {
+  const existingRequest = inFlightSubscribeRequests.get(companyId);
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const requestPromise = (async (): Promise<SubscribeHiringResult> => {
   const lock = beginHiringSubscribeAttempt(companyId);
   if (!lock.acquired) {
     return {
@@ -76,5 +84,16 @@ export const subscribeHiring = async (companyId: string): Promise<SubscribeHirin
     };
   } finally {
     endHiringSubscribeAttempt(companyId, lock.requestId);
+  }
+  })();
+
+  inFlightSubscribeRequests.set(companyId, requestPromise);
+
+  try {
+    return await requestPromise;
+  } finally {
+    if (inFlightSubscribeRequests.get(companyId) === requestPromise) {
+      inFlightSubscribeRequests.delete(companyId);
+    }
   }
 };

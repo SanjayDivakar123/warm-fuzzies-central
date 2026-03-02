@@ -156,8 +156,16 @@ export default function InviteUserModal({
         }
         if (errData?.errorCode === 'CARD_DECLINED') {
           setPaymentError({
-            title: 'Card declined',
-            message: errData?.error || 'Your card was declined. Please update your payment method in Settings and try again.',
+            title: 'Payment method issue',
+            message: 'No valid payment method is set up. Please add or update your payment information in Settings to invite new users.',
+          });
+          setLoading(false);
+          return;
+        }
+        if (errData?.errorCode === 'REQUIRES_AUTHENTICATION') {
+          setPaymentError({
+            title: 'Card authentication required',
+            message: `${errData?.error || 'Your bank requires authentication for this card. Please update your payment method in Settings and try again.'}${errData?.declineCode ? ` (Code: ${errData.declineCode})` : ''}`,
           });
           setLoading(false);
           return;
@@ -165,7 +173,7 @@ export default function InviteUserModal({
         if (errData?.errorCode === 'CHARGE_FAILED') {
           setPaymentError({
             title: 'Payment failed',
-            message: errData?.error || 'There was an issue charging your card. Please check your payment method in Settings.',
+            message: `${errData?.error || 'There was an issue charging your card. Please check your payment method in Settings.'}${errData?.errorCode ? ` (Code: ${errData.errorCode})` : ''}`,
           });
           setLoading(false);
           return;
@@ -184,8 +192,16 @@ export default function InviteUserModal({
         }
         if (data.errorCode === 'CARD_DECLINED') {
           setPaymentError({
-            title: 'Card declined',
-            message: data.error || 'Your card was declined. Please update your payment method in Settings and try again.',
+            title: 'Payment method issue',
+            message: 'No valid payment method is set up. Please add or update your payment information in Settings to invite new users.',
+          });
+          setLoading(false);
+          return;
+        }
+        if (data.errorCode === 'REQUIRES_AUTHENTICATION') {
+          setPaymentError({
+            title: 'Card authentication required',
+            message: `${data.error || 'Your bank requires authentication for this card. Please update your payment method in Settings and try again.'}${data.declineCode ? ` (Code: ${data.declineCode})` : ''}`,
           });
           setLoading(false);
           return;
@@ -193,7 +209,7 @@ export default function InviteUserModal({
         if (data.errorCode === 'CHARGE_FAILED') {
           setPaymentError({
             title: 'Payment failed',
-            message: data.error || 'There was an issue charging your card. Please check your payment method in Settings.',
+            message: `${data.error || 'There was an issue charging your card. Please check your payment method in Settings.'}${data.errorCode ? ` (Code: ${data.errorCode})` : ''}`,
           });
           setLoading(false);
           return;

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,9 @@ interface CompanySummary {
   ownerCount: number;
   adminLevelCount: number;
   credit_balance: number;
+  hiring_subscription_enabled: boolean;
+  hiring_subscription_status: string | null;
+  hiring_subscription_cancel_at_period_end: boolean;
 }
 
 interface CompanyUserRow {
@@ -96,6 +100,8 @@ export default function RCFB2BAdminDashboard() {
   const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
   const [selectedBillingAction, setSelectedBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits">("add_free_credits");
   const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string } | null>(null);
+  const [togglingHiringFor, setTogglingHiringFor] = useState<string | null>(null);
+  const [pendingHiringToggle, setPendingHiringToggle] = useState<{ companyId: string; companyName: string; currentlyEnabled: boolean } | null>(null);
 
   const isAllowed = ALLOWED_SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
 
@@ -254,6 +260,35 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
+  const toggleHiring = async (companyId: string, companyName: string, currentlyEnabled: boolean) => {
+    setTogglingHiringFor(companyId);
+    try {
+      const { data, error } = await supabase.functions.invoke("super-admin-toggle-hiring", {
+        body: {
+          companyId,
+          enable: !currentlyEnabled,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Hiring Platform Updated",
+        description: data?.message || `Hiring platform ${!currentlyEnabled ? 'enabled' : 'disabled'} for ${companyName}`,
+      });
+
+      await fetchCompanies();
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to toggle hiring",
+        description: getErrorMessage(error) || "Could not update hiring platform access.",
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingHiringFor(null);
+    }
+  };
+
   useEffect(() => {
     if (!loading && isAllowed) {
       fetchCompanies();
@@ -397,6 +432,7 @@ export default function RCFB2BAdminDashboard() {
                           <TableHead>Owners</TableHead>
                           <TableHead>Admin-Level</TableHead>
                           <TableHead>Credits</TableHead>
+                          <TableHead>Hiring Platform</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -409,6 +445,23 @@ export default function RCFB2BAdminDashboard() {
                             <TableCell>{company.ownerCount}</TableCell>
                             <TableCell>{company.adminLevelCount}</TableCell>
                             <TableCell>{formatUsd(company.credit_balance)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={company.hiring_subscription_enabled}
+                                  onCheckedChange={() => setPendingHiringToggle({ companyId: company.id, companyName: company.name, currentlyEnabled: company.hiring_subscription_enabled })}
+                                  disabled={togglingHiringFor === company.id}
+                                />
+                                {company.hiring_subscription_enabled && (
+                                  <Badge variant={company.hiring_subscription_status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                    {company.hiring_subscription_status || 'active'}
+                                  </Badge>
+                                )}
+                                {togglingHiringFor === company.id && (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
                                 <Button
@@ -437,7 +490,7 @@ export default function RCFB2BAdminDashboard() {
                         ))}
                         {companies.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                               No companies found.
                             </TableCell>
                           </TableRow>
@@ -712,6 +765,63 @@ export default function RCFB2BAdminDashboard() {
                   "Confirm Remove Credits"
                 ) : (
                   "Confirm Add Credits"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={pendingHiringToggle !== null}
+          onOpenChange={(open) => {
+            if (!open && !togglingHiringFor) setPendingHiringToggle(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pendingHiringToggle?.currentlyEnabled ? "Disable Hiring Platform" : "Enable Hiring Platform"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to{" "}
+                <span className="font-semibold">
+                  {pendingHiringToggle?.currentlyEnabled ? "disable" : "enable"}
+                </span>{" "}
+                the Hiring Platform for{" "}
+                <span className="font-semibold">{pendingHiringToggle?.companyName}</span>.
+                <br />
+                <br />
+                {pendingHiringToggle?.currentlyEnabled ? (
+                  <span className="text-destructive">
+                    This will immediately cancel their subscription and revoke access to all hiring features including job postings, applications, and the ATS pipeline.
+                  </span>
+                ) : (
+                  <span>
+                    This will enable access to the Hiring Platform and all ATS features for this company.
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={togglingHiringFor !== null}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!pendingHiringToggle || togglingHiringFor !== null}
+                onClick={async () => {
+                  if (!pendingHiringToggle) return;
+                  await toggleHiring(pendingHiringToggle.companyId, pendingHiringToggle.companyName, pendingHiringToggle.currentlyEnabled);
+                  setPendingHiringToggle(null);
+                }}
+                className={pendingHiringToggle?.currentlyEnabled ? "bg-destructive hover:bg-destructive/90" : ""}
+              >
+                {togglingHiringFor !== null ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : pendingHiringToggle?.currentlyEnabled ? (
+                  "Confirm Disable"
+                ) : (
+                  "Confirm Enable"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -60,7 +60,7 @@ serve(async (req) => {
       await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance")
+          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end")
           .order("created_at", { ascending: false }),
         supabase.from("company_users").select("company_id, role, status"),
       ]);
@@ -119,6 +119,9 @@ serve(async (req) => {
         created_at: company.created_at,
         seats_purchased: company.seats_purchased,
         credit_balance: company.credit_balance || 0,
+        hiring_subscription_enabled: company.hiring_subscription_enabled || false,
+        hiring_subscription_status: company.hiring_subscription_status || null,
+        hiring_subscription_cancel_at_period_end: company.hiring_subscription_cancel_at_period_end || false,
         ...stats,
       };
     });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHiringSubscribeInFlight } from '@/lib/hiringSubscribeLock';
 import { subscribeHiring } from '@/lib/subscribeHiring';
+import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, 
@@ -34,8 +35,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AlertTriangle, ShieldAlert, ExternalLink, CreditCard } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, ExternalLink, CreditCard, Loader2 } from 'lucide-react';
 import { useHelpTour } from '@/contexts/HelpTourContext';
+import HiringUnlockedModal from '@/components/b2b/HiringUnlockedModal';
 
 // Import hiring sub-components
 import JobPostingsTab from './JobPostingsTab';
@@ -57,14 +59,16 @@ interface HiringSectionProps {
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
     hiring_subscription_current_period_end?: string;
+    hiring_ever_subscribed?: boolean;
   };
   companyUser: { id: string; role: string } | null;
+  onSubscriptionUpdated?: () => void;
 }
 
 type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics' | 'legacy';
 
-export default function HiringSection({ company, companyUser }: HiringSectionProps) {
-  const { activeTour, currentStepIndex } = useHelpTour();
+export default function HiringSection({ company, companyUser, onSubscriptionUpdated }: HiringSectionProps) {
+  const { activeTour, currentStepIndex, startTour } = useHelpTour();
   const [activeTab, setActiveTab] = useState<HiringTab>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -76,6 +80,8 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
     description: string;
     actionUrl?: string;
   } | null>(null);
+  const [showUnlockedModal, setShowUnlockedModal] = useState(false);
+  const [resubscribing, setResubscribing] = useState(false);
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
   const hasHiringAccess = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
@@ -84,6 +90,22 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
   const hiringCost = 500; // $500 in dollars
   const creditContribution = Math.min(creditBalance, hiringCost);
   const cardCharge = hiringCost - creditContribution;
+
+  // Check for tutorial flag after subscription success reload
+  useEffect(() => {
+    if (!hasHiringAccess) return;
+    
+    const shouldStartTutorial = localStorage.getItem('rcf_start_hiring_tutorial');
+    if (shouldStartTutorial === 'true') {
+      localStorage.removeItem('rcf_start_hiring_tutorial');
+      // Start tutorial after a brief delay to ensure UI is ready
+      setTimeout(() => {
+        startTour('admin-hiring-unlocked');
+      }, 1000);
+    } else if (shouldStartTutorial === 'false') {
+      localStorage.removeItem('rcf_start_hiring_tutorial');
+    }
+  }, [hasHiringAccess, startTour]);
 
   useEffect(() => {
     if (activeTour?.id !== 'admin-hiring-unlocked') return;
@@ -116,6 +138,13 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       };
     }
     if (step === 'already_processing' || m.includes('already being processed')) {
+      return {
+        type: 'generic',
+        title: 'Subscription Already Processing',
+        description: 'A subscription request is already in progress. Please wait a few seconds and try again.',
+      };
+    }
+    if (m.includes('idempotent requests')) {
       return {
         type: 'generic',
         title: 'Subscription Already Processing',
@@ -164,7 +193,14 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
       }
 
       if (data?.success) {
-        window.location.reload();
+        // Refresh company data first to unlock the hiring tab
+        if (onSubscriptionUpdated) {
+          onSubscriptionUpdated();
+        }
+        // Show success modal after a brief delay to ensure tab is rendered
+        setTimeout(() => {
+          setShowUnlockedModal(true);
+        }, 500);
       }
     } catch (err: unknown) {
       console.error('Error subscribing to hiring tab:', err);
@@ -173,8 +209,219 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
     }
   };
 
+  const handleResubscribe = async () => {
+    setResubscribing(true);
+    try {
+      // If there's a subscription set to cancel at period end, reactivate it
+      if (company.hiring_subscription_cancel_at_period_end) {
+        const { data, error } = await supabase.functions.invoke('resubscribe-hiring', {
+          body: { companyId: company.id },
+        });
+
+        if (error) throw error;
+
+        // Check for requiresAction (3D Secure / bank authentication)
+        if (data?.requiresAction) {
+          setSubscribeError({
+            type: 'auth_required',
+            title: 'Card Requires Verification',
+            description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
+            actionUrl: data.actionUrl,
+          });
+          return;
+        }
+
+        // Check for error with classification
+        if (data?.error) {
+          setSubscribeError(classifySubscribeError(data.error, data.step));
+          return;
+        }
+
+        if (data?.success) {
+          // Refresh company data first to unlock the hiring tab
+          if (onSubscriptionUpdated) {
+            onSubscriptionUpdated();
+          }
+          // Show success modal after a brief delay to ensure tab is rendered
+          setTimeout(() => {
+            setShowUnlockedModal(true);
+          }, 500);
+          return;
+        }
+      }
+
+      // Otherwise, create a new subscription (e.g., after super admin removed access)
+      // Don't set resubscribing to false here - let the finally block handle it
+      const data = await subscribeHiring(company.id);
+
+      if (data?.requiresAction) {
+        setSubscribeError({
+          type: 'auth_required',
+          title: 'Card Requires Verification',
+          description: 'Your bank requires additional verification before this payment can go through. Click below to complete the authentication step, then return here.',
+          actionUrl: data.actionUrl,
+        });
+        return;
+      }
+
+      if (data?.error) {
+        setSubscribeError(classifySubscribeError(data.error, data.step));
+        return;
+      }
+
+      if (data?.success) {
+        // Refresh company data first to unlock the hiring tab
+        if (onSubscriptionUpdated) {
+          onSubscriptionUpdated();
+        }
+        // Show success modal after a brief delay to ensure tab is rendered
+        setTimeout(() => {
+          setShowUnlockedModal(true);
+        }, 500);
+      }
+    } catch (err: unknown) {
+      console.error('Error resubscribing to hiring tab:', err);
+      const message = err instanceof Error ? err.message : '';
+      setSubscribeError(classifySubscribeError(message));
+    } finally {
+      setResubscribing(false);
+    }
+  };
+
   // Show paywall if no access
   if (!hasHiringAccess) {
+    // Returning subscriber - show blurred/locked view with resubscribe button
+    if (company.hiring_ever_subscribed) {
+      return (
+        <div className="space-y-6 relative">
+          {/* Blurred background tabs */}
+          <div className="filter blur-sm pointer-events-none select-none" aria-hidden="true">
+            <Tabs value="jobs">
+              <TabsList className="grid grid-cols-8 w-full opacity-50">
+                <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3">
+                  <Briefcase className="h-4 w-4" />
+                  <span className="hidden sm:inline">Jobs</span>
+                </TabsTrigger>
+                <TabsTrigger value="pipeline" className="flex items-center gap-1.5 px-3">
+                  <GitBranch className="h-4 w-4" />
+                  <span className="hidden sm:inline">Pipeline</span>
+                </TabsTrigger>
+                <TabsTrigger value="candidates" className="flex items-center gap-1.5 px-3">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Candidates</span>
+                </TabsTrigger>
+                <TabsTrigger value="interviews" className="flex items-center gap-1.5 px-3">
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Interviews</span>
+                </TabsTrigger>
+                <TabsTrigger value="offers" className="flex items-center gap-1.5 px-3">
+                  <FileCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Offers</span>
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="flex items-center gap-1.5 px-3">
+                  <Mail className="h-4 w-4" />
+                  <span className="hidden sm:inline">Templates</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-1.5 px-3">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="legacy" className="flex items-center gap-1.5 px-3">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Legacy</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="mt-6 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sample Content</CardTitle>
+                  <CardDescription>This is what your hiring platform looks like</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-12 bg-muted rounded" />
+                    <div className="h-12 bg-muted rounded" />
+                    <div className="h-12 bg-muted rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Centered resubscribe overlay */}
+          <div className="absolute top-14 left-0 right-0 flex items-center justify-center z-10 p-4">
+            <Card className="border-2 border-primary shadow-2xl max-w-lg w-full">
+              <CardHeader className="text-center pb-4">
+                <div className="mx-auto w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                  <Lock className="h-7 w-7 text-primary" />
+                </div>
+                <CardTitle className="text-2xl mb-2">Welcome Back!</CardTitle>
+                <CardDescription className="text-sm leading-relaxed">
+                  Your subscription has expired. Resubscribe now to regain instant access to your hiring platform.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Monthly Subscription</span>
+                    <span className="text-3xl font-bold">${hiringCost}</span>
+                  </div>
+                  {creditContribution > 0 && (
+                    <div className="flex items-center justify-between text-sm border-t border-border/50 pt-2">
+                      <span className="text-muted-foreground">Billing credits applied</span>
+                      <span className="text-green-600 font-medium">-${creditContribution.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cardCharge > 0 && (
+                    <div className="flex items-baseline justify-between border-t border-border pt-3">
+                      <span className="text-sm font-medium">Card charge</span>
+                      <span className="text-2xl font-bold">${cardCharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {isHROrAdmin && (
+                  <Button 
+                    size="lg" 
+                    onClick={handleResubscribe}
+                    disabled={resubscribing || subscribing}
+                    className="w-full h-12"
+                  >
+                    {(resubscribing || subscribing) ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5 mr-2" />
+                        Resubscribe Now
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {!isHROrAdmin && (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-muted-foreground">
+                      Contact your company admin to resubscribe to this feature
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-xs text-center text-muted-foreground leading-relaxed pt-1">
+                  Same great features, same pricing. Resume where you left off.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // New subscriber - show full paywall with features
     return (
       <div className="space-y-6">
         <Card className="border-2 border-primary/20" data-tour="hiring-locked-overview">
@@ -283,6 +530,25 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
           </CardContent>
         </Card>
 
+        <Dialog open={subscribing || resubscribing} onOpenChange={() => {}}>
+          <DialogContent
+            className="max-w-sm [&>button]:hidden"
+            onEscapeKeyDown={(event) => event.preventDefault()}
+            onPointerDownOutside={(event) => event.preventDefault()}
+            onInteractOutside={(event) => event.preventDefault()}
+          >
+            <DialogHeader>
+              <DialogTitle>Processing Subscription</DialogTitle>
+              <DialogDescription>
+                Please wait while we process your subscription. Do not close this window.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Subscribe Error Modal */}
         <Dialog open={!!subscribeError} onOpenChange={(open) => { if (!open) setSubscribeError(null); }}>
           <DialogContent className="max-w-md">
@@ -336,7 +602,6 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
             </div>
           </DialogContent>
         </Dialog>
-
       </div>
     );
   }
@@ -541,6 +806,21 @@ export default function HiringSection({ company, companyUser }: HiringSectionPro
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Hiring Unlocked Success Modal */}
+      <HiringUnlockedModal
+        open={showUnlockedModal}
+        onClose={() => {
+          setShowUnlockedModal(false);
+        }}
+        onStartTutorial={() => {
+          setShowUnlockedModal(false);
+          // Start tutorial after brief delay
+          setTimeout(() => {
+            startTour('admin-hiring-unlocked');
+          }, 300);
+        }}
+      />
     </div>
   );
 }

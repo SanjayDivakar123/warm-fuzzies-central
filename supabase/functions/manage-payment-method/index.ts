@@ -112,7 +112,22 @@ serve(async (req) => {
         });
       }
 
-      const pm = paymentMethods.data[0];
+      let defaultPaymentMethodId: string | null = null;
+      try {
+        const customerObj = await stripe.customers.retrieve(customerId) as any;
+        const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
+        const invoiceDefaultId = typeof invoiceDefault === "string" ? invoiceDefault : invoiceDefault?.id;
+        if (typeof invoiceDefaultId === "string" && invoiceDefaultId.startsWith("pm_")) {
+          defaultPaymentMethodId = invoiceDefaultId;
+        }
+      } catch (customerRetrieveError) {
+        logStep("Failed to retrieve customer invoice default", { customerId, error: customerRetrieveError });
+      }
+
+      const pm = defaultPaymentMethodId
+        ? (paymentMethods.data.find((method) => method.id === defaultPaymentMethodId) || paymentMethods.data[0])
+        : paymentMethods.data[0];
+
       logStep("Payment method found", { brand: pm.card?.brand, last4: pm.card?.last4 });
 
       return new Response(JSON.stringify({ 

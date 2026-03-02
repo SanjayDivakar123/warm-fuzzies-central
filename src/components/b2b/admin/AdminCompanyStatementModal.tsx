@@ -21,8 +21,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const PORTAL_COST_PER_USER = 20;
-
 type StatementRow = {
   id: string;
   created_at: string;
@@ -30,6 +28,8 @@ type StatementRow = {
   description: string;
   amount: number;
   source: 'transaction' | 'credit';
+  user_email?: string;
+  user_name?: string;
 };
 
 interface AdminCompanyStatementModalProps {
@@ -47,6 +47,16 @@ const getStatementCategory = (type: string, description?: string | null): Statem
   const normalizedDescription = (description || '').toLowerCase();
   if (normalizedType.includes('insight') || normalizedDescription.includes('insight')) return 'extra_insight';
   if (normalizedDescription.includes('hiring tab subscription')) return 'subscription';
+  if (normalizedType.includes('user_addition')) {
+    if (normalizedType.includes('credit')) return 'credit';
+    if (normalizedType.includes('failed')) return 'charge';
+    return 'charge';
+  }
+  if (normalizedType.includes('monthly_billing')) {
+    if (normalizedType.includes('credit')) return 'credit';
+    if (normalizedType.includes('failed')) return 'charge';
+    return 'portal_cost';
+  }
   if (normalizedType.includes('credit')) return 'credit';
   return 'charge';
 };
@@ -127,7 +137,7 @@ export default function AdminCompanyStatementModal({
   const loadStatement = async () => {
     setLoading(true);
     try {
-      const [companyRes, txRes, creditRes, usedUsersRes] = await Promise.all([
+      const [companyRes, txRes, creditRes, userChargesRes] = await Promise.all([
         supabase
           .from('companies')
           .select('created_at, seats_purchased, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_current_period_end')
@@ -145,19 +155,22 @@ export default function AdminCompanyStatementModal({
           .order('created_at', { ascending: true }),
         supabase
           .from('company_users')
-          .select('id', { count: 'exact', head: true })
+          .select('id, email, full_name, charged_at, charge_amount')
           .eq('company_id', companyId)
-          .neq('status', 'revoked'),
+          .not('charged_at', 'is', null)
+          .gt('charge_amount', 0)
+          .order('charged_at', { ascending: true }),
       ]);
 
       if (companyRes.error) throw companyRes.error;
       if (txRes.error) throw txRes.error;
       if (creditRes.error) throw creditRes.error;
-      if (usedUsersRes.error) throw usedUsersRes.error;
+      if (userChargesRes.error) throw userChargesRes.error;
 
       const company = companyRes.data;
       const transactions = txRes.data || [];
       const credits = creditRes.data || [];
+      const chargedUsers = userChargesRes.data || [];
 
       const derivedStartDate = company?.created_at
         ? new Date(company.created_at)
@@ -180,21 +193,35 @@ export default function AdminCompanyStatementModal({
           : periodEnd
       );
 
-      const activeUsers = Math.max(0, usedUsersRes.count || 0);
-      const seatsPurchased = Math.max(2, company.seats_purchased || 2);
-      const billableUsers = Math.max(activeUsers, seatsPurchased);
-      const portalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * PORTAL_COST_PER_USER;
-
       const allTxRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
-        .map((row) => ({
-          id: `tx-${row.id}`,
-          created_at: row.created_at,
-          category: getStatementCategory(row.type, row.description),
-          description: row.description || row.type,
-          amount: row.amount || 0,
-          source: 'transaction' as const,
-        }));
+        .map((row) => {
+          const category = getStatementCategory(row.type, row.description);
+          
+          // Try to find associated user from chargedUsers for invite charges
+          let matchedUser = null;
+          if (category === 'charge' || category === 'credit') {
+            matchedUser = chargedUsers.find(user => {
+              if (!user.charged_at) return false;
+              const txMs = new Date(row.created_at).getTime();
+              const chargedAtMs = new Date(user.charged_at).getTime();
+              const closeInTime = Math.abs(txMs - chargedAtMs) <= 5 * 60 * 1000;
+              const sameAmount = Math.abs(Math.abs(row.amount || 0) - Number(user.charge_amount || 0)) < 0.01;
+              return closeInTime && sameAmount;
+            });
+          }
+          
+          return {
+            id: `tx-${row.id}`,
+            created_at: row.created_at,
+            category,
+            description: row.description || row.type,
+            amount: row.amount || 0,
+            source: 'transaction' as const,
+            user_email: matchedUser?.email,
+            user_name: matchedUser?.full_name || undefined,
+          };
+        });
 
       // Deduplicate hiring tab subscription rows — only show the most recent successful payment
       const subRows = allTxRows.filter((r) => r.category === 'subscription');
@@ -204,10 +231,44 @@ export default function AdminCompanyStatementModal({
         : [];
       const txRows = [...nonSubRows, ...dedupedSubRows];
 
+      const inviteChargeFallbackRows: StatementRow[] = chargedUsers
+        .filter((row) => !!row.charged_at && (!derivedStartDate || new Date(row.charged_at as string) >= derivedStartDate))
+        .filter((row) => {
+          const chargedAtMs = new Date(row.charged_at as string).getTime();
+          const chargeAmount = Number(row.charge_amount || 0);
+          return !txRows.some((txRow) => {
+            const txMs = new Date(txRow.created_at).getTime();
+            const closeInTime = Math.abs(txMs - chargedAtMs) <= 5 * 60 * 1000;
+            const sameAmount = Math.abs(Number(txRow.amount || 0) - chargeAmount) < 0.01;
+            const txDesc = (txRow.description || '').toLowerCase();
+            const looksLikeInviteCharge = txDesc.includes('pro-rated user') || txDesc.includes('user seat charge') || txDesc.includes('user charge');
+            return closeInTime && sameAmount && looksLikeInviteCharge;
+          });
+        })
+        .map((row) => ({
+          id: `user-charge-${row.id}-${row.charged_at}`,
+          created_at: row.charged_at as string,
+          category: 'charge' as const,
+          description: `Pro-rated user seat charge${row.full_name ? ` (${row.full_name})` : row.email ? ` (${row.email})` : ''}`,
+          amount: Number(row.charge_amount || 0),
+          source: 'transaction' as const,
+          user_email: row.email,
+          user_name: row.full_name || undefined,
+        }));
+
+      // Only show credits when they're USED to cover charges, not when granted by super-admin
+      // Super-admin credit grants (super_admin_free_credit, super_admin_paid_credit) should not appear on the statement
+      // They're essentially prepayments that only show up when consumed
       const creditRows: StatementRow[] = isInternalAdminCompany
         ? []
         : credits
-            .filter((row) => (!derivedStartDate || new Date(row.created_at) >= derivedStartDate) && row.amount > 0)
+            .filter((row) => {
+              if (!derivedStartDate || new Date(row.created_at) < derivedStartDate) return false;
+              if (row.amount <= 0) return false;
+              // Filter out super-admin credit grants - they're prepayments, not statement line items
+              const isSuperAdminGrant = row.type === 'super_admin_free_credit' || row.type === 'super_admin_paid_credit';
+              return !isSuperAdminGrant;
+            })
             .map((row) => ({
               id: `credit-${row.id}`,
               created_at: row.created_at,
@@ -217,19 +278,29 @@ export default function AdminCompanyStatementModal({
               source: 'credit' as const,
             }));
 
+      const hasMonthlyBillingRow = txRows.some((row) => row.description.toLowerCase().includes('monthly billing'));
+      const baseSeatsPurchased = Math.max(2, company.seats_purchased || 2);
+      const basePortalMonthlyCost = isInternalAdminCompany ? 0 : baseSeatsPurchased * 20;
       const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
-      const portalCostRow: StatementRow = {
-        id: `portal-cost-${companyId}-${periodAnchorDate}`,
-        created_at: periodAnchorDate,
-        category: 'portal_cost',
-        description: isInternalAdminCompany
-          ? 'Overall Portal Cost (Internal Admin Company - No Charge)'
-          : `Overall Portal Cost (${billableUsers} seat${billableUsers !== 1 ? 's' : ''} × $${PORTAL_COST_PER_USER}/month${billableUsers > activeUsers ? ` — minimum ${seatsPurchased} purchased` : ''})`,
-        amount: portalMonthlyCost,
-        source: 'transaction',
-      };
+      const basePortalCostRow: StatementRow | null = hasMonthlyBillingRow
+        ? null
+        : {
+            id: `portal-base-${companyId}-${periodAnchorDate}`,
+            created_at: periodAnchorDate,
+            category: 'portal_cost',
+            description: isInternalAdminCompany
+              ? 'Base Portal Cost (Internal Admin Company - No Charge)'
+              : `Base Portal Cost (${baseSeatsPurchased} seat${baseSeatsPurchased !== 1 ? 's' : ''} × $20/month)`,
+            amount: basePortalMonthlyCost,
+            source: 'transaction',
+          };
 
-      const rowsToInclude = [...txRows, ...creditRows, portalCostRow];
+      const rowsToInclude = [
+        ...txRows,
+        ...inviteChargeFallbackRows,
+        ...creditRows,
+        ...(basePortalCostRow ? [basePortalCostRow] : []),
+      ];
       const allRows = (isInternalAdminCompany
         ? rowsToInclude.filter((row) => row.category !== 'credit')
         : rowsToInclude
@@ -428,6 +499,15 @@ export default function AdminCompanyStatementModal({
                               <span className="text-muted-foreground">Full Description: </span>
                               <span>{row.description}</span>
                             </div>
+                            {(row.user_email || row.user_name) && (
+                              <div className="pt-1">
+                                <span className="text-muted-foreground">Charged For: </span>
+                                <span className="font-medium">{row.user_name || 'Unknown'}</span>
+                                {row.user_email && (
+                                  <span className="text-muted-foreground ml-2">({row.user_email})</span>
+                                )}
+                              </div>
+                            )}
                             {isDeletable(row) && (
                               <div className="pt-1">
                                 <Button

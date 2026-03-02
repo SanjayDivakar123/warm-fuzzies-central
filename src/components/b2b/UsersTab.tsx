@@ -120,6 +120,12 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [retakeRequestUser, setRetakeRequestUser] = useState<{ id: string; email: string; full_name?: string } | null>(null);
   const [requestingRetake, setRequestingRetake] = useState(false);
+  const [deleteUserTarget, setDeleteUserTarget] = useState<{
+    id: string;
+    email: string;
+    full_name?: string;
+  } | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [adminDeleteTarget, setAdminDeleteTarget] = useState<{
     id: string;
     email: string;
@@ -388,15 +394,22 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         }
         if (errData?.errorCode === "CARD_DECLINED") {
           setPaymentError({
-            title: "Card declined",
-            message: errData?.error || "Your card was declined. Please update your payment method in Settings and try again.",
+            title: "Payment method issue",
+            message: "No valid payment method is set up. Please add or update your payment information in Settings to invite new users.",
+          });
+          return;
+        }
+        if (errData?.errorCode === "REQUIRES_AUTHENTICATION") {
+          setPaymentError({
+            title: "Card authentication required",
+            message: `${errData?.error || "Your bank requires authentication for this card. Please update your payment method in Settings and try again."}${errData?.declineCode ? ` (Code: ${errData.declineCode})` : ''}`,
           });
           return;
         }
         if (errData?.errorCode === "CHARGE_FAILED") {
           setPaymentError({
             title: "Payment failed",
-            message: errData?.error || "There was an issue charging your card. Please check your payment method in Settings.",
+            message: `${errData?.error || "There was an issue charging your card. Please check your payment method in Settings."}${errData?.errorCode ? ` (Code: ${errData.errorCode})` : ''}`,
           });
           return;
         }
@@ -414,15 +427,22 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         }
         if (data.errorCode === "CARD_DECLINED") {
           setPaymentError({
-            title: "Card declined",
-            message: data.error || "Your card was declined. Please update your payment method in Settings and try again.",
+            title: "Payment method issue",
+            message: "No valid payment method is set up. Please add or update your payment information in Settings to invite new users.",
+          });
+          return;
+        }
+        if (data.errorCode === "REQUIRES_AUTHENTICATION") {
+          setPaymentError({
+            title: "Card authentication required",
+            message: `${data.error || "Your bank requires authentication for this card. Please update your payment method in Settings and try again."}${data.declineCode ? ` (Code: ${data.declineCode})` : ''}`,
           });
           return;
         }
         if (data.errorCode === "CHARGE_FAILED") {
           setPaymentError({
             title: "Payment failed",
-            message: data.error || "There was an issue charging your card. Please check your payment method in Settings.",
+            message: `${data.error || "There was an issue charging your card. Please check your payment method in Settings."}${data.errorCode ? ` (Code: ${data.errorCode})` : ''}`,
           });
           return;
         }
@@ -525,34 +545,9 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         details: { email: userToRevoke?.email, full_name: userToRevoke?.full_name },
       });
 
-      // Calculate and apply pro-rated refund for active employees
-      if (userToRevoke?.role === 'employee' && userToRevoke?.status === 'active') {
-        try {
-          const { data: refundData } = await supabase.functions.invoke("calculate-user-refund", {
-            body: {
-              company_id: company.id,
-              company_user_id: userId,
-            },
-          });
-
-          if (refundData?.refunded) {
-            toast({
-              title: "Access revoked",
-              description: `User access has been revoked. $${(refundData.refundAmount / 100).toFixed(2)} credit added to your balance.`,
-            });
-            if (onCompanyUpdate) onCompanyUpdate();
-            fetchUsers();
-            return;
-          }
-        } catch (refundError) {
-          console.error("Error calculating refund:", refundError);
-          // Continue even if refund fails
-        }
-      }
-
       toast({
         title: "Access revoked",
-        description: "User access has been revoked",
+        description: "User access has been revoked. Current month charges remain; this user is excluded from next month billing.",
       });
 
       fetchUsers();
@@ -644,12 +639,26 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
   };
 
   const handleDeleteUser = async (userId: string) => {
+    const userToDelete = users.find((u) => u.id === userId);
+    if (!userToDelete) return;
+
+    setDeleteUserTarget({
+      id: userToDelete.id,
+      email: userToDelete.email,
+      full_name: userToDelete.full_name,
+    });
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!deleteUserTarget) return;
+
+    setDeletingUser(true);
     try {
       // First, clear any task assignments that reference this user
       const { error: primaryError } = await supabase
         .from("task_assignments")
         .update({ primary_assignee_id: null })
-        .eq("primary_assignee_id", userId);
+        .eq("primary_assignee_id", deleteUserTarget.id);
 
       if (primaryError) {
         console.error("Error clearing primary assignments:", primaryError);
@@ -658,29 +667,37 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       const { error: secondaryError } = await supabase
         .from("task_assignments")
         .update({ secondary_assignee_id: null })
-        .eq("secondary_assignee_id", userId);
+        .eq("secondary_assignee_id", deleteUserTarget.id);
 
       if (secondaryError) {
         console.error("Error clearing secondary assignments:", secondaryError);
       }
 
       // Now delete the user
-      const { error } = await supabase.from("company_users").delete().eq("id", userId).eq("status", "revoked"); // Only allow deleting revoked users
+      const { error } = await supabase
+        .from("company_users")
+        .delete()
+        .eq("id", deleteUserTarget.id)
+        .eq("status", "revoked"); // Only allow deleting revoked users
 
       if (error) throw error;
 
       toast({
         title: "User deleted",
-        description: "User has been permanently removed",
+        description: "User has been permanently removed. This month’s charge remains and the user will not be billed next month.",
       });
 
+      setDeleteUserTarget(null);
       fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate();
     } catch (error: any) {
       toast({
         title: "Error deleting user",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -2261,6 +2278,48 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Delete User Confirmation Dialog */}
+        <AlertDialog
+          open={!!deleteUserTarget}
+          onOpenChange={(open) => {
+            if (!open && !deletingUser) {
+              setDeleteUserTarget(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User Permanently</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to permanently delete{' '}
+                <span className="font-medium">{deleteUserTarget?.full_name || deleteUserTarget?.email}</span>?
+                <br /><br />
+                You have already paid for this user for the current month. Deleting them now will not remove or refund this month&apos;s charge.
+                <br /><br />
+                They will simply not be included in next month&apos;s billing.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingUser}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDeleteUser}
+                disabled={deletingUser}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              >
+                {deletingUser ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete User'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Delete Admin Confirmation Dialog */}
         <AlertDialog
           open={!!adminDeleteTarget}

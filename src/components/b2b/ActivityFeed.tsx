@@ -356,13 +356,13 @@ export default function ActivityFeed({ companyId, maxItems = 10, onViewAll }: Ac
           .order('joined_at', { ascending: false })
           .limit(fetchLimit),
 
-        // 5. Billing credits — additions only
+        // 5. Billing credits — exclude super-admin grants (they're prepayments, show in credit balance but not as activities)
         supabase
           .from('billing_credits')
           .select('id, amount, type, description, created_at')
           .eq('company_id', companyId)
           .gt('amount', 0)
-          .not('type', 'in', '("super_admin_credit_removal")')
+          .not('type', 'in', '("super_admin_credit_removal","super_admin_free_credit","super_admin_paid_credit")')
           .gte('created_at', sinceIso)
           .order('created_at', { ascending: false })
           .limit(fetchLimit),

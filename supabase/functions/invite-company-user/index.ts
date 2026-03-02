@@ -375,7 +375,10 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: chargeResult.error || "Failed to process payment for invite",
-          errorCode: "CHARGE_FAILED",
+          errorCode: chargeResult.errorCode || "CHARGE_FAILED",
+          declineCode: chargeResult.declineCode || null,
+          needsPaymentMethod: chargeResult.needsPaymentMethod || false,
+          requiresAuthentication: chargeResult.errorCode === "REQUIRES_AUTHENTICATION",
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -390,8 +393,12 @@ serve(async (req) => {
     let invitedUser;
 
     // Determine charge info from result
-    const chargeAmount = chargeResult.charged ? 2000 : (chargeResult.usedCredits ? chargeResult.creditsUsed : 0);
-    const chargedAt = (chargeResult.charged || chargeResult.usedCredits) ? new Date().toISOString() : null;
+    const proRatedAmountCents = typeof chargeResult.proRatedAmount === "number"
+      ? chargeResult.proRatedAmount
+      : 0;
+    const wasCharged = Boolean(chargeResult.charged || chargeResult.usedCredits);
+    const chargeAmount = wasCharged ? proRatedAmountCents / 100 : 0;
+    const chargedAt = wasCharged ? new Date().toISOString() : null;
 
     // If user was revoked, update their record
     if (existingUser && existingUser.status === "revoked") {

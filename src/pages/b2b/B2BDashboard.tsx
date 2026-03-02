@@ -681,6 +681,7 @@ function B2BDashboardContent() {
             <HiringSection 
               company={company}
               companyUser={companyUser}
+              onSubscriptionUpdated={refreshCompany}
             />
           </TabsContent>
 

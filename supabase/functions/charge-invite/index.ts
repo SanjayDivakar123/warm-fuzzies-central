@@ -150,13 +150,23 @@ serve(async (req) => {
 
       if (updateError) throw new Error("Failed to deduct credits");
 
-      // Record transaction (amount in cents for consistency with other charge-invite transactions)
-      await supabase.from("billing_transactions").insert({
+      // Record BOTH transactions: the charge AND the credit usage
+      // This ensures the statement shows the full picture even if the user is deleted
+      const { error: chargeTxError } = await supabase.from("billing_transactions").insert({
         company_id: company_id,
-        type: "user_addition_credits",
-        amount: -chargeAmount,
+        type: "charge",
+        amount: chargeAmount / 100,
+        description: `Pro-rated user seat charge ($${(chargeAmount / 100).toFixed(2)})`
+      });
+      if (chargeTxError) throw new Error(`Failed to record charge transaction: ${chargeTxError.message}`);
+
+      const { error: creditTxError } = await supabase.from("billing_transactions").insert({
+        company_id: company_id,
+        type: "credit_used",
+        amount: -(chargeAmount / 100),
         description: `Pro-rated user charge ($${(chargeAmount / 100).toFixed(2)}) - used billing credits`
       });
+      if (creditTxError) throw new Error(`Failed to record credit transaction: ${creditTxError.message}`);
 
       logStep("Credits used successfully", { newBalanceDollars });
 
@@ -184,17 +194,19 @@ serve(async (req) => {
       creditsUsedCents = creditBalanceCents;
       cardCharged = chargeAmount - creditBalanceCents;
 
-      await supabase
+      const { error: clearCreditError } = await supabase
         .from("companies")
         .update({ credit_balance: 0 })
         .eq("id", company_id);
+      if (clearCreditError) throw new Error(`Failed to clear company credits: ${clearCreditError.message}`);
 
-      await supabase.from("billing_transactions").insert({
+      const { error: partialCreditTxError } = await supabase.from("billing_transactions").insert({
         company_id: company_id,
-        type: "user_addition_credits",
-        amount: -creditsUsedCents,
+        type: "credit_used",
+        amount: -(creditsUsedCents / 100),
         description: `Pro-rated user charge - used remaining credits ($${(creditBalanceDollars).toFixed(2)})`
       });
+      if (partialCreditTxError) throw new Error(`Failed to record partial credit transaction: ${partialCreditTxError.message}`);
 
       logStep("Used partial credits", { creditsUsedCents, cardCharged });
     }
@@ -227,15 +239,55 @@ serve(async (req) => {
         .eq("id", company_id);
     }
 
-    // Check if customer has a payment method
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: "card",
-    });
+    // Find attached payment method and prefer Stripe customer default payment method
+    let paymentMethods = await stripe.paymentMethods.list({ customer: customerId, type: "card" });
 
     if (paymentMethods.data.length === 0) {
-      logStep("No payment method on file");
-      return new Response(JSON.stringify({ 
+      logStep("No card on stored customer, scanning email-matched customers", { customerId, adminEmail: company.admin_email });
+      const emailCustomers = await stripe.customers.list({ email: company.admin_email, limit: 10 });
+
+      for (const matchedCustomer of emailCustomers.data) {
+        if (matchedCustomer.id === customerId) continue;
+        const matchedPaymentMethods = await stripe.paymentMethods.list({
+          customer: matchedCustomer.id,
+          type: "card",
+        });
+
+        if (matchedPaymentMethods.data.length > 0) {
+          customerId = matchedCustomer.id;
+          paymentMethods = matchedPaymentMethods;
+
+          await supabase
+            .from("companies")
+            .update({ stripe_customer_id: customerId })
+            .eq("id", company_id);
+
+          logStep("Found card on alternate customer and updated company customer ID", { customerId });
+          break;
+        }
+      }
+    }
+
+    let defaultPaymentMethod: string | null = null;
+    try {
+      const customerObj = await stripe.customers.retrieve(customerId) as any;
+      const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
+      const invoiceDefaultId = typeof invoiceDefault === "string" ? invoiceDefault : invoiceDefault?.id;
+
+      if (typeof invoiceDefaultId === "string" && invoiceDefaultId.startsWith("pm_")) {
+        defaultPaymentMethod = invoiceDefaultId;
+      }
+    } catch (customerRetrieveError) {
+      logStep("Failed to retrieve customer invoice default", { customerId, error: customerRetrieveError });
+    }
+
+    if (!defaultPaymentMethod && paymentMethods.data.length > 0) {
+      defaultPaymentMethod = paymentMethods.data[0].id;
+    }
+
+    if (!defaultPaymentMethod) {
+      logStep("No payment method on file after fallback scan", { customerId });
+      return new Response(JSON.stringify({
         success: false,
         errorCode: "NEEDS_PAYMENT_METHOD",
         needsPaymentMethod: true,
@@ -246,10 +298,9 @@ serve(async (req) => {
       });
     }
 
-    const defaultPaymentMethod = paymentMethods.data[0].id;
-    logStep("Payment method found", { paymentMethodId: defaultPaymentMethod });
+    logStep("Payment method resolved", { customerId, paymentMethodId: defaultPaymentMethod });
 
-    // Create and confirm payment intent for remaining amount
+    // Create and confirm on-session payment intent for remaining amount
     let paymentIntent;
     try {
       paymentIntent = await stripe.paymentIntents.create({
@@ -257,7 +308,7 @@ serve(async (req) => {
         currency: "usd",
         customer: customerId,
         payment_method: defaultPaymentMethod,
-        off_session: true,
+        off_session: false,
         confirm: true,
         description: `Pro-rated user charge for ${company.name}`,
         metadata: {
@@ -267,7 +318,19 @@ serve(async (req) => {
         }
       });
     } catch (stripeError: any) {
-      // Stripe throws for card declines when off_session + confirm
+      // Stripe throws for card declines or auth-required states when off_session + confirm
+      if (stripeError?.payment_intent?.status === "requires_action" || stripeError?.code === "authentication_required") {
+        logStep("Payment requires authentication", { code: stripeError?.code, message: stripeError?.message });
+        return new Response(JSON.stringify({
+          success: false,
+          errorCode: "REQUIRES_AUTHENTICATION",
+          error: "This card requires authentication. Please update your payment method in Settings and try again.",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
       const declineCode = stripeError?.decline_code || stripeError?.code || "card_declined";
       logStep("Card declined by Stripe", { declineCode, message: stripeError?.message });
       return new Response(JSON.stringify({
@@ -296,13 +359,14 @@ serve(async (req) => {
     }
 
     // Record transaction
-    await supabase.from("billing_transactions").insert({
+    const { error: cardTxError } = await supabase.from("billing_transactions").insert({
       company_id: company_id,
-      type: "user_addition_card",
-      amount: cardCharged,
+      type: "charge",
+      amount: cardCharged / 100,
       stripe_payment_intent_id: paymentIntent.id,
       description: `Pro-rated user charge ($${(cardCharged / 100).toFixed(2)}) - card payment`
     });
+    if (cardTxError) throw new Error(`Failed to record card transaction: ${cardTxError.message}`);
 
     logStep("Charge successful");
 
