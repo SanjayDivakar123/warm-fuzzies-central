@@ -462,6 +462,32 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
       {/* Testimonials Section */}
       <TestimonialsColumns />
 
+      <section className="px-4 sm:px-6 lg:px-10 pb-16" aria-label="Endorsed by TEDx">
+        <div className="w-full max-w-[1400px] mx-auto rounded-3xl border border-red-500/30 bg-gradient-to-r from-black via-zinc-950 to-black p-6 sm:p-8 md:p-10 shadow-2xl">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-semibold tracking-[0.24em] uppercase text-red-400/90">
+                Endorsed By
+              </p>
+              <h3 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+                TEDx
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-zinc-300 max-w-2xl leading-relaxed">
+                Proudly endorsed by TEDx as part of our mission to advance leadership development through practical, science-backed tools.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-sm">
+              <img
+                src="/DarkThemeTEDx.png"
+                alt="TEDx Third Ward logo"
+                className="h-14 sm:h-16 md:h-20 w-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Celebrity Assessment Section */}
       <section className="section-padding bg-gradient-to-b from-background via-primary/5 to-background" aria-label="Celebrity Assessment">
         <div className="container-wide">
