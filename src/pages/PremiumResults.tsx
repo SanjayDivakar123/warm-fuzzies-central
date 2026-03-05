@@ -12,6 +12,8 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF } from "@/lib/pdfExport";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface PremiumResults {
   dominantColor: string;
@@ -695,6 +697,15 @@ const PremiumResults = () => {
               </Button>
             </Link>
           </div>
+
+          <RoleColorIdentityCard
+            name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+            primaryColor={results.dominantColor}
+            secondaryColor={results.secondaryColor}
+            className="mt-8"
+          />
+
+          <SendToFriendCard color={results.dominantColor} className="mt-8" />
         </div>
       </div>
     </div>

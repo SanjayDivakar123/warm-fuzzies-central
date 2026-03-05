@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { PDFReport } from "@/components/PDFReport";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 const COLOR_INFO = {
   Yellow: { bg: "bg-yellow-500", name: "Yellow - The Doer" },
@@ -862,6 +864,15 @@ const LeadershipResults = () => {
             </div>
           </CardContent>
         </Card>
+
+        <SendToFriendCard color={results.primaryColor} className="mt-8" />
+
+        <RoleColorIdentityCard
+          name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+          primaryColor={results.primaryColor}
+          secondaryColor={results.secondaryColor}
+          className="mt-8"
+        />
       </div>
 
       {/* Hidden PDF Report Component for Generation */}

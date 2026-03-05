@@ -7,6 +7,8 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { Share2, FileText, Users, Zap, Brain, Target, AlertTriangle, MessageSquare, TrendingUp, CheckCircle, XCircle, Lightbulb } from "lucide-react";
 import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface Results {
   dominantColor: string;
@@ -893,6 +895,16 @@ const ProfessionalResults = () => {
               >
                 Back to Company Portal
               </Button>
+            </div>
+
+            <div className="mt-10">
+              <RoleColorIdentityCard
+                name={localStorage.getItem('participantName')}
+                primaryColor={results.dominantColor}
+                secondaryColor={secondaryColorName}
+                className="mb-6"
+              />
+              <SendToFriendCard color={results.dominantColor} />
             </div>
           </div>
         </div>

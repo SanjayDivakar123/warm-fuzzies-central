@@ -32,11 +32,22 @@ import {
   Camera,
   Loader2,
   Shield,
+  Target,
+  Sparkles,
+  Lock,
+  AlertCircle,
+  CheckCircle,
+  DollarSign,
+  Star,
+  Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
 import AssessmentDetails from "@/components/AssessmentDetails";
 import { cn } from "@/lib/utils";
+import { PaymentButton } from "@/components/payment/PaymentButton";
+import { careerProfiles, getCareerProfile } from "@/lib/careerData";
+import ResumeCareerUpload from "@/components/career/ResumeCareerUpload";
 
 interface AssessmentResult {
   id: string;
@@ -65,6 +76,338 @@ interface CompanyAccess {
   subdomain: string;
 }
 
+// Career Finder Section Component
+interface CareerFinderSectionProps {
+  user: any;
+  assessments: AssessmentResult[];
+  navigate: (path: string) => void;
+}
+
+const CareerFinderSection = ({ user, assessments, navigate }: CareerFinderSectionProps) => {
+  const [loading, setLoading] = useState(true);
+  const [hasCompletedAssessment, setHasCompletedAssessment] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const [hasCareerAccess, setHasCareerAccess] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      checkCareerStatus();
+    }
+  }, [user, assessments]);
+
+  const checkCareerStatus = () => {
+    // Check for career report access from localStorage
+    const careerAccessKey = `career_access_${user.id}`;
+    const careerAccess = localStorage.getItem(careerAccessKey);
+    setHasCareerAccess(careerAccess ? JSON.parse(careerAccess).verified : false);
+
+    // Find a completed assessment with color results
+    const completedAssessment = assessments?.find(a => {
+      const results = a.results as any;
+      const assessmentType = a.assessment_type;
+      if (assessmentType === 'free') return false;
+      return results?.primaryColor || results?.dominantColor || 
+             (results?.colorScores && Object.keys(results.colorScores).length > 0) ||
+             (results?.scores && Object.keys(results.scores).length > 0);
+    });
+
+    if (completedAssessment) {
+      const results = completedAssessment.results as any;
+      const color = results?.primaryColor || results?.dominantColor || null;
+      setPrimaryColor(color);
+      setHasCompletedAssessment(true);
+      if (color) {
+        setProfile(getCareerProfile(color));
+      }
+    }
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // User hasn't completed a qualifying assessment
+  if (!hasCompletedAssessment) {
+    return (
+      <>
+        {/* Section Header */}
+        <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent border border-primary/20">
+          <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
+          <div className="relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              Career Finder
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Discover careers that match your RoleColor
+            </p>
+          </div>
+        </div>
+
+        {/* Requirement Notice */}
+        <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Assessment Required</h3>
+                <p className="text-muted-foreground mb-4">
+                  To get personalized career recommendations based on your RoleColor, complete a 25-question or 50-question assessment first.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <PaymentButton productType="premium" variant="default" size="lg">
+                    Get Premium Assessment ($19)
+                  </PaymentButton>
+                  <PaymentButton productType="pro" variant="outline" size="lg">
+                    Get Pro Assessment ($49)
+                  </PaymentButton>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preview Cards */}
+        <div className="grid md:grid-cols-2 gap-6 mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                What You'll Discover
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {['Top 8 careers matched to your RoleColor', 'Salary ranges for each career path', 'Role fit percentages based on your profile', 'Key skills needed for each role', 'Ideal work environment insights'].map((item, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Career Preview by Color
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(careerProfiles).slice(0, 4).map(([color, prof]) => (
+                <div key={color} className="flex items-center gap-3">
+                  <span className="text-2xl">{prof.emoji}</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{prof.archetype}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {prof.careers[0].title}, {prof.careers[1].title}...
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // User has completed assessment - show career finder
+  return (
+    <>
+      {/* Section Header */}
+      <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent border border-primary/20">
+        <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white">
+              <Target className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            Career Finder
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {hasCareerAccess 
+              ? `Career recommendations for ${profile?.archetype}s` 
+              : 'Unlock your personalized career recommendations'}
+          </p>
+        </div>
+      </div>
+
+      {/* User's Color Profile Summary */}
+      {profile && (
+        <Card className="mb-6 border-primary/30">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full flex items-center justify-center text-4xl">
+                {profile.emoji}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Your RoleColor</p>
+                <h3 className="text-2xl font-bold">{profile.colorName} - {profile.archetype}</h3>
+                <p className="text-muted-foreground">{profile.tagline}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasCareerAccess ? (
+        <>
+          {/* Career Report Unlocked */}
+          <Card className="mb-6 border-green-500/50">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Career Report Unlocked!</h3>
+              <p className="text-muted-foreground mb-4">
+                View your personalized career recommendations and AI-powered resume analysis.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button onClick={() => navigate('/career-finder/results')} className="gap-2">
+                  View Career Matches
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                {localStorage.getItem(`career_resume_analysis_${user?.id}`) && (
+                  <Button variant="outline" onClick={() => navigate('/career-finder/resume-results')} className="gap-2">
+                    <FileText className="w-4 h-4" />
+                    View Resume Analysis
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resume Upload Section */}
+          {user && primaryColor && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Upload Resume for AI Analysis
+              </h3>
+              <ResumeCareerUpload primaryColor={primaryColor} userId={user.id} />
+            </div>
+          )}
+
+          {/* Career Preview */}
+          {profile && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Top Careers for {profile.archetype}s</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {profile.careers.slice(0, 4).map((career: any, index: number) => (
+                  <Card key={index} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline">{career.fitPercentage}% fit</Badge>
+                        <div className="flex items-center gap-1 text-green-600 text-sm">
+                          <DollarSign className="w-3 h-3" />
+                          {career.salaryRange}
+                        </div>
+                      </div>
+                      <h4 className="font-semibold">{career.title}</h4>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{career.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button 
+                variant="link" 
+                onClick={() => navigate('/career-finder/results')} 
+                className="mt-4 gap-2"
+              >
+                View all 8 career matches
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Unlock Career Report */}
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Briefcase className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Unlock Your Career Report</h3>
+                <p className="text-muted-foreground">
+                  Get personalized career recommendations and AI-powered resume analysis
+                </p>
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-6 mb-6">
+                <h4 className="font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  What's included:
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {['8 top careers for your color', 'Salary ranges & fit %', 'Required skills breakdown', 'Ideal work environment', 'AI resume analysis', 'Personalized advice'].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="mb-4">
+                  <span className="text-4xl font-bold">$19</span>
+                  <span className="text-muted-foreground ml-2">one-time</span>
+                </div>
+                <PaymentButton productType="career" size="lg" className="gap-2">
+                  Unlock Career Report
+                  <ChevronRight className="w-4 h-4" />
+                </PaymentButton>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Instant access after payment
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Preview Cards */}
+          {profile && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Preview: Top Careers for {profile.archetype}s</h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {profile.careers.slice(0, 3).map((career: any, index: number) => (
+                  <Card key={index} className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5" />
+                    <CardContent className="p-4 relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline">{career.fitPercentage}% fit</Badge>
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <h4 className="font-semibold">{career.title}</h4>
+                      <p className="text-sm text-muted-foreground blur-sm">{career.description}</p>
+                      <p className="text-sm font-medium text-primary mt-2 blur-sm">{career.salaryRange}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <p className="text-center text-muted-foreground mt-4 text-sm">
+                Unlock to see all 8 careers with full details
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
 const Dashboard = () => {
   const { user, updatePassword, signOut, signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -77,7 +420,7 @@ const Dashboard = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business' | 'career'>('overview');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
   const [googleLinking, setGoogleLinking] = useState(false);
@@ -394,6 +737,12 @@ const Dashboard = () => {
       href: '#',
       icon: <Briefcase className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
       onClick: () => setActiveSection('business'),
+    },
+    {
+      label: 'Career Finder',
+      href: '#',
+      icon: <Target className="h-5 w-5 flex-shrink-0 text-muted-foreground" />,
+      onClick: () => setActiveSection('career'),
     },
     {
       label: 'Settings',
@@ -1286,6 +1635,15 @@ const Dashboard = () => {
                     </Card>
                     </div>
                   </>
+                )}
+
+                {/* Career Finder Section */}
+                {activeSection === 'career' && (
+                  <CareerFinderSection 
+                    user={user}
+                    assessments={assessments}
+                    navigate={navigate}
+                  />
                 )}
               </div>
             )}

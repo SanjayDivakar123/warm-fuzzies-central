@@ -13,6 +13,8 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface FreeResults {
   dominantColor: string;
@@ -444,6 +446,14 @@ const FreeResults = () => {
                   ← Back to Home
                 </Button>
               </div>
+
+              <RoleColorIdentityCard
+                name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+                primaryColor={results.dominantColor}
+                className="mt-8"
+              />
+
+              <SendToFriendCard color={results.dominantColor} className="mt-8" />
             </div>
           </div>
         </div>

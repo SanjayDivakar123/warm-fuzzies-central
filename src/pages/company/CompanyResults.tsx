@@ -8,6 +8,8 @@ import { Download, Building2, CheckCircle, Loader2, AlertTriangle, Target, Light
 import { exportCompanyResultsPDF } from "@/lib/companyPdfExport";
 import { useToast } from "@/hooks/use-toast";
 import { HelpButton } from "@/components/help";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 const colorDescriptions = {
   yellow: {
@@ -509,6 +511,14 @@ export default function CompanyResults() {
               onNavigateHome={() => navigate(`/company/${company.subdomain}/home`)}
             />
           </div>
+
+          <RoleColorIdentityCard
+            name="Team Member"
+            primaryColor={assessmentResults.dominantColor}
+            className="mt-8"
+          />
+
+          <SendToFriendCard color={assessmentResults.dominantColor} className="mt-8" />
 
           <div className="fixed bottom-6 right-6 z-50">
             <HelpButton tourFilter={(tour) => tour.id.startsWith('employee-')} size="sm" iconOnly />

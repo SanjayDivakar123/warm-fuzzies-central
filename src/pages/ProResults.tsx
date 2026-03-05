@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF } from "@/lib/pdfExport";
 import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface ProResults {
   dominantColor: string;
@@ -922,6 +924,15 @@ const ProResults = () => {
                 </CardContent>
               </Card>
             </div>
+
+            <SendToFriendCard color={results.dominantColor} className="mt-8" />
+
+            <RoleColorIdentityCard
+              name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+              primaryColor={results.dominantColor}
+              secondaryColor={results.secondaryColor}
+              className="mt-8"
+            />
 
           </div>
         </div>
