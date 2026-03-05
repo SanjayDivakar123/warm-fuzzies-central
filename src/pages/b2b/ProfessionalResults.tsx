@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navigation/Navbar";
-import { Logos3 } from "@/components/ui/logos3";
 import { Share2, FileText, Users, Zap, Brain, Target, AlertTriangle, MessageSquare, TrendingUp, CheckCircle, XCircle, Lightbulb } from "lucide-react";
 import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -474,8 +473,6 @@ const ProfessionalResults = () => {
                 </p>
               </CardContent>
             </Card>
-
-            <Logos3 heading="We Work With" className="py-0 mb-8" />
 
             {/* Color Distribution */}
             <Card className="rounded-3xl shadow-xl border-2 border-primary/20 mb-8">

@@ -4,7 +4,6 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Logos3 } from "@/components/ui/logos3";
 import { Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -330,8 +329,6 @@ export default function PublicRoleColorProfile() {
             </div>
           </CardContent>
         </Card>
-
-        <Logos3 heading="We Work With" className="py-0" />
 
         <div className="grid lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
