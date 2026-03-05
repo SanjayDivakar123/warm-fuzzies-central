@@ -23,7 +23,7 @@ interface Logos3Props {
 }
 
 const Logos3 = ({
-  heading = "Used By",
+  heading = "We Work With",
   logos = [
     {
       id: "logo-houj",
@@ -43,11 +43,15 @@ const Logos3 = ({
       image: "/Used%20By%20Logos/paf-logo.png",
       className: "h-8 w-auto",
     },
+    {
+      id: "logo-sg",
+      description: "SG",
+      image: "/Used%20By%20Logos/sg-logo.svg",
+      className: "h-8 w-auto",
+    },
   ],
   className,
 }: Logos3Props) => {
-  const displayLogos = [...logos, ...logos, ...logos];
-
   return (
     <section className={cn("py-4", className)}>
       <div className="container-wide">
@@ -60,19 +64,19 @@ const Logos3 = ({
             <div className="relative mx-auto flex items-center justify-center">
           <Carousel
             opts={{ loop: true, align: "start" }}
-            plugins={[AutoScroll({ playOnInit: true, speed: 0.9, stopOnInteraction: false })]}
+            plugins={[AutoScroll({ playOnInit: true, speed: 0.8, stopOnInteraction: false })]}
           >
             <CarouselContent className="ml-0">
-              {displayLogos.map((logo, index) => (
+              {logos.map((logo) => (
                 <CarouselItem
-                  key={`${logo.id}-${index}`}
-                  className="flex basis-1/2 justify-center pl-0 sm:basis-1/3 md:basis-1/4 lg:basis-1/5"
+                  key={logo.id}
+                  className="flex basis-1/2 justify-center pl-0 sm:basis-1/3 md:basis-1/3 lg:basis-1/3"
                 >
-                  <div className="mx-2 flex h-16 w-full shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background px-4 py-3 shadow-sm">
+                  <div className="mx-1.5 flex h-12 w-full shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background px-3 py-2 shadow-sm">
                     <img
                       src={logo.image}
                       alt={logo.description}
-                      className={cn("h-9 w-auto object-contain", logo.className)}
+                      className={cn("h-6 w-auto object-contain", logo.className)}
                     />
                   </div>
                 </CarouselItem>

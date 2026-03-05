@@ -331,7 +331,7 @@ export default function PublicRoleColorProfile() {
           </CardContent>
         </Card>
 
-        <Logos3 heading="Used By" className="py-0" />
+        <Logos3 heading="We Work With" className="py-0" />
 
         <div className="grid lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">

@@ -475,7 +475,7 @@ const ProfessionalResults = () => {
               </CardContent>
             </Card>
 
-            <Logos3 heading="Used By" className="py-0 mb-8" />
+            <Logos3 heading="We Work With" className="py-0 mb-8" />
 
             {/* Color Distribution */}
             <Card className="rounded-3xl shadow-xl border-2 border-primary/20 mb-8">

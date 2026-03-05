@@ -276,7 +276,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
       {/* Hero Section with Gradient */}
       <HeroSectionWithGradient />
 
-      <Logos3 heading="Used By" />
+      <Logos3 heading="We Work With" />
 
       {/* Philosophy Section - Enhanced */}
       <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
