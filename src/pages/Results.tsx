@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Navbar } from "@/components/navigation/Navbar";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface QuizResults {
   dominantColor: string;
@@ -795,6 +797,16 @@ const Results = () => {
               <Home className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
+          </div>
+
+          <div className="mt-10">
+            <RoleColorIdentityCard
+              name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+              primaryColor={results.dominantColor}
+              secondaryColor={results.secondaryColor}
+              className="mb-6"
+            />
+            <SendToFriendCard color={results.dominantColor} />
           </div>
         </div>
         </div>

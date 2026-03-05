@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF } from "@/lib/pdfExport";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface VoiceAssessmentResult {
   phone_number: string;
@@ -336,6 +338,14 @@ export const VoiceResults = () => {
               Back to Home
             </Button>
           </div>
+
+          <SendToFriendCard color={results.dominant_color} className="mt-8" />
+
+          <RoleColorIdentityCard
+            name={user?.user_metadata?.full_name || phoneNumber}
+            primaryColor={results.dominant_color}
+            className="mt-8"
+          />
         </div>
       </div>
     </div>

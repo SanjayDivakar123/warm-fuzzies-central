@@ -92,6 +92,14 @@ const Team = () => {
     summary: "Passionate about building, improving, and experimenting with AI systems to solve real-world problems. Engineers AI to help people understand their leadership style using color-based psychology.",
     link: "/team/tanisha-sikder",
     roleColor: "yellow" as const
+  }, {
+    name: "Kody Krueger",
+    title: "Head of Sales",
+    location: "United States",
+    image: "/images/kody-krueger.jpg",
+    summary: "Growth operator at heart, turning early-stage momentum into measurable revenue by combining disciplined sales execution with genuine relationship building. Leads sales strategy and revenue operations at RoleColorFinder.",
+    link: "/team/kody-krueger",
+    roleColor: "green" as const
   }];
   const roleColorConfig = {
     red: { bg: "bg-red-500", text: "text-white", label: "Creative Motivator", border: "border-red-500" },

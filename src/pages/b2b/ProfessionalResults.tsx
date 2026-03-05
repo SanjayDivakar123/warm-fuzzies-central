@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navigation/Navbar";
+import { Logos3 } from "@/components/ui/logos3";
 import { Share2, FileText, Users, Zap, Brain, Target, AlertTriangle, MessageSquare, TrendingUp, CheckCircle, XCircle, Lightbulb } from "lucide-react";
 import { exportProfessional50QPDF } from "@/lib/professional50QPdfExport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SendToFriendCard from "@/components/reports/SendToFriendCard";
+import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
 
 interface Results {
   dominantColor: string;
@@ -451,7 +454,6 @@ const ProfessionalResults = () => {
                 Comprehensive 50-Question Assessment Results
               </p>
             </div>
-
             {/* Primary Color Hero */}
             <Card className="rounded-3xl shadow-xl border-2 mb-8 overflow-hidden" style={{ borderColor: profile.colorHex }}>
               <div className={`${profile.bgClass} p-8 text-white`}>
@@ -472,6 +474,8 @@ const ProfessionalResults = () => {
                 </p>
               </CardContent>
             </Card>
+
+            <Logos3 heading="We Work With" className="py-0 mb-8" />
 
             {/* Color Distribution */}
             <Card className="rounded-3xl shadow-xl border-2 border-primary/20 mb-8">
@@ -893,6 +897,16 @@ const ProfessionalResults = () => {
               >
                 Back to Company Portal
               </Button>
+            </div>
+
+            <div className="mt-10">
+              <RoleColorIdentityCard
+                name={localStorage.getItem('participantName')}
+                primaryColor={results.dominantColor}
+                secondaryColor={secondaryColorName}
+                className="mb-6"
+              />
+              <SendToFriendCard color={results.dominantColor} />
             </div>
           </div>
         </div>

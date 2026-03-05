@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 interface PaymentButtonProps {
-  productType: "premium" | "pro" | "team";
+  productType: "premium" | "pro" | "team" | "career";
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
@@ -48,10 +48,19 @@ export const PaymentButton = ({
     try {
       setLoading(true);
       
+      // Determine success and cancel URLs based on product type
+      const successUrl = productType === 'career' 
+        ? `${window.location.origin}/career-payment-success`
+        : `${window.location.origin}/payment-success?type=${productType}`;
+      
+      const cancelUrl = productType === 'career'
+        ? `${window.location.origin}/career-finder`
+        : `${window.location.origin}/pricing`;
+      
       const paymentData = {
         productType,
-        successUrl: `${window.location.origin}/payment-success?type=${productType}`,
-        cancelUrl: `${window.location.origin}/pricing`,
+        successUrl,
+        cancelUrl,
         ...(customAmount && { customAmount }),
         ...(customDescription && { customDescription })
       };

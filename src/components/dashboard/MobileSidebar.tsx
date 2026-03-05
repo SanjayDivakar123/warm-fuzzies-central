@@ -70,17 +70,42 @@ export const MobileSidebar = ({ user, navItems, logoutItem, onAvatarChange }: Mo
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.userId}/avatar.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
+      const uploadBuckets = ['avatars', 'public-profile-photos', 'company-logos'];
+      let selectedBucket: string | null = null;
+      let lastError: any = null;
 
-      if (uploadError) throw uploadError;
+      for (const bucket of uploadBuckets) {
+        const result = await supabase.storage
+          .from(bucket)
+          .upload(filePath, file, { upsert: true });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+        if (!result.error) {
+          selectedBucket = bucket;
+          break;
+        }
 
-      const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+        lastError = result.error;
+        const message = (result.error.message || '').toLowerCase();
+        if (!message.includes('bucket') && !message.includes('not found')) {
+          break;
+        }
+      }
+
+      let avatarUrl = '';
+      if (!selectedBucket) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        avatarUrl = dataUrl;
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from(selectedBucket)
+          .getPublicUrl(filePath);
+        avatarUrl = `${publicUrl}?t=${Date.now()}`;
+      }
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -95,13 +120,17 @@ export const MobileSidebar = ({ user, navItems, logoutItem, onAvatarChange }: Mo
 
       toast({
         title: "Avatar updated",
-        description: "Your profile picture has been updated",
+        description: selectedBucket
+          ? (selectedBucket === 'avatars'
+              ? "Your profile picture has been updated"
+              : `Your profile picture was saved using ${selectedBucket}`)
+          : "Your profile picture was saved without storage bucket dependency.",
       });
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload avatar. Please try again.",
+        description: (error as any)?.message || "Failed to upload avatar. Please try again.",
         variant: "destructive",
       });
     } finally {

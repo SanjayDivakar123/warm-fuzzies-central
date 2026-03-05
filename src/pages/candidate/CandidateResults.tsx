@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useCandidatePortal } from '@/contexts/CandidatePortalContext';
 import { Loader2, Building2, CheckCircle2, Award, Lightbulb, AlertTriangle, Target } from 'lucide-react';
 import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
+import SendToFriendCard from '@/components/reports/SendToFriendCard';
+import RoleColorIdentityCard from '@/components/reports/RoleColorIdentityCard';
 
 const colorConfig = {
   yellow: {
@@ -248,6 +250,15 @@ export default function CandidateResults() {
               </p>
             </CardContent>
           </Card>
+
+          <RoleColorIdentityCard
+            name={candidate?.full_name || candidate?.name || candidate?.email}
+            primaryColor={assessmentResults.dominantColor}
+            secondaryColor={sortedColors[1]?.color}
+            className="mt-8"
+          />
+
+          <SendToFriendCard color={assessmentResults.dominantColor} className="mt-8" />
         </div>
       </div>
 

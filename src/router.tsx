@@ -27,6 +27,7 @@ import SanjayDivakar from "@/pages/team/SanjayDivakar";
 import TristanBeley from "@/pages/team/TristanBeley";
 import TanishaSikder from "@/pages/team/TanishaSikder";
 import AmitSuthar from "@/pages/team/AmitSuthar";
+import KodyKrueger from "@/pages/team/KodyKrueger";
 
 
 import Sitemap from "@/components/Sitemap";
@@ -43,7 +44,6 @@ import LeadershipGame from "@/pages/LeadershipGame";
 import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
-import RCFB2BAdminDashboard from "@/pages/admin/RCFB2BAdminDashboard";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
@@ -74,6 +74,13 @@ import CandidateResults from "@/pages/candidate/CandidateResults";
 // Public careers pages
 import PublicCareersPage from "@/pages/careers/PublicCareersPage";
 import PublicJobDetailPage from "@/pages/careers/PublicJobDetailPage";
+import PublicRoleColorProfile from "@/pages/PublicRoleColorProfile";
+
+// Career Finder pages
+import CareerFinder from "@/pages/CareerFinder";
+import CareerFinderResults from "@/pages/CareerFinderResults";
+import CareerResumeResults from "@/pages/CareerResumeResults";
+import CareerPaymentSuccess from "@/pages/CareerPaymentSuccess";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -129,6 +136,22 @@ export const routeConfig = [
   {
     path: "/pro-results",
     element: <Layout><ProResults /></Layout>,
+  },
+  {
+    path: "/career-finder",
+    element: <Layout><CareerFinder /></Layout>,
+  },
+  {
+    path: "/career-finder/results",
+    element: <Layout><CareerFinderResults /></Layout>,
+  },
+  {
+    path: "/career-finder/resume-results",
+    element: <Layout><CareerResumeResults /></Layout>,
+  },
+  {
+    path: "/career-payment-success",
+    element: <Layout><CareerPaymentSuccess /></Layout>,
   },
   {
     path: "/payment-success",
@@ -191,6 +214,10 @@ export const routeConfig = [
     element: <Layout><AmitSuthar /></Layout>,
   },
   {
+    path: "/team/kody-krueger",
+    element: <Layout><KodyKrueger /></Layout>,
+  },
+  {
     path: "/sitemap",
     element: <Layout><Sitemap /></Layout>,
   },
@@ -233,10 +260,6 @@ export const routeConfig = [
   {
     path: "/admin/users",
     element: <Layout><UserManagement /></Layout>,
-  },
-  {
-    path: "/admin/rcf-b2b",
-    element: <Layout><RCFB2BAdminDashboard /></Layout>,
   },
   {
     path: "/b2b",
@@ -310,6 +333,10 @@ export const routeConfig = [
   {
     path: "/careers/:companySlug/jobs/:jobId",
     element: <PublicJobDetailPage />,
+  },
+  {
+    path: "/:username",
+    element: <Layout><PublicRoleColorProfile /></Layout>,
   },
   {
     path: "*",

@@ -59,12 +59,17 @@ serve(async (req) => {
         name: "Team Composition & Role Design Program",
         amount: customAmount || 100000, // Use custom amount or default to $1000
         description: customDescription || "12-week program to map capabilities, identify gaps, and design roles"
+      },
+      career: {
+        name: "RCF Career Finder Report",
+        amount: 1900, // $19.00
+        description: "Personalized career recommendations based on your RoleColor profile"
       }
     };
 
     const productConfig = pricing[productType as keyof typeof pricing];
     if (!productConfig) {
-      throw new Error("Invalid product type. Use 'premium', 'pro', or 'team'");
+      throw new Error("Invalid product type. Use 'premium', 'pro', 'team', or 'career'");
     }
 
     console.log("Creating payment for:", productConfig.name, "Amount:", productConfig.amount);
