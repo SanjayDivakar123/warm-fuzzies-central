@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import { PaymentButton } from "@/components/payment/PaymentButton";
 import { careerProfiles, getCareerProfile } from "@/lib/careerData";
 import ResumeCareerUpload from "@/components/career/ResumeCareerUpload";
+import PublicRoleColorProfileSettings from "@/components/profile/PublicRoleColorProfileSettings";
 
 interface AssessmentResult {
   id: string;
@@ -805,17 +806,42 @@ const Dashboard = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
+      const uploadBuckets = ['avatars', 'public-profile-photos', 'company-logos'];
+      let selectedBucket: string | null = null;
+      let lastError: any = null;
 
-      if (uploadError) throw uploadError;
+      for (const bucket of uploadBuckets) {
+        const result = await supabase.storage
+          .from(bucket)
+          .upload(filePath, file, { upsert: true });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+        if (!result.error) {
+          selectedBucket = bucket;
+          break;
+        }
 
-      const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+        lastError = result.error;
+        const message = (result.error.message || '').toLowerCase();
+        if (!message.includes('bucket') && !message.includes('not found')) {
+          break;
+        }
+      }
+
+      let newAvatarUrl = '';
+      if (!selectedBucket) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        newAvatarUrl = dataUrl;
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from(selectedBucket)
+          .getPublicUrl(filePath);
+        newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+      }
 
       await supabase.from('profiles').upsert({
         user_id: user.id,
@@ -823,10 +849,21 @@ const Dashboard = () => {
       }, { onConflict: 'user_id' });
 
       setAvatarUrl(newAvatarUrl);
-      toast({ title: "Avatar updated", description: "Your profile picture has been updated" });
+      toast({
+        title: "Avatar updated",
+        description: selectedBucket
+          ? (selectedBucket === 'avatars'
+              ? "Your profile picture has been updated"
+              : `Your profile picture was saved using ${selectedBucket}`)
+          : "Your profile picture was saved without storage bucket dependency.",
+      });
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast({ title: "Upload failed", description: "Failed to upload avatar. Please try again.", variant: "destructive" });
+      toast({
+        title: "Upload failed",
+        description: (error as any)?.message || "Failed to upload avatar. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setUploading(false);
     }
@@ -1633,6 +1670,14 @@ const Dashboard = () => {
                         )}
                       </CardContent>
                     </Card>
+
+                    <PublicRoleColorProfileSettings
+                      userId={user.id}
+                      userEmail={user.email}
+                      displayName={user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      defaultAvatarUrl={avatarUrl}
+                      assessments={assessments}
+                    />
                     </div>
                   </>
                 )}

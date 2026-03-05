@@ -74,6 +74,7 @@ import CandidateResults from "@/pages/candidate/CandidateResults";
 // Public careers pages
 import PublicCareersPage from "@/pages/careers/PublicCareersPage";
 import PublicJobDetailPage from "@/pages/careers/PublicJobDetailPage";
+import PublicRoleColorProfile from "@/pages/PublicRoleColorProfile";
 
 // Career Finder pages
 import CareerFinder from "@/pages/CareerFinder";
@@ -332,6 +333,10 @@ export const routeConfig = [
   {
     path: "/careers/:companySlug/jobs/:jobId",
     element: <PublicJobDetailPage />,
+  },
+  {
+    path: "/:username",
+    element: <Layout><PublicRoleColorProfile /></Layout>,
   },
   {
     path: "*",

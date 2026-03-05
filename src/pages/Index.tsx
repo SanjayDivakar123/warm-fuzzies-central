@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import HeroSectionWithGradient from "@/components/ui/hero-section-with-gradient";
+import { Logos3 } from "@/components/ui/logos3";
 import { ScrollReveal, ScrollRevealGroup } from "@/components/ui/scroll-reveal";
 import { TestimonialsCarousel } from "@/components/ui/testimonials-carousel";
 import { TestimonialsColumns } from "@/components/ui/testimonials-columns";
@@ -274,6 +275,8 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
       
       {/* Hero Section with Gradient */}
       <HeroSectionWithGradient />
+
+      <Logos3 heading="Used By" />
 
       {/* Philosophy Section - Enhanced */}
       <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
