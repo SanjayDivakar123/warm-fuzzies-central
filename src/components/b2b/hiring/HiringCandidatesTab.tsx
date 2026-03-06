@@ -423,7 +423,7 @@ export default function HiringCandidatesTab({
     <div className="space-y-4" data-tour="hiring-candidates-overview">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3" data-tour="hiring-candidates-filters">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative w-full min-w-0 sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search candidates..."
@@ -434,7 +434,7 @@ export default function HiringCandidatesTab({
         </div>
 
         <Select value={jobFilter} onValueChange={setJobFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All Jobs" />
           </SelectTrigger>
           <SelectContent>
@@ -449,7 +449,7 @@ export default function HiringCandidatesTab({
 
         {stages.length > 0 && (
           <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All Stages" />
             </SelectTrigger>
             <SelectContent>
@@ -464,7 +464,7 @@ export default function HiringCandidatesTab({
         )}
 
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -496,7 +496,8 @@ export default function HiringCandidatesTab({
       {/* Candidates Table */}
       <Card data-tour="hiring-candidates-table">
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
                 <TableHead>
@@ -715,6 +716,7 @@ export default function HiringCandidatesTab({
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -282,7 +282,7 @@ export default function ScheduleInterviewDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
               <Input
@@ -303,7 +303,7 @@ export default function ScheduleInterviewDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
               <Select value={duration} onValueChange={setDuration}>

@@ -327,9 +327,9 @@ export default function HiringPipelineView({
   return (
     <div className="space-y-4" data-tour="hiring-pipeline-overview">
       {/* Job Selector */}
-      <div className="flex items-center gap-4" data-tour="hiring-pipeline-selector">
+      <div className="flex flex-wrap items-center gap-3" data-tour="hiring-pipeline-selector">
         <Select value={selectedJobId || ''} onValueChange={onSelectJob}>
-          <SelectTrigger className="w-[300px]">
+          <SelectTrigger className="w-full sm:w-[300px]">
             <SelectValue placeholder="Select a job..." />
           </SelectTrigger>
           <SelectContent>

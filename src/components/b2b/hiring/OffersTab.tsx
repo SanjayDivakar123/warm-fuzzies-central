@@ -434,9 +434,9 @@ export default function OffersTab({
       </div>
 
       {/* Filters */}
-      <div className="flex items-center justify-between gap-4" data-tour="hiring-offers-controls">
+      <div className="flex flex-wrap items-center justify-between gap-3" data-tour="hiring-offers-controls">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -461,7 +461,8 @@ export default function OffersTab({
       {/* Offers Table */}
       <Card data-tour="hiring-offers-table">
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Candidate</TableHead>
@@ -607,6 +608,7 @@ export default function OffersTab({
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -664,7 +666,7 @@ export default function OffersTab({
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <p className="text-sm text-muted-foreground">Salary</p>
                   <p className="font-medium">

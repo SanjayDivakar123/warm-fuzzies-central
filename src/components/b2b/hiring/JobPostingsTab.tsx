@@ -495,7 +495,7 @@ export default function JobPostingsTab({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-tour="hiring-jobs-list">
+        <div className="grid justify-items-center gap-4 md:grid-cols-2 md:justify-items-stretch lg:grid-cols-3" data-tour="hiring-jobs-list">
           {filteredJobs.map(job => {
             const statusConfig = STATUS_CONFIG[job.status];
             const StatusIcon = statusConfig.icon;
@@ -503,7 +503,7 @@ export default function JobPostingsTab({
             const salary = formatSalary(job.salary_min, job.salary_max);
 
             return (
-              <Card key={job.id} className="relative">
+              <Card key={job.id} className="relative w-full max-w-xl md:max-w-none">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -731,7 +731,7 @@ export default function JobPostingsTab({
             </div>
 
             {/* Location & Remote */}
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input
@@ -760,7 +760,7 @@ export default function JobPostingsTab({
             </div>
 
             {/* Employment Type & Experience */}
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Employment Type</Label>
                 <Select 
@@ -794,7 +794,7 @@ export default function JobPostingsTab({
             </div>
 
             {/* Salary Range */}
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="salaryMin">Salary Min ($)</Label>
                 <Input
@@ -826,7 +826,7 @@ export default function JobPostingsTab({
             </div>
 
             {/* RoleColor matching */}
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Ideal RoleColor (Primary)</Label>
                 <Select 

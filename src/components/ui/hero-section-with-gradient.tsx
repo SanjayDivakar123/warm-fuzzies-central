@@ -468,6 +468,7 @@ const RoleColorModal = ({
   const IconComponent = role.icon;
   const modalRef = useRef<HTMLDivElement>(null);
   const [contentScale, setContentScale] = useState(1);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
     const scrollY = window.scrollY;
@@ -509,6 +510,15 @@ const RoleColorModal = ({
       const modal = modalRef.current;
       if (!modal) return;
 
+      const mobile = window.innerWidth < 640;
+      setIsMobileViewport(mobile);
+
+      if (mobile) {
+        // Keep full-size content on mobile and let users scroll naturally.
+        setContentScale(1);
+        return;
+      }
+
       const availableHeight = window.innerHeight - 160;
       const naturalHeight = modal.scrollHeight;
       const nextScale = naturalHeight > availableHeight
@@ -538,7 +548,7 @@ const RoleColorModal = ({
     opacity: 0
   }} transition={{
     duration: 0.2
-  }} className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden overscroll-none p-4 pt-28 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+  }} className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto overscroll-contain p-3 sm:p-4 pt-20 sm:pt-28 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <motion.div initial={{
       opacity: 0,
       scale: 0.3,
@@ -546,7 +556,7 @@ const RoleColorModal = ({
       y: 100
     }} animate={{
       opacity: 1,
-      scale: contentScale,
+      scale: isMobileViewport ? 1 : contentScale,
       rotateX: 0,
       y: 0
     }} exit={{
@@ -616,7 +626,7 @@ const RoleColorModal = ({
         </div>
 
         {/* Content */}
-        <div className="relative p-6 sm:p-8 space-y-6">
+        <div className="relative p-5 sm:p-8 space-y-6 overflow-y-auto max-h-[calc(100dvh-12.5rem)] sm:max-h-[calc(100dvh-14rem)]">
           {/* Main Description */}
           <motion.div initial={{
           opacity: 0,

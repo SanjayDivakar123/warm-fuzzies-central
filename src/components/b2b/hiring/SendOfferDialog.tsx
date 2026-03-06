@@ -348,8 +348,8 @@ export default function SendOfferDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 space-y-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="salary">Base Salary (Optional)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -381,7 +381,7 @@ export default function SendOfferDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="bonus">Signing Bonus</Label>
               <div className="relative">
@@ -407,7 +407,7 @@ export default function SendOfferDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="probationPeriod">Probationary Period (Optional)</Label>
               <Input
@@ -419,7 +419,7 @@ export default function SendOfferDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input

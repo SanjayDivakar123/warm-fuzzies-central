@@ -416,8 +416,8 @@ function B2BDashboardContent() {
         data-tour="dashboard-header"
         style={{ borderBottomColor: `${primaryColor}30` }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="w-full flex items-center justify-between sm:w-auto sm:justify-start sm:gap-1">
             {/* Logo - always links back to main site */}
             <Link to="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
               {(() => {
@@ -441,7 +441,8 @@ function B2BDashboardContent() {
 
             <span className="text-border mx-1 hidden sm:inline">|</span>
 
-            {/* Company switcher dropdown */}
+            {/* Company switcher dropdown (desktop) */}
+            <div className="hidden sm:block">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-1.5 px-2 hover:bg-muted/50 h-auto py-1.5 text-muted-foreground">
@@ -487,8 +488,9 @@ function B2BDashboardContent() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="w-full sm:w-auto flex items-center justify-end gap-1 sm:gap-2">
             {/* Search Button */}
             <Button
               variant="ghost"
@@ -549,9 +551,61 @@ function B2BDashboardContent() {
               onClick={handleLogout} 
               className="text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign out</span>
             </Button>
+          </div>
+
+          {/* Company switcher dropdown (mobile) */}
+          <div className="sm:hidden w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between text-muted-foreground"
+                >
+                  <span className="truncate">{company.name}</span>
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[calc(100vw-1.5rem)] max-w-sm">
+                {allCompanies.map((item) => (
+                  <DropdownMenuItem
+                    key={item.company.id}
+                    onClick={() => {
+                      if (item.company.id !== company.id) {
+                        switchingCompanyIdRef.current = item.company.id;
+                        setSwitching(true);
+                        switchCompany(item.company.id);
+                        activateTab('overview');
+                      }
+                    }}
+                    className="flex items-center gap-3 py-2.5 cursor-pointer"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-3.5 w-3.5 text-foreground/60" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.company.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{item.companyUser.role}</p>
+                    </div>
+                    {item.company.id === company.id && (
+                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => navigate('/b2b')}
+                  className="flex items-center gap-3 py-2.5 cursor-pointer text-primary"
+                >
+                  <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">Create New Company</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

@@ -24,7 +24,7 @@ export default function MobileBottomNav({ activeTab, onChange, permissions }: Mo
   const allTabs = [
     permissions.canViewOverview && { key: 'overview', label: 'Overview', icon: Home },
     permissions.canManageUsers && { key: 'users', label: 'Users', icon: Users },
-    permissions.canManageCandidates && { key: 'candidates', label: 'Candidates', icon: UserSearch },
+    permissions.canManageCandidates && { key: 'hiring', label: 'Hiring', icon: UserSearch },
     permissions.canViewAssessments && { key: 'assessments', label: 'Assessments', icon: ClipboardList },
     permissions.canManageReminders && { key: 'reminders', label: 'Reminders', icon: Bell },
     permissions.canUseWorkMatrix && { key: 'matrix', label: 'Work Matrix', icon: Grid3x3 },

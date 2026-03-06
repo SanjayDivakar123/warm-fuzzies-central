@@ -320,7 +320,8 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
           {/* Blurred background tabs */}
           <div className="filter blur-sm pointer-events-none select-none" aria-hidden="true">
             <Tabs value="jobs">
-              <TabsList className="grid grid-cols-8 w-full opacity-50">
+              <div className="overflow-x-auto pb-1">
+              <TabsList className="inline-flex min-w-max opacity-50">
                 <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3">
                   <Briefcase className="h-4 w-4" />
                   <span className="hidden sm:inline">Jobs</span>
@@ -354,6 +355,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                   <span className="hidden sm:inline">Legacy</span>
                 </TabsTrigger>
               </TabsList>
+              </div>
             </Tabs>
 
             <div className="mt-6 space-y-4">
@@ -721,8 +723,8 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HiringTab)}>
         {/* Keep the nav bar position fixed across sub-tabs */}
-        <div className="mb-2">
-          <TabsList className="grid grid-cols-8 w-full justify-start">
+        <div className="mb-2 overflow-x-auto pb-1">
+          <TabsList className="inline-flex min-w-max justify-start">
             <TabsTrigger value="jobs" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-jobs">
               <Briefcase className="h-4 w-4" />
               <span className="hidden sm:inline">Jobs</span>

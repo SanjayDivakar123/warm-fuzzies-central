@@ -300,10 +300,10 @@ export default function InterviewsTab({
       </div>
 
       {/* Filters */}
-      <div className="flex items-center justify-between gap-4" data-tour="hiring-interviews-controls">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3" data-tour="hiring-interviews-controls">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -455,14 +455,14 @@ function InterviewCard({
   return (
     <Card className="hover:shadow-sm transition-shadow">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-start gap-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback>
                 {candidate ? getInitials(candidate.full_name, candidate.email) : '??'}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="min-w-0">
               <p className="font-medium">
                 {candidate?.full_name || candidate?.email || 'Unknown Candidate'}
               </p>
@@ -495,7 +495,7 @@ function InterviewCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
             <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
             
             {canManage && interview.status !== 'completed' && interview.status !== 'cancelled' && (
@@ -503,7 +503,7 @@ function InterviewCard({
                 value=""
                 onValueChange={(value) => onUpdateStatus(interview.id, value as InterviewStatus)}
               >
-                <SelectTrigger className="w-[120px] h-8">
+                <SelectTrigger className="h-8 w-full sm:w-[120px]">
                   <SelectValue placeholder="Update..." />
                 </SelectTrigger>
                 <SelectContent>

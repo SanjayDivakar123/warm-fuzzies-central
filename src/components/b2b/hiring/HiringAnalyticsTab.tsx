@@ -317,9 +317,9 @@ export default function HiringAnalyticsTab({
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <Select value={dateRange} onValueChange={(v) => setDateRange(v as any)}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -331,7 +331,7 @@ export default function HiringAnalyticsTab({
         </Select>
 
         <Select value={selectedJob} onValueChange={setSelectedJob}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="All jobs" />
           </SelectTrigger>
           <SelectContent>
