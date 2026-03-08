@@ -30,6 +30,13 @@ export interface InsightMeteringSettings {
   allowPayPerInsight: boolean;
 }
 
+interface InsightPurchasePricing {
+  amountUsd?: number;
+  amountLocal?: number;
+  currency?: string;
+  countryCode?: string;
+}
+
 /**
  * Get the current month string in YYYY-MM format
  */
@@ -180,9 +187,19 @@ export async function incrementInsightUsage(companyId: string): Promise<{ succes
 /**
  * Add insight credits to a company (for purchasing)
  */
-export async function addInsightCredits(companyId: string, credits: number, purchaseAmountUsd?: number): Promise<boolean> {
-  const amountToCharge = Number.isFinite(purchaseAmountUsd as number)
-    ? Math.max(0, purchaseAmountUsd as number)
+export async function addInsightCredits(
+  companyId: string,
+  credits: number,
+  purchasePricing?: number | InsightPurchasePricing,
+): Promise<boolean> {
+  const legacyAmountUsd = typeof purchasePricing === 'number' ? purchasePricing : undefined;
+  const amountUsd = typeof purchasePricing === 'object' ? purchasePricing?.amountUsd : legacyAmountUsd;
+  const amountLocal = typeof purchasePricing === 'object' ? purchasePricing?.amountLocal : undefined;
+  const currency = typeof purchasePricing === 'object' ? purchasePricing?.currency : undefined;
+  const countryCode = typeof purchasePricing === 'object' ? purchasePricing?.countryCode : undefined;
+
+  const amountToCharge = Number.isFinite(amountUsd as number)
+    ? Math.max(0, amountUsd as number)
     : credits;
 
   const { data, error } = await supabase.functions.invoke('purchase-insight-credits', {
@@ -190,6 +207,9 @@ export async function addInsightCredits(companyId: string, credits: number, purc
       company_id: companyId,
       credits,
       amount_usd: amountToCharge,
+      ...(Number.isFinite(amountLocal as number) && { amount_local: amountLocal }),
+      ...(currency && { currency }),
+      ...(countryCode && { country_code: countryCode }),
     },
   });
 

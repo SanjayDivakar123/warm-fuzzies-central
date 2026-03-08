@@ -769,7 +769,7 @@ export default function TeamInsightsModal({
               <AlertDialogTitle>Redo insights?</AlertDialogTitle>
               <AlertDialogDescription>
                 {usage && usage.used >= usage.limit
-                  ? 'You have used all free AI insights this month. Re-doing now will charge $5 USD to your card on file via Stripe (using any available insight credits first). Do you want to continue?'
+                  ? 'You have used all free AI insights this month. Re-doing now will charge your card on file via Stripe in your local pricing currency (using any available insight credits first). Do you want to continue?'
                   : hasMatchingCachedTeam
                   ? 'Your team composition hasn\'t changed. Re-doing now will use one free AI insight credit and reload the same saved insights with the same percentages and analysis.'
                   : 'Your team composition has changed. Re-generating insights will use one of your free AI insights credits. Do you want to continue?'}
@@ -778,7 +778,7 @@ export default function TeamInsightsModal({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmRedo}>
-                {usage && usage.used >= usage.limit ? 'Yes, charge $5 and re-do' : 'Yes, re-do insights'}
+                {usage && usage.used >= usage.limit ? 'Yes, charge and re-do' : 'Yes, re-do insights'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

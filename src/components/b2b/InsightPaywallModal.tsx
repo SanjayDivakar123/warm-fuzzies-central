@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Lightbulb, CreditCard, Sparkles, Check, Lock } from 'lucide-react';
 import { addInsightCredits } from '@/lib/insightMetering';
 import { useToast } from '@/hooks/use-toast';
+import { convertUsdToLocalB2B, detectCountryCode, formatCurrency } from '@/lib/countryPricing';
 
 interface InsightPaywallModalProps {
   open: boolean;
@@ -21,8 +22,6 @@ interface InsightPaywallModalProps {
   companyId: string;
   insightCredits: number;
 }
-
-const PRICE_PER_INSIGHT = 1; // $1 USD
 
 export default function InsightPaywallModal({
   open,
@@ -33,20 +32,53 @@ export default function InsightPaywallModal({
 }: InsightPaywallModalProps) {
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<number>(5);
+  const [countryCode, setCountryCode] = useState('US');
   const { toast } = useToast();
 
-  const packages = [
-    { credits: 5, price: 5, popular: false },
-    { credits: 10, price: 9, popular: true, savings: '10%' },
-    { credits: 25, price: 20, popular: false, savings: '20%' },
+  useEffect(() => {
+    let mounted = true;
+    detectCountryCode()
+      .then((code) => {
+        if (mounted) setCountryCode(code);
+      })
+      .catch(() => {
+        if (mounted) setCountryCode('US');
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const basePackages = [
+    { credits: 5, usdPrice: 5, popular: false },
+    { credits: 10, usdPrice: 9, popular: true, savings: '10%' },
+    { credits: 25, usdPrice: 20, popular: false, savings: '20%' },
   ];
+
+  const packages = useMemo(() => {
+    return basePackages.map((pkg) => {
+      const local = convertUsdToLocalB2B(pkg.usdPrice, countryCode);
+      return {
+        ...pkg,
+        localPrice: local.amountLocal,
+        currency: local.currency,
+        country: local.country,
+      };
+    });
+  }, [countryCode]);
 
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
       // Purchase flow validates wallet/card payment in the edge function before credits are added.
-      const selectedPrice = packages.find((pkg) => pkg.credits === selectedPackage)?.price ?? selectedPackage;
-      const success = await addInsightCredits(companyId, selectedPackage, selectedPrice);
+      const selectedPkg = packages.find((pkg) => pkg.credits === selectedPackage);
+      const success = await addInsightCredits(companyId, selectedPackage, {
+        amountUsd: selectedPkg?.usdPrice ?? selectedPackage,
+        amountLocal: selectedPkg?.localPrice,
+        currency: selectedPkg?.currency,
+        countryCode,
+      });
       
       if (success) {
         toast({
@@ -129,16 +161,20 @@ export default function InsightPaywallModal({
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        ${(pkg.price / pkg.credits).toFixed(2)} per insight
+                        {formatCurrency(pkg.localPrice / pkg.credits, pkg.currency)} per insight
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-lg font-bold">${pkg.price}</span>
+                    <span className="text-lg font-bold">{formatCurrency(pkg.localPrice, pkg.currency)}</span>
                   </div>
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          <div className="text-xs text-muted-foreground text-center">
+            Prices shown for your location.
           </div>
 
           <div className="text-xs text-muted-foreground text-center">
@@ -156,7 +192,11 @@ export default function InsightPaywallModal({
             ) : (
               <>
                 <CreditCard className="h-4 w-4 mr-2" />
-                Purchase ${packages.find(p => p.credits === selectedPackage)?.price}
+                Purchase {(() => {
+                  const selectedPkg = packages.find(p => p.credits === selectedPackage);
+                  if (!selectedPkg) return '';
+                  return formatCurrency(selectedPkg.localPrice, selectedPkg.currency);
+                })()}
               </>
             )}
           </Button>

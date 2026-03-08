@@ -12,6 +12,7 @@ import { Loader2, Building2, Users, Shield, Sparkles, Tag, Check, ArrowRight, Za
 import { motion } from 'framer-motion';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { Navbar } from '@/components/navigation/Navbar';
+import { detectCountryCode, getLocalizedPrice, getCountryPricing, formatCurrency } from '@/lib/countryPricing';
 
 const PROMO_CODES = new Set([
   'LEADERSWELCOME',
@@ -26,6 +27,7 @@ export default function B2B() {
   const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
+  const [countryCode, setCountryCode] = useState('US');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,6 +45,21 @@ export default function B2B() {
     setCheckingAccess(false);
   }, [user]);
 
+  useEffect(() => {
+    let mounted = true;
+    detectCountryCode()
+      .then((code) => {
+        if (mounted) setCountryCode(code);
+      })
+      .catch(() => {
+        if (mounted) setCountryCode('US');
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const generateSubdomain = (name: string) => {
     return name
       .toLowerCase()
@@ -53,7 +70,9 @@ export default function B2B() {
 
   const isPromoValid = PROMO_CODES.has(promoCode.toUpperCase().trim());
   const seatCount = parseInt(seats) || 2;
-  const totalPrice = isPromoValid ? 0 : seatCount * 20;
+  const localizedSeatPrice = getLocalizedPrice('b2b', countryCode);
+  const countryPricing = getCountryPricing(countryCode);
+  const totalPrice = isPromoValid ? 0 : seatCount * localizedSeatPrice.displayAmount;
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,8 +137,30 @@ export default function B2B() {
       }
 
       // Otherwise, redirect to Stripe checkout
-      const { data, error } = await supabase.functions.invoke('create-b2b-payment', {
-        body: {
+      const localizedPayload = {
+        companyName,
+        adminEmail,
+        seats: seatCount,
+        assessmentType,
+        userId: user.id,
+        subdomain,
+        successUrl: `${window.location.origin}/b2b/payment-success`,
+        cancelUrl: `${window.location.origin}/b2b`,
+        countryCode,
+        stripeCurrency: localizedSeatPrice.stripeCurrency,
+        stripeAmountMinor: localizedSeatPrice.stripeAmountMinor,
+        displayCurrency: localizedSeatPrice.displayCurrency,
+        displayAmount: localizedSeatPrice.displayAmount,
+        billingCountry: localizedSeatPrice.country,
+      };
+
+      let { data, error } = await supabase.functions.invoke('create-b2b-payment', {
+        body: localizedPayload,
+      });
+
+      if (error) {
+        console.warn('Localized B2B checkout failed, retrying with default USD payload', error);
+        const fallbackPayload = {
           companyName,
           adminEmail,
           seats: seatCount,
@@ -128,8 +169,15 @@ export default function B2B() {
           subdomain,
           successUrl: `${window.location.origin}/b2b/payment-success`,
           cancelUrl: `${window.location.origin}/b2b`,
-        },
-      });
+        };
+
+        const retry = await supabase.functions.invoke('create-b2b-payment', {
+          body: fallbackPayload,
+        });
+
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -406,7 +454,7 @@ export default function B2B() {
                     {/* Price Summary */}
                     <div className="rounded-xl bg-muted/50 p-5">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm text-muted-foreground">{seatCount} seats × $20/month</span>
+                        <span className="text-sm text-muted-foreground">{seatCount} seats × {formatCurrency(localizedSeatPrice.displayAmount, localizedSeatPrice.displayCurrency)}/month</span>
                         {isPromoValid && (
                           <span className="text-xs font-medium text-role-green bg-role-green/10 px-2 py-0.5 rounded-full">
                             100% OFF
@@ -418,13 +466,14 @@ export default function B2B() {
                         <div className="text-right">
                           {isPromoValid ? (
                             <div className="flex items-baseline gap-2">
-                              <span className="text-lg line-through text-muted-foreground">${seatCount * 20}</span>
+                              <span className="text-lg line-through text-muted-foreground">{formatCurrency(seatCount * localizedSeatPrice.displayAmount, localizedSeatPrice.displayCurrency)}</span>
                               <span className="text-3xl font-bold text-role-green">$0</span>
                             </div>
                           ) : (
-                            <span className="text-3xl font-bold">${totalPrice}</span>
+                            <span className="text-3xl font-bold">{formatCurrency(totalPrice, localizedSeatPrice.displayCurrency)}</span>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">per month</p>
+                          <p className="text-xs text-muted-foreground">{countryPricing.country} pricing</p>
                         </div>
                       </div>
                     </div>
@@ -442,7 +491,7 @@ export default function B2B() {
                         </>
                       ) : (
                         <>
-                          {isPromoValid ? 'Create Free Portal' : `Start for $${totalPrice}/mo`}
+                          {isPromoValid ? 'Create Free Portal' : `Start for ${formatCurrency(totalPrice, localizedSeatPrice.displayCurrency)}/mo`}
                           <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}

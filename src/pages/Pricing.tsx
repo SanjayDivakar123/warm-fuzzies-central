@@ -7,6 +7,8 @@ import { BorderTrail } from "@/components/ui/border-trail"
 import { PaymentButton } from "@/components/payment/PaymentButton"
 import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useEffect, useMemo, useState } from "react"
+import { detectCountryCode, getCountryPricing, getLocalizedPrice } from "@/lib/countryPricing"
 
 interface PlanCardProps {
   name: string
@@ -42,9 +44,8 @@ function PlanCard({ name, price, priceNote, target, description, features, cta, 
         
         <div className="mt-6">
           <div className="flex items-baseline gap-1">
-            {price !== "Free" && <span className="text-muted-foreground">$</span>}
             <span className="text-4xl font-bold tracking-tight text-foreground">
-              {price === "Free" ? "Free" : price.replace("$", "")}
+              {price}
             </span>
             {priceNote && <span className="text-muted-foreground">/{priceNote}</span>}
           </div>
@@ -88,6 +89,28 @@ function PlanCard({ name, price, priceNote, target, description, features, cta, 
 }
 
 export default function Pricing() {
+  const [countryCode, setCountryCode] = useState("US");
+
+  useEffect(() => {
+    let mounted = true;
+    detectCountryCode()
+      .then((code) => {
+        if (mounted) setCountryCode(code);
+      })
+      .catch(() => {
+        if (mounted) setCountryCode("US");
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const countryPricing = useMemo(() => getCountryPricing(countryCode), [countryCode]);
+  const premiumPrice = useMemo(() => getLocalizedPrice("premium", countryCode), [countryCode]);
+  const proPrice = useMemo(() => getLocalizedPrice("pro", countryCode), [countryCode]);
+  const b2bPrice = useMemo(() => getLocalizedPrice("b2b", countryCode), [countryCode]);
+
   const individualPlans = [
     {
       name: "Free Assessment",
@@ -107,7 +130,7 @@ export default function Pricing() {
     },
     {
       name: "Premium Assessment",
-      price: "$19",
+      price: premiumPrice.displayFormatted,
       priceNote: "one-time",
       target: "Complete Analysis",
       description: "Full 25-question assessment with detailed insights",
@@ -125,7 +148,7 @@ export default function Pricing() {
     },
     {
       name: "Pro Deep Dive",
-      price: "$49",
+      price: proPrice.displayFormatted,
       priceNote: "one-time",
       target: "Master Analysis",
       description: "Ultimate 50-question assessment with comprehensive 3-page report",
@@ -165,6 +188,9 @@ export default function Pricing() {
           </p>
           <p className="text-base sm:text-lg text-foreground/80 max-w-2xl mx-auto leading-relaxed">
             Choose the perfect plan for your needs - from individual discovery to enterprise solutions
+          </p>
+          <p className="text-sm text-foreground/70 mt-3">
+            Auto-pricing for {countryPricing.country} ({countryPricing.currency})
           </p>
         </div>
       </div>
@@ -305,8 +331,7 @@ export default function Pricing() {
                     <div className="bg-background/50 rounded-lg p-6 text-center border border-primary/20">
                       <p className="text-sm text-muted-foreground mb-2">Starting at</p>
                       <div className="flex items-baseline justify-center gap-1 mb-2">
-                        <span className="text-muted-foreground">$</span>
-                        <span className="text-5xl font-bold tracking-tight text-foreground">20</span>
+                        <span className="text-5xl font-bold tracking-tight text-foreground">{b2bPrice.displayFormatted}</span>
                         <span className="text-muted-foreground">/user/month</span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-6">billed monthly</p>
@@ -348,9 +373,9 @@ export default function Pricing() {
                 <TableRow>
                   <TableHead className="w-[200px]">Feature</TableHead>
                   <TableHead className="text-center">Free</TableHead>
-                  <TableHead className="text-center">Premium ($19)</TableHead>
-                  <TableHead className="text-center">Pro ($49)</TableHead>
-                  <TableHead className="text-center">Teams ($20/user/mo)</TableHead>
+                  <TableHead className="text-center">Premium ({premiumPrice.displayFormatted})</TableHead>
+                  <TableHead className="text-center">Pro ({proPrice.displayFormatted})</TableHead>
+                  <TableHead className="text-center">Teams ({b2bPrice.displayFormatted}/user/mo)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

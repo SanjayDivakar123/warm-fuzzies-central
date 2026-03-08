@@ -6,6 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const STRIPE_ALLOWED_CURRENCIES = new Set([
+  "aed", "aud", "bam", "bbd", "bdt", "bgn", "bnd", "bob", "brl", "bwp", "cad", "chf", "clp", "cny", "cop", "crc", "czk",
+  "dkk", "dop", "dzd", "egp", "etb", "eur", "fjd", "gbp", "gel", "ghs", "gtq", "gyd", "hkd", "hnl", "hrk", "huf", "idr",
+  "ils", "inr", "isk", "jmd", "jpy", "kes", "krw", "kzt", "lak", "lkr", "mad", "mdl", "mnt", "mur", "mxn", "myr", "nad",
+  "ngn", "nok", "npr", "nzd", "omr", "pen", "php", "pkr", "pln", "pyg", "qar", "ron", "rsd", "rub", "sar", "scr", "sek",
+  "sgd", "thb", "tnd", "try", "twd", "tzs", "uah", "ugx", "usd", "uyu", "vnd", "xaf", "xof", "zar", "zmw",
+]);
+
 serve(async (req) => {
   console.log("=== CREATE PAYMENT FUNCTION STARTED ===");
   console.log("Request method:", req.method);
@@ -22,8 +30,32 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Request body:", body);
     
-    const { productType, successUrl, cancelUrl, customAmount, customDescription } = body;
-    console.log("Extracted data:", { productType, successUrl, cancelUrl, customAmount, customDescription });
+    const {
+      productType,
+      successUrl,
+      cancelUrl,
+      customAmount,
+      customDescription,
+      countryCode,
+      stripeCurrency,
+      stripeAmountMinor,
+      displayCurrency,
+      displayAmount,
+      billingCountry,
+    } = body;
+    console.log("Extracted data:", {
+      productType,
+      successUrl,
+      cancelUrl,
+      customAmount,
+      customDescription,
+      countryCode,
+      stripeCurrency,
+      stripeAmountMinor,
+      displayCurrency,
+      displayAmount,
+      billingCountry,
+    });
 
     if (!productType) {
       throw new Error("Product type is required");
@@ -72,19 +104,26 @@ serve(async (req) => {
       throw new Error("Invalid product type. Use 'premium', 'pro', 'team', or 'career'");
     }
 
-    console.log("Creating payment for:", productConfig.name, "Amount:", productConfig.amount);
+    const requestedCurrency = typeof stripeCurrency === "string" ? stripeCurrency.toLowerCase() : "usd";
+    const checkoutCurrency = STRIPE_ALLOWED_CURRENCIES.has(requestedCurrency) ? requestedCurrency : "usd";
+    const checkoutAmount = typeof stripeAmountMinor === "number" && stripeAmountMinor > 0
+      ? Math.round(stripeAmountMinor)
+      : productConfig.amount;
+    const safeCheckoutAmount = Number.isFinite(checkoutAmount) && checkoutAmount > 0 ? checkoutAmount : productConfig.amount;
+
+    console.log("Creating payment for:", productConfig.name, "Amount:", safeCheckoutAmount, "Currency:", checkoutCurrency);
 
     // Create a one-time payment session (no authentication required)
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: checkoutCurrency,
             product_data: {
               name: productConfig.name,
               description: productConfig.description,
             },
-            unit_amount: productConfig.amount,
+            unit_amount: safeCheckoutAmount,
           },
           quantity: 1,
         },
@@ -95,6 +134,10 @@ serve(async (req) => {
       allow_promotion_codes: true,
       metadata: {
         product_type: productType,
+        country_code: countryCode || "US",
+        billing_country: billingCountry || "United States",
+        display_currency: displayCurrency || "USD",
+        display_amount: typeof displayAmount === "number" ? displayAmount.toString() : "",
       },
     });
 

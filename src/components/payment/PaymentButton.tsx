@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { detectCountryCode, getLocalizedPrice } from "@/lib/countryPricing";
 
 interface PaymentButtonProps {
   productType: "premium" | "pro" | "team" | "career";
@@ -56,22 +57,55 @@ export const PaymentButton = ({
       const cancelUrl = productType === 'career'
         ? `${window.location.origin}/career-finder`
         : `${window.location.origin}/pricing`;
+
+      const pricingProductType = productType === "team" ? "b2b" : (productType as "premium" | "pro" | "career");
+      const countryCode = await detectCountryCode();
+      const localizedPricing =
+        pricingProductType === "premium" || pricingProductType === "pro"
+          ? getLocalizedPrice(pricingProductType, countryCode)
+          : null;
       
       const paymentData = {
         productType,
         successUrl,
         cancelUrl,
+        countryCode,
+        ...(localizedPricing && {
+          stripeCurrency: localizedPricing.stripeCurrency,
+          stripeAmountMinor: localizedPricing.stripeAmountMinor,
+          displayCurrency: localizedPricing.displayCurrency,
+          displayAmount: localizedPricing.displayAmount,
+          billingCountry: localizedPricing.country,
+        }),
         ...(customAmount && { customAmount }),
         ...(customDescription && { customDescription })
       };
       
       console.log("Creating payment with data:", paymentData);
       
-      const { data, error } = await supabase.functions.invoke('create-payment', {
+      let { data, error } = await supabase.functions.invoke('create-payment', {
         body: paymentData
       });
 
       console.log("Payment response:", { data, error });
+
+      if (error) {
+        console.warn("Localized payment failed, retrying with default USD payload", error);
+        const fallbackPayload = {
+          productType,
+          successUrl,
+          cancelUrl,
+          ...(customAmount && { customAmount }),
+          ...(customDescription && { customDescription }),
+        };
+
+        const retry = await supabase.functions.invoke('create-payment', {
+          body: fallbackPayload,
+        });
+
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error("Payment creation error:", error);

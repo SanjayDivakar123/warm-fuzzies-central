@@ -6,6 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const STRIPE_ALLOWED_CURRENCIES = new Set([
+  "aed", "aud", "bam", "bbd", "bdt", "bgn", "bnd", "bob", "brl", "bwp", "cad", "chf", "clp", "cny", "cop", "crc", "czk",
+  "dkk", "dop", "dzd", "egp", "etb", "eur", "fjd", "gbp", "gel", "ghs", "gtq", "gyd", "hkd", "hnl", "hrk", "huf", "idr",
+  "ils", "inr", "isk", "jmd", "jpy", "kes", "krw", "kzt", "lak", "lkr", "mad", "mdl", "mnt", "mur", "mxn", "myr", "nad",
+  "ngn", "nok", "npr", "nzd", "omr", "pen", "php", "pkr", "pln", "pyg", "qar", "ron", "rsd", "rub", "sar", "scr", "sek",
+  "sgd", "thb", "tnd", "try", "twd", "tzs", "uah", "ugx", "usd", "uyu", "vnd", "xaf", "xof", "zar", "zmw",
+]);
+
 serve(async (req) => {
   console.log("=== CREATE B2B PAYMENT FUNCTION STARTED ===");
 
@@ -25,7 +33,13 @@ serve(async (req) => {
       userId,
       subdomain,
       successUrl, 
-      cancelUrl 
+      cancelUrl,
+      countryCode,
+      stripeCurrency,
+      stripeAmountMinor,
+      displayCurrency,
+      displayAmount,
+      billingCountry,
     } = body;
 
     // Validate required fields
@@ -48,22 +62,28 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const pricePerSeat = 2000; // $20.00 in cents
-    const totalAmount = pricePerSeat * seatCount;
+    const pricePerSeat =
+      typeof stripeAmountMinor === "number" && stripeAmountMinor > 0
+        ? Math.round(stripeAmountMinor)
+        : 2000;
+    const requestedCurrency = typeof stripeCurrency === "string" ? stripeCurrency.toLowerCase() : "usd";
+    const checkoutCurrency = STRIPE_ALLOWED_CURRENCIES.has(requestedCurrency) ? requestedCurrency : "usd";
+    const safePricePerSeat = Number.isFinite(pricePerSeat) && pricePerSeat > 0 ? pricePerSeat : 2000;
+    const totalAmount = safePricePerSeat * seatCount;
 
-    console.log(`Creating checkout for ${seatCount} seats at $${totalAmount / 100}`);
+    console.log(`Creating checkout for ${seatCount} seats at ${totalAmount} ${checkoutCurrency}`);
 
     // Create Stripe checkout session with company details in metadata
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: checkoutCurrency,
             product_data: {
               name: "RoleColorFinder B2B - Team Seats",
               description: `${seatCount} employee assessment seats for ${companyName}`,
             },
-            unit_amount: pricePerSeat,
+            unit_amount: safePricePerSeat,
           },
           quantity: seatCount,
         },
@@ -80,6 +100,10 @@ serve(async (req) => {
         user_id: userId,
         subdomain: subdomain,
         type: "b2b_company_creation",
+        country_code: countryCode || "US",
+        billing_country: billingCountry || "United States",
+        display_currency: displayCurrency || "USD",
+        display_amount: typeof displayAmount === "number" ? displayAmount.toString() : "",
       },
       customer_email: adminEmail,
     });

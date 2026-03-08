@@ -7,6 +7,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+]);
+
+const THREE_DECIMAL_CURRENCIES = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
+
+const STRIPE_ALLOWED_CURRENCIES = new Set([
+  "aed", "aud", "bam", "bbd", "bdt", "bgn", "bnd", "bob", "brl", "bwp", "cad", "chf", "clp", "cny", "cop", "crc", "czk",
+  "dkk", "dop", "dzd", "egp", "etb", "eur", "fjd", "gbp", "gel", "ghs", "gtq", "gyd", "hkd", "hnl", "hrk", "huf", "idr",
+  "ils", "inr", "isk", "jmd", "jpy", "kes", "krw", "kzt", "lak", "lkr", "mad", "mdl", "mnt", "mur", "mxn", "myr", "nad",
+  "ngn", "nok", "npr", "nzd", "omr", "pen", "php", "pkr", "pln", "pyg", "qar", "ron", "rsd", "rub", "sar", "scr", "sek",
+  "sgd", "thb", "tnd", "try", "twd", "tzs", "uah", "ugx", "usd", "uyu", "vnd", "xaf", "xof", "zar", "zmw",
+]);
+
+const toMinorUnits = (amount: number, currency: string): number => {
+  const code = currency.toUpperCase();
+  if (ZERO_DECIMAL_CURRENCIES.has(code)) return Math.round(amount);
+  if (THREE_DECIMAL_CURRENCIES.has(code)) return Math.round(amount * 1000);
+  return Math.round(amount * 100);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,13 +56,23 @@ serve(async (req) => {
     const companyId = body?.company_id as string | undefined;
     const creditsRaw = body?.credits;
     const amountRaw = body?.amount_usd;
+    const amountLocalRaw = body?.amount_local;
+    const currencyRaw = body?.currency;
+    const countryCodeRaw = body?.country_code;
 
     const credits = Number(creditsRaw);
     const amountUsd = Number(amountRaw);
+    const amountLocal = Number(amountLocalRaw);
+    const requestedCurrency = typeof currencyRaw === "string" ? currencyRaw.toLowerCase() : "usd";
+    const chargeCurrency = STRIPE_ALLOWED_CURRENCIES.has(requestedCurrency) ? requestedCurrency : "usd";
+    const countryCode = typeof countryCodeRaw === "string" ? countryCodeRaw.toUpperCase() : "US";
 
     if (!companyId) throw new Error("company_id is required");
     if (!Number.isFinite(credits) || credits <= 0) throw new Error("credits must be a positive number");
     if (!Number.isFinite(amountUsd) || amountUsd < 0) throw new Error("amount_usd must be a non-negative number");
+    if (chargeCurrency !== "usd" && (!Number.isFinite(amountLocal) || amountLocal <= 0)) {
+      throw new Error("amount_local must be a positive number for local-currency purchases");
+    }
 
     const { data: companyUser, error: companyUserError } = await supabase
       .from("company_users")
@@ -119,17 +150,23 @@ serve(async (req) => {
       if (paymentMethods.data.length === 0) throw new Error("No payment method on file");
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(roundedAmountUsd * 100),
-        currency: "usd",
+        amount: chargeCurrency === "usd"
+          ? Math.round(roundedAmountUsd * 100)
+          : toMinorUnits(amountLocal, chargeCurrency),
+        currency: chargeCurrency,
         customer: customerId,
         payment_method: paymentMethods.data[0].id,
         off_session: true,
         confirm: true,
-        description: `Purchased ${credits} extra insight credits for ${company.name}`,
+        description: `Purchased ${credits} extra insight credits for ${company.name} (${chargeCurrency.toUpperCase()})`,
         metadata: {
           company_id: company.id,
           type: "extra_insight_purchase",
           credits: String(credits),
+          amount_usd: roundedAmountUsd.toString(),
+          amount_local: Number.isFinite(amountLocal) ? amountLocal.toString() : "",
+          currency: chargeCurrency.toUpperCase(),
+          country_code: countryCode,
         },
       });
 
@@ -167,6 +204,11 @@ serve(async (req) => {
         purchasedCredits: credits,
         remainingInsightCredits: nextCredits,
         amountCharged: roundedAmountUsd,
+        chargedCurrency: chargeCurrency.toUpperCase(),
+        chargedAmountLocal:
+          chargeCurrency === "usd"
+            ? roundedAmountUsd
+            : (Number.isFinite(amountLocal) ? amountLocal : null),
         chargedVia: usedWallet ? "wallet" : "card",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
