@@ -29,6 +29,8 @@ interface UserDetailModalProps {
   onOpenChange: (open: boolean) => void;
   superAdminId: string | undefined;
   isSuperAdmin: boolean;
+  currentUserId?: string | null;
+  currentUserEmail?: string | null;
   allJobRoles: string[];
   predefinedSkills: string[];
   copiedId: string | null;
@@ -42,6 +44,7 @@ interface UserDetailModalProps {
   onManageAdmin: (user: { id: string; email: string; full_name?: string; status: string; role: string }) => void;
   onRevokeAccess: (id: string) => void;
   onRestoreAccess: (id: string) => void;
+  onRestoreAndPromote: (user: { id: string; email: string; full_name?: string }) => void;
   onDeleteUser: (id: string) => void;
   onRequestRetake: (user: { id: string; email: string; full_name?: string }) => void;
   onSaveUserDetails: (userId: string, fullName: string, jobRole: string, skills: string[]) => void;
@@ -60,6 +63,8 @@ export default function UserDetailModal({
   onOpenChange,
   superAdminId,
   isSuperAdmin,
+  currentUserId,
+  currentUserEmail,
   allJobRoles,
   predefinedSkills,
   copiedId,
@@ -73,6 +78,7 @@ export default function UserDetailModal({
   onManageAdmin,
   onRevokeAccess,
   onRestoreAccess,
+  onRestoreAndPromote,
   onDeleteUser,
   onRequestRetake,
   onSaveUserDetails,
@@ -90,6 +96,11 @@ export default function UserDetailModal({
   const [newSkill, setNewSkill] = useState('');
 
   if (!user) return null;
+
+  const isCurrentUserRecord = () => {
+    const rowEmail = (user?.email || '').toLowerCase();
+    return (currentUserId && user?.user_id === currentUserId) || (currentUserEmail && rowEmail === currentUserEmail);
+  };
 
   const handleAddSkill = (skill: string) => {
     if (skill && !skills.includes(skill)) {
@@ -373,7 +384,7 @@ export default function UserDetailModal({
                 </Button>
               )}
 
-              {user.role !== 'employee' && isSuperAdmin && user.id !== superAdminId && (
+              {user.role !== 'employee' && canManageAllRoles && user.id !== superAdminId && !isCurrentUserRecord() && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -412,6 +423,18 @@ export default function UserDetailModal({
                 >
                   <RotateCcw className="h-4 w-4" />
                   Restore
+                </Button>
+              )}
+
+              {user.role === 'employee' && user.status === 'revoked' && canPromoteUsers && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onRestoreAndPromote({ id: user.id, email: user.email, full_name: user.full_name })}
+                  className="gap-2"
+                >
+                  <ShieldPlus className="h-4 w-4" />
+                  Restore & Promote
                 </Button>
               )}
 

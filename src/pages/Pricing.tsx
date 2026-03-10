@@ -327,12 +327,12 @@ export default function Pricing() {
                   </div>
 
                   {/* Right side - Pricing */}
-                  <div className="lg:w-72 flex flex-col justify-center">
+                  <div className="lg:min-w-72 flex flex-col justify-center">
                     <div className="bg-background/50 rounded-lg p-6 text-center border border-primary/20">
                       <p className="text-sm text-muted-foreground mb-2">Starting at</p>
-                      <div className="flex items-baseline justify-center gap-1 mb-2">
-                        <span className="text-5xl font-bold tracking-tight text-foreground">{b2bPrice.displayFormatted}</span>
-                        <span className="text-muted-foreground">/user/month</span>
+                      <div className="flex flex-wrap items-baseline justify-center gap-1 mb-2">
+                        <span className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">{b2bPrice.displayFormatted}</span>
+                        <span className="text-muted-foreground whitespace-nowrap">/user/month</span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-6">billed monthly</p>
                       

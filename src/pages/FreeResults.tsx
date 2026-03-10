@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SendToFriendCard from "@/components/reports/SendToFriendCard";
 import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
+import { getLocalizedPrice, detectCountryCode } from "@/lib/countryPricing";
 
 interface FreeResults {
   dominantColor: string;
@@ -74,6 +75,25 @@ const FreeResults = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [countryCode, setCountryCode] = useState("US");
+
+  useEffect(() => {
+    let mounted = true;
+    detectCountryCode()
+      .then((code) => {
+        if (mounted) setCountryCode(code);
+      })
+      .catch(() => {
+        if (mounted) setCountryCode("US");
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const premiumPrice = useMemo(() => getLocalizedPrice("premium", countryCode), [countryCode]);
+  const proPrice = useMemo(() => getLocalizedPrice("pro", countryCode), [countryCode]);
 
   const handleSaveResult = async () => {
     if (!user || !results || !resultName.trim()) {
@@ -370,7 +390,7 @@ const FreeResults = () => {
                     <CardTitle className="text-xl">Premium Assessment</CardTitle>
                     <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
                   </div>
-                  <div className="text-3xl font-bold">$19 <span className="text-sm font-normal text-muted-foreground">one-time</span></div>
+                  <div className="text-3xl font-bold">{premiumPrice.displayFormatted} <span className="text-sm font-normal text-muted-foreground">one-time</span></div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2 text-sm">
@@ -407,7 +427,7 @@ const FreeResults = () => {
               <Card className="animate-scale-in">
                 <CardHeader>
                   <CardTitle className="text-xl">Pro Deep Dive</CardTitle>
-                  <div className="text-3xl font-bold">$49 <span className="text-sm font-normal text-muted-foreground">one-time</span></div>
+                  <div className="text-3xl font-bold">{proPrice.displayFormatted} <span className="text-sm font-normal text-muted-foreground">one-time</span></div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2 text-sm">

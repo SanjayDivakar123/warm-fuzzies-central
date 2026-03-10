@@ -671,14 +671,6 @@ function B2BDashboardContent() {
                   Assessments
                 </TabsTrigger>
               )}
-              {permissions.canManageReminders && (
-                <TabsTrigger 
-                  value="reminders" 
-                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
-                >
-                  Reminders
-                </TabsTrigger>
-              )}
               {permissions.canUseWorkMatrix && (
                 <TabsTrigger 
                   value="matrix" 
@@ -693,6 +685,14 @@ function B2BDashboardContent() {
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
                   Roles
+                </TabsTrigger>
+              )}
+              {permissions.canManageReminders && (
+                <TabsTrigger 
+                  value="reminders" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
+                >
+                  Reminders
                 </TabsTrigger>
               )}
               {permissions.canViewOverview && (
@@ -750,16 +750,16 @@ function B2BDashboardContent() {
             />
           </TabsContent>
 
-          <TabsContent value="reminders" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
-            <RemindersHistoryTab company={company} />
-          </TabsContent>
-
           <TabsContent value="matrix" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <WorkAssigningMatrixTab />
           </TabsContent>
 
           <TabsContent value="roles" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <RolesTab company={company} />
+          </TabsContent>
+
+          <TabsContent value="reminders" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
+            <RemindersHistoryTab company={company} />
           </TabsContent>
 
           <TabsContent value="settings" forceMount className="mt-0 break-words data-[state=inactive]:hidden">

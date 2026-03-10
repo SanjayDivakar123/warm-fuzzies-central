@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { CheckCircle2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { getCategoryDisplayName, type AssessmentCategory, type AssessmentType } from '@/lib/assessmentQuestionLoader';
 
@@ -111,6 +110,19 @@ const colorDescriptions: Record<string, {
   }
 };
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => char + char).join('')
+    : normalized;
+
+  const red = parseInt(value.slice(0, 2), 16);
+  const green = parseInt(value.slice(2, 4), 16);
+  const blue = parseInt(value.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+};
+
 export default function EmployeeResultsModal({ 
   open, 
   onClose, 
@@ -152,16 +164,43 @@ export default function EmployeeResultsModal({
 
   const categoryName = getCategoryDisplayName(assessmentCategory);
   const questionCount = assessmentType === '50q' ? '50' : '25';
+  const tintStrong = hexToRgba(dominantColorInfo.color, 0.08);
+  const tintSoft = hexToRgba(dominantColorInfo.color, 0.04);
+  const tintBorder = hexToRgba(dominantColorInfo.color, 0.14);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       {open && (
         <style>{`html, body { overflow: hidden !important; }`}</style>
       )}
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent
+        className="flex max-h-[calc(100vh-2rem)] w-[min(56rem,calc(100vw-2rem))] flex-col overflow-hidden border p-0 sm:max-h-[90vh] sm:max-w-4xl"
+        style={{
+          borderColor: tintBorder,
+          backgroundImage: `
+            radial-gradient(circle at top left, ${tintStrong} 0, transparent 28%),
+            radial-gradient(circle at bottom right, ${tintStrong} 0, transparent 28%)
+          `,
+          backgroundColor: 'hsl(var(--background))',
+        }}
+      >
+        <DialogHeader
+          className="shrink-0 border-b p-6 pb-4"
+          style={{
+            borderColor: tintBorder,
+            background: `linear-gradient(180deg, ${tintSoft}, transparent 75%)`,
+          }}
+        >
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="secondary" className="text-xs font-normal">
+            <Badge
+              variant="secondary"
+              className="text-xs font-normal"
+              style={{
+                backgroundColor: tintSoft,
+                borderColor: tintBorder,
+                color: 'inherit',
+              }}
+            >
               {categoryName} Assessment • {questionCount}Q
             </Badge>
           </div>
@@ -173,12 +212,15 @@ export default function EmployeeResultsModal({
           </p>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(90vh-100px)] p-6 pt-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pt-4">
           <div className="space-y-6">
             {/* Leadership Style */}
             <Card 
               className="border-2"
-              style={{ borderColor: dominantColorInfo.color }}
+              style={{
+                borderColor: tintBorder,
+                background: `linear-gradient(180deg, ${tintSoft}, transparent 55%)`,
+              }}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
@@ -298,7 +340,7 @@ export default function EmployeeResultsModal({
               </CardContent>
             </Card>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

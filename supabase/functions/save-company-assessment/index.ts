@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const PRIVILEGED_ROLES = ['admin', 'hr', 'partner'] as const
+
 // Input validation helpers
 function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -16,6 +18,29 @@ function isValidResults(results: unknown): boolean {
   // Basic validation - ensure it's an object and not too large
   const jsonStr = JSON.stringify(results)
   return jsonStr.length <= 50000 // Max 50KB for results JSON
+}
+
+async function findAuthUserIdByEmail(supabase: any, email: string): Promise<string | null> {
+  const normalizedEmail = email.toLowerCase()
+  let page = 1
+
+  while (page <= 10) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    })
+
+    if (error) throw error
+
+    const users = data?.users || []
+    const match = users.find((user: any) => (user.email || '').toLowerCase() === normalizedEmail)
+    if (match?.id) return match.id
+
+    if (users.length < 1000) break
+    page += 1
+  }
+
+  return null
 }
 
 Deno.serve(async (req) => {
@@ -93,10 +118,29 @@ Deno.serve(async (req) => {
       )
     }
 
+    let linkedUserId: string | null = employee.user_id || null
+
+    if (PRIVILEGED_ROLES.includes(employee.role)) {
+      if (!linkedUserId && employee.email) {
+        linkedUserId = await findAuthUserIdByEmail(supabase, employee.email)
+      }
+
+      if (!linkedUserId) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: 'This admin invite is missing its account link. Please ask a company admin to resend or recreate the admin invite before completing the assessment.',
+            errorCode: 'ADMIN_ACCOUNT_LINK_REQUIRED',
+          }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     // Insert into assessment_results
     // Use the employee's id as the user_id to ensure uniqueness per employee
     // This avoids collisions when employees don't have a linked auth user_id
-    const userId = employee.user_id || employeeId
+    const userId = linkedUserId || employeeId
     const assessmentType = results.assessmentType || 'professional_25q'
     
     // First check if an assessment already exists for this user/type combo
@@ -152,6 +196,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await supabase
       .from('company_users')
       .update({
+        user_id: linkedUserId,
         assessment_completed_at: new Date().toISOString(),
         assessment_result_id: assessmentResultId,
         status: 'active'

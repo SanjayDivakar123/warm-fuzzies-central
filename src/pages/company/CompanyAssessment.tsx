@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Building2, Loader2 } from "lucide-react";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
 import { shuffleArray } from "@/lib/utils";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAssessmentQuestions, getCategoryDisplayName, type AssessmentQuestion, type AssessmentCategory, type AssessmentType } from "@/lib/assessmentQuestionLoader";
@@ -136,10 +137,19 @@ export default function CompanyAssessment() {
           });
 
           if (fnError || !data?.success) {
-            console.error('Error saving assessment:', fnError || data?.message);
+            let errorMessage = data?.message || 'Failed to save your assessment. Please try again.';
+
+            if (fnError instanceof FunctionsHttpError) {
+              const payload = await fnError.context.json().catch(() => null);
+              if (payload?.message) {
+                errorMessage = payload.message;
+              }
+            }
+
+            console.error('Error saving assessment:', fnError || errorMessage);
             toast({
               title: 'Error',
-              description: 'Failed to save your assessment. Please try again.',
+              description: errorMessage,
               variant: 'destructive',
             });
             setIsSubmitting(false);

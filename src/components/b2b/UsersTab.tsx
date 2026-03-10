@@ -59,6 +59,7 @@ import ManageAdminModal from './ManageAdminModal';
 import InviteUserModal from './InviteUserModal';
 import UserDetailModal from './UserDetailModal';
 import UserProfileSheet from './UserProfileSheet';
+import { invalidateAssessmentsCache } from './AssessmentsTab';
 
 interface UsersTabProps {
   company: any;
@@ -550,6 +551,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         description: "User access has been revoked. Current month charges remain; this user is excluded from next month billing.",
       });
 
+      invalidateAssessmentsCache(company.id);
       fetchUsers();
     } catch (error: any) {
       toast({
@@ -581,8 +583,39 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         description: `User access has been restored (status: ${newStatus})`,
       });
 
+      invalidateAssessmentsCache(company.id);
       fetchUsers();
       if (onCompanyUpdate) onCompanyUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Error restoring access",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreAndPromote = async (user: { id: string; email: string; full_name?: string }) => {
+    try {
+      const userToRestore = users.find(u => u.id === user.id);
+      const newStatus = userToRestore?.assessment_completed_at ? 'active' : 'invited';
+
+      const { error } = await supabase
+        .from("company_users")
+        .update({ status: newStatus })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Access restored",
+        description: `User access restored. Choose a role to promote them again.`,
+      });
+
+      invalidateAssessmentsCache(company.id);
+      await fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate();
+      setPromoteUser(user);
     } catch (error: any) {
       toast({
         title: "Error restoring access",
@@ -626,6 +659,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       });
 
       setRetakeRequestUser(null);
+      invalidateAssessmentsCache(company.id);
       fetchUsers();
     } catch (error: any) {
       toast({
@@ -688,6 +722,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       });
 
       setDeleteUserTarget(null);
+      invalidateAssessmentsCache(company.id);
       fetchUsers();
       if (onCompanyUpdate) onCompanyUpdate();
     } catch (error: any) {
@@ -751,6 +786,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
       });
 
       setAdminDeleteTarget(null);
+      invalidateAssessmentsCache(company.id);
       fetchUsers();
       if (onCompanyUpdate) onCompanyUpdate();
     } catch (error: any) {
@@ -1633,31 +1669,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                               <TooltipContent>Promote to Admin</TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== "employee" && permissions.canManageAllRoles && !isCurrentUserRecord(user) && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() =>
-                                    setAdminDeleteTarget({
-                                      id: user.id,
-                                      email: user.email,
-                                      full_name: user.full_name,
-                                      role: user.role,
-                                      user_id: user.user_id,
-                                    })
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Delete {user.role === 'admin' ? 'Admin' : user.role === 'hr' ? 'HR' : 'Partner'}</TooltipContent>
-                            </Tooltip>
-                          )}
-                          {/* Super Admin can manage other admins/hr/partners */}
-                          {user.role !== "employee" && isSuperAdmin && user.id !== superAdminId && (
+                          {user.role !== "employee" && permissions.canManageAllRoles && !isCurrentUserRecord(user) && user.id !== superAdminId && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
@@ -1718,6 +1730,20 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                                 </TooltipTrigger>
                                 <TooltipContent>Restore access</TooltipContent>
                               </Tooltip>
+                              {user.role === "employee" && permissions.canPromoteUsers && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleRestoreAndPromote({ id: user.id, email: user.email, full_name: user.full_name })}
+                                    >
+                                      <ShieldPlus className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Restore and promote</TooltipContent>
+                                </Tooltip>
+                              )}
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -2074,6 +2100,8 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           onOpenChange={(open) => !open && setMobileSelectedUser(null)}
           superAdminId={superAdminId}
           isSuperAdmin={isSuperAdmin}
+          currentUserId={currentUserId}
+          currentUserEmail={currentUserEmail}
           allJobRoles={allJobRoles}
           predefinedSkills={PREDEFINED_SKILLS}
           copiedId={copiedId}
@@ -2087,6 +2115,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           onManageAdmin={setManageAdmin}
           onRevokeAccess={handleRevokeAccess}
           onRestoreAccess={handleRestoreAccess}
+          onRestoreAndPromote={handleRestoreAndPromote}
           onDeleteUser={handleDeleteUser}
           onRequestRetake={setRetakeRequestUser}
           onSaveUserDetails={async (userId, fullName, jobRole, skills) => {
@@ -2190,12 +2219,13 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
             if (onCompanyUpdate) onCompanyUpdate();
           }}
         />
-        {/* Manage Admin Modal (Super Admin only) */}
+        {/* Manage Admin Modal */}
         <ManageAdminModal
           open={!!manageAdmin}
           onClose={() => setManageAdmin(null)}
           admin={manageAdmin}
           onActionComplete={() => {
+            invalidateAssessmentsCache(company.id);
             fetchUsers();
             if (onCompanyUpdate) onCompanyUpdate();
           }}

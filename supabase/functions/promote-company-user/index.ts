@@ -279,10 +279,22 @@ serve(async (req) => {
       }
     }
 
-    const updatePayload: Record<string, unknown> = { role };
-    if (resolvedUserId) {
-      updatePayload.user_id = resolvedUserId;
+    if (!resolvedUserId) {
+      return new Response(
+        JSON.stringify({
+          error: "Unable to link the promoted user to a Role Color Finder account. Promotion was not applied.",
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
+
+    const updatePayload: Record<string, unknown> = {
+      role,
+      user_id: resolvedUserId,
+    };
 
     const { data: updatedUser, error: updateError } = await supabase
       .from("company_users")

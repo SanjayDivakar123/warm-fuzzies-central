@@ -65,6 +65,17 @@ const ASSESSMENTS_CACHE_TTL_MS = 60_000;
 const assessmentsCache = new Map<string, { fetchedAt: number; payload: AssessmentsPayload }>();
 const assessmentsInFlight = new Map<string, Promise<AssessmentsPayload>>();
 
+export const invalidateAssessmentsCache = (companyId?: string) => {
+  if (companyId) {
+    assessmentsCache.delete(companyId);
+    assessmentsInFlight.delete(companyId);
+    return;
+  }
+
+  assessmentsCache.clear();
+  assessmentsInFlight.clear();
+};
+
 const colorLabels: Record<string, { label: string; bg: string; text: string }> = {
   yellow: { label: 'Executor', bg: 'bg-yellow-100', text: 'text-yellow-800' },
   red: { label: 'Motivator', bg: 'bg-red-100', text: 'text-red-800' },
@@ -531,44 +542,44 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
               No completed assessments yet. Results will appear here once employees complete their assessments.
             </p>
           ) : (
-            <Table>
+            <Table className="[&_th]:h-10 [&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-3">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>RoleColor</TableHead>
-                  <TableHead>Designation</TableHead>
-                  <TableHead>Completed</TableHead>
-                  <TableHead>Quick Breakdown</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[14%]">Name</TableHead>
+                  <TableHead className="w-[24%]">Email</TableHead>
+                  <TableHead className="whitespace-nowrap">RoleColor</TableHead>
+                  <TableHead className="w-[18%]">Designation</TableHead>
+                  <TableHead className="whitespace-nowrap">Completed</TableHead>
+                  <TableHead className="whitespace-nowrap">Quick Breakdown</TableHead>
+                  <TableHead className="whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
               {completedAssessments.map((assessment) => (
                   <TableRow key={assessment.id} className="transition-colors hover:bg-muted/50">
-                    <TableCell className="font-medium">
+                    <TableCell className="max-w-[140px] font-medium">
                       {assessment.full_name || <span className="text-muted-foreground">Not set</span>}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{assessment.email}</TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[220px] break-all text-muted-foreground">{assessment.email}</TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {assessment.results?.dominantColor 
                         ? getColorBadge(assessment.results.dominantColor)
                         : <span className="text-muted-foreground">—</span>
                       }
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[180px]">
                       {assessment.job_role || <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {new Date(assessment.assessment_completed_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {assessment.results?.scores ? (
                         <div className="flex gap-1">
                           {Object.entries(assessment.results.scores).map(([color, score]) => (
                             <div
                               key={color}
-                              className={`w-6 h-6 rounded text-xs flex items-center justify-center text-white font-medium ${
+                              className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-medium text-white ${
                                 color === 'yellow' ? 'bg-yellow-500' :
                                 color === 'red' ? 'bg-red-500' :
                                 color === 'green' ? 'bg-green-500' :
@@ -584,14 +595,15 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="h-8 px-3 text-xs"
                         onClick={() => setSelectedEmployee(assessment)}
                       >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Full Report
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        View Report
                       </Button>
                     </TableCell>
                   </TableRow>

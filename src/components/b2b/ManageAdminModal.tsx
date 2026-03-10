@@ -44,7 +44,7 @@ export default function ManageAdminModal({
         // Demote admin to employee
         const { error } = await supabase
           .from("company_users")
-          .update({ role: "employee" })
+          .update({ role: "employee", user_id: null })
           .eq("id", admin.id);
         
         if (error) throw error;
@@ -53,7 +53,7 @@ export default function ManageAdminModal({
         // Revoke access (set status to revoked)
         const { error } = await supabase
           .from("company_users")
-          .update({ status: "revoked", role: "employee" })
+          .update({ status: "revoked", role: "employee", user_id: null })
           .eq("id", admin.id);
         
         if (error) throw error;
@@ -136,18 +136,18 @@ export default function ManageAdminModal({
                 {/* Demote to Employee */}
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3"
+                  className="group h-auto w-full justify-start gap-3 py-3 transition-colors hover:border-yellow-300 hover:bg-yellow-50"
                   onClick={() => handleAction('demote')}
                   disabled={loading}
                 >
                   {loading && selectedAction === 'demote' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <ShieldMinus className="h-4 w-4 text-yellow-500" />
+                    <ShieldMinus className="h-4 w-4 text-yellow-500 transition-colors group-hover:text-yellow-600" />
                   )}
                   <div className="text-left">
-                    <p className="font-medium">Demote to Employee</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground transition-colors group-hover:text-yellow-900">Demote to Employee</p>
+                    <p className="text-xs text-muted-foreground transition-colors group-hover:text-yellow-700">
                       Remove admin privileges. User keeps access as an employee.
                     </p>
                   </div>
@@ -156,18 +156,18 @@ export default function ManageAdminModal({
                 {/* Revoke Access */}
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3 border-destructive/50 hover:bg-destructive/10"
+                  className="group h-auto w-full justify-start gap-3 border-destructive/50 py-3 transition-colors hover:border-destructive hover:bg-destructive/5"
                   onClick={() => handleAction('revoke')}
                   disabled={loading}
                 >
                   {loading && selectedAction === 'revoke' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Ban className="h-4 w-4 text-destructive" />
+                    <Ban className="h-4 w-4 text-destructive transition-colors group-hover:text-destructive" />
                   )}
                   <div className="text-left">
-                    <p className="font-medium text-destructive">Revoke Access</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-medium text-destructive transition-colors group-hover:text-destructive">Revoke Access</p>
+                    <p className="text-xs text-muted-foreground transition-colors group-hover:text-destructive/80">
                       Suspend access completely. User will be demoted and blocked.
                     </p>
                   </div>
@@ -178,18 +178,18 @@ export default function ManageAdminModal({
             {/* Delete Permanently */}
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-auto py-3 border-destructive hover:bg-destructive hover:text-destructive-foreground"
+              className="group h-auto w-full justify-start gap-3 border-destructive py-3 transition-colors hover:bg-destructive/10 hover:text-foreground"
               onClick={() => handleAction('delete')}
               disabled={loading}
             >
               {loading && selectedAction === 'delete' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-destructive transition-colors group-hover:text-destructive" />
               )}
               <div className="text-left">
-                <p className="font-medium">Delete Permanently</p>
-                <p className="text-xs opacity-80">
+                <p className="font-medium text-foreground transition-colors group-hover:text-destructive">Delete Permanently</p>
+                <p className="text-xs text-muted-foreground transition-colors group-hover:text-destructive/80">
                   Remove user and all their data from the company.
                 </p>
               </div>

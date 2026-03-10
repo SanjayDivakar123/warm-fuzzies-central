@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const PRIVILEGED_ROLES = ["admin", "hr", "partner"] as const;
+type PrivilegedRole = typeof PRIVILEGED_ROLES[number];
+
 // Input validation helpers
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +18,29 @@ function isValidEmail(email: string): boolean {
 function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return typeof str === "string" && uuidRegex.test(str);
+}
+
+async function findAuthUserIdByEmail(supabase: any, email: string): Promise<string | null> {
+  const normalizedEmail = email.toLowerCase();
+  let page = 1;
+
+  while (page <= 10) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error) throw error;
+
+    const users = data?.users || [];
+    const match = users.find((user: any) => (user.email || "").toLowerCase() === normalizedEmail);
+    if (match?.id) return match.id;
+
+    if (users.length < 1000) break;
+    page += 1;
+  }
+
+  return null;
 }
 
 interface EmailTemplateSettings {
@@ -194,6 +220,118 @@ async function sendInviteEmail(
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
+    return false;
+  }
+}
+
+async function sendPrivilegedInviteEmail(params: {
+  email: string;
+  companyName: string;
+  subdomain: string;
+  role: PrivilegedRole;
+  setupLink?: string | null;
+}) {
+  const { email, companyName, subdomain, role, setupLink } = params;
+  const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
+  const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
+
+  if (!mailgunApiKey || !mailgunDomain) {
+    console.error("MAILGUN_API_KEY or MAILGUN_DOMAIN not configured");
+    return false;
+  }
+
+  const roleLabel = role === "hr" ? "HR" : role === "partner" ? "Partner" : "Admin";
+  const portalUrl = `https://rolecolorfinder.com/company/${subdomain}/admin`;
+  const setupSection = setupLink
+    ? `
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; margin: 0 0 24px 0;">
+        <tr>
+          <td style="padding: 20px;">
+            <p style="margin: 0 0 8px 0; color: #111827; font-weight: 600;">Create your password and account</p>
+            <p style="margin: 0; color: #4b5563; font-size: 14px;">Use the button below to finish account setup before signing in to the admin portal.</p>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="text-align: center; padding: 0 0 28px 0;">
+            <a href="${setupLink}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">Create Password & Account</a>
+          </td>
+        </tr>
+      </table>
+    `
+    : "";
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>You've been invited as ${roleLabel}</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; margin: 0 auto;">
+        <tr>
+          <td>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+              <tr>
+                <td style="background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); padding: 36px 28px; text-align: center;">
+                  <h1 style="margin: 0; color: #fff; font-size: 26px; font-weight: 700;">${companyName}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: #fff; padding: 32px 28px;">
+                  <h2 style="margin: 0 0 14px 0; color: #111827; font-size: 22px;">You're invited as ${roleLabel}</h2>
+                  <p style="margin: 0 0 22px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                    You have been invited to the ${companyName} management portal with ${roleLabel} access.
+                  </p>
+                  ${setupSection}
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                      <td style="text-align: center; padding: 0 0 18px 0;">
+                        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;">Open Admin Portal</a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center;">
+                    Sign-in URL:<br />
+                    <a href="${portalUrl}" style="color: #7E69AB; word-break: break-all;">${portalUrl}</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  try {
+    const formData = new FormData();
+    formData.append("from", "RoleColorFinder <no-reply@rolecolorfinder.com>");
+    formData.append("to", email);
+    formData.append("subject", `You've been invited as ${roleLabel} at ${companyName}`);
+    formData.append("html", htmlContent);
+
+    const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: "Basic " + btoa(`api:${mailgunApiKey}`),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Mailgun error:", response.status, errorText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending privileged invite email:", error);
     return false;
   }
 }
@@ -391,6 +529,8 @@ serve(async (req) => {
     const inviteCode = inviteCodeData;
 
     let invitedUser;
+    let createdAuthInvite = false;
+    let setupLink: string | null = null;
 
     // Determine charge info from result
     const proRatedAmountCents = typeof chargeResult.proRatedAmount === "number"
@@ -399,12 +539,57 @@ serve(async (req) => {
     const wasCharged = Boolean(chargeResult.charged || chargeResult.usedCredits);
     const chargeAmount = wasCharged ? proRatedAmountCents / 100 : 0;
     const chargedAt = wasCharged ? new Date().toISOString() : null;
+    const allowedRoles = ["admin", "hr", "partner", "employee"];
+    const normalizedEmail = email.toLowerCase().trim();
+    const userRole = allowedRoles.includes(requestedRole) ? requestedRole : "employee";
+    const isPrivilegedInvite = PRIVILEGED_ROLES.includes(userRole as PrivilegedRole);
+    let resolvedUserId: string | null = null;
+
+    if (isPrivilegedInvite) {
+      resolvedUserId = await findAuthUserIdByEmail(supabase, normalizedEmail);
+
+      if (!resolvedUserId) {
+        const redirectTo = `https://rolecolorfinder.com/company/${company.subdomain}/admin`;
+        const { data: inviteData, error: inviteError } = await supabase.auth.admin.generateLink({
+          type: "invite",
+          email: normalizedEmail,
+          options: {
+            redirectTo,
+            data: full_name ? { full_name } : undefined,
+          },
+        });
+
+        if (inviteError) {
+          throw inviteError;
+        }
+
+        resolvedUserId = inviteData?.user?.id || null;
+        setupLink = inviteData?.properties?.action_link || null;
+        createdAuthInvite = true;
+
+        if (!resolvedUserId) {
+          resolvedUserId = await findAuthUserIdByEmail(supabase, normalizedEmail);
+        }
+      }
+
+      if (!resolvedUserId) {
+        return new Response(JSON.stringify({ error: "Unable to create or link an account for this admin invite" }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // If user was revoked, update their record
     if (existingUser && existingUser.status === "revoked") {
       const { data: updatedUser, error: updateError } = await supabase
         .from("company_users")
         .update({
+          email: normalizedEmail,
+          full_name: full_name || null,
+          job_role: job_role || null,
+          role: userRole,
+          user_id: resolvedUserId,
           status: "invited",
           invite_code: inviteCode,
           invited_at: new Date().toISOString(),
@@ -413,6 +598,9 @@ serve(async (req) => {
           assessment_result_id: null,
           charge_amount: chargeAmount,
           charged_at: chargedAt,
+          assessment_category: assessment_category || null,
+          assessment_type: assessment_type || null,
+          skills: skills || [],
         })
         .eq("id", existingUser.id)
         .select()
@@ -426,18 +614,15 @@ serve(async (req) => {
       console.log("User re-invited:", invitedUser.id);
     } else {
       // Create new user invite
-      // Validate role - allow admin-level roles and employee
-      const allowedRoles = ['admin', 'hr', 'partner', 'employee'];
-      const userRole = allowedRoles.includes(requestedRole) ? requestedRole : 'employee';
-      
       const { data: newUser, error: userError } = await supabase
         .from("company_users")
         .insert({
           company_id,
-          email: email.toLowerCase().trim(),
+          email: normalizedEmail,
           full_name: full_name || null,
           job_role: job_role || null,
           role: userRole,
+          user_id: resolvedUserId,
           status: "invited",
           invite_code: inviteCode,
           charge_amount: chargeAmount,
@@ -468,7 +653,15 @@ serve(async (req) => {
       primaryColor: company.primary_color,
       secondaryColor: company.secondary_color,
     };
-    const emailSent = await sendInviteEmail(email.toLowerCase().trim(), inviteCode, company.name, company.subdomain, templateSettings);
+    const emailSent = PRIVILEGED_ROLES.includes(invitedUser.role as PrivilegedRole)
+      ? await sendPrivilegedInviteEmail({
+          email: normalizedEmail,
+          companyName: company.name,
+          subdomain: company.subdomain,
+          role: invitedUser.role as PrivilegedRole,
+          setupLink,
+        })
+      : await sendInviteEmail(normalizedEmail, inviteCode, company.name, company.subdomain, templateSettings);
 
     // === SLACK DM INVITE ===
     // Send Slack DM invite if Slack is enabled for this company
@@ -530,6 +723,7 @@ serve(async (req) => {
       user: invitedUser, 
       emailSent,
       slackDmSent,
+      createdAuthInvite,
       billing: {
         charged: chargeResult.charged || false,
         usedCredits: chargeResult.usedCredits || false,
