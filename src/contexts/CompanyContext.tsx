@@ -26,6 +26,10 @@ interface Company {
   hiring_subscription_id?: string;
   hiring_subscription_current_period_end?: string;
   hiring_subscription_cancel_at_period_end?: boolean;
+  portal_billing_anchor_at?: string | null;
+  portal_billing_next_renewal_at?: string | null;
+  hiring_commitment_block_cancel_until?: string | null;
+  hiring_ever_subscribed?: boolean;
   portal_access_locked?: boolean;
   portal_access_lock_reason?: string | null;
   portal_access_locked_at?: string | null;

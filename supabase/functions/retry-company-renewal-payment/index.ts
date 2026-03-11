@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import {
+  getNextRenewalAt,
+  resolveStripeCustomerAndDefaultPaymentMethod,
+  toMoney,
+} from "../_shared/companyPortalBilling.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,14 +74,14 @@ serve(async (req) => {
 
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, credit_balance, portal_access_locked, portal_access_outstanding_balance")
+      .select("id, name, admin_email, created_at, stripe_customer_id, credit_balance, portal_access_locked, portal_access_outstanding_balance, portal_billing_anchor_at, portal_billing_next_renewal_at")
       .eq("id", companyId)
       .single();
 
     if (companyError || !company) return jsonResponse({ error: "Company not found" }, 404);
 
-    const outstandingBalance = Number(company.portal_access_outstanding_balance || 0);
-    const currentCreditBalance = Number(company.credit_balance || 0);
+    const outstandingBalance = toMoney(Number(company.portal_access_outstanding_balance || 0));
+    const currentCreditBalance = toMoney(Number(company.credit_balance || 0));
 
     if (!company.portal_access_locked || outstandingBalance <= 0) {
       await supabase
@@ -92,15 +97,44 @@ serve(async (req) => {
       return jsonResponse({ success: true, resolved: true, cardCharged: 0, creditsApplied: 0, remainingOutstanding: 0 });
     }
 
+    const { data: failedPeriod } = await supabase
+      .from("company_portal_billing_periods")
+      .select("id, period_end, credits_applied, card_charged, outstanding_balance, attempt_count")
+      .eq("company_id", companyId)
+      .eq("status", "failed")
+      .order("renewal_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!failedPeriod) {
+      return jsonResponse({ error: "No failed renewal period was found for this company." }, 409);
+    }
+
     let creditsApplied = 0;
     let cardCharged = 0;
+    let paymentIntentId: string | null = null;
     let remainingOutstanding = outstandingBalance;
 
-    if (currentCreditBalance > 0) {
-      creditsApplied = Number(Math.min(currentCreditBalance, remainingOutstanding).toFixed(2));
-      remainingOutstanding = Number((remainingOutstanding - creditsApplied).toFixed(2));
+    const persistFailedAttempt = async (failureReason?: string) => {
+      await supabase
+        .from("company_portal_billing_periods")
+        .update({
+          credits_applied: toMoney(Number(failedPeriod.credits_applied || 0) + creditsApplied),
+          card_charged: toMoney(Number(failedPeriod.card_charged || 0) + cardCharged),
+          outstanding_balance: remainingOutstanding,
+          failure_reason: failureReason ?? null,
+          updated_at: new Date().toISOString(),
+          attempt_count: Number(failedPeriod.attempt_count || 0) + 1,
+          stripe_payment_intent_id: paymentIntentId,
+        })
+        .eq("id", failedPeriod.id);
+    };
 
-      const newCreditBalance = Number((currentCreditBalance - creditsApplied).toFixed(2));
+    if (currentCreditBalance > 0) {
+      creditsApplied = toMoney(Math.min(currentCreditBalance, remainingOutstanding));
+      remainingOutstanding = toMoney(remainingOutstanding - creditsApplied);
+
+      const newCreditBalance = toMoney(currentCreditBalance - creditsApplied);
       const { error: creditUpdateError } = await supabase
         .from("companies")
         .update({ credit_balance: newCreditBalance })
@@ -111,6 +145,7 @@ serve(async (req) => {
       if (creditsApplied > 0) {
         await supabase.from("billing_transactions").insert({
           company_id: companyId,
+          billing_period_id: failedPeriod.id,
           type: "monthly_billing_credits",
           amount: -creditsApplied,
           description: "Applied billing credits to outstanding portal renewal balance",
@@ -119,29 +154,18 @@ serve(async (req) => {
     }
 
     if (remainingOutstanding > 0) {
-      if (!company.stripe_customer_id) {
-        await supabase
-          .from("companies")
-          .update({ portal_access_outstanding_balance: remainingOutstanding })
-          .eq("id", companyId);
-        return jsonResponse({
-          error: "No payment method is on file for this company.",
-          errorCode: "NO_PAYMENT_METHOD",
-          creditsApplied,
-          remainingOutstanding,
-        }, 402);
-      }
-
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: company.stripe_customer_id,
-        type: "card",
+      const { customerId, defaultPaymentMethodId } = await resolveStripeCustomerAndDefaultPaymentMethod(stripe, supabase, {
+        id: company.id,
+        admin_email: company.admin_email,
+        stripe_customer_id: company.stripe_customer_id,
       });
 
-      if (paymentMethods.data.length === 0) {
+      if (!customerId || !defaultPaymentMethodId) {
         await supabase
           .from("companies")
           .update({ portal_access_outstanding_balance: remainingOutstanding })
           .eq("id", companyId);
+        await persistFailedAttempt("No payment method is on file for this company.");
         return jsonResponse({
           error: "No payment method is on file for this company.",
           errorCode: "NO_PAYMENT_METHOD",
@@ -154,22 +178,28 @@ serve(async (req) => {
         const paymentIntent = await stripe.paymentIntents.create({
           amount: Math.round(remainingOutstanding * 100),
           currency: "usd",
-          customer: company.stripe_customer_id,
-          payment_method: paymentMethods.data[0].id,
+          customer: customerId,
+          payment_method: defaultPaymentMethodId,
           off_session: true,
           confirm: true,
           description: `Outstanding portal renewal charge for ${company.name}`,
           metadata: {
             company_id: company.id,
             type: "monthly_billing_recovery",
+            billing_period_id: failedPeriod.id,
           },
+        }, {
+          idempotencyKey: `portal-recovery-${company.id}-${failedPeriod.id}`,
         });
+
+        paymentIntentId = paymentIntent.id;
 
         if (paymentIntent.status !== "succeeded") {
           await supabase
             .from("companies")
             .update({ portal_access_outstanding_balance: remainingOutstanding })
             .eq("id", companyId);
+          await persistFailedAttempt(`Payment failed with status ${paymentIntent.status}`);
           return jsonResponse({
             error: `Payment failed with status ${paymentIntent.status}`,
             errorCode: "CHARGE_FAILED",
@@ -183,6 +213,7 @@ serve(async (req) => {
 
         await supabase.from("billing_transactions").insert({
           company_id: companyId,
+          billing_period_id: failedPeriod.id,
           type: "monthly_billing_card",
           amount: cardCharged,
           stripe_payment_intent_id: paymentIntent.id,
@@ -194,6 +225,7 @@ serve(async (req) => {
           .update({ portal_access_outstanding_balance: remainingOutstanding })
           .eq("id", companyId);
         const errorMessage = paymentError?.message || "Your card could not be charged.";
+        await persistFailedAttempt(errorMessage);
         return jsonResponse({
           error: errorMessage,
           errorCode: "CHARGE_FAILED",
@@ -210,8 +242,27 @@ serve(async (req) => {
         portal_access_lock_reason: null,
         portal_access_locked_at: null,
         portal_access_outstanding_balance: 0,
+        portal_billing_next_renewal_at: getNextRenewalAt(
+          new Date(company.portal_billing_anchor_at || company.created_at),
+          new Date(failedPeriod.period_end),
+        ).toISOString(),
       })
       .eq("id", companyId);
+
+    await supabase
+      .from("company_portal_billing_periods")
+      .update({
+        status: "recovered",
+        credits_applied: toMoney(Number(failedPeriod.credits_applied || 0) + creditsApplied),
+        card_charged: toMoney(Number(failedPeriod.card_charged || 0) + cardCharged),
+        outstanding_balance: 0,
+        stripe_payment_intent_id: paymentIntentId,
+        failure_reason: null,
+        recovered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        attempt_count: Number(failedPeriod.attempt_count || 0) + 1,
+      })
+      .eq("id", failedPeriod.id);
 
     return jsonResponse({
       success: true,

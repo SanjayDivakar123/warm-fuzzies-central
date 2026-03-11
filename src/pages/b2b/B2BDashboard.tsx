@@ -467,7 +467,7 @@ function B2BDashboardContent() {
   const secondaryColor = company.secondary_color || '#16a34a';
   const hasHiringAccess = Boolean(
     company.hiring_subscription_enabled &&
-    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing')
+    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing' || company.hiring_subscription_status === 'admin_override')
   );
 
   return (

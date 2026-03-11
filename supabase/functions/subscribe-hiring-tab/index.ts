@@ -62,7 +62,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_id")
+      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_id, portal_billing_next_renewal_at")
       .eq("id", companyId)
       .single();
 
@@ -117,9 +117,52 @@ serve(async (req) => {
     try {
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
-    const hiringCost = 500.0; // $500.00 in dollars
-    // Renewal is always exactly one month from the moment the subscription is created
-    const nextRenewalDate = oneMonthFromNow();
+    // Proration: whenever the portal renewal date is known, charge only the remaining
+    // fraction of the month (daysUntilRenewal ÷ 30 × $500).
+    // 7-day commitment block: if fewer than 7 days remain, cancellation is locked until
+    // the first full renewal so the user commits to at least one full monthly cycle.
+    const now = new Date();
+    const portalRenewalAt = company.portal_billing_next_renewal_at
+      ? new Date(company.portal_billing_next_renewal_at)
+      : null;
+    const daysUntilPortalRenewal = portalRenewalAt && !Number.isNaN(portalRenewalAt.getTime())
+      ? (portalRenewalAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      : null;
+    // Prorate whenever the portal renewal date is known and in the future
+    const isProrated =
+      daysUntilPortalRenewal !== null &&
+      daysUntilPortalRenewal > 0;
+    // Short-window: < 7 days remaining → enforce commitment block
+    const isShortWindow = isProrated && daysUntilPortalRenewal! < 7;
+
+    // Prorated cost: days remaining ÷ 30 × $500, or full $500 when portal date unknown
+    const hiringCost = isProrated
+      ? Math.round((daysUntilPortalRenewal! / 30) * 500 * 100) / 100
+      : 500.0;
+
+    // Stripe billing anchor aligns the subscription to the shared portal renewal date
+    const billingCycleAnchorUnix =
+      isProrated && portalRenewalAt
+        ? Math.floor(portalRenewalAt.getTime() / 1000)
+        : undefined;
+
+    // Period end stored on the company record
+    const nextRenewalDate =
+      isProrated && portalRenewalAt ? portalRenewalAt : oneMonthFromNow();
+
+    // Lock cancellation only for sub-7-day signups
+    const hiringCommitmentBlockUntil =
+      isShortWindow && portalRenewalAt ? portalRenewalAt.toISOString() : null;
+
+    console.log("Proration check:", {
+      companyId,
+      portalRenewalAt: portalRenewalAt?.toISOString() ?? null,
+      daysUntilPortalRenewal,
+      isProrated,
+      isShortWindow,
+      hiringCost,
+    });
+
     const normalizedName = (company.name ?? "").trim().toLowerCase().replace(/\s+/g, "");
     const isInternalAdminCompany = normalizedName === "rolecolorfinderllc";
 
@@ -282,6 +325,7 @@ serve(async (req) => {
           hiring_subscription_status: "active",
           hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
           hiring_subscription_cancel_at_period_end: false,
+          ...(hiringCommitmentBlockUntil ? { hiring_commitment_block_cancel_until: hiringCommitmentBlockUntil } : {}),
         })
         .eq("id", companyId);
 
@@ -299,7 +343,9 @@ serve(async (req) => {
         company_id: companyId,
         amount: hiringCost,
         type: "credit_used",
-        description: "Hiring Tab Subscription (fully covered by billing credits)",
+        description: isShortWindow
+          ? `Hiring Tab Subscription — prorated stub through ${nextRenewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} (fully covered by billing credits)`
+          : "Hiring Tab Subscription (fully covered by billing credits)",
       });
 
       console.log("Subscription activated — fully covered by credits");
@@ -310,6 +356,8 @@ serve(async (req) => {
         message: "Subscription activated using billing credits",
         creditApplied: creditContribution,
         cardCharged: 0,
+        isShortWindow,
+        commitmentBlockUntil: hiringCommitmentBlockUntil,
       }), { headers: responseHeaders, status: 200 });
     }
 
@@ -390,6 +438,7 @@ serve(async (req) => {
         expand: ["latest_invoice.payment_intent"],
         metadata: { company_id: companyId, type: "hiring_subscription" },
         ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
+        ...(billingCycleAnchorUnix ? { billing_cycle_anchor: billingCycleAnchorUnix } : {}),
       }, { idempotencyKey: `sub-${paymentOperationKeyBase}` });
     } catch (stripeErr: any) {
       if (isStripeIdempotencyConflict(stripeErr)) {
@@ -484,6 +533,7 @@ serve(async (req) => {
         hiring_subscription_id: subscription.id,
         hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         hiring_subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+        ...(hiringCommitmentBlockUntil ? { hiring_commitment_block_cancel_until: hiringCommitmentBlockUntil } : {}),
       })
       .eq("id", companyId);
     if (subUpdateError) {
@@ -503,6 +553,9 @@ serve(async (req) => {
       }), { headers: responseHeaders, status: 400 });
     }
 
+    const stubSuffix = isShortWindow
+      ? ` — prorated stub through ${nextRenewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+      : "";
     const { error: chargeInsertError } = await supabase
       .from("billing_transactions")
       .upsert({
@@ -510,8 +563,8 @@ serve(async (req) => {
         type: "charge",
         amount: cardCharge,
         description: creditContribution > 0
-          ? `Hiring Tab subscription — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
-          : "Hiring Tab subscription (card on file)",
+          ? `Hiring Tab subscription${stubSuffix} — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
+          : `Hiring Tab subscription${stubSuffix} (card on file)`,
         stripe_payment_intent_id: paymentIntent.id,
       }, { onConflict: "stripe_payment_intent_id" });
 
@@ -533,6 +586,8 @@ serve(async (req) => {
       status: subscription.status,
       creditApplied: creditContribution,
       cardCharged: cardCharge,
+      isShortWindow,
+      commitmentBlockUntil: hiringCommitmentBlockUntil,
     }), {
       headers: responseHeaders,
       status: 200,

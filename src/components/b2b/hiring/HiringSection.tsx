@@ -14,6 +14,7 @@ import {
   Plus,
   Lock,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,7 @@ interface HiringSectionProps {
     hiring_subscription_cancel_at_period_end?: boolean;
     hiring_subscription_current_period_end?: string;
     hiring_ever_subscribed?: boolean;
+    portal_billing_next_renewal_at?: string | null;
   };
   companyUser: { id: string; role: string } | null;
   onSubscriptionUpdated?: () => void;
@@ -83,14 +85,36 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
   const [showUnlockedModal, setShowUnlockedModal] = useState(false);
   const [resubscribing, setResubscribing] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-  const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
-  const hasHiringAccess = company.hiring_subscription_enabled && 
-    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
+  const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
+  const [showLearnMore, setShowLearnMore] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'subscribe' | 'resubscribe'>('subscribe');
 
   const creditBalance = company.credit_balance || 0; // In dollars
-  const hiringCost = 500; // $500 in dollars
-  const creditContribution = Math.min(creditBalance, hiringCost);
-  const cardCharge = hiringCost - creditContribution;
+
+  // Proration: always charge the remaining fraction of the billing cycle (days ÷ 30 × $500)
+  const portalRenewalAt = company.portal_billing_next_renewal_at
+    ? new Date(company.portal_billing_next_renewal_at)
+    : null;
+  const daysUntilPortalRenewal = portalRenewalAt
+    ? (portalRenewalAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    : null;
+  const isProrated = daysUntilPortalRenewal !== null && daysUntilPortalRenewal > 0;
+  // 7-day clause: if < 7 days remain, lock cancellation until portfolio renewal
+  const isShortWindow = isProrated && daysUntilPortalRenewal! < 7;
+  const proratedCost = isProrated
+    ? Math.round((daysUntilPortalRenewal! / 30) * 500 * 100) / 100
+    : 500;
+  const effectiveCreditContribution = Math.min(creditBalance, proratedCost);
+  const effectiveCardCharge = proratedCost - effectiveCreditContribution;
+  // Aliases used by the welcome-back card
+  const hiringCost = proratedCost;
+  const creditContribution = effectiveCreditContribution;
+  const cardCharge = effectiveCardCharge;
+  const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
+  const hasPaidHiringSubscription = company.hiring_subscription_enabled && 
+    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
+  const hasHiringAccess = company.hiring_subscription_enabled && 
+    (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing' || company.hiring_subscription_status === 'admin_override');
 
   // Check for tutorial flag after subscription success reload
   useEffect(() => {
@@ -390,8 +414,10 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
               <CardContent className="space-y-4 pt-0">
                 <div className="rounded-lg bg-muted/50 p-4 space-y-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Monthly Subscription</span>
-                    <span className="text-3xl font-bold">${hiringCost}</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {isProrated ? `Prorated charge (${Math.ceil(daysUntilPortalRenewal!)} days)` : 'Monthly Subscription'}
+                    </span>
+                    <span className="text-3xl font-bold">${hiringCost.toFixed(2)}</span>
                   </div>
                   {creditContribution > 0 && (
                     <div className="flex items-center justify-between text-sm border-t border-border/50 pt-2">
@@ -410,7 +436,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                 {isHROrAdmin && (
                   <Button 
                     size="lg" 
-                    onClick={handleResubscribe}
+                    onClick={() => { setConfirmAction('resubscribe'); setShowSubscribeConfirm(true); }}
                     disabled={resubscribing || subscribing}
                     className="w-full h-12"
                   >
@@ -592,7 +618,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                 {isHROrAdmin && (
                   <Button 
                     size="lg" 
-                    onClick={handleSubscribe}
+                    onClick={() => { setConfirmAction('subscribe'); setShowSubscribeConfirm(true); }}
                     disabled={subscribing}
                     className="w-full max-w-md"
                   >
@@ -912,6 +938,96 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
               onClick={() => setSubscribeError(null)}
             >
               {subscribeError?.type === 'auth_required' ? 'Dismiss' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-purchase Confirmation Dialog */}
+      <Dialog open={showSubscribeConfirm} onOpenChange={(open) => { if (!open) { setShowSubscribeConfirm(false); setShowLearnMore(false); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subscribe to Hiring Tab</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-1">
+                {isProrated ? (
+                  <p className="text-sm leading-relaxed">
+                    Your portal renews on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
+                    Today's charge is prorated to{' '}
+                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                  </p>
+                ) : (
+                  <p className="text-sm leading-relaxed">
+                    You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                  </p>
+                )}
+
+                {effectiveCreditContribution > 0 && (
+                  <div className="rounded-md bg-muted/60 p-3 text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Today's cost</span>
+                      <span className="font-medium">${proratedCost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-700">
+                      <span>Credits applied</span>
+                      <span>−${effectiveCreditContribution.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1 font-semibold">
+                      <span>Card charge</span>
+                      <span>${effectiveCardCharge.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {isShortWindow && (
+                  <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3 text-sm text-amber-800">
+                    <strong>Note: </strong>Cancellation is unavailable until{' '}
+                    {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {' '}because your subscription started within 7 days of your portal renewal.
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowLearnMore((v) => !v)}
+                >
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showLearnMore ? 'rotate-180' : ''}`} />
+                  {showLearnMore ? 'Hide details' : 'Learn more about billing'}
+                </button>
+
+                {showLearnMore && (
+                  <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-2">
+                    {isProrated ? (
+                      <>
+                        <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal ({Math.ceil(daysUntilPortalRenewal!)} days ÷ 30 × $500).</p>
+                        <p><strong>When is the next $500 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
+                        {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
+                        <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
+                        <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              className="w-full"
+              onClick={() => { setShowSubscribeConfirm(false); setShowLearnMore(false); confirmAction === 'resubscribe' ? handleResubscribe() : handleSubscribe(); }}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {isProrated
+                ? `Confirm — $${proratedCost.toFixed(2)} today`
+                : `Confirm — $${effectiveCardCharge > 0 ? effectiveCardCharge.toFixed(2) : '0.00'} card${effectiveCreditContribution > 0 ? ` + $${effectiveCreditContribution.toFixed(2)} credits` : ''}`}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setShowSubscribeConfirm(false); setShowLearnMore(false); }}>
+              Cancel
             </Button>
           </div>
         </DialogContent>

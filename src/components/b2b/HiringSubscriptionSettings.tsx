@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   ExternalLink,
   RefreshCw,
+  ChevronDown,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -50,7 +51,10 @@ interface HiringSubscriptionSettingsProps {
     hiring_subscription_status?: string;
     hiring_subscription_cancel_at_period_end?: boolean;
     hiring_subscription_current_period_end?: string;
+    portal_billing_anchor_at?: string | null;
+    portal_billing_next_renewal_at?: string | null;
     hiring_ever_subscribed?: boolean;
+    hiring_commitment_block_cancel_until?: string | null;
   };
   onSubscriptionUpdated?: () => void;
 }
@@ -61,6 +65,18 @@ export default function HiringSubscriptionSettings({
 }: HiringSubscriptionSettingsProps) {
   const INTERNAL_COMPANY_ID = '0f03753c-ea99-4236-9f8c-16324b92f257';
   const PORTAL_COST_PER_USER = 20;
+  const MIN_PORTAL_SEATS = 2;
+
+  const isMissingBillingSchemaError = (error: { message?: string; code?: string } | null | undefined) => {
+    if (!error) return false;
+    const message = (error.message || '').toLowerCase();
+    return (
+      message.includes('company_portal_billing_periods') ||
+      message.includes('billing_period_id') ||
+      message.includes('does not exist') ||
+      message.includes('could not find the table')
+    );
+  };
 
   type StatementRow = {
     id: string;
@@ -71,6 +87,20 @@ export default function HiringSubscriptionSettings({
     source: 'transaction' | 'credit';
     user_email?: string;
     user_name?: string;
+  };
+
+  type BillingPeriodRow = {
+    id: string;
+    period_start: string;
+    period_end: string;
+    renewal_at: string;
+    status: string;
+    total_amount: number;
+    credits_applied: number;
+    card_charged: number;
+    outstanding_balance: number;
+    failure_reason: string | null;
+    created_at: string;
   };
 
   const hiringCost = 500;
@@ -90,6 +120,9 @@ export default function HiringSubscriptionSettings({
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCommitmentBlockDialog, setShowCommitmentBlockDialog] = useState(false);
+  const [showSubscribeConfirm, setShowSubscribeConfirm] = useState(false);
+  const [showLearnMore, setShowLearnMore] = useState(false);
   const [showStatementDialog, setShowStatementDialog] = useState(false);
   const [showRenewalDialog, setShowRenewalDialog] = useState(false);
   const [showChargeDetailDialog, setShowChargeDetailDialog] = useState(false);
@@ -107,7 +140,6 @@ export default function HiringSubscriptionSettings({
     totalCharge: number;
   } | null>(null);
   const [statementStartDate, setStatementStartDate] = useState<Date | null>(null);
-  const [subscriptionStartDate, setSubscriptionStartDate] = useState<Date | null>(null);
   const [renewalDateLoading, setRenewalDateLoading] = useState(false);
   const [statementTotals, setStatementTotals] = useState({
     charges: 0,
@@ -120,53 +152,48 @@ export default function HiringSubscriptionSettings({
   const { toast } = useToast();
   const isInternalAdminCompany = company.id === INTERNAL_COMPANY_ID;
 
-  const hasActiveSubscription = company.hiring_subscription_enabled && 
+  const isAdminOverride = company.hiring_subscription_enabled && company.hiring_subscription_status === 'admin_override';
+  const hasPaidSubscription = company.hiring_subscription_enabled && 
     (company.hiring_subscription_status === 'active' || company.hiring_subscription_status === 'trialing');
+  const hasActiveSubscription = hasPaidSubscription || isAdminOverride;
   
   const isCancelling = company.hiring_subscription_cancel_at_period_end;
   const periodEnd = company.hiring_subscription_current_period_end 
     ? new Date(company.hiring_subscription_current_period_end)
     : null;
+  const portalRenewalDate = company.portal_billing_next_renewal_at
+    ? new Date(company.portal_billing_next_renewal_at)
+    : company.portal_billing_anchor_at
+      ? (() => { const d = new Date(company.portal_billing_anchor_at!); d.setMonth(d.getMonth() + 1); return d; })()
+      : null;
+
+  // Commitment block: cancellation is disabled until this date (short-window signup clause)
+  const commitmentBlockUntil = company.hiring_commitment_block_cancel_until
+    ? new Date(company.hiring_commitment_block_cancel_until)
+    : null;
+  const isInCommitmentPeriod =
+    commitmentBlockUntil !== null &&
+    !Number.isNaN(commitmentBlockUntil.getTime()) &&
+    commitmentBlockUntil > new Date();
+
+  // Proration for pre-purchase summary: charge remaining fraction of cycle (days ÷ 30 × $500)
+  const daysUntilPortalRenewal = portalRenewalDate
+    ? (portalRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    : null;
+  const isProrated = daysUntilPortalRenewal !== null && daysUntilPortalRenewal > 0;
+  // 7-day clause: lock cancellation when < 7 days remain until portal renewal
+  const isShortWindow = isProrated && daysUntilPortalRenewal! < 7;
+  const proratedCost = isProrated
+    ? Math.round((daysUntilPortalRenewal! / 30) * 500 * 100) / 100
+    : hiringCost;
+  const effectiveCreditContribution = Math.min(creditBalance, proratedCost);
+  const effectiveCardCharge = proratedCost - effectiveCreditContribution;
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
-  const addOneMonthAnchored = (current: Date, anchorDay: number) => {
-    const year = current.getFullYear();
-    const month = current.getMonth();
-    const targetMonthDate = new Date(year, month + 1, 1);
-    const lastDayOfTargetMonth = new Date(
-      targetMonthDate.getFullYear(),
-      targetMonthDate.getMonth() + 1,
-      0
-    ).getDate();
-    const day = Math.min(anchorDay, lastDayOfTargetMonth);
-
-    return new Date(
-      targetMonthDate.getFullYear(),
-      targetMonthDate.getMonth(),
-      day,
-      current.getHours(),
-      current.getMinutes(),
-      current.getSeconds(),
-      current.getMilliseconds()
-    );
-  };
-
-  const getNextRenewalFromStart = (startDate: Date) => {
-    const now = new Date();
-    const anchorDay = startDate.getDate();
-    let cursor = new Date(startDate);
-
-    while (cursor <= now) {
-      cursor = addOneMonthAnchored(cursor, anchorDay);
-    }
-    return cursor;
-  };
-
-  const displayedRenewalDate = subscriptionStartDate
-    ? getNextRenewalFromStart(subscriptionStartDate)
-    : periodEnd;
+  // Portal renewal is the authoritative renewal date; never fall back to the hiring period end
+  const displayedRenewalDate = isCancelling ? periodEnd : portalRenewalDate;
 
   const getStatementCategory = (type: string, description?: string | null): StatementRow['category'] => {
     const normalizedType = (type || '').toLowerCase();
@@ -175,7 +202,7 @@ export default function HiringSubscriptionSettings({
     if (normalizedType.includes('insight') || normalizedDescription.includes('insight')) {
       return 'extra_insight';
     }
-    if (normalizedDescription.includes('hiring tab subscription')) {
+    if (normalizedDescription.includes('hiring tab subscription') || normalizedType.includes('hiring_subscription')) {
       return 'subscription';
     }
     if (normalizedType.includes('user_addition')) {
@@ -228,18 +255,18 @@ export default function HiringSubscriptionSettings({
 
       if (error) throw error;
 
-      const activeUsers = Math.max(0, count || 0);
-      const seatsPurchased = Math.max(2, company.seats_purchased || 2);
-      const billableUsers = Math.max(activeUsers, seatsPurchased);
+      const includedUsers = Math.max(0, count || 0);
+      const seatsPurchased = Math.max(MIN_PORTAL_SEATS, company.seats_purchased || 0);
+      const billableUsers = Math.max(includedUsers, seatsPurchased);
 
-      const hiringCharge = hasActiveSubscription && !isCancelling
+      const hiringCharge = hasPaidSubscription && !isCancelling
         ? (isInternalAdminCompany ? 0 : 500)
         : 0;
       const portalCharge = isInternalAdminCompany ? 0 : billableUsers * PORTAL_COST_PER_USER;
       const totalCharge = hiringCharge + portalCharge;
 
       setRenewalEstimate({
-        activeUsers,
+        activeUsers: includedUsers,
         seatsPurchased,
         billableUsers,
         hiringCharge,
@@ -263,12 +290,7 @@ export default function HiringSubscriptionSettings({
     const silent = options?.silent === true;
     if (!silent) setStatementLoading(true);
     try {
-      const [txRes, creditRes, userChargesRes] = await Promise.all([
-        supabase
-          .from('billing_transactions')
-          .select('id, created_at, type, amount, description')
-          .eq('company_id', company.id)
-          .order('created_at', { ascending: true }),
+      const [creditRes, userChargesRes, periodRes, txWithPeriodRes] = await Promise.all([
         supabase
           .from('billing_credits')
           .select('id, created_at, amount, description, type')
@@ -281,20 +303,52 @@ export default function HiringSubscriptionSettings({
           .not('charged_at', 'is', null)
           .gt('charge_amount', 0)
           .order('charged_at', { ascending: true }),
+        supabase
+          .from('company_portal_billing_periods')
+          .select('id, period_start, period_end, renewal_at, status, total_amount, credits_applied, card_charged, outstanding_balance, failure_reason, created_at')
+          .eq('company_id', company.id)
+          .order('renewal_at', { ascending: true }),
+        supabase
+          .from('billing_transactions')
+          .select('id, billing_period_id, created_at, type, amount, description')
+          .eq('company_id', company.id)
+          .order('created_at', { ascending: true }),
       ]);
 
-      if (txRes.error) throw txRes.error;
       if (creditRes.error) throw creditRes.error;
       if (userChargesRes.error) throw userChargesRes.error;
 
-      const transactions = txRes.data || [];
+      const billingPeriods = !periodRes.error
+        ? (periodRes.data || []) as BillingPeriodRow[]
+        : isMissingBillingSchemaError(periodRes.error)
+          ? []
+          : (() => { throw periodRes.error; })();
+
+      const transactions = !txWithPeriodRes.error
+        ? txWithPeriodRes.data || []
+        : isMissingBillingSchemaError(txWithPeriodRes.error)
+          ? await (async () => {
+              const { data, error } = await supabase
+                .from('billing_transactions')
+                .select('id, created_at, type, amount, description')
+                .eq('company_id', company.id)
+                .order('created_at', { ascending: true });
+
+              if (error) throw error;
+              return (data || []).map((row) => ({
+                ...row,
+                billing_period_id: null,
+              }));
+            })()
+          : (() => { throw txWithPeriodRes.error; })();
+
       const credits = creditRes.data || [];
       const chargedUsers = userChargesRes.data || [];
 
-      const derivedStartDate = company.created_at
-        ? new Date(company.created_at)
-        : company.hiring_subscription_current_period_end
-          ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
+      const derivedStartDate = company.portal_billing_anchor_at
+        ? new Date(company.portal_billing_anchor_at)
+        : company.created_at
+          ? new Date(company.created_at)
           : null;
 
       setStatementStartDate(derivedStartDate);
@@ -332,10 +386,35 @@ export default function HiringSubscriptionSettings({
       // Deduplicate hiring tab subscription rows — only show the most recent successful payment
       const subRows = allTxRows.filter((r) => r.category === 'subscription');
       const nonSubRows = allTxRows.filter((r) => r.category !== 'subscription');
-      const dedupedSubRows = subRows.length > 0
-        ? [subRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]]
-        : [];
+      const informationalSubRows = subRows.filter((row) => {
+        const description = row.description.toLowerCase();
+        return Math.abs(row.amount) < 0.01 && (description.includes('cancel') || description.includes('no refund'));
+      });
+      const billableSubRows = subRows.filter((row) => !informationalSubRows.includes(row));
+      const dedupedSubRows = billableSubRows.length > 0
+        ? [billableSubRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0], ...informationalSubRows]
+        : informationalSubRows;
       const txRows = [...nonSubRows, ...dedupedSubRows];
+      const transactionPeriodIds = new Set(
+        transactions
+          .map((row) => row.billing_period_id)
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      );
+
+      const periodFallbackRows: StatementRow[] = billingPeriods
+        .filter((period) => !derivedStartDate || new Date(period.renewal_at) >= derivedStartDate)
+        .filter((period) => !transactionPeriodIds.has(period.id))
+        .filter((period) => period.total_amount > 0 || period.outstanding_balance > 0)
+        .map((period) => ({
+          id: `period-${period.id}`,
+          created_at: period.renewal_at,
+          category: period.status === 'failed' ? 'charge' : 'portal_cost',
+          description: period.status === 'failed'
+            ? period.failure_reason || 'Portal renewal failed'
+            : `Portal renewal for billing period ending ${new Date(period.period_end).toLocaleDateString()}`,
+          amount: period.status === 'failed' ? period.outstanding_balance || period.total_amount : period.total_amount,
+          source: 'transaction' as const,
+        }));
 
       const inviteChargeFallbackRows: StatementRow[] = chargedUsers
         .filter((row) => !!row.charged_at && (!derivedStartDate || new Date(row.charged_at as string) >= derivedStartDate))
@@ -382,28 +461,11 @@ export default function HiringSubscriptionSettings({
           source: 'credit' as const,
         }));
 
-      const hasMonthlyBillingRow = txRows.some((row) => row.description.toLowerCase().includes('monthly billing'));
-      const baseSeatsPurchased = Math.max(2, company.seats_purchased || 2);
-      const basePortalMonthlyCost = isInternalAdminCompany ? 0 : baseSeatsPurchased * 20;
-      const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
-      const basePortalCostRow: StatementRow | null = hasMonthlyBillingRow
-        ? null
-        : {
-            id: `portal-base-${company.id}-${periodAnchorDate}`,
-            created_at: periodAnchorDate,
-            category: 'portal_cost',
-            description: isInternalAdminCompany
-              ? 'Base Portal Cost (Internal Admin Company - No Charge)'
-              : `Base Portal Cost (${baseSeatsPurchased} seat${baseSeatsPurchased !== 1 ? 's' : ''} × $20/month)`,
-            amount: basePortalMonthlyCost,
-            source: 'transaction',
-          };
-
       const rowsToInclude = [
         ...txRows,
+        ...periodFallbackRows,
         ...inviteChargeFallbackRows,
         ...creditRows,
-        ...(basePortalCostRow ? [basePortalCostRow] : []),
       ];
       const allRows = (isInternalAdminCompany
         ? rowsToInclude.filter((row) => row.category !== 'credit')
@@ -492,42 +554,24 @@ export default function HiringSubscriptionSettings({
   }, [showRenewalDialog]);
 
   useEffect(() => {
-    const loadSubscriptionStartDate = async () => {
-      const storageKey = `rcf_hiring_subscription_start_date_${company.id}`;
-      const cachedStartDate = sessionStorage.getItem(storageKey);
-      if (cachedStartDate) {
-        if (cachedStartDate === "__NONE__") {
-          setSubscriptionStartDate(null);
-        } else {
-          setSubscriptionStartDate(new Date(cachedStartDate));
-        }
-        setRenewalDateLoading(false);
-        return;
-      }
+    const shouldLockScroll = showStatementDialog || showRenewalDialog;
+    if (!shouldLockScroll) return;
 
-      setRenewalDateLoading(true);
-      if (company.created_at) {
-        const start = new Date(company.created_at);
-        setSubscriptionStartDate(start);
-        sessionStorage.setItem(storageKey, start.toISOString());
-      } else if (company.hiring_subscription_current_period_end) {
-        const start = new Date(
-          new Date(company.hiring_subscription_current_period_end).setMonth(
-            new Date(company.hiring_subscription_current_period_end).getMonth() - 1
-          )
-        );
-        setSubscriptionStartDate(start);
-        sessionStorage.setItem(storageKey, start.toISOString());
-      } else {
-        setSubscriptionStartDate(null);
-        sessionStorage.setItem(storageKey, "__NONE__");
-      }
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
 
-      setRenewalDateLoading(false);
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
     };
+  }, [showStatementDialog, showRenewalDialog]);
 
-    loadSubscriptionStartDate();
-  }, [company.id, company.hiring_subscription_current_period_end]);
+  useEffect(() => {
+    setRenewalDateLoading(false);
+  }, [company.id, company.portal_billing_next_renewal_at, company.hiring_subscription_current_period_end]);
 
   // Translate raw Stripe / edge-function messages into clean user-facing errors
   const classifyError = (msg: string, step?: string): NonNullable<typeof subscribeError> => {
@@ -665,6 +709,13 @@ export default function HiringSubscriptionSettings({
       });
 
       if (error) throw error;
+
+      // Commitment block: backend returns a structured non-error so the UI can explain it
+      if (data?.error === 'COMMITMENT_BLOCK') {
+        setShowCommitmentBlockDialog(true);
+        return;
+      }
+
       if (data?.error) throw new Error(data.error);
 
       if (data?.cancelledImmediately) {
@@ -704,6 +755,9 @@ export default function HiringSubscriptionSettings({
   const getStatusBadge = () => {
     if (!hasActiveSubscription) {
       return <Badge variant="outline">Not Subscribed</Badge>;
+    }
+    if (isAdminOverride) {
+      return <Badge variant="secondary">Admin Override</Badge>;
     }
     if (isCancelling) {
       return <Badge variant="outline" className="border-yellow-500 text-yellow-600">Cancelling</Badge>;
@@ -779,16 +833,16 @@ export default function HiringSubscriptionSettings({
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Monthly Subscription</span>
+                    <span className="text-sm font-medium">{isAdminOverride ? 'Access Source' : 'Monthly Subscription'}</span>
                   </div>
-                  <span className="font-semibold">{isInternalAdminCompany ? '$0/month (Internal)' : '$500/month'}</span>
+                  <span className="font-semibold">{isAdminOverride ? 'Manual admin override' : isInternalAdminCompany ? '$0/month (Internal)' : '$500/month'}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">
-                      {isCancelling ? 'Ends on' : 'Renewal date'}
+                      {isAdminOverride ? 'Shared company renewal date' : isCancelling ? 'Ends on' : 'Renewal date'}
                     </span>
                   </div>
                   <span className="text-sm">
@@ -801,6 +855,15 @@ export default function HiringSubscriptionSettings({
                     )}
                   </span>
                 </div>
+
+                {isAdminOverride && (
+                  <div className="space-y-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm font-medium text-blue-700">Hiring access is being provided by an admin override.</p>
+                    <p className="text-xs text-muted-foreground">
+                      This company currently has access without a Stripe-backed paid hiring subscription.
+                    </p>
+                  </div>
+                )}
 
                 {isCancelling && (
                   <div className="space-y-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
@@ -855,11 +918,17 @@ export default function HiringSubscriptionSettings({
               </div>
 
               {/* Cancel Button */}
-              {!isCancelling && (
+              {!isCancelling && !isAdminOverride && (
                 <div className="border-t pt-4">
                   <Button 
                     variant="outline"
-                    onClick={() => setShowCancelDialog(true)}
+                    onClick={() => {
+                      if (isInCommitmentPeriod) {
+                        setShowCommitmentBlockDialog(true);
+                      } else {
+                        setShowCancelDialog(true);
+                      }
+                    }}
                     disabled={cancelling}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
@@ -905,7 +974,7 @@ export default function HiringSubscriptionSettings({
                       {isInternalAdminCompany ? 'No charge for internal admin company' : 'Cancel anytime'}
                     </p>
                   </div>
-                  <Button onClick={handleSubscribe} disabled={subscribing}>
+                  <Button onClick={() => setShowSubscribeConfirm(true)} disabled={subscribing}>
                     {subscribing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1048,6 +1117,121 @@ export default function HiringSubscriptionSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Commitment Block Dialog — shown when user tries to cancel during the short-window period */}
+      <AlertDialog open={showCommitmentBlockDialog} onOpenChange={setShowCommitmentBlockDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancellation Unavailable</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your Hiring subscription was started within 7 days of your portal renewal date. Cancellation is
+              temporarily unavailable until{' '}
+              <strong>
+                {commitmentBlockUntil?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) ?? 'your next renewal'}
+              </strong>
+              , when the first full monthly billing cycle begins.
+              <br /><br />
+              After that date you'll be able to cancel anytime in the normal way.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowCommitmentBlockDialog(false)}>
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Pre-purchase Confirmation Dialog */}
+      <Dialog open={showSubscribeConfirm} onOpenChange={(open) => { if (!open) { setShowSubscribeConfirm(false); setShowLearnMore(false); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subscribe to Hiring Tab</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-1">
+                {isProrated ? (
+                  <p className="text-sm leading-relaxed">
+                    Your portal renews on {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
+                    Today's charge is prorated to{' '}
+                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                  </p>
+                ) : (
+                  <p className="text-sm leading-relaxed">
+                    You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                  </p>
+                )}
+
+                {effectiveCreditContribution > 0 && (
+                  <div className="rounded-md bg-muted/60 p-3 text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Today's cost</span>
+                      <span className="font-medium">${proratedCost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-700">
+                      <span>Credits applied</span>
+                      <span>−${effectiveCreditContribution.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1 font-semibold">
+                      <span>Card charge</span>
+                      <span>${effectiveCardCharge.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {isShortWindow && (
+                  <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3 text-sm text-amber-800">
+                    <strong>Note: </strong>Cancellation is unavailable until{' '}
+                    {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {' '}because your subscription starts within 7 days of your portal renewal.
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowLearnMore((v) => !v)}
+                >
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showLearnMore ? 'rotate-180' : ''}`} />
+                  {showLearnMore ? 'Hide details' : 'Learn more about billing'}
+                </button>
+
+                {showLearnMore && (
+                  <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-2">
+                    {isProrated ? (
+                      <>
+                        <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal ({Math.ceil(daysUntilPortalRenewal!)} days ÷ 30 × $500).</p>
+                        <p><strong>When is the next $500 charge?</strong> On {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
+                        {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
+                        <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
+                        <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              className="w-full"
+              onClick={() => { setShowSubscribeConfirm(false); setShowLearnMore(false); handleSubscribe(); }}
+              disabled={subscribing}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {isProrated
+                ? `Confirm — $${proratedCost.toFixed(2)} today`
+                : `Confirm — $${effectiveCardCharge > 0 ? effectiveCardCharge.toFixed(2) : '0.00'} card${effectiveCreditContribution > 0 ? ` + $${effectiveCreditContribution.toFixed(2)} credits` : ''}`}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { setShowSubscribeConfirm(false); setShowLearnMore(false); }}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showStatementDialog} onOpenChange={setShowStatementDialog}>
         <DialogContent className="max-w-6xl max-h-[88vh] overflow-hidden flex flex-col">
@@ -1197,12 +1381,16 @@ export default function HiringSubscriptionSettings({
             </Button>
           </div>
 
-          <div className="flex-1 overflow-auto space-y-4 pr-1">
+          <div
+            className="-mr-6 flex-1 space-y-4 overflow-y-auto pr-6 sm:-mr-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 hover:[&::-webkit-scrollbar-thumb]:bg-white/15"
+            style={{ scrollbarColor: 'rgba(255,255,255,0.14) transparent' }}
+          >
             {renewalEstimate && !renewalEstimateLoading && (() => {
               const availableCredits = Number(company.credit_balance || 0);
+              const creditsApplied = Math.min(Math.max(availableCredits, 0), renewalEstimate.totalCharge);
               const netChargeAfterCredits = isInternalAdminCompany
                 ? 0
-                : Math.max(0, renewalEstimate.totalCharge - availableCredits);
+                : Math.max(0, renewalEstimate.totalCharge - creditsApplied);
               
               return (
                 <div className="space-y-6">
@@ -1219,7 +1407,7 @@ export default function HiringSubscriptionSettings({
                         <p className="text-xs text-muted-foreground mb-1">Portal Seats</p>
                         <p className="text-2xl font-bold">{formatCurrency(renewalEstimate.portalCharge)}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {renewalEstimate.billableUsers} seat{renewalEstimate.billableUsers !== 1 ? 's' : ''} × ${PORTAL_COST_PER_USER}/month
+                          {renewalEstimate.billableUsers} billable user{renewalEstimate.billableUsers !== 1 ? 's' : ''} × ${PORTAL_COST_PER_USER}/month
                         </p>
                       </div>
                     </div>
@@ -1236,15 +1424,15 @@ export default function HiringSubscriptionSettings({
                         </div>
                       </div>
                       
-                      {availableCredits > 0 && (
+                      {creditsApplied > 0 && (
                         <>
                           <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-4">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Available Credits</p>
+                                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Expected Credits Applied</p>
                                 <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">Will be applied automatically</p>
                               </div>
-                              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">-{formatCurrency(availableCredits)}</p>
+                              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">-{formatCurrency(creditsApplied)}</p>
                             </div>
                           </div>
                           
@@ -1273,15 +1461,15 @@ export default function HiringSubscriptionSettings({
                     <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Account Details</h4>
                     <div className="grid gap-3 grid-cols-3">
                       <div className="rounded-md bg-muted/20 p-3">
-                        <p className="text-xs text-muted-foreground">Active Users</p>
+                        <p className="text-xs text-muted-foreground">Invited + Active Users</p>
                         <p className="text-lg font-semibold">{renewalEstimate.activeUsers}</p>
                       </div>
                       <div className="rounded-md bg-muted/20 p-3">
-                        <p className="text-xs text-muted-foreground">Seats Purchased</p>
+                        <p className="text-xs text-muted-foreground">Stored Seats</p>
                         <p className="text-lg font-semibold">{renewalEstimate.seatsPurchased}</p>
                       </div>
                       <div className="rounded-md bg-muted/20 p-3">
-                        <p className="text-xs text-muted-foreground">Billable Seats</p>
+                        <p className="text-xs text-muted-foreground">Billable Users</p>
                         <p className="text-lg font-semibold">{renewalEstimate.billableUsers}</p>
                       </div>
                     </div>
@@ -1290,7 +1478,7 @@ export default function HiringSubscriptionSettings({
                   {/* Explanation */}
                   <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4">
                     <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-                      <strong>Note:</strong> Billable seats = max(active users, seats purchased). Users added mid-cycle are prorated until renewal, then charged the full monthly rate.
+                      <strong>Note:</strong> Portal renewals charge the greater of invited plus active users or stored seats, with a 2-seat minimum. Users added mid-cycle are prorated until the shared company renewal date, then charged the full monthly rate.
                     </p>
                   </div>
                 </div>

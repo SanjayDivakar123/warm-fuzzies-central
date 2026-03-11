@@ -18,6 +18,23 @@ const resolvePeriodEnd = (existingValue: string | null | undefined) => {
     : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 };
 
+const recordCancellationEvent = async (
+  supabase: ReturnType<typeof createClient>,
+  companyId: string,
+  description: string,
+) => {
+  const { error } = await supabase.from("billing_transactions").insert({
+    company_id: companyId,
+    type: "hiring_subscription_cancelled",
+    amount: 0,
+    description,
+  });
+
+  if (error) {
+    console.error("Failed to record hiring cancellation event:", error);
+  }
+};
+
 serve(async (req) => {
   console.log("=== CANCEL HIRING SUBSCRIPTION FUNCTION STARTED ===");
 
@@ -58,7 +75,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, hiring_subscription_id, hiring_subscription_enabled, hiring_subscription_current_period_end")
+      .select("id, hiring_subscription_id, hiring_subscription_enabled, hiring_subscription_current_period_end, hiring_commitment_block_cancel_until")
       .eq("id", companyId)
       .single();
 
@@ -67,6 +84,29 @@ serve(async (req) => {
     // Check if hiring is enabled
     if (!company.hiring_subscription_enabled) {
       throw new Error("Hiring platform is not currently enabled for this company");
+    }
+
+    // Enforce temporary commitment block for short-window signups.
+    // Admin immediate cancellation (cancelImmediately=true) bypasses this check.
+    if (!cancelImmediately && company.hiring_commitment_block_cancel_until) {
+      const blockUntil = new Date(company.hiring_commitment_block_cancel_until);
+      if (!Number.isNaN(blockUntil.getTime()) && blockUntil > new Date()) {
+        const blockUntilFormatted = blockUntil.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        console.log("Commitment block active until", blockUntilFormatted, "for company", companyId);
+        return new Response(JSON.stringify({
+          success: false,
+          error: "COMMITMENT_BLOCK",
+          blockUntil: blockUntil.toISOString(),
+          message: `Your Hiring subscription was started within 7 days of your portal renewal and cannot be cancelled until ${blockUntilFormatted}, when the first full monthly renewal begins.`,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     // If no Stripe subscription exists (e.g., enabled by super admin)
@@ -83,6 +123,12 @@ serve(async (req) => {
             hiring_subscription_current_period_end: null,
           })
           .eq("id", companyId);
+
+        await recordCancellationEvent(
+          supabase,
+          companyId,
+          "Hiring Tab subscription cancelled immediately (no refund due)",
+        );
 
         console.log("Hiring platform disabled immediately by super admin (no Stripe subscription):", companyId);
 
@@ -105,6 +151,12 @@ serve(async (req) => {
             hiring_subscription_current_period_end: periodEnd.toISOString(),
           })
           .eq("id", companyId);
+
+        await recordCancellationEvent(
+          supabase,
+          companyId,
+          `Hiring Tab subscription set to cancel on ${periodEnd.toLocaleDateString()} (no refund due)`,
+        );
 
         console.log("Hiring platform set to cancel at end of billing period (no Stripe subscription):", companyId);
 
@@ -139,6 +191,12 @@ serve(async (req) => {
         })
         .eq("id", companyId);
 
+      await recordCancellationEvent(
+        supabase,
+        companyId,
+        "Hiring Tab subscription cancelled immediately (no refund due)",
+      );
+
       console.log("Hiring subscription cancelled immediately:", companyId);
 
       return new Response(JSON.stringify({ 
@@ -167,6 +225,12 @@ serve(async (req) => {
           })
           .eq("id", companyId);
 
+        await recordCancellationEvent(
+          supabase,
+          companyId,
+          `Hiring Tab subscription set to cancel on ${new Date(periodEnd).toLocaleDateString()} (no refund due)`,
+        );
+
         console.log("Hiring subscription set to cancel at period end:", companyId);
 
         return new Response(JSON.stringify({ 
@@ -193,6 +257,12 @@ serve(async (req) => {
         if (fallbackError) {
           throw fallbackError;
         }
+
+        await recordCancellationEvent(
+          supabase,
+          companyId,
+          `Hiring Tab subscription set to cancel on ${new Date(periodEnd).toLocaleDateString()} (no refund due)`,
+        );
 
         return new Response(JSON.stringify({
           success: true,

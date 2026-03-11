@@ -104,6 +104,20 @@ serve(async (req) => {
           { cancel_at_period_end: false }
         );
 
+        const isPayingStatus = subscription.status === "active" || subscription.status === "trialing";
+        if (!isPayingStatus) {
+          await supabase
+            .from("companies")
+            .update({
+              hiring_subscription_cancel_at_period_end: false,
+              hiring_subscription_enabled: false,
+              hiring_subscription_status: subscription.status,
+            })
+            .eq("id", companyId);
+
+          throw new Error(`Subscription cannot be reactivated from status ${subscription.status}. Please start a new subscription.`);
+        }
+
         console.log("Reactivated subscription in Stripe:", company.hiring_subscription_id);
 
         // Update company
@@ -111,7 +125,7 @@ serve(async (req) => {
           .from("companies")
           .update({
             hiring_subscription_cancel_at_period_end: false,
-            hiring_subscription_enabled: true,
+            hiring_subscription_enabled: isPayingStatus,
             hiring_subscription_status: subscription.status,
           })
           .eq("id", companyId);
@@ -128,28 +142,7 @@ serve(async (req) => {
         });
       } catch (stripeError: any) {
         console.error("Stripe error during reactivation:", stripeError);
-        
-        // If Stripe subscription doesn't exist or is invalid, still update our DB
-        // This handles cases where Stripe subscription was deleted but we still have the ID
-        await supabase
-          .from("companies")
-          .update({
-            hiring_subscription_cancel_at_period_end: false,
-            hiring_subscription_enabled: true,
-            hiring_subscription_status: "active",
-          })
-          .eq("id", companyId);
-
-        console.log("Updated company record despite Stripe error");
-
-        return new Response(JSON.stringify({ 
-          success: true,
-          reactivated: true,
-          warning: "Subscription reactivated locally. Stripe sync may be needed.",
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+        throw stripeError;
       }
     }
 

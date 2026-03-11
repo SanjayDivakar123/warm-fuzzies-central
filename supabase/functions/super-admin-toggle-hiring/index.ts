@@ -82,7 +82,7 @@ serve(async (req) => {
           await supabase
             .from("companies")
             .update({
-              hiring_subscription_enabled: true,
+              hiring_subscription_enabled: subscription.status === "active" || subscription.status === "trialing",
               hiring_subscription_status: subscription.status,
               hiring_subscription_cancel_at_period_end: false,
             })
@@ -98,12 +98,12 @@ serve(async (req) => {
           });
         } catch (stripeError) {
           console.error("Error with existing subscription:", stripeError);
-          // If subscription doesn't exist in Stripe, just enable the flag
+          // If subscription doesn't exist in Stripe, grant explicit admin override access.
           await supabase
             .from("companies")
             .update({
               hiring_subscription_enabled: true,
-              hiring_subscription_status: "active",
+              hiring_subscription_status: "admin_override",
               hiring_subscription_cancel_at_period_end: false,
             })
             .eq("id", companyId);
@@ -118,12 +118,12 @@ serve(async (req) => {
           });
         }
       } else {
-        // No subscription exists, just enable the flag
+        // No subscription exists, grant explicit admin override access.
         await supabase
           .from("companies")
           .update({
             hiring_subscription_enabled: true,
-            hiring_subscription_status: "active",
+            hiring_subscription_status: "admin_override",
             hiring_subscription_cancel_at_period_end: false,
           })
           .eq("id", companyId);
