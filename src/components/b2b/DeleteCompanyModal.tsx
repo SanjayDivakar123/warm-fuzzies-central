@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface DeleteCompanyModalProps {
   open: boolean;
@@ -26,20 +25,19 @@ interface DeleteCompanyModalProps {
 
 export default function DeleteCompanyModal({ open, onClose, company }: DeleteCompanyModalProps) {
   const [confirmationText, setConfirmationText] = useState('');
-  const [deleting, setDeleting] = useState(false);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
-  const { signOut } = useAuth();
 
   const isConfirmed = confirmationText === company.name;
 
-  const handleDelete = async () => {
+  const handleRequestDelete = async () => {
     if (!isConfirmed) return;
 
-    setDeleting(true);
+    setSending(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('delete-company', {
-        body: { company_id: company.id },
+        body: { action: 'request', company_id: company.id },
       });
 
       if (error) throw error;
@@ -49,22 +47,20 @@ export default function DeleteCompanyModal({ open, onClose, company }: DeleteCom
       }
 
       toast({
-        title: 'Company deleted',
-        description: 'Your company and all associated data have been permanently deleted.',
+        title: 'Confirmation email sent',
+        description: 'A secure deletion link was sent to the owner email. Open the link and type the company name to complete deletion.',
       });
 
-      // Close modal and redirect to create new company
       onClose();
-      window.location.href = '/b2b';
     } catch (error: any) {
-      console.error('Error deleting company:', error);
+      console.error('Error requesting company deletion:', error);
       toast({
-        title: 'Failed to delete company',
-        description: error.message || 'An error occurred while deleting the company.',
+        title: 'Failed to request deletion',
+        description: error.message || 'An error occurred while requesting company deletion.',
         variant: 'destructive',
       });
     } finally {
-      setDeleting(false);
+      setSending(false);
     }
   };
 
@@ -82,7 +78,7 @@ export default function DeleteCompanyModal({ open, onClose, company }: DeleteCom
             Delete Company
           </DialogTitle>
           <DialogDescription className="text-left">
-            This action is <strong>permanent and irreversible</strong>. All company data will be deleted, including:
+            This action is <strong>permanent and irreversible</strong>. To protect your company, deletion must be approved from the owner email via a secure link.
           </DialogDescription>
         </DialogHeader>
 
@@ -96,7 +92,7 @@ export default function DeleteCompanyModal({ open, onClose, company }: DeleteCom
 
           <div className="space-y-2">
             <Label htmlFor="confirm-name">
-              Type <strong className="text-foreground">{company.name}</strong> to confirm:
+              Type <strong className="text-foreground">{company.name}</strong> to send deletion approval email:
             </Label>
             <Input
               id="confirm-name"
@@ -109,24 +105,24 @@ export default function DeleteCompanyModal({ open, onClose, company }: DeleteCom
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose} disabled={deleting}>
+          <Button variant="outline" onClick={handleClose} disabled={sending}>
             Cancel
           </Button>
           <Button
             variant="destructive"
-            onClick={handleDelete}
-            disabled={!isConfirmed || deleting}
+            onClick={handleRequestDelete}
+            disabled={!isConfirmed || sending}
             className="gap-2"
           >
-            {deleting ? (
+            {sending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Deleting...
+                Sending...
               </>
             ) : (
               <>
                 <Trash2 className="h-4 w-4" />
-                Delete Company
+                Send Delete Approval Email
               </>
             )}
           </Button>

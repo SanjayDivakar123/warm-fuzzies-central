@@ -49,6 +49,7 @@ import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
 import B2BPaymentSuccess from "@/pages/b2b/B2BPaymentSuccess";
+import ConfirmDeleteCompany from "@/pages/b2b/ConfirmDeleteCompany";
 import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
 import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
 import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
@@ -277,6 +278,10 @@ export const routeConfig = [
   {
     path: "/b2b/payment-success",
     element: <Layout><B2BPaymentSuccess /></Layout>,
+  },
+  {
+    path: "/b2b/confirm-delete-company",
+    element: <ConfirmDeleteCompany />,
   },
   {
     path: "/b2b/company-portal",
