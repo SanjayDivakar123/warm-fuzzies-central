@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import AutoScroll from "embla-carousel-auto-scroll";
 
@@ -30,12 +30,6 @@ const Logos3 = ({
       description: "HOUJ",
       image: "/Used%20By%20Logos/houj-logo.webp",
       className: "h-8 w-auto brightness-0 saturate-100",
-    },
-    {
-      id: "logo-tedx3w",
-      description: "TEDx3W",
-      image: "/Used%20By%20Logos/tedx3w-logo.avif",
-      className: "h-8 w-auto",
     },
     {
       id: "logo-paf",

@@ -9,106 +9,91 @@ const testimonialsData = [
     text: "Loved the simplicity and effectiveness of the test - it was engaging and focused only on leadership which was interesting. I was quite intrigued by the accuracy of the results.",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
     name: "Divakar Vijayasarathy",
-    role: "Founder & CEO, DVS Advisory Group, TEDx Advisor",
-    tedxEndorsed: true,
+    role: "Founder & CEO, DVS Advisory Group",
   },
   {
     text: "RCF gave us instant clarity on roles and execution gaps. It saved weeks of trial-and-error.",
     image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
     name: "Aaron Whitcombe",
-    role: "Operations Manager, TEDx Event Collaborator",
-    tedxEndorsed: true,
+    role: "Operations Manager",
   },
   {
     text: "The insights were sharp, practical, and immediately actionable. This isn't a personality quiz—it's a decision tool.",
     image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
     name: "Priya Malhotra",
-    role: "Senior Product Analyst, TEDx Program Contributor",
-    tedxEndorsed: true,
+    role: "Senior Product Analyst",
   },
   {
     text: "RCF helped us rebalance our team without drama. Productivity went up within a sprint.",
     image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
     name: "Daniel Kwon",
-    role: "Engineering Lead, TEDx Volunteer Mentor",
-    tedxEndorsed: true,
+    role: "Engineering Lead",
   },
   {
     text: "Finally, a framework that aligns people to outcomes, not just vibes.",
     image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
     name: "Melissa Harding",
-    role: "Director of Marketing, TEDx Brand Partner",
-    tedxEndorsed: true,
+    role: "Director of Marketing",
   },
   {
     text: "RCF made internal alignment measurable. That alone is worth it.",
     image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
     name: "Rohan Iyer",
-    role: "Strategy Associate, TEDx Program Volunteer",
-    tedxEndorsed: true,
+    role: "Strategy Associate",
   },
   {
     text: "This changed how we approach hiring and development. Clear, structured, defensible.",
     image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face",
     name: "Lauren Feldman",
-    role: "HR Business Partner, TEDx People & Culture Contributor",
-    tedxEndorsed: true,
+    role: "HR Business Partner",
   },
   {
     text: "We uncovered blind spots that weren't visible in org charts or KPIs.",
     image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&crop=face",
     name: "Marcus Bell",
-    role: "Revenue Operations Manager, TEDx Community Advisor",
-    tedxEndorsed: true,
+    role: "Revenue Operations Manager",
   },
   {
     text: "Team communication improved almost immediately. Less friction, more ownership.",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
     name: "Sofia Alvarez",
-    role: "Customer Success Lead, TEDx Speaker Network Member",
-    tedxEndorsed: true,
+    role: "Customer Success Lead",
   },
   {
     text: "This is one of the few tools that sales leaders actually respect.",
     image: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face",
     name: "Nathan Brooks",
-    role: "VP Sales, TEDx Leadership Panelist",
-    tedxEndorsed: true,
+    role: "VP Sales",
   },
   {
     text: "RCF gave us a shared language across leadership, HR, and managers.",
     image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face",
     name: "Aisha Rahman",
-    role: "People Ops Manager, TEDx Community Speaker",
-    tedxEndorsed: true,
+    role: "People Ops Manager",
   },
   {
     text: "Clear ROI. Better decisions, fewer misaligned hires.",
     image: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=150&h=150&fit=crop&crop=face",
     name: "Jonathan Pierce",
-    role: "CFO, TEDx Executive Circle",
-    tedxEndorsed: true,
+    role: "CFO",
   },
   {
     text: "The behavioral clarity is impressive. It's structured but not rigid.",
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
     name: "Emily Chen",
-    role: "UX Researcher, TEDx Experience Design Contributor",
-    tedxEndorsed: true,
+    role: "UX Researcher",
   },
   {
     text: "RCF brought order where we had constant role confusion.",
     image: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face",
     name: "Kevin Donnelly",
-    role: "IT Manager, TEDx Operations Volunteer",
-    tedxEndorsed: true,
+    role: "IT Manager",
   },
   {
     text: "This helped me understand how to lead without overstepping.",
     image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face",
     name: "Neha Kulkarni",
-    role: "Program Manager, TEDx Program Curator",
-    tedxEndorsed: true,
+    role: "Program Manager",
   },
   {
     text: "We now put the right people in front of the right partners.",
@@ -1228,27 +1213,10 @@ const testimonialsData = [
   },
 ];
 
-// Ensure exactly 25% of testimonials show the TEDx badge.
-const tedxTargetCount = Math.floor(testimonialsData.length * 0.25);
-const tedxIndices = new Set<number>();
-
-// Use a coprime stride so TEDx entries are spread across the entire list.
-let tedxCursor = 0;
-const tedxStride = 37;
-while (tedxIndices.size < tedxTargetCount) {
-  tedxIndices.add(tedxCursor);
-  tedxCursor = (tedxCursor + tedxStride) % testimonialsData.length;
-}
-
-const testimonialsWithTedx = testimonialsData.map((testimonial, index) => ({
-  ...testimonial,
-  tedxEndorsed: tedxIndices.has(index),
-}));
-
 // Distribute testimonials across 3 columns
-const firstColumn = testimonialsWithTedx.slice(0, 67);
-const secondColumn = testimonialsWithTedx.slice(67, 134);
-const thirdColumn = testimonialsWithTedx.slice(134, 200);
+const firstColumn = testimonialsData.slice(0, 67);
+const secondColumn = testimonialsData.slice(67, 134);
+const thirdColumn = testimonialsData.slice(134, 200);
 
 export const TestimonialsColumns = () => {
   return (

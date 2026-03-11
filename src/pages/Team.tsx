@@ -265,21 +265,18 @@ const Team = () => {
         <section className="mt-20">
           <div className="max-w-6xl mx-auto rounded-2xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-8 md:p-10">
             <p className="text-sm font-semibold tracking-[0.2em] text-primary uppercase">
-              Endorsed By
+              Our Mission
             </p>
             <div className="mt-5 flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
               <div className="max-w-2xl">
-                <h2 className="text-3xl md:text-4xl font-bold">TEDx</h2>
+                <h2 className="text-3xl md:text-4xl font-bold">Leadership Impact</h2>
                 <p className="mt-3 text-muted-foreground leading-relaxed">
-                  RoleColorFinder is officially partnered with and endorsed by TEDx. We are proud to showcase this collaboration as part of our company journey.
+                  RoleColorFinder helps people and teams discover strengths, align roles, and build high-performing cultures through practical assessment tools.
                 </p>
               </div>
-              <img
-                src="/TedxThirdWardLogo-R2ggq6GL.avif"
-                alt="TEDx Third Ward logo"
-                className="h-16 w-auto md:h-20 object-contain"
-                loading="lazy"
-              />
+              <div className="rounded-xl border border-border/70 bg-card px-6 py-4 text-base md:text-lg font-semibold text-foreground">
+                RoleColor™ Team
+              </div>
             </div>
           </div>
         </section>

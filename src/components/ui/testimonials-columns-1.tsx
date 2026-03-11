@@ -7,7 +7,6 @@ export interface TestimonialItem {
   text: string;
   name: string;
   role: string;
-  tedxEndorsed?: boolean;
 }
 
 export const TestimonialsColumn = (props: {
@@ -35,7 +34,7 @@ export const TestimonialsColumn = (props: {
         {[
           ...new Array(2).fill(0).map((_, index) => (
             <React.Fragment key={index}>
-              {props.testimonials.map(({ text, name, role, tedxEndorsed }, i) => (
+              {props.testimonials.map(({ text, name, role }, i) => (
                 <div className="p-10 rounded-3xl border shadow-lg shadow-primary/10 max-w-xs w-full bg-background" key={`${index}-${i}`}>
                   <div className="flex gap-1 mb-4">
                     {Array.from({ length: 5 }).map((_, starIndex) => (
@@ -50,14 +49,6 @@ export const TestimonialsColumn = (props: {
                     <div className="font-medium tracking-tight leading-5 text-foreground">{name}</div>
                     <div className="leading-5 opacity-60 tracking-tight text-muted-foreground flex items-center gap-2 flex-wrap">
                       <span>{role}</span>
-                      {tedxEndorsed && (
-                        <img
-                          src="/TedxThirdWardLogo-R2ggq6GL.avif"
-                          alt="TEDx endorsed"
-                          className="h-4 w-auto object-contain"
-                          loading="lazy"
-                        />
-                      )}
                     </div>
                   </div>
                 </div>
