@@ -239,6 +239,7 @@ export type Database = {
       billing_transactions: {
         Row: {
           amount: number
+          billing_period_id: string | null
           company_id: string
           company_user_id: string | null
           created_at: string
@@ -249,6 +250,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          billing_period_id?: string | null
           company_id: string
           company_user_id?: string | null
           created_at?: string
@@ -259,6 +261,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          billing_period_id?: string | null
           company_id?: string
           company_user_id?: string | null
           created_at?: string
@@ -276,10 +279,88 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "billing_transactions_billing_period_id_fkey"
+            columns: ["billing_period_id"]
+            isOneToOne: false
+            referencedRelation: "company_portal_billing_periods"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "billing_transactions_company_user_id_fkey"
             columns: ["company_user_id"]
             isOneToOne: false
             referencedRelation: "company_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_portal_billing_periods: {
+        Row: {
+          attempt_count: number
+          billed_user_count: number
+          card_charged: number
+          company_id: string
+          created_at: string
+          credits_applied: number
+          failure_reason: string | null
+          id: string
+          idempotency_key: string
+          outstanding_balance: number
+          period_end: string
+          period_start: string
+          recovered_at: string | null
+          renewal_at: string
+          status: string
+          stripe_payment_intent_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          billed_user_count?: number
+          card_charged?: number
+          company_id: string
+          created_at?: string
+          credits_applied?: number
+          failure_reason?: string | null
+          id?: string
+          idempotency_key: string
+          outstanding_balance?: number
+          period_end: string
+          period_start: string
+          recovered_at?: string | null
+          renewal_at: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          billed_user_count?: number
+          card_charged?: number
+          company_id?: string
+          created_at?: string
+          credits_applied?: number
+          failure_reason?: string | null
+          id?: string
+          idempotency_key?: string
+          outstanding_balance?: number
+          period_end?: string
+          period_start?: string
+          recovered_at?: string | null
+          renewal_at?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_portal_billing_periods_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1227,6 +1308,12 @@ export type Database = {
           ms_teams_notifications_enabled: boolean | null
           ms_teams_webhook_url: string | null
           name: string
+          portal_access_lock_reason: string | null
+          portal_access_locked: boolean
+          portal_access_locked_at: string | null
+          portal_access_outstanding_balance: number
+          portal_billing_anchor_at: string | null
+          portal_billing_next_renewal_at: string | null
           primary_color: string | null
           seats_purchased: number
           secondary_color: string | null
@@ -1270,6 +1357,12 @@ export type Database = {
           ms_teams_notifications_enabled?: boolean | null
           ms_teams_webhook_url?: string | null
           name: string
+          portal_access_lock_reason?: string | null
+          portal_access_locked?: boolean
+          portal_access_locked_at?: string | null
+          portal_access_outstanding_balance?: number
+          portal_billing_anchor_at?: string | null
+          portal_billing_next_renewal_at?: string | null
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
@@ -1313,6 +1406,12 @@ export type Database = {
           ms_teams_notifications_enabled?: boolean | null
           ms_teams_webhook_url?: string | null
           name?: string
+          portal_access_lock_reason?: string | null
+          portal_access_locked?: boolean
+          portal_access_locked_at?: string | null
+          portal_access_outstanding_balance?: number
+          portal_billing_anchor_at?: string | null
+          portal_billing_next_renewal_at?: string | null
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null

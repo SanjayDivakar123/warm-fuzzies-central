@@ -69,6 +69,13 @@ interface SettingsTabProps {
   onScrollComplete?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   registerSaveHandler?: (handler: () => Promise<boolean>) => void;
+  billingOnly?: boolean;
+  billingLock?: {
+    outstandingBalance: number;
+    reason?: string | null;
+    lockedAt?: string | null;
+  } | null;
+  onResolveBillingLock?: (options?: { silent?: boolean }) => Promise<boolean>;
 }
 
 export default function SettingsTab({
@@ -78,6 +85,9 @@ export default function SettingsTab({
   onScrollComplete,
   onDirtyChange,
   registerSaveHandler,
+  billingOnly = false,
+  billingLock = null,
+  onResolveBillingLock,
 }: SettingsTabProps) {
   type SaveableSettings = {
     logoUrl: string;
@@ -410,6 +420,87 @@ export default function SettingsTab({
       registerSaveHandler(handleSave);
     }
   }, [registerSaveHandler, handleSave]);
+
+  if (billingOnly) {
+    return (
+      <div className="space-y-4">
+        <Card id="portal-billing-lock" className="border-amber-300 bg-amber-50/70 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-medium text-amber-900">
+              <AlertTriangle className="h-5 w-5" />
+              Portal Access Paused
+            </CardTitle>
+            <CardDescription className="text-amber-800">
+              Your renewal payment did not go through. The rest of the portal is temporarily unavailable until this balance is covered.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-amber-900">
+            <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-white/70 px-4 py-3">
+              <span>Outstanding renewal balance</span>
+              <span className="font-semibold">${Number(billingLock?.outstandingBalance || 0).toFixed(2)}</span>
+            </div>
+            {billingLock?.lockedAt && (
+              <p className="text-xs text-amber-700">
+                Access paused on {new Date(billingLock.lockedAt).toLocaleString()}.
+              </p>
+            )}
+            <p className="text-xs text-amber-700">
+              Update the card on file or add enough billing credits below. Access will be restored automatically after the renewal balance is successfully settled.
+            </p>
+          </CardContent>
+        </Card>
+
+        <PaymentMethodCard
+          company={company}
+          billingLock={{
+            outstandingBalance: Number(billingLock?.outstandingBalance || 0),
+            lockedAt: billingLock?.lockedAt || null,
+          }}
+          onBillingResolved={onResolveBillingLock}
+        />
+
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-medium">
+              <Wallet className="h-5 w-5" />
+              Wallet
+            </CardTitle>
+            <CardDescription>Add billing credits to cover the outstanding renewal balance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
+                {loadingBalance ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Credits are automatically applied before charging your card. If your balance covers the outstanding renewal, access can be restored without another card charge.
+              </p>
+              <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Credits
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <AddCreditsModal
+          open={addCreditsOpen}
+          onClose={() => setAddCreditsOpen(false)}
+          companyId={company.id}
+          currentBalance={creditBalance}
+          onCreditsAdded={() => {
+            if (onSettingsSaved) onSettingsSaved();
+            if (onResolveBillingLock) void onResolveBillingLock({ silent: true });
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

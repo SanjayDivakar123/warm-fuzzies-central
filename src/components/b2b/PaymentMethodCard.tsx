@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CreditCard, Loader2, Plus, RefreshCw } from 'lucide-react';
 
 interface PaymentMethodCardProps {
   company: {
@@ -12,6 +12,11 @@ interface PaymentMethodCardProps {
     name: string;
     credit_balance?: number;
   };
+  billingLock?: {
+    outstandingBalance: number;
+    lockedAt?: string | null;
+  };
+  onBillingResolved?: (options?: { silent?: boolean }) => Promise<boolean>;
 }
 
 interface PaymentMethodInfo {
@@ -22,9 +27,10 @@ interface PaymentMethodInfo {
   expYear: number;
 }
 
-export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
+export default function PaymentMethodCard({ company, billingLock, onBillingResolved }: PaymentMethodCardProps) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodInfo | null>(null);
   const { toast } = useToast();
 
@@ -67,22 +73,47 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
 
   // Check for payment setup success in URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const paymentSetup = params.get('payment_setup');
-    if (paymentSetup === 'success' || paymentSetup === 'cancelled') {
+    const handlePaymentSetupReturn = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const paymentSetup = params.get('payment_setup');
+      if (paymentSetup !== 'success' && paymentSetup !== 'cancelled') {
+        return;
+      }
+
       if (paymentSetup === 'success') {
         toast({
           title: 'Payment method saved',
           description: 'Your payment method has been successfully added.',
         });
-        fetchPaymentMethod();
+        await fetchPaymentMethod();
+        if (billingLock && onBillingResolved) {
+          setResolving(true);
+          try {
+            await onBillingResolved({ silent: false });
+          } finally {
+            setResolving(false);
+          }
+        }
       }
+
       // Remove only payment_setup from URL, preserve other params (tab, company, etc.)
       params.delete('payment_setup');
       const remaining = params.toString();
       window.history.replaceState({}, '', remaining ? `${window.location.pathname}?${remaining}` : window.location.pathname);
+    };
+
+    void handlePaymentSetupReturn();
+  }, [billingLock, onBillingResolved, toast]);
+
+  const handleResolveBillingLock = async () => {
+    if (!onBillingResolved) return;
+    setResolving(true);
+    try {
+      await onBillingResolved({ silent: false });
+    } finally {
+      setResolving(false);
     }
-  }, []);
+  };
 
   const handleUpdatePaymentMethod = async () => {
     setUpdating(true);
@@ -153,10 +184,28 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
           Payment Method
         </CardTitle>
         <CardDescription>
-          Your payment method is used for auto-charging when inviting new employees ($20/seat)
+          {billingLock
+            ? 'Your payment method will be used to recover the outstanding renewal balance and restore portal access.'
+            : 'Your payment method is used for auto-charging when inviting new employees ($20/seat)'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {billingLock && billingLock.outstandingBalance > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+              <div className="space-y-1">
+                <p className="font-medium">Portal access is paused until the renewal balance is settled.</p>
+                <p className="text-sm">
+                  Outstanding renewal balance: <span className="font-semibold">${billingLock.outstandingBalance.toFixed(2)}</span>
+                </p>
+                <p className="text-xs text-amber-700">
+                  Update the card on file or add enough billing credits below, then retry the renewal charge to restore access.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center p-6">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -193,6 +242,16 @@ export default function PaymentMethodCard({ company }: PaymentMethodCardProps) {
               )}
               Update Payment Method
             </Button>
+            {billingLock && billingLock.outstandingBalance > 0 && onBillingResolved && (
+              <Button
+                className="w-full gap-2"
+                onClick={handleResolveBillingLock}
+                disabled={resolving}
+              >
+                {resolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Retry Renewal Payment
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

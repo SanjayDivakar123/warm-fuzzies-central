@@ -32,6 +32,20 @@ type StatementRow = {
   user_name?: string;
 };
 
+type BillingPeriodRow = {
+  id: string;
+  period_start: string;
+  period_end: string;
+  renewal_at: string;
+  status: string;
+  total_amount: number;
+  credits_applied: number;
+  card_charged: number;
+  outstanding_balance: number;
+  failure_reason: string | null;
+  created_at: string;
+};
+
 interface AdminCompanyStatementModalProps {
   companyId: string;
   companyName: string;
@@ -42,6 +56,12 @@ interface AdminCompanyStatementModalProps {
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+const getAnchoredRenewalFromStart = (startDate: Date) => {
+  const renewal = new Date(startDate);
+  renewal.setMonth(renewal.getMonth() + 1);
+  return renewal;
+};
 
 const getStatementCategory = (type: string, description?: string | null): StatementRow['category'] => {
   const normalizedType = (type || '').toLowerCase();
@@ -78,35 +98,17 @@ const getCategoryColor = (category: StatementRow['category']) => {
   return 'text-foreground';
 };
 
-const addOneMonthAnchored = (current: Date, anchorDay: number) => {
-  const year = current.getFullYear();
-  const month = current.getMonth();
-  const targetMonthDate = new Date(year, month + 1, 1);
-  const lastDayOfTargetMonth = new Date(
-    targetMonthDate.getFullYear(),
-    targetMonthDate.getMonth() + 1,
-    0
-  ).getDate();
-  const day = Math.min(anchorDay, lastDayOfTargetMonth);
-  return new Date(
-    targetMonthDate.getFullYear(),
-    targetMonthDate.getMonth(),
-    day,
-    current.getHours(),
-    current.getMinutes(),
-    current.getSeconds(),
-    current.getMilliseconds()
+const isMissingBillingSchemaError = (error: { message?: string; code?: string } | null | undefined) => {
+  if (!error) return false;
+  const message = (error.message || '').toLowerCase();
+  return (
+    message.includes('portal_billing_anchor_at') ||
+    message.includes('portal_billing_next_renewal_at') ||
+    message.includes('company_portal_billing_periods') ||
+    message.includes('billing_period_id') ||
+    message.includes('could not find the table') ||
+    message.includes('does not exist')
   );
-};
-
-const getNextRenewalFromStart = (startDate: Date) => {
-  const now = new Date();
-  const anchorDay = startDate.getDate();
-  let cursor = new Date(startDate);
-  while (cursor <= now) {
-    cursor = addOneMonthAnchored(cursor, anchorDay);
-  }
-  return cursor;
 };
 
 export default function AdminCompanyStatementModal({
@@ -117,6 +119,7 @@ export default function AdminCompanyStatementModal({
   onClose,
 }: AdminCompanyStatementModalProps) {
   const INTERNAL_COMPANY_ID = '0f03753c-ea99-4236-9f8c-16324b92f257';
+  const MIN_PORTAL_SEATS = 2;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [statementRows, setStatementRows] = useState<StatementRow[]>([]);
@@ -132,9 +135,14 @@ export default function AdminCompanyStatementModal({
   const [renewalDate, setRenewalDate] = useState<Date | null>(null);
   const [activeView, setActiveView] = useState<'statement' | 'renewal'>(initialView);
   const [renewalPreview, setRenewalPreview] = useState({
+    activeUsers: 0,
+    storedSeats: MIN_PORTAL_SEATS,
+    billableUsers: MIN_PORTAL_SEATS,
     portalCost: 0,
     hiringCost: 0,
     total: 0,
+    creditsApplied: 0,
+    cardCharge: 0,
     willRenewHiring: false,
   });
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -146,17 +154,12 @@ export default function AdminCompanyStatementModal({
   const loadStatement = async () => {
     setLoading(true);
     try {
-      const [companyRes, txRes, creditRes, userChargesRes] = await Promise.all([
+      const [companyRes, creditRes, userChargesRes, activeUsersRes] = await Promise.all([
         supabase
           .from('companies')
-          .select('created_at, seats_purchased, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_current_period_end')
+          .select('created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, hiring_subscription_current_period_end')
           .eq('id', companyId)
           .single(),
-        supabase
-          .from('billing_transactions')
-          .select('id, created_at, type, amount, description, stripe_payment_intent_id')
-          .eq('company_id', companyId)
-          .order('created_at', { ascending: true }),
         supabase
           .from('billing_credits')
           .select('id, created_at, amount, description, type')
@@ -169,39 +172,116 @@ export default function AdminCompanyStatementModal({
           .not('charged_at', 'is', null)
           .gt('charge_amount', 0)
           .order('charged_at', { ascending: true }),
+        supabase
+          .from('company_users')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', companyId)
+          .neq('status', 'revoked'),
       ]);
 
       if (companyRes.error) throw companyRes.error;
-      if (txRes.error) throw txRes.error;
       if (creditRes.error) throw creditRes.error;
       if (userChargesRes.error) throw userChargesRes.error;
+      if (activeUsersRes.error) throw activeUsersRes.error;
+
+      const [periodRes, companyBillingMetaRes, txWithPeriodRes] = await Promise.all([
+        supabase
+          .from('company_portal_billing_periods')
+          .select('id, period_start, period_end, renewal_at, status, total_amount, credits_applied, card_charged, outstanding_balance, failure_reason, created_at')
+          .eq('company_id', companyId)
+          .order('renewal_at', { ascending: true }),
+        supabase
+          .from('companies')
+          .select('portal_billing_anchor_at, portal_billing_next_renewal_at')
+          .eq('id', companyId)
+          .single(),
+        supabase
+          .from('billing_transactions')
+          .select('id, billing_period_id, created_at, type, amount, description, stripe_payment_intent_id')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: true }),
+      ]);
+
+      let billingPeriods: BillingPeriodRow[] = [];
+      if (!periodRes.error) {
+        billingPeriods = (periodRes.data || []) as BillingPeriodRow[];
+      } else if (!isMissingBillingSchemaError(periodRes.error)) {
+        throw periodRes.error;
+      }
+
+      let companyBillingMeta: { portal_billing_anchor_at?: string | null; portal_billing_next_renewal_at?: string | null } | null = null;
+      if (!companyBillingMetaRes.error) {
+        companyBillingMeta = companyBillingMetaRes.data;
+      } else if (!isMissingBillingSchemaError(companyBillingMetaRes.error)) {
+        throw companyBillingMetaRes.error;
+      }
+
+      let transactions: Array<{
+        id: string;
+        billing_period_id?: string | null;
+        created_at: string;
+        type: string;
+        amount: number;
+        description: string | null;
+        stripe_payment_intent_id?: string | null;
+      }> = [];
+
+      if (!txWithPeriodRes.error) {
+        transactions = txWithPeriodRes.data || [];
+      } else if (isMissingBillingSchemaError(txWithPeriodRes.error)) {
+        const { data: legacyTransactions, error: legacyTxError } = await supabase
+          .from('billing_transactions')
+          .select('id, created_at, type, amount, description, stripe_payment_intent_id')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: true });
+
+        if (legacyTxError) throw legacyTxError;
+        transactions = (legacyTransactions || []).map((row) => ({
+          ...row,
+          billing_period_id: null,
+        }));
+      } else {
+        throw txWithPeriodRes.error;
+      }
 
       const company = companyRes.data;
-      const transactions = txRes.data || [];
       const credits = creditRes.data || [];
       const chargedUsers = userChargesRes.data || [];
 
-      const derivedStartDate = company?.created_at
-        ? new Date(company.created_at)
-        : company?.hiring_subscription_current_period_end
-          ? new Date(new Date(company.hiring_subscription_current_period_end).setMonth(new Date(company.hiring_subscription_current_period_end).getMonth() - 1))
+      const firstBillingPeriod = billingPeriods.length > 0 ? billingPeriods[0] : null;
+      const derivedStartDate = companyBillingMeta?.portal_billing_anchor_at
+        ? new Date(companyBillingMeta.portal_billing_anchor_at)
+        : firstBillingPeriod?.period_start
+          ? new Date(firstBillingPeriod.period_start)
+        : company?.created_at
+          ? new Date(company.created_at)
           : null;
 
       setStatementStartDate(derivedStartDate);
 
       const hasActiveSubscription =
         company?.hiring_subscription_enabled &&
-        (company?.hiring_subscription_status === 'active' || company?.hiring_subscription_status === 'trialing');
+        (company?.hiring_subscription_status === 'active' || company?.hiring_subscription_status === 'trialing' || company?.hiring_subscription_status === 'admin_override');
       const hasCancelledAtPeriodEnd = !!company?.hiring_subscription_cancel_at_period_end;
       const periodEnd = company?.hiring_subscription_current_period_end
         ? new Date(company.hiring_subscription_current_period_end)
         : null;
-      const subStart = derivedStartDate;
-      setRenewalDate(
-        hasActiveSubscription && subStart
-          ? getNextRenewalFromStart(subStart)
-          : periodEnd
-      );
+      const rawRenewalDate = companyBillingMeta?.portal_billing_next_renewal_at
+        ? new Date(companyBillingMeta.portal_billing_next_renewal_at)
+        : billingPeriods.length > 0
+          ? new Date(billingPeriods[billingPeriods.length - 1].renewal_at)
+          : null;
+
+      const anchoredRenewalDate = derivedStartDate ? getAnchoredRenewalFromStart(derivedStartDate) : null;
+
+      const effectiveRenewalDate = anchoredRenewalDate
+        ? rawRenewalDate && !Number.isNaN(rawRenewalDate.getTime()) &&
+          rawRenewalDate.getDate() === anchoredRenewalDate.getDate()
+          ? rawRenewalDate
+          : anchoredRenewalDate
+        : rawRenewalDate;
+
+      setRenewalDate(effectiveRenewalDate);
 
       const allTxRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
@@ -240,6 +320,26 @@ export default function AdminCompanyStatementModal({
         ? [subRows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]]
         : [];
       const txRows = [...nonSubRows, ...dedupedSubRows];
+      const transactionPeriodIds = new Set(
+        transactions
+          .map((row) => row.billing_period_id)
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      );
+
+      const periodFallbackRows: StatementRow[] = billingPeriods
+        .filter((period) => !derivedStartDate || new Date(period.renewal_at) >= derivedStartDate)
+        .filter((period) => !transactionPeriodIds.has(period.id))
+        .filter((period) => period.total_amount > 0 || period.outstanding_balance > 0)
+        .map((period) => ({
+          id: `period-${period.id}`,
+          created_at: period.renewal_at,
+          category: period.status === 'failed' ? 'charge' : 'portal_cost',
+          description: period.status === 'failed'
+            ? period.failure_reason || 'Portal renewal failed'
+            : `Portal renewal for billing period ending ${new Date(period.period_end).toLocaleDateString()}`,
+          amount: period.status === 'failed' ? period.outstanding_balance || period.total_amount : period.total_amount,
+          source: 'transaction' as const,
+        }));
 
       const inviteChargeFallbackRows: StatementRow[] = chargedUsers
         .filter((row) => !!row.charged_at && (!derivedStartDate || new Date(row.charged_at as string) >= derivedStartDate))
@@ -288,35 +388,32 @@ export default function AdminCompanyStatementModal({
               source: 'credit' as const,
             }));
 
-      const hasMonthlyBillingRow = txRows.some((row) => row.description.toLowerCase().includes('monthly billing'));
-      const baseSeatsPurchased = Math.max(2, company.seats_purchased || 2);
-      const basePortalMonthlyCost = isInternalAdminCompany ? 0 : baseSeatsPurchased * 20;
-      const hiringRenewalCost = isInternalAdminCompany ? 0 : (hasActiveSubscription && !hasCancelledAtPeriodEnd ? 500 : 0);
+      const activeUsers = Math.max(0, activeUsersRes.count || 0);
+      const storedSeats = Math.max(MIN_PORTAL_SEATS, company.seats_purchased || 0);
+      const billableUsers = Math.max(activeUsers, storedSeats);
+      const basePortalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * 20;
+      const hiringRenewalCost = isInternalAdminCompany ? 0 : (hasActiveSubscription && !hasCancelledAtPeriodEnd && company?.hiring_subscription_status !== 'admin_override' ? 500 : 0);
+      const recurringTotal = basePortalMonthlyCost + hiringRenewalCost;
+      const availableCredits = isInternalAdminCompany ? 0 : Number(company.credit_balance || 0);
+      const creditsApplied = Math.min(Math.max(availableCredits, 0), recurringTotal);
+      const cardCharge = Math.max(0, recurringTotal - creditsApplied);
       setRenewalPreview({
+        activeUsers,
+        storedSeats,
+        billableUsers,
         portalCost: basePortalMonthlyCost,
         hiringCost: hiringRenewalCost,
-        total: basePortalMonthlyCost + hiringRenewalCost,
+        total: recurringTotal,
+        creditsApplied,
+        cardCharge,
         willRenewHiring: hiringRenewalCost > 0,
       });
-      const periodAnchorDate = (derivedStartDate || new Date()).toISOString();
-      const basePortalCostRow: StatementRow | null = hasMonthlyBillingRow
-        ? null
-        : {
-            id: `portal-base-${companyId}-${periodAnchorDate}`,
-            created_at: periodAnchorDate,
-            category: 'portal_cost',
-            description: isInternalAdminCompany
-              ? 'Base Portal Cost (Internal Admin Company - No Charge)'
-              : `Base Portal Cost (${baseSeatsPurchased} seat${baseSeatsPurchased !== 1 ? 's' : ''} × $20/month)`,
-            amount: basePortalMonthlyCost,
-            source: 'transaction',
-          };
 
       const rowsToInclude = [
         ...txRows,
+        ...periodFallbackRows,
         ...inviteChargeFallbackRows,
         ...creditRows,
-        ...(basePortalCostRow ? [basePortalCostRow] : []),
       ];
       const allRows = (isInternalAdminCompany
         ? rowsToInclude.filter((row) => row.category !== 'credit')
@@ -399,7 +496,7 @@ export default function AdminCompanyStatementModal({
           <DialogHeader>
             <DialogTitle>Monthly Statement — {companyName}</DialogTitle>
             <DialogDescription>
-              Statement period starts from company creation date. Portal cost is free only for the internal admin company (RoleColorFinder). Click any row to expand details. Trash icon removes the entry permanently.
+              Statement dates follow your billing-cycle anchor (same renewal day each month). Portal cost is free only for the internal admin company (RoleColorFinder). Click any row to expand details. Trash icon removes the entry permanently.
             </DialogDescription>
           </DialogHeader>
 
@@ -425,7 +522,7 @@ export default function AdminCompanyStatementModal({
           <div className="flex-1 overflow-auto space-y-4 pr-1">
             {activeView === 'renewal' ? (
               <>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-4">
                   <div className="rounded-lg border p-3">
                     <p className="text-xs text-muted-foreground">Next Renewal Date</p>
                     <p className="text-sm font-medium">
@@ -437,11 +534,24 @@ export default function AdminCompanyStatementModal({
                     <p className="text-sm font-medium">{formatCurrency(renewalPreview.total)}</p>
                   </div>
                   <div className="rounded-lg border p-3">
-                    <p className="text-xs text-muted-foreground">Hiring Renewal Status</p>
+                    <p className="text-xs text-muted-foreground">Expected Credits</p>
                     <p className="text-sm font-medium">
-                      {renewalPreview.willRenewHiring ? 'Will renew' : 'Not scheduled to renew'}
+                      {renewalPreview.creditsApplied > 0 ? `-${formatCurrency(renewalPreview.creditsApplied)}` : formatCurrency(0)}
                     </p>
                   </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Estimated Card Charge</p>
+                    <p className="text-sm font-medium">
+                      {formatCurrency(renewalPreview.cardCharge)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Hiring Renewal Status</p>
+                  <p className="text-sm font-medium">
+                    {renewalPreview.willRenewHiring ? 'Will renew' : 'Not scheduled to renew'}
+                  </p>
                 </div>
 
                 <div className="rounded-lg border">
@@ -461,9 +571,15 @@ export default function AdminCompanyStatementModal({
                       </div>
                       <div className="col-span-4 text-right font-semibold">{formatCurrency(renewalPreview.hiringCost)}</div>
                     </div>
+                    {renewalPreview.creditsApplied > 0 && (
+                      <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center">
+                        <div className="col-span-8 text-green-600">Expected Credits Applied at Renewal</div>
+                        <div className="col-span-4 text-right font-semibold text-green-600">-{formatCurrency(renewalPreview.creditsApplied)}</div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center bg-muted/20">
-                      <div className="col-span-8 font-medium">Projected Renewal Total</div>
-                      <div className="col-span-4 text-right font-bold">{formatCurrency(renewalPreview.total)}</div>
+                      <div className="col-span-8 font-medium">Projected Card Charge</div>
+                      <div className="col-span-4 text-right font-bold">{formatCurrency(renewalPreview.cardCharge)}</div>
                     </div>
                   </div>
                 </div>

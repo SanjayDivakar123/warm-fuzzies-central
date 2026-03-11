@@ -61,6 +61,7 @@ interface JobPostingsTabProps {
   company: { id: string; name: string };
   companyUser: { id: string; role: string } | null;
   showCreateModal: boolean;
+  onOpenCreateModal: () => void;
   onCloseCreateModal: () => void;
   onViewPipeline: (jobId: string) => void;
   onViewCandidates: (jobId: string) => void;
@@ -111,6 +112,7 @@ export default function JobPostingsTab({
   company, 
   companyUser,
   showCreateModal,
+  onOpenCreateModal,
   onCloseCreateModal,
   onViewPipeline,
   onViewCandidates,
@@ -451,7 +453,7 @@ export default function JobPostingsTab({
   return (
     <div className="space-y-6" data-tour="hiring-jobs-overview">
       {/* Stats & Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4" data-tour="hiring-jobs-filters">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" data-tour="hiring-jobs-filters">
         <div className="flex flex-wrap gap-2">
           <Button
             variant={statusFilter === 'all' ? 'default' : 'outline'}
@@ -475,6 +477,12 @@ export default function JobPostingsTab({
             );
           })}
         </div>
+        {isHROrAdmin && (
+          <Button className="h-9 sm:ml-auto" onClick={onOpenCreateModal}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Job
+          </Button>
+        )}
       </div>
 
       {/* Jobs Grid */}
@@ -487,7 +495,7 @@ export default function JobPostingsTab({
               Create your first job posting to start receiving applications.
             </p>
             {isHROrAdmin && (
-              <Button onClick={() => onCloseCreateModal()}>
+              <Button onClick={onOpenCreateModal}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Job Posting
               </Button>

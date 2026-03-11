@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { getNextRenewalAt } from "../_shared/companyPortalBilling.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,17 +9,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Returns exactly one month from the current moment (subscription sign-up date → renewal date)
-const oneMonthFromNow = () => {
-  const d = new Date();
-  d.setUTCMonth(d.getUTCMonth() + 1);
-  return d;
-};
-
 const isStripeIdempotencyConflict = (stripeErr: any) => {
   const message = typeof stripeErr?.message === "string" ? stripeErr.message.toLowerCase() : "";
   return stripeErr?.code === "idempotency_key_in_use" || message.includes("keys for idempotent requests");
 };
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+const toUtcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 
 serve(async (req) => {
   console.log("=== SUBSCRIBE TO HIRING TAB FUNCTION STARTED ===");
@@ -62,7 +59,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_id")
+      .select("id, name, admin_email, stripe_customer_id, credit_balance, created_at, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_id, hiring_subscription_current_period_end, portal_billing_anchor_at, portal_billing_next_renewal_at")
       .eq("id", companyId)
       .single();
 
@@ -89,11 +86,13 @@ serve(async (req) => {
     let lockPaymentIntentId: string | null = null;
     let lockError: string | null = null;
 
-    const { data: lockData, error: lockErrorResponse } = await supabase.rpc("acquire_hiring_subscription_lock", {
+    const acquireLock = async () => supabase.rpc("acquire_hiring_subscription_lock", {
       p_company_id: companyId,
       p_request_id: requestId,
       p_ttl_seconds: 120,
     });
+
+    let { data: lockData, error: lockErrorResponse } = await acquireLock();
 
     if (lockErrorResponse) {
       console.error("Failed to acquire subscription lock:", lockErrorResponse);
@@ -103,7 +102,26 @@ serve(async (req) => {
       }), { headers: responseHeaders, status: 500 });
     }
 
-    const currentLock = Array.isArray(lockData) ? lockData[0] : lockData;
+    let currentLock = Array.isArray(lockData) ? lockData[0] : lockData;
+    if (!currentLock?.acquired && currentLock?.current_status && currentLock.current_status !== "processing") {
+      // Recover from stale lock rows that are marked completed/failed but not yet expired.
+      // This prevents false "already processing" errors after revoke/reactivate flows.
+      await supabase
+        .from("hiring_subscription_request_locks")
+        .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
+        .eq("company_id", companyId);
+
+      ({ data: lockData, error: lockErrorResponse } = await acquireLock());
+      if (lockErrorResponse) {
+        console.error("Failed to reacquire subscription lock after stale-lock recovery:", lockErrorResponse);
+        return new Response(JSON.stringify({
+          error: "Unable to process subscription right now. Please try again.",
+          step: "acquire_lock_failed",
+        }), { headers: responseHeaders, status: 500 });
+      }
+      currentLock = Array.isArray(lockData) ? lockData[0] : lockData;
+    }
+
     if (!currentLock?.acquired) {
       return new Response(JSON.stringify({
         error: "A subscription request is already being processed. Please wait a few seconds and try again.",
@@ -117,9 +135,80 @@ serve(async (req) => {
     try {
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
-    const hiringCost = 500.0; // $500.00 in dollars
-    // Renewal is always exactly one month from the moment the subscription is created
-    const nextRenewalDate = oneMonthFromNow();
+    // Proration: whenever the portal renewal date is known, charge only the remaining
+    // fraction of the month (daysUntilRenewal ÷ 30 × $500).
+    // 7-day commitment block: if fewer than 7 days remain, cancellation is locked until
+    // the first full renewal so the user commits to at least one full monthly cycle.
+    const now = new Date();
+    const anchorAt = new Date(company.portal_billing_anchor_at || company.created_at);
+    const rawPortalRenewalAt = company.portal_billing_next_renewal_at
+      ? new Date(company.portal_billing_next_renewal_at)
+      : null;
+    const rawCurrentPeriodEnd = company.hiring_subscription_current_period_end
+      ? new Date(company.hiring_subscription_current_period_end)
+      : null;
+    const hasValidPortalRenewalAt = !!rawPortalRenewalAt && !Number.isNaN(rawPortalRenewalAt.getTime());
+    const hasValidCurrentPeriodEnd = !!rawCurrentPeriodEnd && !Number.isNaN(rawCurrentPeriodEnd.getTime());
+    const seededRenewalAt = hasValidPortalRenewalAt
+      ? rawPortalRenewalAt
+      : (hasValidCurrentPeriodEnd ? rawCurrentPeriodEnd : null);
+    const portalRenewalAt = seededRenewalAt && seededRenewalAt.getTime() > now.getTime()
+      ? seededRenewalAt
+      : getNextRenewalAt(anchorAt, now);
+
+    const needsBillingDateRepair =
+      !company.portal_billing_anchor_at ||
+      !hasValidPortalRenewalAt ||
+      (rawPortalRenewalAt !== null && rawPortalRenewalAt.getTime() <= now.getTime());
+
+    if (needsBillingDateRepair) {
+      const { error: repairError } = await supabase
+        .from("companies")
+        .update({
+          portal_billing_anchor_at: anchorAt.toISOString(),
+          portal_billing_next_renewal_at: portalRenewalAt.toISOString(),
+        })
+        .eq("id", companyId);
+
+      if (repairError) {
+        console.error("Failed to normalize portal billing dates:", repairError);
+      }
+    }
+
+    const daysUntilPortalRenewal = Math.max(Math.floor((toUtcDay(portalRenewalAt) - toUtcDay(now)) / DAY_MS), 0);
+    // Prorate whenever the portal renewal date is known and in the future
+    const isProrated = daysUntilPortalRenewal > 0 && daysUntilPortalRenewal < 30;
+    // Short-window: < 7 days remaining → enforce commitment block
+    const isShortWindow = isProrated && daysUntilPortalRenewal < 7;
+    const billableProrationDays = Math.min(daysUntilPortalRenewal, 30);
+
+    // Prorated cost: whole days remaining ÷ 30 × $500, minimum $100
+    const hiringCost = isProrated
+      ? Math.max(100, Math.round((billableProrationDays / 30) * 500 * 100) / 100)
+      : 500.0;
+
+    // Stripe billing anchor aligns the subscription to the shared portal renewal date
+    const billingCycleAnchorUnix =
+      isProrated
+        ? Math.floor(portalRenewalAt.getTime() / 1000)
+        : undefined;
+
+    // Period end stored on the company record
+    const nextRenewalDate = portalRenewalAt;
+
+    // Lock cancellation only for sub-7-day signups
+    const hiringCommitmentBlockUntil =
+      isShortWindow ? portalRenewalAt.toISOString() : null;
+
+    console.log("Proration check:", {
+      companyId,
+      portalRenewalAt: portalRenewalAt?.toISOString() ?? null,
+      daysUntilPortalRenewal,
+      isProrated,
+      isShortWindow,
+      hiringCost,
+    });
+
     const normalizedName = (company.name ?? "").trim().toLowerCase().replace(/\s+/g, "");
     const isInternalAdminCompany = normalizedName === "rolecolorfinderllc";
 
@@ -219,7 +308,7 @@ serve(async (req) => {
     //   1. A previous call charged the card but the DB update failed.
     //   2. Two concurrent calls both pass the DB guard before either writes back.
     //   3. Multiple browser tabs / network retries.
-    if (cardCharge > 0) {
+    {
       const [activeSubs, trialingSubs, incompleteSubs] = await Promise.all([
         stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 }),
         stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 10 }),
@@ -270,6 +359,225 @@ serve(async (req) => {
       }
     }
 
+    // --- Exact-charge prorated flow ---
+    // For prorated activations, charge exactly the UI-shown card amount first,
+    // then create a monthly subscription that starts full-price at the anchor date.
+    if (isProrated) {
+      // Find attached payment method (email-based fallback handles customer ID mismatches)
+      let paymentMethods = await stripe.paymentMethods.list({ customer: customerId, type: "card" });
+
+      if (paymentMethods.data.length === 0) {
+        console.log("No card on stored customer, scanning all email-matched customers...");
+        const emailCustomers = await stripe.customers.list({ email: company.admin_email, limit: 10 });
+        for (const c of emailCustomers.data) {
+          if (c.id === customerId) continue;
+          const pms = await stripe.paymentMethods.list({ customer: c.id, type: "card" });
+          if (pms.data.length > 0) {
+            console.log("Found card on alternate customer", c.id, "— updating stored customer ID");
+            paymentMethods = pms;
+            customerId = c.id;
+            await supabase.from("companies").update({ stripe_customer_id: customerId }).eq("id", companyId);
+            break;
+          }
+        }
+      }
+
+      let defaultPM: string | null = paymentMethods.data.length > 0 ? paymentMethods.data[0].id : null;
+      if (!defaultPM) {
+        try {
+          const customerObj = await stripe.customers.retrieve(customerId) as any;
+          const inv = customerObj?.invoice_settings?.default_payment_method;
+          const src = customerObj?.default_source;
+          defaultPM = (typeof inv === "string" ? inv : inv?.id) ?? (typeof src === "string" ? src : src?.id) ?? null;
+        } catch (_) {}
+      }
+
+      if (!defaultPM) {
+        lockError = "No payment method on file";
+        lockTtlSeconds = 0;
+        return new Response(JSON.stringify({
+          error: "No payment method on file. Please add a payment method first.",
+          step: "no_default_payment_method",
+        }), { headers: responseHeaders, status: 400 });
+      }
+
+      if (!billingCycleAnchorUnix) {
+        lockError = "Missing billing cycle anchor for prorated subscription";
+        return new Response(JSON.stringify({
+          error: "Unable to determine billing cycle anchor for prorated subscription.",
+          step: "missing_billing_anchor",
+        }), { headers: responseHeaders, status: 400 });
+      }
+
+      const paymentOperationKeyBase = `hiring-prorated-${companyId}-${customerId}-${defaultPM}-${billingFingerprint}-${requestId}`;
+      const cardChargeCents = Math.round(cardCharge * 100);
+      let upfrontPaymentIntent: Stripe.PaymentIntent | null = null;
+
+      if (cardChargeCents > 0) {
+        try {
+          upfrontPaymentIntent = await stripe.paymentIntents.create({
+            amount: cardChargeCents,
+            currency: "usd",
+            customer: customerId,
+            payment_method: defaultPM,
+            confirm: true,
+            off_session: true,
+            description: `Hiring Tab prorated activation through ${nextRenewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+            metadata: {
+              company_id: companyId,
+              type: "hiring_prorated_activation",
+            },
+          }, { idempotencyKey: `pi-${paymentOperationKeyBase}` });
+        } catch (stripeErr: any) {
+          if (isStripeIdempotencyConflict(stripeErr)) {
+            lockError = "Subscription already processing";
+            lockTtlSeconds = 0;
+            return new Response(JSON.stringify({
+              error: "A subscription request is already being processed. Please wait a few seconds and try again.",
+              step: "already_processing",
+            }), { headers: responseHeaders, status: 409 });
+          }
+
+          const pi = stripeErr?.payment_intent;
+          if (pi?.status === "requires_action") {
+            const actionUrl = pi?.next_action?.redirect_to_url?.url ?? pi?.next_action?.use_stripe_sdk?.stripe_js;
+            lockError = "Requires authentication";
+            lockTtlSeconds = 0;
+            return new Response(JSON.stringify({
+              success: false,
+              requiresAction: true,
+              actionUrl,
+              clientSecret: pi?.client_secret,
+              step: "requires_authentication",
+            }), { headers: responseHeaders, status: 200 });
+          }
+
+          if (stripeErr?.type === "StripeCardError" || stripeErr?.code === "card_declined" || stripeErr?.decline_code) {
+            lockError = "Card declined";
+            lockTtlSeconds = 0;
+            return new Response(JSON.stringify({
+              error: "Your card was declined. Please check your card details or update your payment method and try again.",
+              step: "card_declined",
+            }), { headers: responseHeaders, status: 400 });
+          }
+
+          console.error("Stripe payment intent create error:", stripeErr);
+          lockError = stripeErr?.message || "Payment failed";
+          lockTtlSeconds = 0;
+          return new Response(JSON.stringify({
+            error: stripeErr?.message || "Payment could not be processed. Please update your payment method and try again.",
+            step: "payment_failed",
+          }), { headers: responseHeaders, status: 400 });
+        }
+      }
+
+      // Deduct credits only after successful upfront payment (or immediately if no card charge is needed).
+      if (creditContribution > 0) {
+        const newBalance = Number((creditBalance - creditContribution).toFixed(2));
+        await supabase.from("companies").update({ credit_balance: newBalance }).eq("id", companyId);
+        await supabase.from("billing_transactions").insert({
+          company_id: companyId,
+          type: "credit_used",
+          amount: creditContribution,
+          description: `Billing credits applied to prorated Hiring Tab activation ($${creditContribution.toFixed(2)})`,
+        });
+      }
+
+      // Create $500/month recurring price for post-proration full renewals.
+      const price = await stripe.prices.create({
+        currency: "usd",
+        unit_amount: 50000,
+        recurring: { interval: "month" },
+        product_data: { name: "RoleColorFinder Hiring Tab" },
+      }, { idempotencyKey: `price-${paymentOperationKeyBase}` });
+
+      let subscription: Stripe.Subscription;
+      try {
+        subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{ price: price.id }],
+          default_payment_method: defaultPM,
+          trial_end: billingCycleAnchorUnix,
+          proration_behavior: "none",
+          metadata: { company_id: companyId, type: "hiring_subscription" },
+        }, { idempotencyKey: `sub-${paymentOperationKeyBase}` });
+      } catch (stripeErr: any) {
+        if (isStripeIdempotencyConflict(stripeErr)) {
+          lockError = "Subscription already processing";
+          lockTtlSeconds = 0;
+          return new Response(JSON.stringify({
+            error: "A subscription request is already being processed. Please wait a few seconds and try again.",
+            step: "already_processing",
+          }), { headers: responseHeaders, status: 409 });
+        }
+        console.error("Stripe subscription create error (prorated flow):", stripeErr);
+        lockError = stripeErr?.message || "Subscription setup failed";
+        lockTtlSeconds = 0;
+        return new Response(JSON.stringify({
+          error: stripeErr?.message || "Unable to start recurring subscription.",
+          step: "subscription_create_failed",
+        }), { headers: responseHeaders, status: 400 });
+      }
+
+      const { error: subUpdateError } = await supabase
+        .from("companies")
+        .update({
+          hiring_subscription_enabled: subscription.status === "active" || subscription.status === "trialing",
+          hiring_subscription_status: subscription.status,
+          hiring_subscription_id: subscription.id,
+          hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          hiring_subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+          ...(hiringCommitmentBlockUntil ? { hiring_commitment_block_cancel_until: hiringCommitmentBlockUntil } : {}),
+        })
+        .eq("id", companyId);
+
+      if (subUpdateError) {
+        lockError = "Failed to update company with Stripe subscription";
+        console.error("update_company_subscription error", subUpdateError);
+        return new Response(JSON.stringify({
+          error: "Failed to update company with Stripe subscription",
+          step: "update_company_subscription",
+        }), { headers: responseHeaders, status: 400 });
+      }
+
+      if (upfrontPaymentIntent?.id) {
+        const { error: chargeInsertError } = await supabase
+          .from("billing_transactions")
+          .upsert({
+            company_id: companyId,
+            type: "charge",
+            amount: cardCharge,
+            description: `Hiring Tab prorated activation — $${cardCharge.toFixed(2)} card${creditContribution > 0 ? ` + $${creditContribution.toFixed(2)} credits` : ""}`,
+            stripe_payment_intent_id: upfrontPaymentIntent.id,
+          }, { onConflict: "stripe_payment_intent_id" });
+
+        if (chargeInsertError) {
+          lockError = "Failed to persist charge transaction";
+          return new Response(JSON.stringify({
+            error: "Failed to persist billing transaction.",
+            step: "insert_billing_transaction",
+          }), { headers: responseHeaders, status: 400 });
+        }
+      }
+
+      lockStatus = "completed";
+      lockTtlSeconds = 600;
+      lockSubscriptionId = subscription.id;
+      lockPaymentIntentId = upfrontPaymentIntent?.id ?? null;
+      return new Response(JSON.stringify({
+        success: true,
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        creditApplied: creditContribution,
+        cardCharged: cardCharge,
+        isShortWindow,
+        commitmentBlockUntil: hiringCommitmentBlockUntil,
+      }), {
+        headers: responseHeaders,
+        status: 200,
+      });
+    }
+
     // --- Case A: Credits cover the full $500 (no card needed) ---
     if (cardCharge === 0) {
       const newBalance = Number((creditBalance - hiringCost).toFixed(2));
@@ -282,6 +590,7 @@ serve(async (req) => {
           hiring_subscription_status: "active",
           hiring_subscription_current_period_end: nextRenewalDate.toISOString(),
           hiring_subscription_cancel_at_period_end: false,
+          ...(hiringCommitmentBlockUntil ? { hiring_commitment_block_cancel_until: hiringCommitmentBlockUntil } : {}),
         })
         .eq("id", companyId);
 
@@ -295,11 +604,21 @@ serve(async (req) => {
         }), { headers: responseHeaders, status: 400 });
       }
 
+      // Subscription record (so it appears in the Subscriptions column of the statement)
       await supabase.from("billing_transactions").insert({
         company_id: companyId,
+        type: "hiring_subscription",
         amount: hiringCost,
-        type: "credit_used",
-        description: "Hiring Tab Subscription (fully covered by billing credits)",
+        description: isShortWindow
+          ? `Hiring Tab Subscription — prorated stub through ${nextRenewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+          : "Hiring Tab Subscription",
+      });
+      // Credit deduction record (negative amount so it shows as a deduction in the statement)
+      await supabase.from("billing_transactions").insert({
+        company_id: companyId,
+        type: "credit_applied",
+        amount: -hiringCost,
+        description: "Billing credits applied (Hiring Tab activation)",
       });
 
       console.log("Subscription activated — fully covered by credits");
@@ -310,6 +629,8 @@ serve(async (req) => {
         message: "Subscription activated using billing credits",
         creditApplied: creditContribution,
         cardCharged: 0,
+        isShortWindow,
+        commitmentBlockUntil: hiringCommitmentBlockUntil,
       }), { headers: responseHeaders, status: 200 });
     }
 
@@ -390,6 +711,7 @@ serve(async (req) => {
         expand: ["latest_invoice.payment_intent"],
         metadata: { company_id: companyId, type: "hiring_subscription" },
         ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
+        ...(billingCycleAnchorUnix ? { billing_cycle_anchor: billingCycleAnchorUnix } : {}),
       }, { idempotencyKey: `sub-${paymentOperationKeyBase}` });
     } catch (stripeErr: any) {
       if (isStripeIdempotencyConflict(stripeErr)) {
@@ -484,6 +806,7 @@ serve(async (req) => {
         hiring_subscription_id: subscription.id,
         hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         hiring_subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+        ...(hiringCommitmentBlockUntil ? { hiring_commitment_block_cancel_until: hiringCommitmentBlockUntil } : {}),
       })
       .eq("id", companyId);
     if (subUpdateError) {
@@ -503,6 +826,9 @@ serve(async (req) => {
       }), { headers: responseHeaders, status: 400 });
     }
 
+    const stubSuffix = isShortWindow
+      ? ` — prorated stub through ${nextRenewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+      : "";
     const { error: chargeInsertError } = await supabase
       .from("billing_transactions")
       .upsert({
@@ -510,8 +836,8 @@ serve(async (req) => {
         type: "charge",
         amount: cardCharge,
         description: creditContribution > 0
-          ? `Hiring Tab subscription — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
-          : "Hiring Tab subscription (card on file)",
+          ? `Hiring Tab subscription${stubSuffix} — $${cardCharge.toFixed(2)} card + $${creditContribution.toFixed(2)} credits`
+          : `Hiring Tab subscription${stubSuffix} (card on file)`,
         stripe_payment_intent_id: paymentIntent.id,
       }, { onConflict: "stripe_payment_intent_id" });
 
@@ -533,6 +859,8 @@ serve(async (req) => {
       status: subscription.status,
       creditApplied: creditContribution,
       cardCharged: cardCharge,
+      isShortWindow,
+      commitmentBlockUntil: hiringCommitmentBlockUntil,
     }), {
       headers: responseHeaders,
       status: 200,

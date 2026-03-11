@@ -26,6 +26,14 @@ interface Company {
   hiring_subscription_id?: string;
   hiring_subscription_current_period_end?: string;
   hiring_subscription_cancel_at_period_end?: boolean;
+  portal_billing_anchor_at?: string | null;
+  portal_billing_next_renewal_at?: string | null;
+  hiring_commitment_block_cancel_until?: string | null;
+  hiring_ever_subscribed?: boolean;
+  portal_access_locked?: boolean;
+  portal_access_lock_reason?: string | null;
+  portal_access_locked_at?: string | null;
+  portal_access_outstanding_balance?: number;
 }
 
 interface CompanyUser {
@@ -311,6 +319,43 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
   useEffect(() => {
     fetchCompanyData();
   }, [user]);
+
+  useEffect(() => {
+    if (!company?.id) return;
+
+    const channel = supabase
+      .channel(`company-live-${company.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'companies',
+          filter: `id=eq.${company.id}`,
+        },
+        (payload) => {
+          const updatedCompany = payload.new as Company;
+
+          setCompany((prev) => {
+            if (!prev || prev.id !== updatedCompany.id) return prev;
+            return { ...prev, ...updatedCompany };
+          });
+
+          setAllCompanies((prev) =>
+            prev.map((entry) =>
+              entry.company.id === updatedCompany.id
+                ? { ...entry, company: { ...entry.company, ...updatedCompany } }
+                : entry
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [company?.id]);
 
   const permissions = companyUser
     ? ROLE_PERMISSIONS[companyUser.role]

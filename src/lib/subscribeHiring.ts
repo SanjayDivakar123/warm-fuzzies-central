@@ -15,6 +15,8 @@ export type SubscribeHiringResult = {
   creditApplied?: number;
   cardCharged?: number;
   alreadyExisted?: boolean;
+  isShortWindow?: boolean;
+  commitmentBlockUntil?: string | null;
 };
 
 type EdgeErrorPayload = {

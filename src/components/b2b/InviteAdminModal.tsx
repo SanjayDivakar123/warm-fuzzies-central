@@ -8,15 +8,25 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Shield, Users, Briefcase } from "lucide-react";
 import type { CompanyUserRole } from "@/contexts/CompanyContext";
+import type { AssessmentCategory, AssessmentType } from "@/lib/assessmentQuestionLoader";
 
 interface InviteAdminModalProps {
   open: boolean;
   onClose: () => void;
   companyId: string;
+  defaultAssessmentType: AssessmentType;
   onInviteComplete: () => void;
 }
 
 type AdminRole = Exclude<CompanyUserRole, 'employee'>;
+type AdminAssessmentTypeChoice = 'default' | AssessmentType;
+
+const DEFAULT_ASSESSMENT_CATEGORY: AssessmentCategory = 'professional';
+
+const ASSESSMENT_TYPES: { value: AssessmentType; label: string }[] = [
+  { value: '25q', label: '25 Questions' },
+  { value: '50q', label: '50 Questions' },
+];
 
 const ROLE_INFO: Record<AdminRole, { label: string; icon: typeof Shield; description: string }> = {
   admin: {
@@ -36,15 +46,19 @@ const ROLE_INFO: Record<AdminRole, { label: string; icon: typeof Shield; descrip
   },
 };
 
+const INVITABLE_ROLES: AdminRole[] = ['admin', 'hr'];
+
 export default function InviteAdminModal({
   open,
   onClose,
   companyId,
+  defaultAssessmentType,
   onInviteComplete,
 }: InviteAdminModalProps) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [selectedRole, setSelectedRole] = useState<AdminRole>("admin");
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState<AdminAssessmentTypeChoice>('default');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -72,12 +86,18 @@ export default function InviteAdminModal({
 
     setLoading(true);
     try {
+      const resolvedAssessmentType = selectedAssessmentType === 'default'
+        ? defaultAssessmentType
+        : selectedAssessmentType;
+
       const { data, error } = await supabase.functions.invoke("invite-company-user", {
         body: {
           company_id: companyId,
           email: email.trim().toLowerCase(),
           full_name: fullName.trim() || null,
           role: selectedRole,
+          assessment_category: DEFAULT_ASSESSMENT_CATEGORY,
+          assessment_type: resolvedAssessmentType,
         },
       });
 
@@ -92,6 +112,7 @@ export default function InviteAdminModal({
       setEmail("");
       setFullName("");
       setSelectedRole("admin");
+      setSelectedAssessmentType('default');
       onInviteComplete();
       onClose();
     } catch (error: any) {
@@ -127,7 +148,8 @@ export default function InviteAdminModal({
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {(Object.entries(ROLE_INFO) as [AdminRole, typeof ROLE_INFO[AdminRole]][]).map(([role, info]) => {
+                {INVITABLE_ROLES.map((role) => {
+                  const info = ROLE_INFO[role];
                   const Icon = info.icon;
                   return (
                     <SelectItem key={role} value={role}>
@@ -153,6 +175,30 @@ export default function InviteAdminModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="assessmentType">Assessment Type</Label>
+            <Select
+              value={selectedAssessmentType}
+              onValueChange={(value) => setSelectedAssessmentType(value as AdminAssessmentTypeChoice)}
+            >
+              <SelectTrigger id="assessmentType">
+                <SelectValue placeholder="Use company default" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  Company default ({defaultAssessmentType === '25q' ? '25 Questions' : '50 Questions'})
+                </SelectItem>
+                {ASSESSMENT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Admin invites use the Professional assessment category. If you do not choose a question count, the company default is applied.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name (Optional)</Label>

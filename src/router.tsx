@@ -43,11 +43,13 @@ import LeadershipResults from "@/pages/LeadershipResults";
 import LeadershipGame from "@/pages/LeadershipGame";
 import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import RCFB2BAdminDashboard from "@/pages/admin/RCFB2BAdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
 import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
 import B2BPaymentSuccess from "@/pages/b2b/B2BPaymentSuccess";
+import ConfirmDeleteCompany from "@/pages/b2b/ConfirmDeleteCompany";
 import ProfessionalAssessment25Q from "@/pages/b2b/ProfessionalAssessment25Q";
 import ProfessionalAssessment50Q from "@/pages/b2b/ProfessionalAssessment50Q";
 import ProfessionalResults from "@/pages/b2b/ProfessionalResults";
@@ -258,6 +260,10 @@ export const routeConfig = [
     element: <Layout><AdminDashboard /></Layout>,
   },
   {
+    path: "/admin/rcf-b2b",
+    element: <Layout><RCFB2BAdminDashboard /></Layout>,
+  },
+  {
     path: "/admin/users",
     element: <Layout><UserManagement /></Layout>,
   },
@@ -272,6 +278,10 @@ export const routeConfig = [
   {
     path: "/b2b/payment-success",
     element: <Layout><B2BPaymentSuccess /></Layout>,
+  },
+  {
+    path: "/b2b/confirm-delete-company",
+    element: <ConfirmDeleteCompany />,
   },
   {
     path: "/b2b/company-portal",

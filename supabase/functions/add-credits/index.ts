@@ -19,6 +19,8 @@ function isValidUUID(str: string): boolean {
   return typeof str === "string" && uuidRegex.test(str);
 }
 
+const MANAGEMENT_ROLES = ["admin", "hr", "partner"] as const;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -73,18 +75,17 @@ serve(async (req) => {
     // Create service role client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user is a company admin
-    const { data: adminCheck, error: adminError } = await supabase
+    // Verify user has management access for this company
+    const { data: managementCheck, error: managementError } = await supabase
       .from("company_users")
       .select("role")
       .eq("company_id", company_id)
       .eq("user_id", user.id)
-      .eq("role", "admin")
       .eq("status", "active")
       .maybeSingle();
 
-    if (adminError || !adminCheck) {
-      return jsonResponse({ error: "Forbidden: You must be a company admin" }, 403);
+    if (managementError || !managementCheck || !MANAGEMENT_ROLES.includes(managementCheck.role)) {
+      return jsonResponse({ error: "Forbidden: You must be an active management user for this company" }, 403);
     }
 
     // Get current balance + Stripe metadata
