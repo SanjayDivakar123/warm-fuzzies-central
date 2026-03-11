@@ -30,10 +30,34 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
+    const clearPortalLock = async (companyId: string) => {
+      await supabase
+        .from("companies")
+        .update({
+          portal_access_locked: false,
+          portal_access_lock_reason: null,
+          portal_access_locked_at: null,
+          portal_access_outstanding_balance: 0,
+        })
+        .eq("id", companyId);
+    };
+
+    const setPortalLock = async (companyId: string, outstandingBalance: number, reason: string) => {
+      await supabase
+        .from("companies")
+        .update({
+          portal_access_locked: true,
+          portal_access_lock_reason: reason,
+          portal_access_locked_at: new Date().toISOString(),
+          portal_access_outstanding_balance: Number(outstandingBalance.toFixed(2)),
+        })
+        .eq("id", companyId);
+    };
+
     // Get all active companies
     const { data: companies, error: companiesError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, credit_balance, stripe_customer_id")
+      .select("id, name, admin_email, credit_balance, stripe_customer_id, portal_access_locked, portal_access_outstanding_balance")
       .neq("name", "RoleColorFinderLLC"); // Exclude unlimited company
 
     if (companiesError) throw new Error(`Failed to fetch companies: ${companiesError.message}`);
@@ -52,6 +76,11 @@ serve(async (req) => {
     }> = [];
 
     for (const company of companies || []) {
+      let activeUsers = 0;
+      let totalCharge = 0;
+      let creditsUsed = 0;
+      let cardCharged = 0;
+
       try {
         logStep("Processing company", { companyId: company.id, name: company.name });
 
@@ -78,7 +107,7 @@ serve(async (req) => {
           continue;
         }
 
-        const activeUsers = activeUserCount || 0;
+        activeUsers = activeUserCount || 0;
         if (activeUsers === 0) {
           logStep("No active employees, skipping", { companyId: company.id });
           results.push({
@@ -93,11 +122,8 @@ serve(async (req) => {
           continue;
         }
 
-        const totalCharge = Number((activeUsers * MONTHLY_RATE_DOLLARS).toFixed(2));
+        totalCharge = Number((activeUsers * MONTHLY_RATE_DOLLARS).toFixed(2));
         const creditBalance = Number((company.credit_balance || 0).toFixed(2));
-        
-        let creditsUsed = 0;
-        let cardCharged = 0;
 
         logStep("Calculating charges", { 
           activeUsers, 
@@ -122,6 +148,8 @@ serve(async (req) => {
             amount: -totalCharge,
             description: `Monthly billing for ${activeUsers} users - used credits`
           });
+
+          await clearPortalLock(company.id);
 
           logStep("Charged via credits", { creditsUsed, newBalance });
         } else {
@@ -154,6 +182,8 @@ serve(async (req) => {
                 description: `Monthly billing failed - no Stripe customer ID`
               });
 
+              await setPortalLock(company.id, cardCharged, "Monthly renewal failed because no payment method is on file.");
+
               results.push({
                 companyId: company.id,
                 companyName: company.name,
@@ -173,34 +203,76 @@ serve(async (req) => {
             });
 
             if (paymentMethods.data.length > 0) {
-              const paymentIntent = await stripe.paymentIntents.create({
-                amount: Math.round(cardCharged * 100),
-                currency: "usd",
-                customer: company.stripe_customer_id,
-                payment_method: paymentMethods.data[0].id,
-                off_session: true,
-                confirm: true,
-                description: `Monthly billing for ${activeUsers} users - ${company.name}`,
-                metadata: {
-                  company_id: company.id,
-                  type: "monthly_billing",
-                  active_users: activeUsers.toString()
+              try {
+                const paymentIntent = await stripe.paymentIntents.create({
+                  amount: Math.round(cardCharged * 100),
+                  currency: "usd",
+                  customer: company.stripe_customer_id,
+                  payment_method: paymentMethods.data[0].id,
+                  off_session: true,
+                  confirm: true,
+                  description: `Monthly billing for ${activeUsers} users - ${company.name}`,
+                  metadata: {
+                    company_id: company.id,
+                    type: "monthly_billing",
+                    active_users: activeUsers.toString()
+                  }
+                });
+
+                if (paymentIntent.status !== "succeeded") {
+                  await supabase.from("billing_transactions").insert({
+                    company_id: company.id,
+                    type: "monthly_billing_failed",
+                    amount: cardCharged,
+                    description: `Monthly billing failed - payment status ${paymentIntent.status}`
+                  });
+                  await setPortalLock(company.id, cardCharged, "Monthly renewal payment failed. Update the card on file or add credits to restore access.");
+
+                  results.push({
+                    companyId: company.id,
+                    companyName: company.name,
+                    activeUsers,
+                    totalCharge,
+                    creditsUsed,
+                    cardCharged: 0,
+                    success: false,
+                    error: `Payment failed: ${paymentIntent.status}`
+                  });
+                  continue;
                 }
-              });
 
-              if (paymentIntent.status !== "succeeded") {
-                throw new Error(`Payment failed: ${paymentIntent.status}`);
+                await supabase.from("billing_transactions").insert({
+                  company_id: company.id,
+                  type: "monthly_billing_card",
+                  amount: cardCharged,
+                  stripe_payment_intent_id: paymentIntent.id,
+                  description: `Monthly billing for ${activeUsers} users - card charge`
+                });
+
+                await clearPortalLock(company.id);
+                logStep("Charged via card", { cardCharged, paymentIntentId: paymentIntent.id });
+              } catch (paymentError) {
+                const paymentMessage = paymentError instanceof Error ? paymentError.message : String(paymentError);
+                await supabase.from("billing_transactions").insert({
+                  company_id: company.id,
+                  type: "monthly_billing_failed",
+                  amount: cardCharged,
+                  description: `Monthly billing failed - ${paymentMessage}`
+                });
+                await setPortalLock(company.id, cardCharged, "Monthly renewal payment failed. Update the card on file or add credits to restore access.");
+
+                results.push({
+                  companyId: company.id,
+                  companyName: company.name,
+                  activeUsers,
+                  totalCharge,
+                  creditsUsed,
+                  cardCharged: 0,
+                  success: false,
+                  error: paymentMessage
+                });
+                continue;
               }
-
-              await supabase.from("billing_transactions").insert({
-                company_id: company.id,
-                type: "monthly_billing_card",
-                amount: cardCharged,
-                stripe_payment_intent_id: paymentIntent.id,
-                description: `Monthly billing for ${activeUsers} users - card charge`
-              });
-
-              logStep("Charged via card", { cardCharged, paymentIntentId: paymentIntent.id });
             } else {
               logStep("No payment method on file", { companyId: company.id });
               // Log the failed billing attempt
@@ -210,6 +282,7 @@ serve(async (req) => {
                 amount: cardCharged,
                 description: `Monthly billing failed - no payment method on file`
               });
+              await setPortalLock(company.id, cardCharged, "Monthly renewal failed because no payment method is on file.");
               
               results.push({
                 companyId: company.id,
@@ -239,13 +312,16 @@ serve(async (req) => {
       } catch (companyError) {
         const errorMessage = companyError instanceof Error ? companyError.message : String(companyError);
         logStep("Error processing company", { companyId: company.id, error: errorMessage });
+        if (cardCharged > 0) {
+          await setPortalLock(company.id, cardCharged, "Monthly renewal payment failed. Update the card on file or add credits to restore access.");
+        }
         
         results.push({
           companyId: company.id,
           companyName: company.name,
-          activeUsers: 0,
-          totalCharge: 0,
-          creditsUsed: 0,
+          activeUsers,
+          totalCharge,
+          creditsUsed,
           cardCharged: 0,
           success: false,
           error: errorMessage

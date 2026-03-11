@@ -11,6 +11,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2, Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
 
+const MANAGEMENT_ROLES = ['admin', 'hr', 'partner'] as const;
+
+function getRoleLabel(role: string | null | undefined) {
+  if (role === 'hr') return 'HR';
+  if (role === 'partner') return 'Partner';
+  return 'Admin';
+}
+
 export default function CompanyAdminLogin() {
   const { company, loading: companyLoading, error } = useCompanyPortal();
   const { user, loading: authLoading, signIn, signInWithGoogle } = useAuth();
@@ -30,33 +38,30 @@ export default function CompanyAdminLogin() {
       
       setCheckingAdmin(true);
       try {
-        const { data: adminUser, error: adminError } = await supabase
+        const { data: managementUser, error: managementError } = await supabase
           .from('company_users')
           .select('*')
           .eq('company_id', company.id)
           .eq('user_id', user.id)
-          .eq('role', 'admin')
+          .in('role', [...MANAGEMENT_ROLES])
           .eq('status', 'active')
           .maybeSingle();
 
-        if (adminUser && !adminError) {
-          // User is already logged in and is an admin
+        if (managementUser && !managementError) {
           toast({
-            title: "Welcome, Admin!",
+            title: `Welcome, ${getRoleLabel(managementUser.role)}!`,
             description: "Redirecting to your dashboard...",
           });
           navigate('/b2b/company-portal');
         } else {
-          // User is logged in but not an admin for this company
           // Check if they just came from Google OAuth (URL has hash/params)
           const urlHasOAuthParams = window.location.hash.includes('access_token') || 
                                     window.location.search.includes('code=');
           
           if (urlHasOAuthParams) {
-            // They tried to sign in via Google but aren't an admin
             toast({
               title: "Access Denied",
-              description: "You are not authorized as an admin for this company.",
+              description: "You are not authorized to access this company management portal.",
               variant: "destructive"
             });
             await supabase.auth.signOut();
@@ -132,29 +137,29 @@ export default function CompanyAdminLogin() {
         return;
       }
 
-      // Check if user is an admin for this company
-      const { data: adminUser, error: adminError } = await supabase
+      // Check if user has management access for this company
+      const { data: managementUser, error: managementError } = await supabase
         .from('company_users')
         .select('*')
         .eq('company_id', company.id)
         .eq('user_id', loggedInUser.id)
-        .eq('role', 'admin')
+        .in('role', [...MANAGEMENT_ROLES])
         .eq('status', 'active')
         .maybeSingle();
 
-      if (adminError || !adminUser) {
-        // Sign out the user since they're not an admin for this company
+      if (managementError || !managementUser) {
+        // Sign out the user since they do not have access to this company management portal
         await supabase.auth.signOut();
         toast({
           title: "Access Denied",
-          description: "You are not authorized as an admin for this company.",
+          description: "You are not authorized to access this company management portal.",
           variant: "destructive"
         });
         return;
       }
 
       toast({
-        title: "Welcome, Admin!",
+        title: `Welcome, ${getRoleLabel(managementUser.role)}!`,
         description: "Redirecting to your dashboard...",
       });
 
@@ -221,9 +226,9 @@ export default function CompanyAdminLogin() {
                   <Shield className="h-7 w-7" style={{ color: primaryColor }} />
                 </div>
               </div>
-              <CardTitle className="text-2xl">Admin Login</CardTitle>
+              <CardTitle className="text-2xl">Management Login</CardTitle>
               <CardDescription>
-                Sign in to access the {company.name} admin dashboard
+                Sign in to access the {company.name} management dashboard
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -231,12 +236,12 @@ export default function CompanyAdminLogin() {
                 <div className="space-y-2">
                   <Label htmlFor="admin-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    Admin Email
+                    Work Email
                   </Label>
                   <Input
                     id="admin-email"
                     type="email"
-                    placeholder="admin@company.com"
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -270,7 +275,7 @@ export default function CompanyAdminLogin() {
                       Signing in...
                     </>
                   ) : (
-                    'Sign In as Admin'
+                    'Sign In'
                   )}
                 </Button>
               </form>

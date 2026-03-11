@@ -70,7 +70,9 @@ function B2BDashboardContent() {
   const [creditNotifications, setCreditNotifications] = useState<{ id: string; amount: number; description: string | null }[]>([]);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [resolvingBillingLock, setResolvingBillingLock] = useState(false);
   const switchingCompanyIdRef = useRef<string | null>(null);
+  const autoResolveKeyRef = useRef<string | null>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -242,6 +244,76 @@ function B2BDashboardContent() {
       setActiveTab(prev => (prev === requestedTab ? prev : requestedTab));
     }
   }, [searchParams]);
+
+  const outstandingPortalBalance = Number(company?.portal_access_outstanding_balance || 0);
+  const isPortalBillingLocked = Boolean(company?.portal_access_locked && outstandingPortalBalance > 0);
+
+  const resolvePortalBillingLock = async (options?: { silent?: boolean }) => {
+    if (!company?.id) return false;
+    const silent = options?.silent === true;
+
+    setResolvingBillingLock(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('retry-company-renewal-payment', {
+        body: { company_id: company.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      await refreshCompany();
+
+      if (!silent) {
+        const creditsApplied = Number(data?.creditsApplied || 0);
+        const cardCharged = Number(data?.cardCharged || 0);
+        const detailParts = [];
+        if (creditsApplied > 0) detailParts.push(`$${creditsApplied.toFixed(2)} in credits applied`);
+        if (cardCharged > 0) detailParts.push(`$${cardCharged.toFixed(2)} charged to card`);
+
+        toast({
+          title: 'Portal access restored',
+          description: detailParts.length > 0 ? detailParts.join(' • ') : 'Your renewal balance has been settled.',
+        });
+      }
+
+      return true;
+    } catch (error: any) {
+      if (!silent) {
+        toast({
+          title: 'Renewal payment still outstanding',
+          description: error?.message || 'Update the card on file or add more credits, then try again.',
+          variant: 'destructive',
+        });
+      }
+      return false;
+    } finally {
+      setResolvingBillingLock(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isPortalBillingLocked) {
+      autoResolveKeyRef.current = null;
+      return;
+    }
+
+    if (activeTab !== 'settings') {
+      activateTab('settings');
+    }
+  }, [isPortalBillingLocked, activeTab]);
+
+  useEffect(() => {
+    if (!company?.id || !isPortalBillingLocked) return;
+
+    const creditBalance = Number(company.credit_balance || 0);
+    if (creditBalance < outstandingPortalBalance || outstandingPortalBalance <= 0) return;
+
+    const resolveKey = `${company.id}:${outstandingPortalBalance}:${creditBalance}`;
+    if (autoResolveKeyRef.current === resolveKey || resolvingBillingLock) return;
+
+    autoResolveKeyRef.current = resolveKey;
+    void resolvePortalBillingLock({ silent: true });
+  }, [company?.id, company?.credit_balance, isPortalBillingLocked, outstandingPortalBalance, resolvingBillingLock]);
 
   useEffect(() => {
     const onGuideTabChange = (event: Event) => {
@@ -614,6 +686,18 @@ function B2BDashboardContent() {
         {/* Employee-specific view: show tasks instead of admin tabs */}
         {companyUser?.role === 'employee' ? (
           <EmployeeTasksView />
+        ) : isPortalBillingLocked ? (
+          <SettingsTab
+            company={company}
+            onSettingsSaved={refreshCompany}
+            billingOnly
+            billingLock={{
+              outstandingBalance: outstandingPortalBalance,
+              reason: company.portal_access_lock_reason || null,
+              lockedAt: company.portal_access_locked_at || null,
+            }}
+            onResolveBillingLock={resolvePortalBillingLock}
+          />
         ) : (
           <>
         {/* Inject dynamic styles for active tabs using company colors */}
@@ -782,11 +866,13 @@ function B2BDashboardContent() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        onChange={handleTabChange}
-        permissions={permissions}
-      />
+      {!isPortalBillingLocked && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          permissions={permissions}
+        />
+      )}
 
       <AlertDialog
         open={showUnsavedDialog}

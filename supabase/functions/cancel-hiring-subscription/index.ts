@@ -8,6 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const resolvePeriodEnd = (existingValue: string | null | undefined) => {
+  const now = new Date();
+  const existingPeriodEnd = existingValue ? new Date(existingValue) : null;
+  const hasFuturePeriodEnd = !!existingPeriodEnd && !Number.isNaN(existingPeriodEnd.getTime()) && existingPeriodEnd.getTime() > now.getTime();
+
+  return hasFuturePeriodEnd
+    ? existingPeriodEnd
+    : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+};
+
 serve(async (req) => {
   console.log("=== CANCEL HIRING SUBSCRIPTION FUNCTION STARTED ===");
 
@@ -86,14 +96,7 @@ serve(async (req) => {
         });
       } else {
         // Regular user cancellation - keep access until end of current billing period
-        const now = new Date();
-        const existingPeriodEnd = company.hiring_subscription_current_period_end
-          ? new Date(company.hiring_subscription_current_period_end)
-          : null;
-        const hasFuturePeriodEnd = !!existingPeriodEnd && !Number.isNaN(existingPeriodEnd.getTime()) && existingPeriodEnd.getTime() > now.getTime();
-        const periodEnd = hasFuturePeriodEnd
-          ? existingPeriodEnd
-          : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        const periodEnd = resolvePeriodEnd(company.hiring_subscription_current_period_end);
 
         await supabase
           .from("companies")
@@ -147,30 +150,60 @@ serve(async (req) => {
       });
     } else {
       // Cancel at period end
-      const subscription = await stripe.subscriptions.update(
-        company.hiring_subscription_id,
-        { cancel_at_period_end: true }
-      );
+      try {
+        const subscription = await stripe.subscriptions.update(
+          company.hiring_subscription_id,
+          { cancel_at_period_end: true }
+        );
 
-      // Update company - mark for cancellation but keep enabled until period end
-      await supabase
-        .from("companies")
-        .update({
-          hiring_subscription_cancel_at_period_end: true,
-          hiring_subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        })
-        .eq("id", companyId);
+        const periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
 
-      console.log("Hiring subscription set to cancel at period end:", companyId);
+        // Update company - mark for cancellation but keep enabled until period end
+        await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_cancel_at_period_end: true,
+            hiring_subscription_current_period_end: periodEnd,
+          })
+          .eq("id", companyId);
 
-      return new Response(JSON.stringify({ 
-        success: true,
-        cancelAtPeriodEnd: true,
-        periodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+        console.log("Hiring subscription set to cancel at period end:", companyId);
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          cancelAtPeriodEnd: true,
+          periodEnd,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } catch (stripeError) {
+        console.error("Stripe cancellation failed, falling back to local cancellation state:", stripeError);
+
+        const periodEnd = resolvePeriodEnd(company.hiring_subscription_current_period_end).toISOString();
+
+        const { error: fallbackError } = await supabase
+          .from("companies")
+          .update({
+            hiring_subscription_cancel_at_period_end: true,
+            hiring_subscription_current_period_end: periodEnd,
+          })
+          .eq("id", companyId);
+
+        if (fallbackError) {
+          throw fallbackError;
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          cancelAtPeriodEnd: true,
+          periodEnd,
+          warning: "Stripe cancellation could not be synced immediately. Local cancellation is scheduled.",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
   } catch (error) {
     console.error("Error cancelling hiring subscription:", error);

@@ -759,21 +759,12 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
             </TabsTrigger>
           </TabsList>
         </div>
-        {/* Action row placed below nav bar to avoid layout shifts */}
-        <div className="flex justify-end mb-4 min-h-[2.25rem]">
-          {activeTab === 'jobs' && isHROrAdmin && (
-            <Button className="h-9" onClick={() => setShowCreateJob(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Job
-            </Button>
-          )}
-        </div>
-
         <TabsContent value="jobs" className="mt-0">
           <JobPostingsTab 
             company={company}
             companyUser={companyUser}
             showCreateModal={showCreateJob}
+            onOpenCreateModal={() => setShowCreateJob(true)}
             onCloseCreateModal={() => setShowCreateJob(false)}
             onViewPipeline={handleViewPipeline}
             onViewCandidates={handleViewJobCandidates}

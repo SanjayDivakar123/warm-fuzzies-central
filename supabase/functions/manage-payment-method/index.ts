@@ -12,6 +12,8 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[MANAGE-PAYMENT-METHOD] ${step}${detailsStr}`);
 };
 
+const MANAGEMENT_ROLES = ["admin", "hr", "partner"] as const;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -42,7 +44,7 @@ serve(async (req) => {
 
     if (!company_id) throw new Error("company_id is required");
 
-    // Verify user is admin for this company
+    // Verify user has management access for this company
     const { data: companyUser, error: cuError } = await supabase
       .from("company_users")
       .select("role, status")
@@ -50,8 +52,8 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (cuError || !companyUser || companyUser.role !== "admin" || companyUser.status !== "active") {
-      throw new Error("User is not an admin for this company");
+    if (cuError || !companyUser || companyUser.status !== "active" || !MANAGEMENT_ROLES.includes(companyUser.role)) {
+      throw new Error("User is not authorized to manage billing for this company");
     }
 
     // Get company details

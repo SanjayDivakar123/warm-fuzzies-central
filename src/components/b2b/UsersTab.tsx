@@ -2204,6 +2204,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           open={showInviteAdmin}
           onClose={() => setShowInviteAdmin(false)}
           companyId={company.id}
+          defaultAssessmentType={company.assessment_type}
           onInviteComplete={() => {
             fetchUsers();
             if (onCompanyUpdate) onCompanyUpdate();
