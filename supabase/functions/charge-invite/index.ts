@@ -124,12 +124,22 @@ serve(async (req) => {
 
     logStep("Beyond pre-paid seats — will attempt charge", { activeUserCount, seatsPurchased });
 
+    const now = new Date();
     const anchorAt = new Date(company.portal_billing_anchor_at || company.created_at);
-    const nextRenewalAt = company.portal_billing_next_renewal_at
+    const rawNextRenewalAt = company.portal_billing_next_renewal_at
       ? new Date(company.portal_billing_next_renewal_at)
-      : getNextRenewalAt(anchorAt, new Date());
+      : null;
+    const hasValidStoredRenewal = !!rawNextRenewalAt && !Number.isNaN(rawNextRenewalAt.getTime());
+    const nextRenewalAt = hasValidStoredRenewal && rawNextRenewalAt.getTime() > now.getTime()
+      ? rawNextRenewalAt
+      : getNextRenewalAt(anchorAt, now);
 
-    if (!company.portal_billing_anchor_at || !company.portal_billing_next_renewal_at) {
+    const needsBillingDateRepair =
+      !company.portal_billing_anchor_at ||
+      !hasValidStoredRenewal ||
+      (rawNextRenewalAt !== null && rawNextRenewalAt.getTime() <= now.getTime());
+
+    if (needsBillingDateRepair) {
       await supabase
         .from("companies")
         .update({
@@ -137,6 +147,11 @@ serve(async (req) => {
           portal_billing_next_renewal_at: nextRenewalAt.toISOString(),
         })
         .eq("id", company_id);
+
+      logStep("Normalized stale/missing billing dates", {
+        anchorAt: anchorAt.toISOString(),
+        nextRenewalAt: nextRenewalAt.toISOString(),
+      });
     }
 
     // Calculate pro-rated charge amount for the remaining time until the next anchored renewal.
@@ -266,7 +281,18 @@ serve(async (req) => {
           type: "card",
         });
 
-        if (matchedPaymentMethods.data.length > 0) {
+        let matchedHasDefaultSource = false;
+        try {
+          const matchedCustomerObj = await stripe.customers.retrieve(matchedCustomer.id) as any;
+          const matchedSource = matchedCustomerObj?.default_source;
+          const matchedSourceId = typeof matchedSource === "string" ? matchedSource : matchedSource?.id;
+          matchedHasDefaultSource = typeof matchedSourceId === "string" &&
+            (matchedSourceId.startsWith("src_") || matchedSourceId.startsWith("card_"));
+        } catch {
+          // ignore retrieve failures here and continue scanning
+        }
+
+        if (matchedPaymentMethods.data.length > 0 || matchedHasDefaultSource) {
           customerId = matchedCustomer.id;
           paymentMethods = matchedPaymentMethods;
 
@@ -282,6 +308,7 @@ serve(async (req) => {
     }
 
     let defaultPaymentMethod: string | null = null;
+    let defaultSourceId: string | null = null;
     try {
       const customerObj = await stripe.customers.retrieve(customerId) as any;
       const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
@@ -289,6 +316,14 @@ serve(async (req) => {
 
       if (typeof invoiceDefaultId === "string" && invoiceDefaultId.startsWith("pm_")) {
         defaultPaymentMethod = invoiceDefaultId;
+      }
+
+      const customerDefaultSource = customerObj?.default_source;
+      const sourceId = typeof customerDefaultSource === "string"
+        ? customerDefaultSource
+        : customerDefaultSource?.id;
+      if (typeof sourceId === "string" && (sourceId.startsWith("src_") || sourceId.startsWith("card_"))) {
+        defaultSourceId = sourceId;
       }
     } catch (customerRetrieveError) {
       logStep("Failed to retrieve customer invoice default", { customerId, error: customerRetrieveError });
@@ -298,7 +333,7 @@ serve(async (req) => {
       defaultPaymentMethod = paymentMethods.data[0].id;
     }
 
-    if (!defaultPaymentMethod) {
+    if (!defaultPaymentMethod && !defaultSourceId) {
       logStep("No payment method on file after fallback scan", { customerId });
       return new Response(JSON.stringify({
         success: false,
@@ -311,25 +346,69 @@ serve(async (req) => {
       });
     }
 
-    logStep("Payment method resolved", { customerId, paymentMethodId: defaultPaymentMethod });
+    logStep("Payment method resolved", { customerId, paymentMethodId: defaultPaymentMethod, sourceId: defaultSourceId });
 
     // Create and confirm on-session payment intent for remaining amount
-    let paymentIntent;
+    let paymentIntent: Stripe.PaymentIntent | null = null;
+    let legacyCharge: Stripe.Charge | null = null;
     try {
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: cardCharged,
-        currency: "usd",
-        customer: customerId,
-        payment_method: defaultPaymentMethod,
-        off_session: false,
-        confirm: true,
-        description: `Pro-rated user charge for ${company.name}`,
-        metadata: {
-          company_id: company.id,
-          type: "user_addition",
-          pro_rated_amount: cardCharged.toString()
+      if (defaultPaymentMethod) {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: cardCharged,
+          currency: "usd",
+          customer: customerId,
+          payment_method: defaultPaymentMethod,
+          off_session: false,
+          confirm: true,
+          description: `Pro-rated user charge for ${company.name}`,
+          metadata: {
+            company_id: company.id,
+            type: "user_addition",
+            pro_rated_amount: cardCharged.toString()
+          }
+        });
+
+        logStep("Payment intent created", { paymentIntentId: paymentIntent.id, status: paymentIntent.status });
+
+        if (paymentIntent.status !== "succeeded") {
+          logStep("Payment not succeeded", { status: paymentIntent.status });
+          return new Response(JSON.stringify({
+            success: false,
+            errorCode: "CARD_DECLINED",
+            error: `Your card was declined. Please check your payment method in Settings.`,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
         }
-      });
+      } else {
+        // Legacy fallback: attempt a direct charge using the customer's default source.
+        legacyCharge = await stripe.charges.create({
+          amount: cardCharged,
+          currency: "usd",
+          customer: customerId,
+          source: defaultSourceId!,
+          description: `Pro-rated user charge for ${company.name}`,
+          metadata: {
+            company_id: company.id,
+            type: "user_addition",
+            pro_rated_amount: cardCharged.toString(),
+          },
+        });
+
+        logStep("Legacy charge created", { chargeId: legacyCharge.id, status: legacyCharge.status });
+
+        if (legacyCharge.status !== "succeeded") {
+          return new Response(JSON.stringify({
+            success: false,
+            errorCode: "CARD_DECLINED",
+            error: "Your card was declined. Please check your payment method in Settings.",
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      }
     } catch (stripeError: any) {
       // Stripe throws for card declines or auth-required states when off_session + confirm
       if (stripeError?.payment_intent?.status === "requires_action" || stripeError?.code === "authentication_required") {
@@ -357,26 +436,12 @@ serve(async (req) => {
       });
     }
 
-    logStep("Payment intent created", { paymentIntentId: paymentIntent.id, status: paymentIntent.status });
-
-    if (paymentIntent.status !== "succeeded") {
-      logStep("Payment not succeeded", { status: paymentIntent.status });
-      return new Response(JSON.stringify({
-        success: false,
-        errorCode: "CARD_DECLINED",
-        error: `Your card was declined. Please check your payment method in Settings.`,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
     // Record transaction
     const { error: cardTxError } = await supabase.from("billing_transactions").insert({
       company_id: company_id,
       type: "charge",
       amount: cardCharged / 100,
-      stripe_payment_intent_id: paymentIntent.id,
+      stripe_payment_intent_id: paymentIntent?.id || null,
       description: `Pro-rated user charge ($${(cardCharged / 100).toFixed(2)}) - card payment`
     });
     if (cardTxError) throw new Error(`Failed to record card transaction: ${cardTxError.message}`);
@@ -391,7 +456,8 @@ serve(async (req) => {
       amountCharged: cardCharged,
       totalAmount: chargeAmount,
       proRatedAmount: chargeAmount,
-      paymentIntentId: paymentIntent.id 
+      paymentIntentId: paymentIntent?.id || null,
+      chargeId: legacyCharge?.id || null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

@@ -161,11 +161,60 @@ export default function HiringSubscriptionSettings({
   const periodEnd = company.hiring_subscription_current_period_end 
     ? new Date(company.hiring_subscription_current_period_end)
     : null;
-  const portalRenewalDate = company.portal_billing_next_renewal_at
-    ? new Date(company.portal_billing_next_renewal_at)
-    : company.portal_billing_anchor_at
-      ? (() => { const d = new Date(company.portal_billing_anchor_at!); d.setMonth(d.getMonth() + 1); return d; })()
-      : null;
+  const DAY_MS = 1000 * 60 * 60 * 24;
+  const daysInMonthUtc = (year: number, monthIndex: number) =>
+    new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  const buildAnchoredDate = (anchorAt: Date, monthOffset: number) => {
+    const anchorYear = anchorAt.getUTCFullYear();
+    const anchorMonth = anchorAt.getUTCMonth();
+    const anchorDay = anchorAt.getUTCDate();
+    const anchorHour = anchorAt.getUTCHours();
+    const anchorMinute = anchorAt.getUTCMinutes();
+    const anchorSecond = anchorAt.getUTCSeconds();
+    const anchorMillisecond = anchorAt.getUTCMilliseconds();
+
+    const totalMonths = anchorMonth + monthOffset;
+    const targetYear = anchorYear + Math.floor(totalMonths / 12);
+    const normalizedMonth = ((totalMonths % 12) + 12) % 12;
+    const targetDay = Math.min(anchorDay, daysInMonthUtc(targetYear, normalizedMonth));
+
+    return new Date(Date.UTC(
+      targetYear,
+      normalizedMonth,
+      targetDay,
+      anchorHour,
+      anchorMinute,
+      anchorSecond,
+      anchorMillisecond,
+    ));
+  };
+  const getNextRenewalFromAnchor = (anchorAt: Date, reference: Date) => {
+    let monthOffset = 1;
+    let candidate = buildAnchoredDate(anchorAt, monthOffset);
+    while (candidate.getTime() <= reference.getTime()) {
+      monthOffset += 1;
+      candidate = buildAnchoredDate(anchorAt, monthOffset);
+    }
+    return candidate;
+  };
+  const now = new Date();
+  const normalizeFutureRenewal = (input: string | null | undefined) => {
+    if (!input) return null;
+    const parsed = new Date(input);
+    if (Number.isNaN(parsed.getTime())) return null;
+    const next = new Date(parsed);
+    while (next.getTime() <= now.getTime()) {
+      next.setUTCMonth(next.getUTCMonth() + 1);
+    }
+    return next;
+  };
+  const portalRenewalDate = company.portal_billing_anchor_at
+    ? (() => {
+        const parsedAnchor = new Date(company.portal_billing_anchor_at);
+        if (Number.isNaN(parsedAnchor.getTime())) return null;
+        return getNextRenewalFromAnchor(parsedAnchor, now);
+      })()
+    : normalizeFutureRenewal(company.portal_billing_next_renewal_at);
 
   // Commitment block: cancellation is disabled until this date (short-window signup clause)
   const commitmentBlockUntil = company.hiring_commitment_block_cancel_until
@@ -176,15 +225,16 @@ export default function HiringSubscriptionSettings({
     !Number.isNaN(commitmentBlockUntil.getTime()) &&
     commitmentBlockUntil > new Date();
 
-  // Proration for pre-purchase summary: charge remaining fraction of cycle (days ÷ 30 × $500)
+  // Proration for pre-purchase summary: whole-day proration against the next renewal date.
   const daysUntilPortalRenewal = portalRenewalDate
-    ? (portalRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    ? Math.max(Math.floor((Date.UTC(portalRenewalDate.getUTCFullYear(), portalRenewalDate.getUTCMonth(), portalRenewalDate.getUTCDate()) - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) / DAY_MS), 0)
     : null;
-  const isProrated = daysUntilPortalRenewal !== null && daysUntilPortalRenewal > 0;
+  const isProrated = daysUntilPortalRenewal !== null && daysUntilPortalRenewal > 0 && daysUntilPortalRenewal < 30;
   // 7-day clause: lock cancellation when < 7 days remain until portal renewal
   const isShortWindow = isProrated && daysUntilPortalRenewal! < 7;
+  const billableProrationDays = Math.min(daysUntilPortalRenewal ?? 0, 30);
   const proratedCost = isProrated
-    ? Math.round((daysUntilPortalRenewal! / 30) * 500 * 100) / 100
+    ? Math.round((billableProrationDays / 30) * 500 * 100) / 100
     : hiringCost;
   const effectiveCreditContribution = Math.min(creditBalance, proratedCost);
   const effectiveCardCharge = proratedCost - effectiveCreditContribution;
@@ -969,9 +1019,19 @@ export default function HiringSubscriptionSettings({
 
                 <div className="flex items-center justify-between p-4 rounded-lg border">
                   <div>
-                    <p className="font-semibold">{isInternalAdminCompany ? '$0 per month (Internal Admin)' : '$500 per month'}</p>
+                    <p className="font-semibold">
+                      {isInternalAdminCompany
+                        ? '$0 per month (Internal Admin)'
+                        : isProrated
+                          ? `$${proratedCost.toFixed(2)} today`
+                          : '$500 per month'}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {isInternalAdminCompany ? 'No charge for internal admin company' : 'Cancel anytime'}
+                      {isInternalAdminCompany
+                        ? 'No charge for internal admin company'
+                        : isProrated
+                          ? `Prorated for ${daysUntilPortalRenewal} day${daysUntilPortalRenewal === 1 ? '' : 's'} until renewal, then $500/month`
+                          : 'Cancel anytime'}
                     </p>
                   </div>
                   <Button onClick={() => setShowSubscribeConfirm(true)} disabled={subscribing}>
@@ -1009,9 +1069,9 @@ export default function HiringSubscriptionSettings({
                 <p className="text-xs text-muted-foreground">
                   {isInternalAdminCompany
                     ? 'Internal admin company billing is free and no credit charges are applied.'
-                    : creditContribution > 0
-                      ? `$${creditContribution.toFixed(2)} in billing credits will be applied. Your card will be charged $${cardCharge.toFixed(2)}.`
-                      : 'Payment will be processed via Stripe. Billing credits will be applied first if available.'}
+                    : effectiveCreditContribution > 0
+                      ? `$${effectiveCreditContribution.toFixed(2)} in billing credits will be applied. Your card will be charged $${effectiveCardCharge.toFixed(2)}.`
+                      : `Payment will be processed via Stripe. ${isProrated ? `Today's charge is $${proratedCost.toFixed(2)}.` : '$500/month will be charged.'} Billing credits will be applied first if available.`}
                 </p>
               </div>
             </>
@@ -1132,6 +1192,8 @@ export default function HiringSubscriptionSettings({
               , when the first full monthly billing cycle begins.
               <br /><br />
               After that date you'll be able to cancel anytime in the normal way.
+              <br /><br />
+              If you have any questions or concerns, reach out to support@rolecolorfinder.com.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1199,7 +1261,7 @@ export default function HiringSubscriptionSettings({
                   <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-2">
                     {isProrated ? (
                       <>
-                        <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal ({Math.ceil(daysUntilPortalRenewal!)} days ÷ 30 × $500).</p>
+                        <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal on {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.</p>
                         <p><strong>When is the next $500 charge?</strong> On {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
                         {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
                         <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>

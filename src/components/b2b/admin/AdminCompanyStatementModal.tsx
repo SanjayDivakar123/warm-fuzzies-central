@@ -57,6 +57,12 @@ interface AdminCompanyStatementModalProps {
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
+const getAnchoredRenewalFromStart = (startDate: Date) => {
+  const renewal = new Date(startDate);
+  renewal.setMonth(renewal.getMonth() + 1);
+  return renewal;
+};
+
 const getStatementCategory = (type: string, description?: string | null): StatementRow['category'] => {
   const normalizedType = (type || '').toLowerCase();
   const normalizedDescription = (description || '').toLowerCase();
@@ -260,15 +266,22 @@ export default function AdminCompanyStatementModal({
       const periodEnd = company?.hiring_subscription_current_period_end
         ? new Date(company.hiring_subscription_current_period_end)
         : null;
-      setRenewalDate(
-        companyBillingMeta?.portal_billing_next_renewal_at
-          ? new Date(companyBillingMeta.portal_billing_next_renewal_at)
-          : billingPeriods.length > 0
-            ? new Date(billingPeriods[billingPeriods.length - 1].renewal_at)
-          : companyBillingMeta?.portal_billing_anchor_at
-            ? (() => { const d = new Date(companyBillingMeta!.portal_billing_anchor_at!); d.setMonth(d.getMonth() + 1); return d; })()
-          : null
-      );
+      const rawRenewalDate = companyBillingMeta?.portal_billing_next_renewal_at
+        ? new Date(companyBillingMeta.portal_billing_next_renewal_at)
+        : billingPeriods.length > 0
+          ? new Date(billingPeriods[billingPeriods.length - 1].renewal_at)
+          : null;
+
+      const anchoredRenewalDate = derivedStartDate ? getAnchoredRenewalFromStart(derivedStartDate) : null;
+
+      const effectiveRenewalDate = anchoredRenewalDate
+        ? rawRenewalDate && !Number.isNaN(rawRenewalDate.getTime()) &&
+          rawRenewalDate.getDate() === anchoredRenewalDate.getDate()
+          ? rawRenewalDate
+          : anchoredRenewalDate
+        : rawRenewalDate;
+
+      setRenewalDate(effectiveRenewalDate);
 
       const allTxRows: StatementRow[] = transactions
         .filter((row) => !derivedStartDate || new Date(row.created_at) >= derivedStartDate)
@@ -483,7 +496,7 @@ export default function AdminCompanyStatementModal({
           <DialogHeader>
             <DialogTitle>Monthly Statement — {companyName}</DialogTitle>
             <DialogDescription>
-              Statement period starts from company creation date. Portal cost is free only for the internal admin company (RoleColorFinder). Click any row to expand details. Trash icon removes the entry permanently.
+              Statement dates follow your billing-cycle anchor (same renewal day each month). Portal cost is free only for the internal admin company (RoleColorFinder). Click any row to expand details. Trash icon removes the entry permanently.
             </DialogDescription>
           </DialogHeader>
 

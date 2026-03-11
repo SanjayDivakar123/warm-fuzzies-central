@@ -320,6 +320,43 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     fetchCompanyData();
   }, [user]);
 
+  useEffect(() => {
+    if (!company?.id) return;
+
+    const channel = supabase
+      .channel(`company-live-${company.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'companies',
+          filter: `id=eq.${company.id}`,
+        },
+        (payload) => {
+          const updatedCompany = payload.new as Company;
+
+          setCompany((prev) => {
+            if (!prev || prev.id !== updatedCompany.id) return prev;
+            return { ...prev, ...updatedCompany };
+          });
+
+          setAllCompanies((prev) =>
+            prev.map((entry) =>
+              entry.company.id === updatedCompany.id
+                ? { ...entry, company: { ...entry.company, ...updatedCompany } }
+                : entry
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [company?.id]);
+
   const permissions = companyUser
     ? ROLE_PERMISSIONS[companyUser.role]
     : ROLE_PERMISSIONS.employee;
