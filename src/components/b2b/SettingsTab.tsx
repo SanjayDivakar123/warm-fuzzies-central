@@ -19,7 +19,6 @@ import {
   Wallet,
   Sun,
   Moon,
-  Plus,
   Globe,
   Copy,
   ExternalLink,
@@ -34,7 +33,6 @@ import {
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
-import AddCreditsModal from "./AddCreditsModal";
 import HiringSubscriptionSettings from "./HiringSubscriptionSettings";
 // Integrations infrastructure is kept, but hidden via feature flag
 const INTEGRATIONS_ENABLED = false;
@@ -116,7 +114,6 @@ export default function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"light" | "dark" | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [addCreditsOpen, setAddCreditsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -445,7 +442,7 @@ export default function SettingsTab({
               </p>
             )}
             <p className="text-xs text-amber-700">
-              Update the card on file or add enough billing credits below. Access will be restored automatically after the renewal balance is successfully settled.
+              Update the card on file to settle the renewal balance. Billing credits are managed by Role Color Finder super-admins and applied automatically when available.
             </p>
           </CardContent>
         </Card>
@@ -459,45 +456,28 @@ export default function SettingsTab({
           onBillingResolved={onResolveBillingLock}
         />
 
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg font-medium">
-              <Wallet className="h-5 w-5" />
-              Wallet
-            </CardTitle>
-            <CardDescription>Add billing credits to cover the outstanding renewal balance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
-                {loadingBalance ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : (
+        {creditBalance > 0 && (
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                <Wallet className="h-5 w-5" />
+                Wallet
+              </CardTitle>
+              <CardDescription>Billing credits are managed by Role Color Finder super-admins.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
                   <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
-                )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Credits are automatically applied before charging your card. Contact super-admin support if you need a balance adjustment.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Credits are automatically applied before charging your card. If your balance covers the outstanding renewal, access can be restored without another card charge.
-              </p>
-              <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Add Credits
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <AddCreditsModal
-          open={addCreditsOpen}
-          onClose={() => setAddCreditsOpen(false)}
-          companyId={company.id}
-          currentBalance={creditBalance}
-          onCreditsAdded={() => {
-            if (onSettingsSaved) onSettingsSaved();
-            if (onResolveBillingLock) void onResolveBillingLock({ silent: true });
-          }}
-        />
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -952,35 +932,29 @@ export default function SettingsTab({
           {/* Payment Method */}
           <PaymentMethodCard company={company} />
 
-          {/* Wallet / Credit Balance */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg font-medium">
-                <Wallet className="h-5 w-5" />
-                Wallet
-              </CardTitle>
-              <CardDescription>Your credit balance for payments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
-                  {loadingBalance ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : (
+          {/* Wallet / Credit Balance (display only when balance is positive) */}
+          {creditBalance > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                  <Wallet className="h-5 w-5" />
+                  Wallet
+                </CardTitle>
+                <CardDescription>Credits are managed by Role Color Finder super-admins.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <span className="text-sm text-muted-foreground font-medium">Credit Balance</span>
                     <span className="font-semibold text-primary">${creditBalance.toLocaleString()}</span>
-                  )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Credits are automatically applied before charging your card on file.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Credits are applied to your account and deducted before charging your card on file.
-                </p>
-                <Button variant="outline" className="w-full gap-2" onClick={() => setAddCreditsOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                  Add Credits
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {INTEGRATIONS_ENABLED && (
@@ -1026,16 +1000,6 @@ export default function SettingsTab({
       {/* Delete Company Modal */}
       <DeleteCompanyModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} company={company} />
 
-      {/* Add Credits Modal */}
-      <AddCreditsModal
-        open={addCreditsOpen}
-        onClose={() => setAddCreditsOpen(false)}
-        companyId={company.id}
-        currentBalance={creditBalance}
-        onCreditsAdded={() => {
-          if (onSettingsSaved) onSettingsSaved();
-        }}
-      />
     </div>
   );
 }

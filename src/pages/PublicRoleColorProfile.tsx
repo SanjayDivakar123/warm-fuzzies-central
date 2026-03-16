@@ -79,28 +79,149 @@ const themeClass: Record<string, string> = {
   sunset: "from-orange-500/10 via-rose-500/10 to-background",
 };
 
-const formatKeyLabel = (key: string) =>
-  key
-    .replace(/_/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (character) => character.toUpperCase());
+type AssessmentShowcaseSection =
+  | "full"
+  | "summary"
+  | "scores"
+  | "color-profile"
+  | "work-style"
+  | "leadership"
+  | "communication"
+  | "strengths";
 
-const renderReportValue = (value: any) => {
-  if (value === null || value === undefined || value === "") {
-    return <p className="text-sm text-muted-foreground">—</p>;
+const parseShowcaseSection = (value?: string | null): AssessmentShowcaseSection => {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) {
+    return "full";
+  }
+
+  if (normalized === "manual" || normalized === "latest") {
+    return "full";
+  }
+
+  const [, section] = normalized.split(":");
+  const candidate = section || normalized;
+  const allowed = new Set<AssessmentShowcaseSection>([
+    "full",
+    "summary",
+    "scores",
+    "color-profile",
+    "work-style",
+    "leadership",
+    "communication",
+    "strengths",
+  ]);
+
+  return allowed.has(candidate as AssessmentShowcaseSection)
+    ? (candidate as AssessmentShowcaseSection)
+    : "full";
+};
+
+const getFirstDefined = (source: any, keys: string[]) => {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+  return null;
+};
+
+const toDisplayList = (value: any): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/\n|,|\u2022/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const toDisplayText = (value: any): string | null => {
+  if (value === undefined || value === null || value === "") {
+    return null;
   }
 
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return <p className="text-sm whitespace-pre-wrap">{String(value)}</p>;
+    return String(value);
   }
 
-  return (
-    <pre className="text-xs bg-muted/40 rounded-md p-3 overflow-x-auto">
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
+  return null;
+};
+
+const toTitleCase = (value: string) =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
+const formatRelativeDate = (input?: string | null) => {
+  if (!input) {
+    return "Unknown";
+  }
+
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+
+  const diffMs = date.getTime() - Date.now();
+  const diffSeconds = Math.round(diffMs / 1000);
+  const absSeconds = Math.abs(diffSeconds);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+  if (absSeconds < 60) {
+    return rtf.format(diffSeconds, "second");
+  }
+
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (Math.abs(diffMinutes) < 60) {
+    return rtf.format(diffMinutes, "minute");
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (Math.abs(diffHours) < 24) {
+    return rtf.format(diffHours, "hour");
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  if (Math.abs(diffDays) < 30) {
+    return rtf.format(diffDays, "day");
+  }
+
+  const diffMonths = Math.round(diffDays / 30);
+  if (Math.abs(diffMonths) < 12) {
+    return rtf.format(diffMonths, "month");
+  }
+
+  const diffYears = Math.round(diffMonths / 12);
+  return rtf.format(diffYears, "year");
+};
+
+const formatDateTime = (input?: string | null) => {
+  if (!input) {
+    return "Unknown";
+  }
+
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 };
 
 const colorBarClass: Record<string, string> = {
@@ -165,6 +286,7 @@ export default function PublicRoleColorProfile() {
                 username: cached.username,
                 theme: cached.theme || "classic",
                 profile_image_url: cached.profile_image_url || null,
+                selected_assessment_type: cached.selected_assessment_type || "latest:full",
                 view_count: cached.view_count || 0,
               });
               setPerson(cached.person || null);
@@ -273,6 +395,87 @@ export default function PublicRoleColorProfile() {
 
   const meta = roleMeta[dominantColor] || roleMeta.red;
   const secondaryMeta = secondaryColor ? roleMeta[secondaryColor] : null;
+  const selectedShowcaseSection = useMemo<AssessmentShowcaseSection>(
+    () => parseShowcaseSection(profile?.selected_assessment_type),
+    [profile?.selected_assessment_type],
+  );
+
+  const completedAt = useMemo(
+    () =>
+      getFirstDefined(assessment, ["completed_at", "created_at"]) ||
+      getFirstDefined(assessment?.results || {}, ["completed_at", "completedAt", "created_at", "createdAt"]),
+    [assessment],
+  );
+
+  const dominantColorLabel = useMemo(() => toTitleCase(dominantColor), [dominantColor]);
+
+  const summaryText = useMemo(() => {
+    const results = assessment?.results || {};
+    return toDisplayText(
+      getFirstDefined(results, [
+        "summary",
+        "profileSummary",
+        "interpretation",
+        "description",
+        "insight",
+      ]),
+    );
+  }, [assessment]);
+
+  const workStyleItems = useMemo(() => {
+    const results = assessment?.results || {};
+    return [
+      ...toDisplayList(getFirstDefined(results, ["workStyle", "work_style", "workingStyle"])),
+      ...toDisplayList(getFirstDefined(results, ["idealEnvironment", "workEnvironment", "environment"])),
+    ];
+  }, [assessment]);
+
+  const leadershipItems = useMemo(() => {
+    const results = assessment?.results || {};
+    return [
+      ...toDisplayList(getFirstDefined(results, ["leadershipStyle", "leadership", "managementStyle"])),
+      ...toDisplayList(getFirstDefined(results, ["decisionMaking", "decision_style"])),
+    ];
+  }, [assessment]);
+
+  const communicationItems = useMemo(() => {
+    const results = assessment?.results || {};
+    return [
+      ...toDisplayList(getFirstDefined(results, ["communicationStyle", "communication", "collaborationStyle"])),
+      ...toDisplayList(getFirstDefined(results, ["conflictStyle", "feedbackStyle"])),
+    ];
+  }, [assessment]);
+
+  const strengthsItems = useMemo(() => {
+    const results = assessment?.results || {};
+    return [
+      ...toDisplayList(getFirstDefined(results, ["strengths", "coreStrengths", "topStrengths"])),
+      ...toDisplayList(getFirstDefined(results, ["growthAreas", "blindSpots", "developmentAreas"])),
+    ];
+  }, [assessment]);
+
+  const showcasedSectionTitle = useMemo(() => {
+    const labels: Record<AssessmentShowcaseSection, string> = {
+      full: "Full Assessment Report",
+      summary: "Assessment Summary",
+      scores: "Color Scores",
+      "color-profile": "Color Profile",
+      "work-style": "Work Style",
+      leadership: "Leadership",
+      communication: "Communication",
+      strengths: "Strengths",
+    };
+
+    return labels[selectedShowcaseSection] || labels.full;
+  }, [selectedShowcaseSection]);
+
+  const showSummarySection = selectedShowcaseSection === "full" || selectedShowcaseSection === "summary";
+  const showScoresSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "scores";
+  const showColorProfileSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "color-profile";
+  const showWorkStyleSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "work-style";
+  const showLeadershipSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "leadership";
+  const showCommunicationSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "communication";
+  const showStrengthsSection = selectedShowcaseSection === "full" || selectedShowcaseSection === "strengths";
 
   if (loading) {
     return (
@@ -359,23 +562,33 @@ export default function PublicRoleColorProfile() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Full Assessment Report</CardTitle>
+            <CardTitle>{showcasedSectionTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {!assessment ? (
               <p className="text-sm text-muted-foreground">No assessment report available for this public profile.</p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">{(assessment.assessment_type || "assessment").toUpperCase()}</Badge>
-                  {assessment.created_at && (
-                    <Badge variant="outline">{new Date(assessment.created_at).toLocaleDateString()}</Badge>
+                  {completedAt && (
+                    <Badge variant="outline" title={formatDateTime(completedAt)}>
+                      Completed {formatRelativeDate(completedAt)}
+                    </Badge>
                   )}
+                  <Badge variant="outline">Dominant color: {dominantColorLabel}</Badge>
                 </div>
 
-                {scoreMap.length > 0 && (
+                {showSummarySection && summaryText && (
+                  <div className="rounded-lg border p-4 space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Summary</p>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{summaryText}</p>
+                  </div>
+                )}
+
+                {showScoresSection && scoreMap.length > 0 && (
                   <div className="rounded-lg border p-4 space-y-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Scores</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Color Scores</p>
                     {scoreMap.map(({ color, score, percentage }) => (
                       <div key={color} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
@@ -394,61 +607,73 @@ export default function PublicRoleColorProfile() {
                 )}
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Company Id</p>
-                    {renderReportValue(assessment.company_id || assessment.results?.company_id || assessment.results?.companyId)}
-                  </div>
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Company Name</p>
-                    {renderReportValue(assessment.company_name || assessment.results?.company_name || assessment.results?.companyName)}
-                  </div>
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Completed At</p>
-                    {renderReportValue(assessment.completed_at || assessment.results?.completed_at || assessment.results?.completedAt || assessment.created_at)}
-                  </div>
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Dominant Color</p>
-                    {renderReportValue(assessment.results?.dominantColor || assessment.dominant_color || dominantColor)}
-                  </div>
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Assessment Type</p>
-                    {renderReportValue(assessment.assessment_type || assessment.results?.assessment_type || assessment.results?.assessmentType)}
-                  </div>
-                  <div className="rounded-lg border p-3 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Questions</p>
-                    {renderReportValue(assessment.total_questions || assessment.results?.total_questions || assessment.results?.totalQuestions)}
-                  </div>
+                  {showColorProfileSection && (
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Color Profile</p>
+                      <p className="text-sm">Primary: <span className="font-medium">{dominantColorLabel}</span></p>
+                      {secondaryMeta && (
+                        <p className="text-sm">
+                          Secondary: <span className="font-medium">{toTitleCase(secondaryColor)}</span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {showWorkStyleSection && workStyleItems.length > 0 && (
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Work Style</p>
+                      <ul className="space-y-1 text-sm">
+                        {workStyleItems.map((item) => (
+                          <li key={`work-${item}`}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {showLeadershipSection && leadershipItems.length > 0 && (
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Leadership</p>
+                      <ul className="space-y-1 text-sm">
+                        {leadershipItems.map((item) => (
+                          <li key={`leadership-${item}`}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {showCommunicationSection && communicationItems.length > 0 && (
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Communication</p>
+                      <ul className="space-y-1 text-sm">
+                        {communicationItems.map((item) => (
+                          <li key={`communication-${item}`}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {showStrengthsSection && strengthsItems.length > 0 && (
+                    <div className="rounded-lg border p-4 space-y-2 md:col-span-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Strengths</p>
+                      <ul className="grid gap-1 text-sm sm:grid-cols-2">
+                        {strengthsItems.map((item) => (
+                          <li key={`strength-${item}`}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(assessment.results || {})
-                    .filter(([key]) => ![
-                      "scores",
-                      "colorScores",
-                      "completedAt",
-                      "completed_at",
-                      "companyId",
-                      "company_id",
-                      "companyName",
-                      "company_name",
-                      "dominantColor",
-                      "dominant_color",
-                      "assessmentType",
-                      "assessment_type",
-                      "totalQuestions",
-                      "total_questions",
-                    ].includes(key))
-                    .map(([key, value]) => (
-                      <div key={key} className="rounded-lg border p-3 space-y-2">
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{formatKeyLabel(key)}</p>
-                        {renderReportValue(value)}
-                      </div>
-                    ))}
-                </div>
-
-                {Object.keys(assessment.results || {}).length === 0 && (
-                  <p className="text-sm text-muted-foreground">This assessment does not have structured result fields yet.</p>
-                )}
+                {!summaryText &&
+                  scoreMap.length === 0 &&
+                  workStyleItems.length === 0 &&
+                  leadershipItems.length === 0 &&
+                  communicationItems.length === 0 &&
+                  strengthsItems.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      This assessment has limited structured data available for public display.
+                    </p>
+                  )}
               </>
             )}
           </CardContent>

@@ -200,7 +200,7 @@ export default function PaymentMethodCard({ company, billingLock, onBillingResol
                   Outstanding renewal balance: <span className="font-semibold">${billingLock.outstandingBalance.toFixed(2)}</span>
                 </p>
                 <p className="text-xs text-amber-700">
-                  Update the card on file or add enough billing credits below, then retry the renewal charge to restore access.
+                  Update the card on file and retry the renewal charge to restore access. Billing credits are applied automatically when available.
                 </p>
               </div>
             </div>
