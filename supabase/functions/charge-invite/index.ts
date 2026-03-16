@@ -93,7 +93,7 @@ serve(async (req) => {
       });
     }
 
-    // Count current non-revoked users to see if we're still within pre-paid seats
+    // Count current non-revoked users before adding the new invite.
     const { count: activeUserCount, error: countError } = await supabase
       .from("company_users")
       .select("id", { count: "exact", head: true })
@@ -102,27 +102,27 @@ serve(async (req) => {
 
     if (countError) throw new Error("Failed to count active users");
 
-    const seatsPurchased = getPortalSeatBaseline(company.seats_purchased || 0);
-    logStep("Seat check", { activeUserCount, seatsPurchased, configuredSeats: company.seats_purchased || 0 });
+    const includedBaselineSeats = getPortalSeatBaseline(company.seats_purchased || 0);
+    logStep("Seat check", { activeUserCount, includedBaselineSeats, configuredSeats: company.seats_purchased || 0 });
 
-    // If the next user still fits within the included seat allocation, no charge is needed.
-    if ((activeUserCount ?? 0) < seatsPurchased) {
-      logStep("Within pre-paid seats - no charge required", { activeUserCount, seatsPurchased });
+    // The first two active users are included in the baseline due-now charge.
+    if ((activeUserCount ?? 0) < includedBaselineSeats) {
+      logStep("Within baseline included users - no charge required", { activeUserCount, includedBaselineSeats });
       return new Response(JSON.stringify({
         success: true,
         charged: false,
         usedCredits: false,
         withinPrePaidSeats: true,
         seatsUsed: activeUserCount ?? 0,
-        seatsPurchased,
-        message: `Within pre-paid seat allocation (${activeUserCount}/${seatsPurchased} seats used)`,
+        seatsPurchased: includedBaselineSeats,
+        message: `Within baseline included users (${activeUserCount}/${includedBaselineSeats} users used)`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    logStep("Beyond pre-paid seats — will attempt charge", { activeUserCount, seatsPurchased });
+    logStep("Beyond baseline included users — will attempt charge", { activeUserCount, includedBaselineSeats });
 
     const now = new Date();
     const anchorAt = new Date(company.portal_billing_anchor_at || company.created_at);
@@ -348,7 +348,7 @@ serve(async (req) => {
 
     logStep("Payment method resolved", { customerId, paymentMethodId: defaultPaymentMethod, sourceId: defaultSourceId });
 
-    // Create and confirm on-session payment intent for remaining amount
+    // Create and confirm off-session payment intent for remaining amount.
     let paymentIntent: Stripe.PaymentIntent | null = null;
     let legacyCharge: Stripe.Charge | null = null;
     try {
@@ -358,7 +358,7 @@ serve(async (req) => {
           currency: "usd",
           customer: customerId,
           payment_method: defaultPaymentMethod,
-          off_session: false,
+          off_session: true,
           confirm: true,
           description: `Pro-rated user charge for ${company.name}`,
           metadata: {
@@ -370,12 +370,25 @@ serve(async (req) => {
 
         logStep("Payment intent created", { paymentIntentId: paymentIntent.id, status: paymentIntent.status });
 
+        if (paymentIntent.status === "requires_action" || paymentIntent.status === "requires_payment_method") {
+          logStep("Payment requires authentication", { status: paymentIntent.status });
+          return new Response(JSON.stringify({
+            success: false,
+            errorCode: "REQUIRES_AUTHENTICATION",
+            error: "This card requires authentication. Please update your payment method in Settings and try again.",
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
         if (paymentIntent.status !== "succeeded") {
           logStep("Payment not succeeded", { status: paymentIntent.status });
           return new Response(JSON.stringify({
             success: false,
             errorCode: "CARD_DECLINED",
-            error: `Your card was declined. Please check your payment method in Settings.`,
+            error: `Card charge failed with status ${paymentIntent.status}.`,
+            declineCode: paymentIntent.status,
           }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -428,7 +441,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         errorCode: "CARD_DECLINED",
-        error: "Your card was declined. Please check your payment method in Settings.",
+        error: stripeError?.message || "Your card charge failed. Please check your payment method and try again.",
         declineCode,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

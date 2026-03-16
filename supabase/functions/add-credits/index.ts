@@ -19,7 +19,10 @@ function isValidUUID(str: string): boolean {
   return typeof str === "string" && uuidRegex.test(str);
 }
 
-const MANAGEMENT_ROLES = ["admin", "hr", "partner"] as const;
+const ALLOWED_SUPER_ADMINS = new Set([
+  "sanjay@rolecolorfinder.com",
+  "tristan@rolecolorfinder.com",
+]);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -51,6 +54,11 @@ serve(async (req) => {
       return jsonResponse({ error: "Invalid token" }, 401);
     }
 
+    const callerEmail = (user.email || "").toLowerCase();
+    if (!ALLOWED_SUPER_ADMINS.has(callerEmail)) {
+      return jsonResponse({ error: "Forbidden: Only super admins can grant credits to companies" }, 403);
+    }
+
     const body = await req.json();
     const { company_id, amount, charge_amount, promo_code } = body;
 
@@ -74,19 +82,6 @@ serve(async (req) => {
 
     // Create service role client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify user has management access for this company
-    const { data: managementCheck, error: managementError } = await supabase
-      .from("company_users")
-      .select("role")
-      .eq("company_id", company_id)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (managementError || !managementCheck || !MANAGEMENT_ROLES.includes(managementCheck.role)) {
-      return jsonResponse({ error: "Forbidden: You must be an active management user for this company" }, 403);
-    }
 
     // Get current balance + Stripe metadata
     const { data: company, error: companyError } = await supabase

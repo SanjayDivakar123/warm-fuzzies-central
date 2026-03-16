@@ -890,19 +890,19 @@ const Dashboard = () => {
       
       <div className="flex flex-1 w-full overflow-hidden">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
-          <SidebarBody className="justify-between gap-10">
+          <SidebarBody className="justify-between gap-10 md:my-2 md:mr-2 md:rounded-2xl">
             <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
               {/* User Profile with Avatar Upload */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="relative group">
+              <div className="flex items-center mb-6 min-h-8">
+                <div className="relative group shrink-0">
                   {userProfile.avatarUrl ? (
                     <img
                       src={userProfile.avatarUrl}
                       alt={userProfile.name}
-                      className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                      className="h-8 w-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold flex-shrink-0">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
                       {userProfile.name.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -926,11 +926,15 @@ const Dashboard = () => {
                   />
                 </div>
                 <motion.div
+                  initial={false}
                   animate={{
-                    display: sidebarOpen ? "block" : "none",
                     opacity: sidebarOpen ? 1 : 0,
+                    width: sidebarOpen ? 190 : 0,
+                    x: sidebarOpen ? 0 : -6,
                   }}
-                  className="overflow-hidden"
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="ml-3 overflow-hidden whitespace-nowrap"
+                  aria-hidden={!sidebarOpen}
                 >
                   <p className="font-medium text-sm text-foreground truncate">{userProfile.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{userProfile.email}</p>

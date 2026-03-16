@@ -19,10 +19,11 @@ const PROMO_CODES = new Set([
   'RCFINTERNAL',
 ]);
 
+const MIN_BILLABLE_SEATS = 2;
+
 export default function B2B() {
   const [companyName, setCompanyName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [seats, setSeats] = useState('2'); // Min 2 per spec
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>('25q');
   const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,7 +70,7 @@ export default function B2B() {
   };
 
   const isPromoValid = PROMO_CODES.has(promoCode.toUpperCase().trim());
-  const seatCount = parseInt(seats) || 2;
+  const seatCount = MIN_BILLABLE_SEATS;
   const localizedSeatPrice = getLocalizedPrice('b2b', countryCode);
   const countryPricing = getCountryPricing(countryCode);
   const totalPrice = isPromoValid ? 0 : seatCount * localizedSeatPrice.displayAmount;
@@ -88,16 +89,6 @@ export default function B2B() {
       return;
     }
 
-    // Validate minimum seats
-    if (seatCount < 2) {
-      toast({
-        title: 'Minimum 2 seats required',
-        description: 'Please enter at least 2 seats.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -110,7 +101,7 @@ export default function B2B() {
             name: companyName,
             subdomain,
             admin_email: adminEmail,
-            seats_purchased: seatCount,
+            seats_purchased: MIN_BILLABLE_SEATS,
             assessment_type: assessmentType,
             user_id: user.id,
           },
@@ -140,7 +131,7 @@ export default function B2B() {
       const localizedPayload = {
         companyName,
         adminEmail,
-        seats: seatCount,
+        seats: MIN_BILLABLE_SEATS,
         assessmentType,
         userId: user.id,
         subdomain,
@@ -163,7 +154,7 @@ export default function B2B() {
         const fallbackPayload = {
           companyName,
           adminEmail,
-          seats: seatCount,
+          seats: MIN_BILLABLE_SEATS,
           assessmentType,
           userId: user.id,
           subdomain,
@@ -386,29 +377,8 @@ export default function B2B() {
                       />
                     </div>
 
-                    {/* Two column: Seats & Assessment Type */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="seats" className="text-sm font-medium">Team Size</Label>
-                        <Input
-                          id="seats"
-                          type="number"
-                          min="2"
-                          value={seats}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (isNaN(val) || val < 2) {
-                              setSeats('2');
-                            } else {
-                              setSeats(String(val));
-                            }
-                          }}
-                          required
-                          className="h-12 bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
-                        />
-                        <p className="text-xs text-muted-foreground">Min. 2 seats</p>
-                      </div>
-
+                    {/* Assessment Type */}
+                    <div className="space-y-2">
                       <div className="space-y-2">
                         <Label htmlFor="assessmentType" className="text-sm font-medium">Assessment</Label>
                         <Select value={assessmentType} onValueChange={(v) => setAssessmentType(v as '25q' | '50q')}>
@@ -453,16 +423,15 @@ export default function B2B() {
 
                     {/* Price Summary */}
                     <div className="rounded-xl bg-muted/50 p-5">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm text-muted-foreground">{seatCount} seats × {formatCurrency(localizedSeatPrice.displayAmount, localizedSeatPrice.displayCurrency)}/month</span>
-                        {isPromoValid && (
+                      {isPromoValid && (
+                        <div className="flex justify-end mb-3">
                           <span className="text-xs font-medium text-role-green bg-role-green/10 px-2 py-0.5 rounded-full">
                             100% OFF
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="flex justify-between items-end">
-                        <span className="text-sm font-medium">Total</span>
+                        <span className="text-sm font-medium">Due now</span>
                         <div className="text-right">
                           {isPromoValid ? (
                             <div className="flex items-baseline gap-2">
@@ -472,10 +441,13 @@ export default function B2B() {
                           ) : (
                             <span className="text-3xl font-bold">{formatCurrency(totalPrice, localizedSeatPrice.displayCurrency)}</span>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">per month</p>
+                          <p className="text-xs text-muted-foreground mt-1">minimum 2 users billed at signup</p>
                           <p className="text-xs text-muted-foreground">{countryPricing.country} pricing</p>
                         </div>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Additional invited users are charged immediately with a prorated amount until your renewal date.
+                      </p>
                     </div>
 
                     {/* Submit Button */}

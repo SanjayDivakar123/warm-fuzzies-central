@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -97,28 +97,28 @@ const Index = () => {
     if (!celebrityResult) return;
     
     const { profile, scores, totalQuestions } = celebrityResult;
-    const text = `🌟 ${celebrityResult.celebrityName}'s RoleColor™ Profile 🌟
+    const text = `ðŸŒŸ ${celebrityResult.celebrityName}'s RoleColorâ„¢ Profile ðŸŒŸ
 
 ${profile.dominant.emoji} Dominant Color: ${profile.dominant.name} (${celebrityResult.dominantColor.toUpperCase()})
 ${profile.secondary.emoji} Secondary Color: ${profile.secondary.name} (${celebrityResult.secondaryColor.toUpperCase()})
 
-📊 Color Scores (out of ${totalQuestions}):
-• Yellow: ${scores.yellow} (${Math.round((scores.yellow / totalQuestions) * 100)}%)
-• Red: ${scores.red} (${Math.round((scores.red / totalQuestions) * 100)}%)
-• Green: ${scores.green} (${Math.round((scores.green / totalQuestions) * 100)}%)
-• Blue: ${scores.blue} (${Math.round((scores.blue / totalQuestions) * 100)}%)
+ðŸ“Š Color Scores (out of ${totalQuestions}):
+â€¢ Yellow: ${scores.yellow} (${Math.round((scores.yellow / totalQuestions) * 100)}%)
+â€¢ Red: ${scores.red} (${Math.round((scores.red / totalQuestions) * 100)}%)
+â€¢ Green: ${scores.green} (${Math.round((scores.green / totalQuestions) * 100)}%)
+â€¢ Blue: ${scores.blue} (${Math.round((scores.blue / totalQuestions) * 100)}%)
 
-💡 About ${celebrityResult.celebrityName}:
+ðŸ’¡ About ${celebrityResult.celebrityName}:
 ${profile.dominant.description}
 
-✨ Key Traits: ${profile.dominant.traits.join(", ")}
-🎯 Strengths: ${profile.dominant.strengths.join(", ")}
-📈 Growth Areas: ${profile.dominant.challenges.join(", ")}
+âœ¨ Key Traits: ${profile.dominant.traits.join(", ")}
+ðŸŽ¯ Strengths: ${profile.dominant.strengths.join(", ")}
+ðŸ“ˆ Growth Areas: ${profile.dominant.challenges.join(", ")}
 
 Similar to: ${profile.dominant.famousExamples.join(", ")}
 
 ---
-Discover your own RoleColor™ at rolecolorfinder.com`;
+Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
 
     navigator.clipboard.writeText(text);
     toast({ title: "Copied!", description: "Results copied to clipboard" });
@@ -147,7 +147,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                 <DialogTitle className="text-center text-2xl">
                   <Badge variant="secondary" className="mb-4">
                     <Star className="w-4 h-4 mr-2 text-yellow-500" />
-                    Celebrity RoleColor™ Profile
+                    Celebrity RoleColorâ„¢ Profile
                   </Badge>
                   <div className="mt-2">
                     <span className={colorStyles[celebrityResult.dominantColor]?.text}>{celebrityResult.celebrityName}</span>
@@ -184,11 +184,11 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
 
                 {/* Strengths */}
                 <div>
-                  <h4 className="font-bold mb-3">💪 {celebrityResult.celebrityName}'s Strengths</h4>
+                  <h4 className="font-bold mb-3">ðŸ’ª {celebrityResult.celebrityName}'s Strengths</h4>
                   <div className="grid sm:grid-cols-2 gap-2">
                     {celebrityResult.profile.dominant.strengths.map((s, i) => (
                       <div key={i} className={`p-3 rounded-xl ${colorStyles[celebrityResult.dominantColor]?.bg} border ${colorStyles[celebrityResult.dominantColor]?.border}`}>
-                        <span className={colorStyles[celebrityResult.dominantColor]?.text}>✓</span> {s}
+                        <span className={colorStyles[celebrityResult.dominantColor]?.text}>âœ“</span> {s}
                       </div>
                     ))}
                   </div>
@@ -196,7 +196,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
 
                 {/* Growth Areas */}
                 <div>
-                  <h4 className="font-bold mb-3">📈 Growth Opportunities</h4>
+                  <h4 className="font-bold mb-3">ðŸ“ˆ Growth Opportunities</h4>
                   <div className="grid sm:grid-cols-3 gap-2">
                     {celebrityResult.profile.dominant.challenges.map((c, i) => (
                       <div key={i} className="p-3 rounded-xl bg-muted/50 border border-border text-sm">{c}</div>
@@ -219,7 +219,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
 
                 {/* Score Breakdown */}
                 <div>
-                  <h4 className="font-bold mb-3">📊 Color Score Breakdown</h4>
+                  <h4 className="font-bold mb-3">ðŸ“Š Color Score Breakdown</h4>
                   <div className="grid grid-cols-4 gap-3">
                     {Object.entries(celebrityResult.scores).map(([color, score]) => {
                       const styles = colorStyles[color];
@@ -236,7 +236,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
 
                 {/* Similar Figures */}
                 <div>
-                  <h4 className="font-bold mb-3">⭐ Similar Leadership Styles</h4>
+                  <h4 className="font-bold mb-3">â­ Similar Leadership Styles</h4>
                   <div className="flex flex-wrap gap-2">
                     {celebrityResult.profile.dominant.famousExamples.map((ex, i) => (
                       <Badge key={i} variant="outline" className={`${colorStyles[celebrityResult.dominantColor]?.border} ${colorStyles[celebrityResult.dominantColor]?.text}`}>{ex}</Badge>
@@ -257,7 +257,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                 {/* CTA */}
                 <Card className="bg-gradient-to-br from-primary/10 via-green/10 to-blue/10 border-primary/20">
                   <CardContent className="p-6 text-center">
-                    <h4 className="text-lg font-bold mb-2">Discover Your Own RoleColor™</h4>
+                    <h4 className="text-lg font-bold mb-2">Discover Your Own RoleColorâ„¢</h4>
                     <p className="text-muted-foreground text-sm mb-4">
                       Now that you've analyzed {celebrityResult.celebrityName}, find out your own leadership color!
                     </p>
@@ -295,7 +295,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               <blockquote className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-muted-foreground mb-6 sm:mb-8 md:mb-10 leading-relaxed italic text-balance">
                 "Leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage."
               </blockquote>
-              <cite className="text-primary font-bold text-base sm:text-lg md:text-xl">— Bruce Tuckman, developer of the team development model</cite>
+              <cite className="text-primary font-bold text-base sm:text-lg md:text-xl">â€” Bruce Tuckman, developer of the team development model</cite>
             </div>
           </ScrollReveal>
 
@@ -314,7 +314,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                   <div className="relative glass-card-strong rounded-[1.25rem] p-6 sm:p-8 md:p-12 bg-background">
                     <h4 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 sm:mb-6 md:mb-8">Contextual Leadership</h4>
                     <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-                      We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> — the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
+                      We believe in <strong className="text-foreground gradient-text-primary">Contextual Leadership</strong> â€” the understanding that leadership isn't a fixed identity. It's adapting your strengths to what a team needs at each stage.
                     </p>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                   />
                   <div className="relative glass-card-strong rounded-[1.25rem] p-6 sm:p-8 md:p-12 bg-gradient-to-br from-primary/5 to-green/5">
                     <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed">
-                      Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges — because 
+                      Our tool reveals your unique color profile and shows you how to flex your leadership style across different team stages, contexts, and challenges â€” because 
                       <strong className="gradient-text-primary text-lg sm:text-xl md:text-2xl block mt-4"> effective leaders adapt, they don't impose.</strong>
                     </p>
                   </div>
@@ -355,7 +355,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               </h4>
               
               <Badge variant="outline" className="text-lg px-8 py-4 border-primary/40 text-primary font-bold">
-                🔬 Patent Pending System
+                ðŸ”¬ Patent Pending System
               </Badge>
             </div>
             
@@ -411,10 +411,10 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
           <div id="rolecolor-profiles">
           <ScrollReveal preset="zoom-in" className="mb-20 scroll-mt-24">
             <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
-              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor™ Profiles</span>:
+              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColorâ„¢ Profiles</span>:
             </h4>
             
-            <ScrollRevealGroup preset="fade-up" staggerDelay={0.1} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16">
+            <ScrollRevealGroup preset="fade-up" staggerDelay={0.1} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16 auto-rows-[minmax(0,1fr)]">
               {[{
               icon: Target,
               color: 'yellow',
@@ -439,7 +439,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               name: 'Blue',
               desc: 'Innovation-focused visionaries (strategists, designers, researchers)',
               gradient: 'gradient-blue'
-            }].map((role, i) => <div key={i} className="glass-card rounded-2xl p-6 sm:p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group">
+            }].map((role, i) => <div key={i} className="glass-card rounded-2xl p-6 sm:p-8 border border-border text-center hover:border-primary/50 transition-all duration-500 hover-lift group h-full flex flex-col items-center justify-center">
                   <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-${role.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-${role.color}`}>
                     <role.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                   </div>
@@ -450,7 +450,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
 
             <div className="text-center">
               <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
-                Discover Your RoleColor™ Profile
+                Discover Your RoleColorâ„¢ Profile
                 <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -518,7 +518,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                     ) : (
                       <>
                         <Star className="mr-2 w-5 h-5" />
-                        Analyze {celebrityName.trim() || "Their"} RoleColor™
+                        Analyze {celebrityName.trim() || "Their"} RoleColorâ„¢
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
@@ -529,7 +529,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                 </p>
                 {isAnalyzing && (
                   <p className="text-sm text-primary mt-2 animate-pulse">
-                    🤖 AI is analyzing 50 leadership questions as {celebrityName.trim()}...
+                    ðŸ¤– AI is analyzing 50 leadership questions as {celebrityName.trim()}...
                   </p>
                 )}
               </div>
@@ -549,7 +549,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               The Complete System
             </Badge>
             <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-8 leading-tight text-balance">
-              From Knowing How People Are Built →
+              From Knowing How People Are Built â†’
               <br />
               <span className="gradient-text-primary">Knowing If They Can Execute</span>
             </h3>
@@ -558,13 +558,13 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
           {/* Narrative */}
           <ScrollReveal preset="blur-in" delay={0.1} className="max-w-4xl mx-auto text-center mb-16">
             <p className="text-xl md:text-2xl text-foreground leading-relaxed mb-6">
-              RoleColorFinder reveals how people are built — how they think, lead, decide, and respond under pressure.
+              RoleColorFinder reveals how people are built â€” how they think, lead, decide, and respond under pressure.
             </p>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
               But understanding structure is only half the equation.
             </p>
             <p className="text-xl md:text-2xl text-foreground leading-relaxed mb-8">
-              <strong className="gradient-text-primary">RoleColorAI</strong> extends RoleColorFinder into execution intelligence — showing whether someone can perform in a specific role, on a specific team, at a specific moment in time.
+              <strong className="gradient-text-primary">RoleColorAI</strong> extends RoleColorFinder into execution intelligence â€” showing whether someone can perform in a specific role, on a specific team, at a specific moment in time.
             </p>
             <p className="text-2xl font-semibold text-foreground">
               Together, they form a complete decision system.
@@ -628,7 +628,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
               <div className="border-t border-border pt-6">
                 <p className="text-muted-foreground leading-relaxed">
                   <strong className="text-foreground">This is the execution layer.</strong><br />
-                  It explains whether someone can succeed here — and for how long.
+                  It explains whether someone can succeed here â€” and for how long.
                 </p>
               </div>
             </div>
@@ -743,7 +743,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                 {
                   id: "5",
                   title: "How do I get started?",
-                  content: "Simply click 'Start Your Free Assessment' above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™ profile."
+                  content: "Simply click 'Start Your Free Assessment' above to begin the 3-minute quiz. You'll get immediate results showing your RoleColorâ„¢ profile."
                 },
                 {
                   id: "6",

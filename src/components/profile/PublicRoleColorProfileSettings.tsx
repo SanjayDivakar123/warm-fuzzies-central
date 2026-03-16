@@ -31,10 +31,83 @@ interface PublicProfileRow {
   username: string;
   is_public: boolean;
   selected_assessment_result_id: string | null;
+  selected_assessment_type: string | null;
   theme: string;
   profile_image_url: string | null;
   view_count: number;
 }
+
+type AssessmentShowcaseSection =
+  | "full"
+  | "summary"
+  | "scores"
+  | "color-profile"
+  | "work-style"
+  | "leadership"
+  | "communication"
+  | "strengths";
+
+const defaultShowcaseSection: AssessmentShowcaseSection = "full";
+
+const sectionOptions: Array<{ value: AssessmentShowcaseSection; label: string }> = [
+  { value: "full", label: "Full assessment report" },
+  { value: "summary", label: "Summary" },
+  { value: "scores", label: "Color scores" },
+  { value: "color-profile", label: "Color profile" },
+  { value: "work-style", label: "Work style" },
+  { value: "leadership", label: "Leadership" },
+  { value: "communication", label: "Communication" },
+  { value: "strengths", label: "Strengths" },
+];
+
+const parseSelectedAssessmentType = (
+  value?: string | null,
+): { source: "manual" | "latest"; section: AssessmentShowcaseSection } => {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (!normalized || normalized === "latest" || normalized === "manual") {
+    return {
+      source: normalized === "manual" ? "manual" : "latest",
+      section: defaultShowcaseSection,
+    };
+  }
+
+  const [sourceRaw, sectionRaw] = normalized.split(":");
+  const source = sourceRaw === "manual" ? "manual" : "latest";
+  const validSection = sectionOptions.some((item) => item.value === sectionRaw)
+    ? (sectionRaw as AssessmentShowcaseSection)
+    : defaultShowcaseSection;
+
+  return { source, section: validSection };
+};
+
+const encodeSelectedAssessmentType = (
+  source: "manual" | "latest",
+  section: AssessmentShowcaseSection,
+) => `${source}:${section}`;
+
+const isLongFormAssessment = (assessment?: AssessmentSummary | null) => {
+  if (!assessment) {
+    return false;
+  }
+
+  const typeText = String(assessment.assessment_type || "").toLowerCase();
+  const totalQuestions = Number(
+    assessment.results?.total_questions ||
+      assessment.results?.totalQuestions ||
+      assessment.results?.questionCount ||
+      assessment.results?.questions ||
+      0,
+  );
+
+  return (
+    typeText.includes("25") ||
+    typeText.includes("50") ||
+    typeText.includes("professional") ||
+    typeText.includes("pro") ||
+    totalQuestions >= 25
+  );
+};
 
 const slugify = (value: string) =>
   value
@@ -147,10 +220,12 @@ export default function PublicRoleColorProfileSettings({
     username: slugify(userEmail?.split("@")[0] || "rolecolor-user"),
     is_public: true,
     selected_assessment_result_id: null,
+    selected_assessment_type: encodeSelectedAssessmentType("latest", defaultShowcaseSection),
     theme: "classic",
     profile_image_url: defaultAvatarUrl || null,
     view_count: 0,
   });
+  const [showcaseSection, setShowcaseSection] = useState<AssessmentShowcaseSection>(defaultShowcaseSection);
 
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
@@ -185,6 +260,16 @@ export default function PublicRoleColorProfileSettings({
     return assessments[0] || null;
   };
 
+  const selectedAssessmentForPreview = useMemo(
+    () => getSelectedAssessment(profile.selected_assessment_result_id),
+    [assessments, profile.selected_assessment_result_id],
+  );
+
+  const shouldShowSectionSelector = useMemo(
+    () => isLongFormAssessment(selectedAssessmentForPreview),
+    [selectedAssessmentForPreview],
+  );
+
   const persistLocalPublicProfile = (nextProfile: PublicProfileRow) => {
     const selectedAssessment = getSelectedAssessment(nextProfile.selected_assessment_result_id);
     const localPayload = {
@@ -198,6 +283,10 @@ export default function PublicRoleColorProfileSettings({
         avatar_url: nextProfile.profile_image_url || defaultAvatarUrl || null,
       },
       assessment: selectedAssessment || null,
+      selected_assessment_type: encodeSelectedAssessmentType(
+        nextProfile.selected_assessment_result_id ? "manual" : "latest",
+        showcaseSection,
+      ),
       updated_at: new Date().toISOString(),
     };
 
@@ -262,10 +351,14 @@ export default function PublicRoleColorProfileSettings({
               ...prev,
               username: cached.username || prev.username,
               is_public: cached.is_public ?? prev.is_public,
+              selected_assessment_type:
+                cached.selected_assessment_type || prev.selected_assessment_type,
               theme: cached.theme || prev.theme,
               profile_image_url: cached.profile_image_url || prev.profile_image_url,
               view_count: cached.view_count || 0,
             }));
+            const parsedType = parseSelectedAssessmentType(cached.selected_assessment_type);
+            setShowcaseSection(parsedType.section);
           }
         }
         setLoading(false);
@@ -275,7 +368,7 @@ export default function PublicRoleColorProfileSettings({
       try {
         const { data, error } = await (supabase as any)
           .from("public_profiles")
-          .select("username, is_public, selected_assessment_result_id, theme, profile_image_url, view_count")
+          .select("username, is_public, selected_assessment_result_id, selected_assessment_type, theme, profile_image_url, view_count")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -293,11 +386,14 @@ export default function PublicRoleColorProfileSettings({
             username: data.username,
             is_public: data.is_public,
             selected_assessment_result_id: data.selected_assessment_result_id,
+            selected_assessment_type: data.selected_assessment_type || null,
             theme: data.theme || "classic",
             profile_image_url: data.profile_image_url || defaultAvatarUrl || null,
             view_count: data.view_count || 0,
           };
           setProfile(loadedProfile);
+          const parsedType = parseSelectedAssessmentType(data.selected_assessment_type);
+          setShowcaseSection(parsedType.section);
           persistLocalPublicProfile(loadedProfile);
         } else {
           const cachedUsername = localStorage.getItem(`public_profile_user_${userId}`);
@@ -309,10 +405,14 @@ export default function PublicRoleColorProfileSettings({
                 ...prev,
                 username: cached.username || prev.username,
                 is_public: cached.is_public ?? prev.is_public,
+                selected_assessment_type:
+                  cached.selected_assessment_type || prev.selected_assessment_type,
                 theme: cached.theme || prev.theme,
                 profile_image_url: cached.profile_image_url || prev.profile_image_url,
                 view_count: cached.view_count || 0,
               }));
+              const parsedType = parseSelectedAssessmentType(cached.selected_assessment_type);
+              setShowcaseSection(parsedType.section);
             }
           }
         }
@@ -501,7 +601,10 @@ export default function PublicRoleColorProfileSettings({
         username: cleanedUsername,
         is_public: profile.is_public,
         selected_assessment_result_id: profile.selected_assessment_result_id,
-        selected_assessment_type: profile.selected_assessment_result_id ? "manual" : "latest",
+        selected_assessment_type: encodeSelectedAssessmentType(
+          profile.selected_assessment_result_id ? "manual" : "latest",
+          shouldShowSectionSelector ? showcaseSection : defaultShowcaseSection,
+        ),
         theme: hasPremiumAccess ? profile.theme : "classic",
         profile_image_url: profile.profile_image_url,
         updated_at: new Date().toISOString(),
@@ -510,6 +613,7 @@ export default function PublicRoleColorProfileSettings({
       const nextProfile = {
         ...profile,
         username: cleanedUsername,
+        selected_assessment_type: payload.selected_assessment_type,
         theme: hasPremiumAccess ? profile.theme : "classic",
       };
 
@@ -663,6 +767,30 @@ export default function PublicRoleColorProfileSettings({
               </SelectContent>
             </Select>
           </div>
+
+          {shouldShowSectionSelector && (
+            <div className="space-y-2">
+              <Label>Section to showcase</Label>
+              <Select
+                value={showcaseSection}
+                onValueChange={(value) => setShowcaseSection(value as AssessmentShowcaseSection)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sectionOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                For 25/50-question and professional assessments, choose one section or show the full report.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

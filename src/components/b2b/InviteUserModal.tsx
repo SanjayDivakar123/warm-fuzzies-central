@@ -49,6 +49,31 @@ const ASSESSMENT_TYPES: { value: AssessmentType; label: string }[] = [
   { value: '50q', label: '50 Questions' },
 ];
 
+const getFriendlyCardDeclineMessage = (declineCode?: string, fallbackMessage?: string) => {
+  const code = (declineCode || '').toLowerCase();
+
+  if (code === 'transaction_not_allowed') {
+    return 'This card cannot be used for this type of purchase. Please try another card or contact your bank.';
+  }
+  if (code === 'insufficient_funds') {
+    return 'Your bank reported insufficient funds. Please use a different card or try again later.';
+  }
+  if (code === 'do_not_honor' || code === 'card_declined') {
+    return 'Your bank declined the charge. Please try another card or contact your bank.';
+  }
+  if (code === 'expired_card') {
+    return 'This card is expired. Please update your payment method.';
+  }
+  if (code === 'incorrect_cvc' || code === 'invalid_cvc') {
+    return 'Your card security code could not be verified. Please update your payment method.';
+  }
+  if (code === 'processing_error') {
+    return 'Your bank could not process this charge right now. Please try again in a moment.';
+  }
+
+  return fallbackMessage || 'Your card could not be charged. Please try another card or contact your bank.';
+};
+
 export default function InviteUserModal({
   open,
   onClose,
@@ -149,15 +174,16 @@ export default function InviteUserModal({
         if (errData?.errorCode === 'NEEDS_PAYMENT_METHOD' || errData?.needsPaymentMethod) {
           setPaymentError({
             title: 'Payment method required',
-            message: 'No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.',
+            message: 'No payment method is on file. Add one in Settings to invite users beyond the 2-user minimum.',
           });
           setLoading(false);
           return;
         }
         if (errData?.errorCode === 'CARD_DECLINED') {
+          const userMessage = getFriendlyCardDeclineMessage(errData?.declineCode, errData?.error);
           setPaymentError({
-            title: 'Payment method issue',
-            message: 'No valid payment method is set up. Please add or update your payment information in Settings to invite new users.',
+            title: 'Card charge failed',
+            message: `${userMessage}${errData?.declineCode ? ` (Reference: ${errData.declineCode})` : ''}`,
           });
           setLoading(false);
           return;
@@ -185,15 +211,16 @@ export default function InviteUserModal({
         if (data.errorCode === 'NEEDS_PAYMENT_METHOD' || data.needsPaymentMethod) {
           setPaymentError({
             title: 'Payment method required',
-            message: 'No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.',
+            message: 'No payment method is on file. Add one in Settings to invite users beyond the 2-user minimum.',
           });
           setLoading(false);
           return;
         }
         if (data.errorCode === 'CARD_DECLINED') {
+          const userMessage = getFriendlyCardDeclineMessage(data.declineCode, data.error);
           setPaymentError({
-            title: 'Payment method issue',
-            message: 'No valid payment method is set up. Please add or update your payment information in Settings to invite new users.',
+            title: 'Card charge failed',
+            message: `${userMessage}${data.declineCode ? ` (Reference: ${data.declineCode})` : ''}`,
           });
           setLoading(false);
           return;
@@ -228,10 +255,10 @@ export default function InviteUserModal({
         billingMsg = proRatedAmount
           ? ` (Used $${(proRatedAmount / 100).toFixed(2)} billing credit)`
           : ' (Used billing credit)';
-      } else if (billing?.withinPrePaidSeats) {
+      } else if (billing?.withinBaselineUsers || billing?.withinPrePaidSeats) {
         const used = (billing.seatsUsed ?? 0) + 1;
-        const total = billing.seatsPurchased ?? '?';
-        billingMsg = ` (Pre-paid seat ${used}/${total} — charges start after seat ${total})`;
+        const total = billing.baselineUsers ?? billing.seatsPurchased ?? '?';
+        billingMsg = ` (Included user ${used}/${total} — charges start after user ${total})`;
       }
 
       toast({
@@ -463,3 +490,4 @@ export default function InviteUserModal({
     </>
   );
 }
+

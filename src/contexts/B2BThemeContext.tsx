@@ -103,6 +103,10 @@ export function B2BThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove('dark');
     }
+
+    return () => {
+      root.classList.remove('dark');
+    };
   }, [resolvedTheme]);
 
   // Inject company colors as CSS custom properties
