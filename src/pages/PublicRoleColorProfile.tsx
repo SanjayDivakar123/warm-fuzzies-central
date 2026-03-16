@@ -680,12 +680,12 @@ export default function PublicRoleColorProfile() {
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="font-semibold">Build your own RoleColor social profile</h3>
-              <p className="text-sm text-muted-foreground">Customize your URL, pick your featured assessment, and share your identity card.</p>
+          <CardContent className="p-6 md:p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-3 max-w-3xl">
+              <h3 className="text-4xl md:text-6xl font-semibold leading-[1.08] tracking-tight">Build your own RoleColor social profile</h3>
+              <p className="text-base md:text-2xl leading-relaxed text-muted-foreground">Customize your URL, pick your featured assessment, and share your identity card.</p>
             </div>
-            <Button onClick={() => navigate("/free-assessment")}>
+            <Button className="w-full sm:w-auto" onClick={() => navigate("/free-assessment")}>
               <ExternalLink className="w-4 h-4 mr-2" />
               Take Assessment
             </Button>

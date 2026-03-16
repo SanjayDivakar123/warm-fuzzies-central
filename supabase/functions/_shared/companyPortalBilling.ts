@@ -14,8 +14,8 @@ const daysInMonthUtc = (year: number, monthIndex: number) =>
 
 export const toMoney = (amount: number) => Number(amount.toFixed(2));
 
-export const getPortalSeatBaseline = (storedSeats: number | null | undefined) =>
-  Math.max(MIN_PORTAL_SEATS, Number(storedSeats || 0));
+export const getPortalSeatBaseline = (_storedSeats: number | null | undefined) =>
+  MIN_PORTAL_SEATS;
 
 export const getBillablePortalUsers = (
   activeUsers: number | null | undefined,
@@ -95,7 +95,7 @@ export const getProrationAmountCents = (
     return 0;
   }
 
-  return Math.max(0, Math.round((remainingMs / totalPeriodMs) * monthlyRateCents));
+  return Math.max(0, Math.ceil((remainingMs / totalPeriodMs) * monthlyRateCents));
 };
 
 export const resolveStripeCustomerAndDefaultPaymentMethod = async (

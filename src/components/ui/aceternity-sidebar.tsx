@@ -98,12 +98,13 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col bg-card border-r border-border w-[300px] flex-shrink-0",
+        "h-full px-4 py-4 hidden md:flex md:flex-col bg-card border-r border-border w-[300px] flex-shrink-0 overflow-hidden",
         className
       )}
       animate={{
-        width: animate ? (open ? "300px" : "60px") : "300px",
+        width: animate ? (open ? "300px" : "72px") : "300px",
       }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
@@ -176,6 +177,10 @@ export const SidebarLink = ({
   props?: Omit<LinkProps, 'to'>;
 }) => {
   const { open, setOpen, animate } = useSidebar();
+  const isCollapsed = animate && !open;
+  const iconMotion = {
+    x: isCollapsed ? 10 : 0,
+  };
   
   const handleClick = () => {
     // Close sidebar on mobile after clicking a link
@@ -192,17 +197,28 @@ export const SidebarLink = ({
       <button
         onClick={handleClick}
         className={cn(
-          "flex items-center justify-start gap-2 group/sidebar py-2 w-full text-left",
+          "flex items-center justify-start gap-2 group/sidebar py-2 w-full text-left rounded-md",
           className
         )}
       >
-        {link.icon}
         <motion.span
+          initial={false}
+          animate={iconMotion}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className="inline-flex"
+        >
+          {link.icon}
+        </motion.span>
+        <motion.span
+          initial={false}
           animate={{
-            display: animate ? (open ? "inline-block" : "none") : "inline-block",
             opacity: animate ? (open ? 1 : 0) : 1,
+            maxWidth: animate ? (open ? 160 : 0) : 160,
+            x: animate ? (open ? 0 : -6) : 0,
           }}
-          className="text-foreground text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+          whileHover={{ x: open ? 4 : -2 }}
+          transition={{ duration: 0.18, ease: "easeInOut" }}
+          className="text-foreground text-sm whitespace-nowrap overflow-hidden inline-block !p-0 !m-0"
         >
           {link.label}
         </motion.span>
@@ -215,18 +231,29 @@ export const SidebarLink = ({
       to={link.href}
       onClick={handleClick}
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2",
+        "flex items-center justify-start gap-2 group/sidebar py-2 w-full rounded-md",
         className
       )}
       {...props}
     >
-      {link.icon}
       <motion.span
+        initial={false}
+        animate={iconMotion}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
+        className="inline-flex"
+      >
+        {link.icon}
+      </motion.span>
+      <motion.span
+        initial={false}
         animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
+          maxWidth: animate ? (open ? 160 : 0) : 160,
+          x: animate ? (open ? 0 : -6) : 0,
         }}
-        className="text-foreground text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        whileHover={{ x: open ? 4 : -2 }}
+        transition={{ duration: 0.18, ease: "easeInOut" }}
+        className="text-foreground text-sm whitespace-nowrap overflow-hidden inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>

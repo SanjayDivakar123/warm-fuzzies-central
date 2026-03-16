@@ -89,6 +89,31 @@ const PREDEFINED_SKILLS = [
   "Technical Support",
 ];
 
+const getFriendlyCardDeclineMessage = (declineCode?: string, fallbackMessage?: string) => {
+  const code = (declineCode || '').toLowerCase();
+
+  if (code === 'transaction_not_allowed') {
+    return 'This card cannot be used for this type of purchase. Please try another card or contact your bank.';
+  }
+  if (code === 'insufficient_funds') {
+    return 'Your bank reported insufficient funds. Please use a different card or try again later.';
+  }
+  if (code === 'do_not_honor' || code === 'card_declined') {
+    return 'Your bank declined the charge. Please try another card or contact your bank.';
+  }
+  if (code === 'expired_card') {
+    return 'This card is expired. Please update your payment method.';
+  }
+  if (code === 'incorrect_cvc' || code === 'invalid_cvc') {
+    return 'Your card security code could not be verified. Please update your payment method.';
+  }
+  if (code === 'processing_error') {
+    return 'Your bank could not process this charge right now. Please try again in a moment.';
+  }
+
+  return fallbackMessage || 'Your card could not be charged. Please try another card or contact your bank.';
+};
+
 type UserFilter = 'all' | 'pending_reminders' | 'completed';
 
 export default function UsersTab({ company, onCompanyUpdate, readOnly = false, selectedUserId, onClearSelectedUser }: UsersTabProps) {
@@ -389,14 +414,15 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         if (errData?.errorCode === "NEEDS_PAYMENT_METHOD" || errData?.needsPaymentMethod) {
           setPaymentError({
             title: "Payment method required",
-            message: "No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.",
+            message: "No payment method is on file. Add one in Settings to invite users beyond the 2-user minimum.",
           });
           return;
         }
         if (errData?.errorCode === "CARD_DECLINED") {
+          const userMessage = getFriendlyCardDeclineMessage(errData?.declineCode, errData?.error);
           setPaymentError({
-            title: "Payment method issue",
-            message: "No valid payment method is set up. Please add or update your payment information in Settings to invite new users.",
+            title: "Card charge failed",
+            message: `${userMessage}${errData?.declineCode ? ` (Reference: ${errData.declineCode})` : ''}`,
           });
           return;
         }
@@ -422,14 +448,15 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         if (data.errorCode === "NEEDS_PAYMENT_METHOD" || data.needsPaymentMethod) {
           setPaymentError({
             title: "Payment method required",
-            message: "No payment method is on file. Add one in Settings to invite users beyond your pre-paid seats.",
+            message: "No payment method is on file. Add one in Settings to invite users beyond the 2-user minimum.",
           });
           return;
         }
         if (data.errorCode === "CARD_DECLINED") {
+          const userMessage = getFriendlyCardDeclineMessage(data.declineCode, data.error);
           setPaymentError({
-            title: "Payment method issue",
-            message: "No valid payment method is set up. Please add or update your payment information in Settings to invite new users.",
+            title: "Card charge failed",
+            message: `${userMessage}${data.declineCode ? ` (Reference: ${data.declineCode})` : ''}`,
           });
           return;
         }
@@ -462,10 +489,10 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
         billingMsg = proRatedAmount 
           ? ` (Used $${(proRatedAmount / 100).toFixed(2)} billing credit)` 
           : " (Used billing credit)";
-      } else if (billing?.withinPrePaidSeats) {
+      } else if (billing?.withinBaselineUsers || billing?.withinPrePaidSeats) {
         const used = (billing.seatsUsed ?? 0) + 1;
-        const total = billing.seatsPurchased ?? '?';
-        billingMsg = ` (Pre-paid seat ${used}/${total} — charges start after seat ${total})`;
+        const total = billing.baselineUsers ?? billing.seatsPurchased ?? '?';
+        billingMsg = ` (Included user ${used}/${total} — charges start after user ${total})`;
       }
 
       toast({
@@ -548,7 +575,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
 
       toast({
         title: "Access revoked",
-        description: "User access has been revoked. Current month charges remain; this user is excluded from next month billing.",
+        description: "User access has been revoked. The current month remains fully billed with no refund or credit; only future charges stop.",
       });
 
       invalidateAssessmentsCache(company.id);
@@ -1285,14 +1312,14 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                   ∞ Unlimited
                 </Badge>
               ) : (() => {
-                const seatsPurchased = company.seats_purchased ?? 0;
+                const seatsPurchased = 2;
                 const activeCount = users.filter((u: any) => u.status !== 'revoked').length;
                 if (seatsPurchased > 0) {
-                  const withinPrePaid = activeCount < seatsPurchased;
+                  const withinBaseline = activeCount < seatsPurchased;
                   return (
-                    <Badge variant={withinPrePaid ? 'secondary' : 'outline'} className={withinPrePaid ? '' : 'border-amber-400 text-amber-700 bg-amber-50'}>
-                      {withinPrePaid
-                        ? `${activeCount}/${seatsPurchased} pre-paid seats used`
+                    <Badge variant={withinBaseline ? 'secondary' : 'outline'} className={withinBaseline ? '' : 'border-amber-400 text-amber-700 bg-amber-50'}>
+                      {withinBaseline
+                        ? `${activeCount}/${seatsPurchased} included users used`
                         : `${activeCount} users — charges apply`}
                     </Badge>
                   );

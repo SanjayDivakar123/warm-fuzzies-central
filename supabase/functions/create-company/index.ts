@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MIN_BILLABLE_SEATS = 2;
+
 // Input validation helpers
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -78,7 +80,7 @@ serve(async (req) => {
     console.log('Authenticated user:', user.id, user.email);
 
     const body = await req.json();
-    let { name, subdomain, admin_email, seats_purchased, assessment_type } = body;
+    let { name, subdomain, admin_email, assessment_type } = body;
 
     // Input validation
     name = sanitizeString(name || '', 100);
@@ -102,14 +104,6 @@ serve(async (req) => {
     if (!isValidEmail(admin_email)) {
       return new Response(
         JSON.stringify({ error: 'Invalid admin email format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Validate seats
-    if (typeof seats_purchased !== 'number' || seats_purchased < 2 || seats_purchased > 10000) {
-      return new Response(
-        JSON.stringify({ error: 'Seats must be between 2 and 10,000' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -145,7 +139,7 @@ serve(async (req) => {
         name,
         subdomain,
         admin_email,
-        seats_purchased,
+        seats_purchased: MIN_BILLABLE_SEATS,
         assessment_type,
         subdomain_enabled: true,
         subdomain_status: 'active',

@@ -389,7 +389,7 @@ export default function AdminCompanyStatementModal({
             }));
 
       const activeUsers = Math.max(0, activeUsersRes.count || 0);
-      const storedSeats = Math.max(MIN_PORTAL_SEATS, company.seats_purchased || 0);
+      const storedSeats = MIN_PORTAL_SEATS;
       const billableUsers = Math.max(activeUsers, storedSeats);
       const basePortalMonthlyCost = isInternalAdminCompany ? 0 : billableUsers * 20;
       const hiringRenewalCost = isInternalAdminCompany ? 0 : (hasActiveSubscription && !hasCancelledAtPeriodEnd && company?.hiring_subscription_status !== 'admin_override' ? 500 : 0);

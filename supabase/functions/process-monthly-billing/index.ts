@@ -509,9 +509,38 @@ serve(async (req) => {
       failed: results.filter(r => !r.success).length
     });
 
+    let dailyProrationRun: unknown = null;
+    try {
+      const dailyProrationResponse = await fetch(`${supabaseUrl}/functions/v1/update-daily-prorations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+          "apikey": supabaseServiceKey,
+        },
+        body: JSON.stringify({ trigger: "process-monthly-billing" }),
+      });
+
+      dailyProrationRun = await dailyProrationResponse.json().catch(() => ({
+        success: false,
+        error: "Failed to parse daily proration response",
+      }));
+
+      if (!dailyProrationResponse.ok) {
+        logStep("Daily proration run failed", dailyProrationRun);
+      } else {
+        logStep("Daily proration run completed", dailyProrationRun);
+      }
+    } catch (dailyProrationError) {
+      const message = dailyProrationError instanceof Error ? dailyProrationError.message : String(dailyProrationError);
+      dailyProrationRun = { success: false, error: message };
+      logStep("Daily proration run crashed", { error: message });
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
-      results 
+      results,
+      dailyProrationRun,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
