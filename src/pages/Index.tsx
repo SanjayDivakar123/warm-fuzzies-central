@@ -97,7 +97,7 @@ const Index = () => {
     if (!celebrityResult) return;
     
     const { profile, scores, totalQuestions } = celebrityResult;
-    const text = `ðŸŒŸ ${celebrityResult.celebrityName}'s RoleColorâ„¢ Profile ðŸŒŸ
+    const text = `ðŸŒŸ ${celebrityResult.celebrityName}'s RoleColor™ Profile ðŸŒŸ
 
 ${profile.dominant.emoji} Dominant Color: ${profile.dominant.name} (${celebrityResult.dominantColor.toUpperCase()})
 ${profile.secondary.emoji} Secondary Color: ${profile.secondary.name} (${celebrityResult.secondaryColor.toUpperCase()})
@@ -118,7 +118,7 @@ ${profile.dominant.description}
 Similar to: ${profile.dominant.famousExamples.join(", ")}
 
 ---
-Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
+Discover your own RoleColor™ at rolecolorfinder.com`;
 
     navigator.clipboard.writeText(text);
     toast({ title: "Copied!", description: "Results copied to clipboard" });
@@ -147,7 +147,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
                 <DialogTitle className="text-center text-2xl">
                   <Badge variant="secondary" className="mb-4">
                     <Star className="w-4 h-4 mr-2 text-yellow-500" />
-                    Celebrity RoleColorâ„¢ Profile
+                    Celebrity RoleColor™ Profile
                   </Badge>
                   <div className="mt-2">
                     <span className={colorStyles[celebrityResult.dominantColor]?.text}>{celebrityResult.celebrityName}</span>
@@ -257,7 +257,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
                 {/* CTA */}
                 <Card className="bg-gradient-to-br from-primary/10 via-green/10 to-blue/10 border-primary/20">
                   <CardContent className="p-6 text-center">
-                    <h4 className="text-lg font-bold mb-2">Discover Your Own RoleColorâ„¢</h4>
+                    <h4 className="text-lg font-bold mb-2">Discover Your Own RoleColor™</h4>
                     <p className="text-muted-foreground text-sm mb-4">
                       Now that you've analyzed {celebrityResult.celebrityName}, find out your own leadership color!
                     </p>
@@ -411,7 +411,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
           <div id="rolecolor-profiles">
           <ScrollReveal preset="zoom-in" className="mb-20 scroll-mt-24">
             <h4 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
-              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColorâ„¢ Profiles</span>:
+              Our algorithm translates your answers into one of four <span className="gradient-text-primary">RoleColor™ Profiles</span>:
             </h4>
             
             <ScrollRevealGroup preset="fade-up" staggerDelay={0.1} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16 auto-rows-[minmax(0,1fr)]">
@@ -450,7 +450,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
 
             <div className="text-center">
               <Button variant="default" size="lg" className="text-base sm:text-lg md:text-xl px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 font-bold group" onClick={() => navigate('/free-assessment')}>
-                Discover Your RoleColorâ„¢ Profile
+                Discover Your RoleColor™ Profile
                 <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -518,7 +518,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
                     ) : (
                       <>
                         <Star className="mr-2 w-5 h-5" />
-                        Analyze {celebrityName.trim() || "Their"} RoleColorâ„¢
+                        Analyze {celebrityName.trim() || "Their"} RoleColor™
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
@@ -743,7 +743,7 @@ Discover your own RoleColorâ„¢ at rolecolorfinder.com`;
                 {
                   id: "5",
                   title: "How do I get started?",
-                  content: "Simply click 'Start Your Free Assessment' above to begin the 3-minute quiz. You'll get immediate results showing your RoleColorâ„¢ profile."
+                  content: "Simply click 'Start Your Free Assessment' above to begin the 3-minute quiz. You'll get immediate results showing your RoleColor™ profile."
                 },
                 {
                   id: "6",
