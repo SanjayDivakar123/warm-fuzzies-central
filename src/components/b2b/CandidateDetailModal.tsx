@@ -26,6 +26,7 @@ interface Candidate {
   assessment_category: string | null;
   assessment_type: string | null;
   assessment_completed_at: string | null;
+  assessment_result_id: string | null;
   fit_score: number | null;
   fit_analysis: any;
   resume_url: string | null;
@@ -83,9 +84,14 @@ export default function CandidateDetailModal({
 }: CandidateDetailModalProps) {
   if (!candidate) return null;
 
+  const hasCompletedAssessment = Boolean(candidate.assessment_completed_at || candidate.assessment_result_id);
+  const displayStatus = hasCompletedAssessment && ['invited', 'applied', 'assessment_pending'].includes(candidate.status)
+    ? 'assessment_completed'
+    : candidate.status;
+
   const getStatusBadge = () => (
-    <Badge className={STATUS_COLORS[candidate.status] || ''}>
-      {STATUS_LABELS[candidate.status] || candidate.status}
+    <Badge className={STATUS_COLORS[displayStatus] || ''}>
+      {STATUS_LABELS[displayStatus] || displayStatus}
     </Badge>
   );
 
@@ -169,10 +175,14 @@ export default function CandidateDetailModal({
             <p className="text-sm">{new Date(candidate.created_at).toLocaleDateString()}</p>
           </div>
 
-          {candidate.assessment_completed_at && (
+          {hasCompletedAssessment && (
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Assessment Completed</Label>
-              <p className="text-sm">{new Date(candidate.assessment_completed_at).toLocaleDateString()}</p>
+              <p className="text-sm">
+                {candidate.assessment_completed_at
+                  ? new Date(candidate.assessment_completed_at).toLocaleDateString()
+                  : 'Completed'}
+              </p>
             </div>
           )}
 
@@ -209,7 +219,7 @@ export default function CandidateDetailModal({
               )}
 
               {/* View Results */}
-              {candidate.assessment_completed_at && (
+              {hasCompletedAssessment && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -225,7 +235,7 @@ export default function CandidateDetailModal({
               )}
 
               {/* Analyze Fit */}
-              {candidate.assessment_completed_at && candidate.fit_score === null && (
+              {hasCompletedAssessment && candidate.fit_score === null && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -243,7 +253,7 @@ export default function CandidateDetailModal({
               )}
 
               {/* Hire */}
-              {candidate.status === 'assessment_completed' && canHire && (
+              {displayStatus === 'assessment_completed' && canHire && (
                 <Button
                   variant="outline"
                   size="sm"

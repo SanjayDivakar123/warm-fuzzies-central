@@ -28,6 +28,7 @@ interface Candidate {
   assessment_category: string | null;
   assessment_type: string | null;
   assessment_completed_at: string | null;
+  assessment_result_id: string | null;
   fit_score: number | null;
   fit_analysis: any;
   resume_url: string | null;
@@ -253,21 +254,35 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
     toast({ title: 'Link copied to clipboard' });
   };
 
+  const hasCompletedAssessment = (candidate: Candidate) =>
+    Boolean(candidate.assessment_completed_at || candidate.assessment_result_id);
+
+  const getDisplayStatus = (candidate: Candidate) => {
+    if (
+      hasCompletedAssessment(candidate) &&
+      ['invited', 'applied', 'assessment_pending'].includes(candidate.status)
+    ) {
+      return 'assessment_completed';
+    }
+
+    return candidate.status;
+  };
+
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = 
       c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.full_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
       (c.position_title?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || getDisplayStatus(c) === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
   const stats = {
     total: candidates.length,
-    pending: candidates.filter(c => c.status === 'assessment_pending' || c.status === 'invited').length,
-    completed: candidates.filter(c => c.status === 'assessment_completed').length,
+    pending: candidates.filter(c => ['assessment_pending', 'invited'].includes(getDisplayStatus(c))).length,
+    completed: candidates.filter(c => getDisplayStatus(c) === 'assessment_completed').length,
     hired: candidates.filter(c => c.status === 'hired').length,
   };
 
@@ -406,6 +421,8 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
               {/* Mobile Card View */}
               <div className="sm:hidden space-y-2">
                 {filteredCandidates.map(candidate => (
+                  
+                  // Completed candidates may have stale status values; normalize for display.
                   <button
                     key={candidate.id}
                     onClick={() => setMobileSelectedCandidate(candidate)}
@@ -419,8 +436,8 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
                         <p className="text-sm text-muted-foreground truncate">{candidate.email}</p>
                       </div>
                       <div className="flex-shrink-0">
-                        <Badge className={STATUS_COLORS[candidate.status] || ''}>
-                          {STATUS_LABELS[candidate.status] || candidate.status}
+                        <Badge className={STATUS_COLORS[getDisplayStatus(candidate)] || ''}>
+                          {STATUS_LABELS[getDisplayStatus(candidate)] || getDisplayStatus(candidate)}
                         </Badge>
                       </div>
                     </div>
@@ -514,8 +531,8 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={STATUS_COLORS[candidate.status] || ''}>
-                          {STATUS_LABELS[candidate.status] || candidate.status}
+                        <Badge className={STATUS_COLORS[getDisplayStatus(candidate)] || ''}>
+                          {STATUS_LABELS[getDisplayStatus(candidate)] || getDisplayStatus(candidate)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -540,7 +557,7 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
                               <Eye className="h-3 w-3" />
                             </Button>
                           </div>
-                        ) : candidate.assessment_completed_at ? (
+                        ) : hasCompletedAssessment(candidate) ? (
                           <Button
                             variant="outline"
                             size="sm"
@@ -588,7 +605,7 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
                                 Upload Resume
                               </DropdownMenuItem>
                             )}
-                            {candidate.assessment_completed_at && (
+                            {hasCompletedAssessment(candidate) && (
                               <DropdownMenuItem onClick={() => {
                                 setSelectedCandidate(candidate);
                                 setShowResultsModal(true);
@@ -597,7 +614,7 @@ export default function CandidatesTab({ company, canHireCandidates = true, canMa
                                 View Results
                               </DropdownMenuItem>
                             )}
-                            {candidate.status === 'assessment_completed' && canHireCandidates && (
+                            {getDisplayStatus(candidate) === 'assessment_completed' && canHireCandidates && (
                               <>
                                 <DropdownMenuItem onClick={() => handleHireCandidate(candidate)}>
                                   <UserCheck className="h-4 w-4 mr-2" />
