@@ -228,7 +228,24 @@ const ProResults = () => {
     }
 
     if (savedResults) {
-      setResults(JSON.parse(savedResults));
+      const parsed = JSON.parse(savedResults);
+
+      // Ensure colorDistribution exists (may be absent in older saved results)
+      if (!parsed.colorDistribution && parsed.scores) {
+        parsed.colorDistribution = Object.entries(parsed.scores).sort(
+          ([, a], [, b]) => (b as number) - (a as number)
+        );
+      }
+
+      // Ensure secondaryColor and tertiaryColor exist
+      if (!parsed.secondaryColor && parsed.colorDistribution) {
+        parsed.secondaryColor = parsed.colorDistribution[1]?.[0] || parsed.colorDistribution[0]?.[0];
+      }
+      if (!parsed.tertiaryColor && parsed.colorDistribution) {
+        parsed.tertiaryColor = parsed.colorDistribution[2]?.[0] || parsed.colorDistribution[0]?.[0];
+      }
+
+      setResults(parsed);
 
       // Fetch or generate shareable code if user is logged in
       if (user) {
@@ -348,9 +365,13 @@ const ProResults = () => {
   const tertiaryColor = colorData[results.tertiaryColor as keyof typeof colorData];
 
   const calculateBlendProfile = () => {
-    const [primary, primaryScore] = results.colorDistribution[0];
-    const [secondary, secondaryScore] = results.colorDistribution[1];
-    const [tertiary, tertiaryScore] = results.colorDistribution[2];
+    const dist: [string, number][] = results.colorDistribution?.length
+      ? results.colorDistribution
+      : (Object.entries(results.scores).sort(([, a], [, b]) => b - a) as [string, number][]);
+
+    const [primary, primaryScore] = dist[0] ?? ["", 0];
+    const [secondary, secondaryScore] = dist[1] ?? ["", 0];
+    const [tertiary, tertiaryScore] = dist[2] ?? ["", 0];
     
     const primaryPercentage = Math.round((primaryScore / results.totalQuestions) * 100);
     const secondaryPercentage = Math.round((secondaryScore / results.totalQuestions) * 100);
