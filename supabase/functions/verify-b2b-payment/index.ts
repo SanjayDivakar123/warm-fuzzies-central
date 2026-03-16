@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const MIN_BILLABLE_SEATS = 2;
+
 serve(async (req) => {
   console.log("=== VERIFY B2B PAYMENT FUNCTION STARTED ===");
 
@@ -44,7 +46,6 @@ serve(async (req) => {
     const {
       company_name,
       admin_email,
-      seats,
       assessment_type,
       user_id,
       subdomain,
@@ -96,7 +97,7 @@ serve(async (req) => {
         name: company_name,
         subdomain: subdomain,
         admin_email: admin_email,
-        seats_purchased: parseInt(seats),
+        seats_purchased: MIN_BILLABLE_SEATS,
         assessment_type: assessment_type || "25q",
         ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
       })

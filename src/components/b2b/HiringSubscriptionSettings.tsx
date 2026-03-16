@@ -133,7 +133,7 @@ export default function HiringSubscriptionSettings({
   const [renewalEstimateLoading, setRenewalEstimateLoading] = useState(false);
   const [renewalEstimate, setRenewalEstimate] = useState<{
     activeUsers: number;
-    seatsPurchased: number;
+    baselineUsers: number;
     billableUsers: number;
     hiringCharge: number;
     portalCharge: number;
@@ -306,8 +306,8 @@ export default function HiringSubscriptionSettings({
       if (error) throw error;
 
       const includedUsers = Math.max(0, count || 0);
-      const seatsPurchased = Math.max(MIN_PORTAL_SEATS, company.seats_purchased || 0);
-      const billableUsers = Math.max(includedUsers, seatsPurchased);
+      const baselineUsers = MIN_PORTAL_SEATS;
+      const billableUsers = Math.max(includedUsers, baselineUsers);
 
       const hiringCharge = hasPaidSubscription && !isCancelling
         ? (isInternalAdminCompany ? 0 : 500)
@@ -317,7 +317,7 @@ export default function HiringSubscriptionSettings({
 
       setRenewalEstimate({
         activeUsers: includedUsers,
-        seatsPurchased,
+        baselineUsers,
         billableUsers,
         hiringCharge,
         portalCharge,
@@ -1319,7 +1319,7 @@ export default function HiringSubscriptionSettings({
             </Button>
           </div>
 
-          <div className="flex-1 overflow-auto space-y-4 pr-1">
+          <div className="flex-1 overflow-auto space-y-4 pr-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/20 hover:[&::-webkit-scrollbar-thumb]:bg-black/30 dark:[&::-webkit-scrollbar-thumb]:bg-white/10 dark:hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-lg border p-3">
                 <p className="text-xs text-muted-foreground">Billing Cycle Started</p>
@@ -1398,7 +1398,7 @@ export default function HiringSubscriptionSettings({
                   No statement activity yet.
                 </div>
               ) : (
-                <div className="max-h-[52vh] overflow-auto">
+                <div className="max-h-[52vh] overflow-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/20 hover:[&::-webkit-scrollbar-thumb]:bg-black/30 dark:[&::-webkit-scrollbar-thumb]:bg-white/10 dark:hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
                   {statementRows.map((row) => (
                     <button
                       key={row.id}
@@ -1527,8 +1527,8 @@ export default function HiringSubscriptionSettings({
                         <p className="text-lg font-semibold">{renewalEstimate.activeUsers}</p>
                       </div>
                       <div className="rounded-md bg-muted/20 p-3">
-                        <p className="text-xs text-muted-foreground">Stored Seats</p>
-                        <p className="text-lg font-semibold">{renewalEstimate.seatsPurchased}</p>
+                        <p className="text-xs text-muted-foreground">Minimum Included Users</p>
+                        <p className="text-lg font-semibold">{renewalEstimate.baselineUsers}</p>
                       </div>
                       <div className="rounded-md bg-muted/20 p-3">
                         <p className="text-xs text-muted-foreground">Billable Users</p>
@@ -1540,7 +1540,7 @@ export default function HiringSubscriptionSettings({
                   {/* Explanation */}
                   <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4">
                     <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-                      <strong>Note:</strong> Portal renewals charge the greater of invited plus active users or stored seats, with a 2-seat minimum. Users added mid-cycle are prorated until the shared company renewal date, then charged the full monthly rate.
+                      <strong>Note:</strong> Portal renewals charge the greater of invited plus active users or the 2-user minimum baseline. Users added mid-cycle are prorated until the shared company renewal date, then charged the full monthly rate.
                     </p>
                   </div>
                 </div>

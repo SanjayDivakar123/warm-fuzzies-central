@@ -329,36 +329,8 @@ function B2BDashboardContent() {
   }, [handleTabChange]);
 
   useEffect(() => {
-    const seatsAdded = searchParams.get('seats_added');
     const sessionId = searchParams.get('session_id');
     const hiringSubscribed = searchParams.get('hiring_subscribed');
-
-    if (seatsAdded === 'true' && sessionId) {
-      const verifyPayment = async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('verify-add-seats-payment', {
-            body: { sessionId },
-          });
-
-          if (error || !data?.success) {
-            console.error('Seat payment verification failed:', error || data?.error);
-          } else {
-            toast({
-              title: 'Seats added successfully!',
-              description: `Your company now has ${data.newTotal} seats.`,
-            });
-          }
-        } catch (err) {
-          console.error('Error verifying payment:', err);
-        } finally {
-          // Clean up URL
-          searchParams.delete('seats_added');
-          searchParams.delete('session_id');
-          setSearchParams(searchParams, { replace: true });
-        }
-      };
-      verifyPayment();
-    }
 
     if (hiringSubscribed === 'true' && sessionId) {
       const verifySubscription = async () => {

@@ -455,7 +455,7 @@ serve(async (req) => {
       });
     }
 
-    // Check seats available
+    // Enforce hard upper limit only. Baseline billing logic runs inside charge-invite.
     const { data: activeUsers } = await supabase
       .from("company_users")
       .select("id")
@@ -464,7 +464,7 @@ serve(async (req) => {
 
     // Special case: RoleColorFinder LLC has unlimited users
     // All other companies are only capped at the absolute 20,000 hard max.
-    // Invites beyond seats_purchased are allowed — charge-invite will handle billing.
+    // Invites beyond the 2-user minimum are allowed — charge-invite will handle billing.
     const isUnlimitedCompany = company.name === "RoleColorFinder LLC";
     const maxSeatsAllowed = 20000;
     const effectiveSeats = isUnlimitedCompany ? Infinity : maxSeatsAllowed;
@@ -729,6 +729,8 @@ serve(async (req) => {
         usedCredits: chargeResult.usedCredits || false,
         amount: chargeAmount,
         proRatedAmount: chargeResult.proRatedAmount || chargeAmount,
+        withinBaselineUsers: chargeResult.withinPrePaidSeats || false,
+        baselineUsers: chargeResult.seatsPurchased ?? null,
         withinPrePaidSeats: chargeResult.withinPrePaidSeats || false,
         seatsUsed: chargeResult.seatsUsed ?? null,
         seatsPurchased: chargeResult.seatsPurchased ?? null,

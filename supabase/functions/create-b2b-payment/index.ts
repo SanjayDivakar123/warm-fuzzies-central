@@ -14,6 +14,8 @@ const STRIPE_ALLOWED_CURRENCIES = new Set([
   "sgd", "thb", "tnd", "try", "twd", "tzs", "uah", "ugx", "usd", "uyu", "vnd", "xaf", "xof", "zar", "zmw",
 ]);
 
+const MIN_BILLABLE_SEATS = 2;
+
 serve(async (req) => {
   console.log("=== CREATE B2B PAYMENT FUNCTION STARTED ===");
 
@@ -28,7 +30,6 @@ serve(async (req) => {
     const { 
       companyName, 
       adminEmail, 
-      seats, 
       assessmentType, 
       userId,
       subdomain,
@@ -43,14 +44,11 @@ serve(async (req) => {
     } = body;
 
     // Validate required fields
-    if (!companyName || !adminEmail || !seats || !userId || !subdomain) {
+    if (!companyName || !adminEmail || !userId || !subdomain) {
       throw new Error("Missing required fields");
     }
 
-    const seatCount = parseInt(seats);
-    if (seatCount < 2) {
-      throw new Error("Minimum 2 seats required");
-    }
+    const seatCount = MIN_BILLABLE_SEATS;
 
     const stripeSecret = Deno.env.get("STRIPE_SECRET");
     if (!stripeSecret) {
@@ -71,7 +69,7 @@ serve(async (req) => {
     const safePricePerSeat = Number.isFinite(pricePerSeat) && pricePerSeat > 0 ? pricePerSeat : 2000;
     const totalAmount = safePricePerSeat * seatCount;
 
-    console.log(`Creating checkout for ${seatCount} seats at ${totalAmount} ${checkoutCurrency}`);
+    console.log(`Creating baseline checkout for ${seatCount} seats at ${totalAmount} ${checkoutCurrency}`);
 
     // Create Stripe checkout session with company details in metadata
     const session = await stripe.checkout.sessions.create({
@@ -81,7 +79,7 @@ serve(async (req) => {
             currency: checkoutCurrency,
             product_data: {
               name: "RoleColorFinder B2B - Team Seats",
-              description: `${seatCount} employee assessment seats for ${companyName}`,
+              description: `${seatCount} baseline employee seats for ${companyName}`,
             },
             unit_amount: safePricePerSeat,
           },
