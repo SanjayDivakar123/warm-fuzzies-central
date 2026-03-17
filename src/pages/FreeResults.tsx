@@ -256,7 +256,7 @@ const FreeResults = () => {
   const colorData = colorPreviewData[results.dominantColor as keyof typeof colorPreviewData];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-20">
       <Navbar />
       <div className="bg-gradient-subtle py-12 px-4">
         <div className="max-w-4xl mx-auto">

@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import Index from "@/pages/Index";
-import { Auth } from "@/pages/Auth";
+import AnimatedAuth from "@/pages/AnimatedAuth";
 import Dashboard from "@/pages/Dashboard";
 import FreeAssessment from "@/pages/FreeAssessment";
 import FreeResults from "@/pages/FreeResults";
@@ -101,7 +101,7 @@ export const routeConfig = [
   },
   {
     path: "/auth",
-    element: <Layout><Auth /></Layout>,
+    element: <Layout><AnimatedAuth /></Layout>,
   },
   {
     path: "/dashboard",

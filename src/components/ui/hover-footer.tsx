@@ -171,7 +171,6 @@ const footerLinks = [
     links: [
       { label: "Sign In / Sign Up", href: "/auth" },
       { label: "Reset Password", href: "/reset-password" },
-      { label: "Contact", href: "/contact" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms of Service", href: "/terms-of-service" },
     ],
@@ -230,9 +229,6 @@ export function HoverFooter() {
             <div className="flex gap-6">
               <Link to="/about" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
                 About
-              </Link>
-              <Link to="/contact" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
-                Contact
               </Link>
               <Link to="/privacy-policy" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
                 Privacy

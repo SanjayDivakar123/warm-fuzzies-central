@@ -234,36 +234,6 @@ const About = () => {
           </div>
         </section>
 
-        {/* Company Information */}
-        <section className="mb-20">
-          <Card className="relative overflow-hidden border-purple-500/20 shadow-2xl">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500/5 via-violet-500/5 to-transparent pointer-events-none" />
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full blur-3xl" />
-            <CardContent className="p-12 md:p-16 relative z-10">
-              <div className="text-center mb-12">
-                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25 mb-6">
-                  <Award className="w-10 h-10" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold">Company Information</h2>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
-                {[
-                  { label: "Headquarters", value: "Connecticut, United States", icon: "🏢" },
-                  { label: "Founded", value: "2024", icon: "📅" },
-                  { label: "Contact Email", value: "support@rolecolorfinder.com", icon: "✉️" },
-                  { label: "Legal Status", value: "Registered Business Entity", icon: "📋" }
-                ].map((item, i) => (
-                  <div key={i} className="text-center p-6 rounded-2xl bg-background/50 border border-purple-500/10 hover:border-purple-500/30 transition-colors">
-                    <div className="text-3xl mb-3">{item.icon}</div>
-                    <h3 className="font-semibold text-foreground mb-2">{item.label}</h3>
-                    <p className="text-muted-foreground text-sm">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
         {/* CTA Section */}
         <section className="text-center">
           <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">

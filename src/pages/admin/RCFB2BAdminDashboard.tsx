@@ -66,6 +66,18 @@ interface PlatformUserRow {
   b2b_company_count: number;
 }
 
+interface ContactQueryRow {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  source_page: string;
+  status: string;
+  created_at: string;
+  submitted_by_user_id: string | null;
+}
+
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) return error.message;
   return "Unexpected error";
@@ -99,6 +111,11 @@ export default function RCFB2BAdminDashboard() {
   const [platformUsersLoading, setPlatformUsersLoading] = useState(false);
   const [platformSearch, setPlatformSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<"all" | "owners" | "admin_level" | "non_b2b">("all");
+  const [contactQueries, setContactQueries] = useState<ContactQueryRow[]>([]);
+  const [contactQueriesLoading, setContactQueriesLoading] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactStatusFilter, setContactStatusFilter] = useState<"all" | "new" | "reviewed" | "resolved">("all");
+  const [updatingContactId, setUpdatingContactId] = useState<string | null>(null);
   const [sendingResetTo, setSendingResetTo] = useState<string | null>(null);
   const [billingCompanyId, setBillingCompanyId] = useState<string>("");
   const [billingAmountUsd, setBillingAmountUsd] = useState<string>("");
@@ -216,6 +233,61 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
+  const fetchContactQueries = useCallback(async () => {
+    setContactQueriesLoading(true);
+    try {
+      let query = supabase
+        .from("contact_queries")
+        .select("id, name, email, phone, message, source_page, status, created_at, submitted_by_user_id")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (contactStatusFilter !== "all") {
+        query = query.eq("status", contactStatusFilter);
+      }
+
+      if (contactSearch.trim()) {
+        const escapedSearch = contactSearch.trim().replace(/,/g, " ");
+        query = query.or(`name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,message.ilike.%${escapedSearch}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setContactQueries((data || []) as ContactQueryRow[]);
+    } catch (error: unknown) {
+      toast({
+        title: "Error loading contact queries",
+        description: getErrorMessage(error) || "Unable to load contact queries right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setContactQueriesLoading(false);
+    }
+  }, [contactSearch, contactStatusFilter, toast]);
+
+  const updateContactQueryStatus = async (id: string, status: "new" | "reviewed" | "resolved") => {
+    setUpdatingContactId(id);
+    try {
+      const { error } = await supabase
+        .from("contact_queries")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+
+      setContactQueries((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status } : item))
+      );
+    } catch (error: unknown) {
+      toast({
+        title: "Could not update status",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingContactId(null);
+    }
+  };
+
   const handleCompanyBillingAction = async (action: "charge_card" | "add_free_credits" | "remove_credits") => {
     const selectedId = billingCompanyId || selectedCompanyId;
     const amountUsd = Number(billingAmountUsd);
@@ -319,6 +391,14 @@ export default function RCFB2BAdminDashboard() {
     return () => clearTimeout(timeoutId);
   }, [fetchPlatformUsers, isAllowed, loading, platformFilter, platformSearch]);
 
+  useEffect(() => {
+    if (loading || !isAllowed || activeTab !== "contact-queries") return;
+    const timeoutId = setTimeout(() => {
+      fetchContactQueries();
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [activeTab, contactSearch, contactStatusFilter, fetchContactQueries, isAllowed, loading]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -348,7 +428,7 @@ export default function RCFB2BAdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 gap-2 h-auto p-1">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 h-auto p-1">
             <TabsTrigger value="companies" className="gap-2">
               <Building2 className="h-4 w-4" />
               Companies
@@ -360,6 +440,10 @@ export default function RCFB2BAdminDashboard() {
             <TabsTrigger value="platform-users" className="gap-2">
               <Mail className="h-4 w-4" />
               Platform Users
+            </TabsTrigger>
+            <TabsTrigger value="contact-queries" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Contact Queries
             </TabsTrigger>
           </TabsList>
 
@@ -793,6 +877,132 @@ export default function RCFB2BAdminDashboard() {
                           <TableRow>
                             <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                               No platform users matched this filter.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="contact-queries">
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle>Filters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search name, email, or message"
+                      value={contactSearch}
+                      onChange={(event) => setContactSearch(event.target.value)}
+                    />
+                  </div>
+                  <Select
+                    value={contactStatusFilter}
+                    onValueChange={(value) => setContactStatusFilter(value as typeof contactStatusFilter)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={fetchContactQueries} disabled={contactQueriesLoading}>
+                    {contactQueriesLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Refresh
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Form Submissions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {contactQueriesLoading ? (
+                  <div className="py-8 text-center text-muted-foreground">Loading contact queries...</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Submitted</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contactQueries.map((query) => (
+                          <TableRow key={query.id}>
+                            <TableCell>{new Date(query.created_at).toLocaleString()}</TableCell>
+                            <TableCell>{query.name}</TableCell>
+                            <TableCell>{query.email}</TableCell>
+                            <TableCell>{query.phone || "-"}</TableCell>
+                            <TableCell className="max-w-sm whitespace-normal break-words">{query.message}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{query.source_page}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  query.status === "new"
+                                    ? "destructive"
+                                    : query.status === "reviewed"
+                                      ? "secondary"
+                                      : "default"
+                                }
+                              >
+                                {query.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={query.status}
+                                onValueChange={(value) =>
+                                  updateContactQueryStatus(
+                                    query.id,
+                                    value as "new" | "reviewed" | "resolved"
+                                  )
+                                }
+                                disabled={updatingContactId === query.id}
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="reviewed">Reviewed</SelectItem>
+                                  <SelectItem value="resolved">Resolved</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {contactQueries.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                              No contact queries yet.
                             </TableCell>
                           </TableRow>
                         )}

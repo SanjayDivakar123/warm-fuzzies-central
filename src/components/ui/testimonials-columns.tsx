@@ -1213,10 +1213,19 @@ const testimonialsData = [
   },
 ];
 
+const uniqueTestimonialsData = testimonialsData.filter(
+  (item, index, arr) =>
+    index ===
+    arr.findIndex(
+      (candidate) => candidate.name === item.name && candidate.text === item.text
+    )
+);
+
 // Distribute testimonials across 3 columns
-const firstColumn = testimonialsData.slice(0, 67);
-const secondColumn = testimonialsData.slice(67, 134);
-const thirdColumn = testimonialsData.slice(134, 200);
+const itemsPerColumn = Math.ceil(uniqueTestimonialsData.length / 3);
+const firstColumn = uniqueTestimonialsData.slice(0, itemsPerColumn);
+const secondColumn = uniqueTestimonialsData.slice(itemsPerColumn, itemsPerColumn * 2);
+const thirdColumn = uniqueTestimonialsData.slice(itemsPerColumn * 2);
 
 export const TestimonialsColumns = () => {
   return (

@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/aceternity-sidebar";
-import { FloatingHeader } from "@/components/ui/floating-header";
+import { Navbar } from "@/components/navigation/Navbar";
 
 import { motion } from "framer-motion";
 import { 
@@ -773,8 +773,8 @@ const Dashboard = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
-        <FloatingHeader />
+      <div className="min-h-screen bg-background pt-20">
+        <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please sign in to view your dashboard</h1>
@@ -870,8 +870,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
-      <FloatingHeader />
+    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden pt-20">
+      <Navbar />
       
       {/* Mobile Dashboard Header - shown only on mobile */}
       <div className="md:hidden flex items-center h-12 px-4 bg-card border-b border-border w-full gap-3">
@@ -1417,7 +1417,7 @@ const Dashboard = () => {
                               <div>
                                 <h3 className="font-bold text-base sm:text-lg">RCF Super-Admin Portal</h3>
                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                  View all B2B companies, company users, and platform accounts
+                                  View all B2B companies, company users, platform accounts, and contact queries
                                 </p>
                               </div>
                             </div>
