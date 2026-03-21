@@ -626,6 +626,13 @@ export default function HiringSubscriptionSettings({
   // Translate raw Stripe / edge-function messages into clean user-facing errors
   const classifyError = (msg: string, step?: string): NonNullable<typeof subscribeError> => {
     const m = (msg || '').toLowerCase();
+    if (m.includes('no such customer')) {
+      return {
+        type: 'card_declined',
+        title: 'Payment Method Needs to Be Updated',
+        description: 'Your saved billing profile could not be found in our current payment system. Please update your payment method below and then try subscribing again.',
+      };
+    }
     if (step === 'no_default_payment_method' || m.includes('no payment method') || m.includes('no default payment')) {
       return {
         type: 'card_declined',

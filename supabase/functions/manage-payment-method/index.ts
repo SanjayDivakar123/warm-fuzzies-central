@@ -14,6 +14,14 @@ const logStep = (step: string, details?: unknown) => {
 
 const MANAGEMENT_ROLES = ["admin", "hr", "partner"] as const;
 
+const isMissingStripeCustomerError = (error: unknown) => {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error || "").toLowerCase();
+  return message.includes("no such customer");
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -69,32 +77,51 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Get or create Stripe customer
-    let customerId = company.stripe_customer_id;
-
-    if (!customerId) {
-      // Check if customer exists by email
-      const customers = await stripe.customers.list({ email: company.admin_email, limit: 1 });
-      
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-        logStep("Found existing Stripe customer", { customerId });
-      } else {
-        // Create new customer
-        const customer = await stripe.customers.create({
-          email: company.admin_email,
-          name: company.name,
-          metadata: { company_id: company.id }
-        });
-        customerId = customer.id;
-        logStep("Created new Stripe customer", { customerId });
-      }
-
-      // Save customer ID to company
+    const saveCustomerId = async (nextCustomerId: string) => {
       await supabase
         .from("companies")
-        .update({ stripe_customer_id: customerId })
+        .update({ stripe_customer_id: nextCustomerId })
         .eq("id", company_id);
+    };
+
+    const findOrCreateCustomerByEmail = async () => {
+      const customers = await stripe.customers.list({ email: company.admin_email, limit: 1 });
+
+      if (customers.data.length > 0) {
+        const nextCustomerId = customers.data[0].id;
+        logStep("Found existing Stripe customer", { customerId: nextCustomerId });
+        return nextCustomerId;
+      }
+
+      const customer = await stripe.customers.create({
+        email: company.admin_email,
+        name: company.name,
+        metadata: { company_id: company.id }
+      });
+      logStep("Created new Stripe customer", { customerId: customer.id });
+      return customer.id;
+    };
+
+    // Get or create Stripe customer, and recover automatically if the stored ID
+    // belongs to an old Stripe account.
+    let customerId = company.stripe_customer_id;
+
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch (error) {
+        if (!isMissingStripeCustomerError(error)) {
+          throw error;
+        }
+
+        logStep("Stored Stripe customer missing; rebuilding customer mapping", { customerId });
+        customerId = null;
+      }
+    }
+
+    if (!customerId) {
+      customerId = await findOrCreateCustomerByEmail();
+      await saveCustomerId(customerId);
     }
 
     // Handle different actions
