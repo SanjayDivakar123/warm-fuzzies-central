@@ -83,6 +83,7 @@ import CareerFinder from "@/pages/CareerFinder";
 import CareerFinderResults from "@/pages/CareerFinderResults";
 import CareerResumeResults from "@/pages/CareerResumeResults";
 import CareerPaymentSuccess from "@/pages/CareerPaymentSuccess";
+import HyattProposal from "@/pages/client/HyattProposal";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -343,6 +344,10 @@ export const routeConfig = [
   {
     path: "/careers/:companySlug/jobs/:jobId",
     element: <PublicJobDetailPage />,
+  },
+  {
+    path: "/client/RCF-HYATT-2026-03-001",
+    element: <HyattProposal />,
   },
   {
     path: "/:username",
