@@ -223,6 +223,13 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
 
   const classifySubscribeError = (msg: string, step?: string): typeof subscribeError => {
     const m = (msg || '').toLowerCase();
+    if (m.includes('no such customer')) {
+      return {
+        type: 'card_declined',
+        title: 'Payment Method Needs to Be Updated',
+        description: 'Your saved billing profile could not be found in our current payment system. Please update your payment method in Settings and then try again.',
+      };
+    }
     if (step === 'no_default_payment_method' || m.includes('no payment method') || m.includes('no default payment')) {
       return {
         type: 'no_payment_method',
