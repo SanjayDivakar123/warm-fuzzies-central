@@ -10,6 +10,8 @@ const corsHeaders = {
 const ALLOWED_SUPER_ADMINS = new Set([
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ]);
 
 type CompanyMembership = {
@@ -24,9 +26,26 @@ type CompanyMembership = {
 type AuthUserSummary = {
   id: string;
   email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
   created_at?: string | null;
   last_sign_in_at?: string | null;
   email_confirmed_at?: string | null;
+};
+
+const resolveFullName = (metadata: Record<string, unknown> | null | undefined): string | null => {
+  if (!metadata) return null;
+
+  const direct =
+    (metadata.full_name as string | undefined) ||
+    (metadata.name as string | undefined) ||
+    (metadata.display_name as string | undefined);
+
+  if (direct && direct.trim()) return direct.trim();
+
+  const first = (metadata.first_name as string | undefined)?.trim() || "";
+  const last = (metadata.last_name as string | undefined)?.trim() || "";
+  const combined = `${first} ${last}`.trim();
+  return combined || null;
 };
 
 serve(async (req) => {
@@ -143,6 +162,7 @@ serve(async (req) => {
         return {
           id: authUser.id,
           email: authUser.email,
+          full_name: resolveFullName(authUser.user_metadata),
           created_at: authUser.created_at,
           last_sign_in_at: authUser.last_sign_in_at,
           email_confirmed_at: authUser.email_confirmed_at,

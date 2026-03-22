@@ -136,7 +136,7 @@ serve(async (req) => {
 
     // Use dollars for all internal accounting (DECIMAL(10,2))
     // Proration: whenever the portal renewal date is known, charge only the remaining
-    // fraction of the month (daysUntilRenewal ÷ 30 × $500).
+    // fraction of the month (daysUntilRenewal ÷ 30 × $1,000).
     // 7-day commitment block: if fewer than 7 days remain, cancellation is locked until
     // the first full renewal so the user commits to at least one full monthly cycle.
     const now = new Date();
@@ -182,10 +182,10 @@ serve(async (req) => {
     const isShortWindow = isProrated && daysUntilPortalRenewal < 7;
     const billableProrationDays = Math.min(daysUntilPortalRenewal, 30);
 
-    // Prorated cost: whole days remaining ÷ 30 × $500, minimum $100
+    // Prorated cost: whole days remaining ÷ 30 × $1,000, minimum $100
     const hiringCost = isProrated
-      ? Math.max(100, Math.round((billableProrationDays / 30) * 500 * 100) / 100)
-      : 500.0;
+      ? Math.max(100, Math.round((billableProrationDays / 30) * 1000 * 100) / 100)
+      : 1000.0;
 
     // Stripe billing anchor aligns the subscription to the shared portal renewal date
     const billingCycleAnchorUnix =
@@ -254,7 +254,7 @@ serve(async (req) => {
       ? rawCreditBalance
       : parseFloat((rawCreditBalance as unknown as string) ?? "0");
 
-    // How much of the $500 can credits cover (capped at $500)?
+    // How much of the $1,000 can credits cover (capped at $1,000)?
     const creditContribution = Number(Math.min(creditBalance, hiringCost).toFixed(2));
     // How much still needs to go on the card?
     const cardCharge = Number((hiringCost - creditContribution).toFixed(2));
@@ -483,10 +483,10 @@ serve(async (req) => {
         });
       }
 
-      // Create $500/month recurring price for post-proration full renewals.
+      // Create $1,000/month recurring price for post-proration full renewals.
       const price = await stripe.prices.create({
         currency: "usd",
-        unit_amount: 50000,
+        unit_amount: 100000,
         recurring: { interval: "month" },
         product_data: { name: "RoleColorFinder Hiring Tab" },
       }, { idempotencyKey: `price-${paymentOperationKeyBase}` });
@@ -578,7 +578,7 @@ serve(async (req) => {
       });
     }
 
-    // --- Case A: Credits cover the full $500 (no card needed) ---
+    // --- Case A: Credits cover the full $1,000 (no card needed) ---
     if (cardCharge === 0) {
       const newBalance = Number((creditBalance - hiringCost).toFixed(2));
 
@@ -634,7 +634,7 @@ serve(async (req) => {
       }), { headers: responseHeaders, status: 200 });
     }
 
-    // --- Case B & C: Card must be charged (all or partial $500) ---
+    // --- Case B & C: Card must be charged (all or partial $1,000) ---
     // Credits are only deducted AFTER the card succeeds.
     //
     // The price + subscription idempotency keys are request-scoped, so retries
@@ -681,10 +681,10 @@ serve(async (req) => {
 
     const paymentOperationKeyBase = `hiring-${companyId}-${customerId}-${defaultPM}-${billingFingerprint}-${requestId}`;
 
-    // Create $500/month price for recurring billing.
+    // Create $1,000/month price for recurring billing.
     const price = await stripe.prices.create({
       currency: "usd",
-      unit_amount: 50000,
+      unit_amount: 100000,
       recurring: { interval: "month" },
       product_data: { name: "RoleColorFinder Hiring Tab" },
     }, { idempotencyKey: `price-${paymentOperationKeyBase}` });
@@ -792,7 +792,7 @@ serve(async (req) => {
         company_id: companyId,
         type: "credit_used",
         amount: creditContribution,
-        description: `Billing credits applied to Hiring Tab subscription ($${creditContribution.toFixed(2)} of $500.00)`,
+        description: `Billing credits applied to Hiring Tab subscription ($${creditContribution.toFixed(2)} of $1,000.00)`,
       });
       console.log(`Deducted $${creditContribution.toFixed(2)} credits after successful card charge`);
     }

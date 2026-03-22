@@ -11,6 +11,8 @@ const corsHeaders = {
 const ALLOWED_SUPER_ADMIN_EMAILS = [
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ];
 
 serve(async (req) => {

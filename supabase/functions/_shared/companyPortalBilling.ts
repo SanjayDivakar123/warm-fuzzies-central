@@ -1,6 +1,13 @@
 import Stripe from "https://esm.sh/stripe@14.21.0";
 
-export const MONTHLY_RATE_DOLLARS = 20.0;
+export const CORE_PLATFORM_MONTHLY_DOLLARS = 500.0;
+export const HIRING_INTELLIGENCE_MONTHLY_DOLLARS = 1000.0;
+export const INCLUDED_ACTIVE_JOB_ROLES = 10;
+export const ACTIVE_ROLE_SCALE_BLOCK_SIZE = 10;
+export const ACTIVE_ROLE_SCALE_BLOCK_MONTHLY_DOLLARS = 1000.0;
+export const OUTCOME_PRICE_PER_SUCCESSFUL_HIRE_DOLLARS = 20.0;
+// Backward compatibility for older imports.
+export const MONTHLY_RATE_DOLLARS = CORE_PLATFORM_MONTHLY_DOLLARS;
 export const MIN_PORTAL_SEATS = 2;
 
 const normalizeCompanyName = (value: string | null | undefined) =>
@@ -21,6 +28,22 @@ export const getBillablePortalUsers = (
   activeUsers: number | null | undefined,
   storedSeats: number | null | undefined,
 ) => Math.max(Math.max(0, Number(activeUsers || 0)), getPortalSeatBaseline(storedSeats));
+
+export const getAdditionalActiveRoleBlocks = (activeRoleCount: number | null | undefined) => {
+  const activeRoles = Math.max(0, Number(activeRoleCount || 0));
+  const additionalRoles = Math.max(0, activeRoles - INCLUDED_ACTIVE_JOB_ROLES);
+  return Math.ceil(additionalRoles / ACTIVE_ROLE_SCALE_BLOCK_SIZE);
+};
+
+export const getActiveRoleScalingCharge = (activeRoleCount: number | null | undefined) => {
+  const blocks = getAdditionalActiveRoleBlocks(activeRoleCount);
+  return toMoney(blocks * ACTIVE_ROLE_SCALE_BLOCK_MONTHLY_DOLLARS);
+};
+
+export const getOutcomeBasedCharge = (successfulHireCount: number | null | undefined) => {
+  const hires = Math.max(0, Number(successfulHireCount || 0));
+  return toMoney(hires * OUTCOME_PRICE_PER_SUCCESSFUL_HIRE_DOLLARS);
+};
 
 export const buildAnchoredDate = (anchorAtInput: Date, monthOffset: number) => {
   const anchorAt = new Date(anchorAtInput);

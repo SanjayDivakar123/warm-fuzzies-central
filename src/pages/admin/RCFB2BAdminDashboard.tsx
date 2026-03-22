@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +35,8 @@ import AdminCompanyStatementModal from "@/components/b2b/admin/AdminCompanyState
 const ALLOWED_SUPER_ADMIN_EMAILS = [
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ];
 
 interface CompanySummary {
@@ -47,6 +50,15 @@ interface CompanySummary {
   hiring_subscription_enabled: boolean;
   hiring_subscription_status: string | null;
   hiring_subscription_cancel_at_period_end: boolean;
+  b2b_trial_enabled: boolean;
+  b2b_trial_starts_at: string | null;
+  b2b_trial_ends_at: string | null;
+  b2b_trial_user_limit: number;
+  b2b_trial_converted_at: string | null;
+  requires_post_setup_deployment_fee: boolean;
+  deployment_fee_waived: boolean;
+  deployment_fee_waived_at: string | null;
+  deployment_fee_charged_at: string | null;
 }
 
 interface CompanyUserRow {
@@ -61,6 +73,7 @@ interface CompanyUserRow {
 interface PlatformUserRow {
   id: string;
   email: string | null;
+  full_name?: string | null;
   is_b2b_owner: boolean;
   is_b2b_admin_level: boolean;
   b2b_company_count: number;
@@ -81,6 +94,20 @@ interface ContactQueryRow {
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) return error.message;
   return "Unexpected error";
+};
+
+const getEdgeErrorMessage = async (error: unknown): Promise<string> => {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const payload = await error.context.json();
+      if (payload?.error && typeof payload.error === "string") {
+        return payload.error;
+      }
+    } catch {
+      // Ignore parse errors and fall back to default message.
+    }
+  }
+  return getErrorMessage(error);
 };
 
 const formatUsdFromCents = (amountCents: number) =>
@@ -121,8 +148,25 @@ export default function RCFB2BAdminDashboard() {
   const [billingAmountUsd, setBillingAmountUsd] = useState<string>("");
   const [billingDescription, setBillingDescription] = useState<string>("");
   const [billingLoadingAction, setBillingLoadingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
+  const [trialLoadingAction, setTrialLoadingAction] = useState(false);
   const [pendingBillingAction, setPendingBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits" | null>(null);
   const [selectedBillingAction, setSelectedBillingAction] = useState<"charge_card" | "add_free_credits" | "remove_credits">("add_free_credits");
+  const [trialCompanyId, setTrialCompanyId] = useState<string>("");
+  const [trialEndsAt, setTrialEndsAt] = useState<string>("");
+  const [trialUserLimit, setTrialUserLimit] = useState<string>("10");
+  const [createCompanyName, setCreateCompanyName] = useState("");
+  const [createCompanySubdomain, setCreateCompanySubdomain] = useState("");
+  const [createCompanyAdminUserId, setCreateCompanyAdminUserId] = useState("");
+  const [createCompanyAdminSearch, setCreateCompanyAdminSearch] = useState("");
+  const [createCompanyWaiveDeploymentFee, setCreateCompanyWaiveDeploymentFee] = useState(false);
+  const [createCompanyLoading, setCreateCompanyLoading] = useState(false);
+  const [assignAdminCompanyId, setAssignAdminCompanyId] = useState("");
+  const [assignAdminUserId, setAssignAdminUserId] = useState("");
+  const [assignAdminSearch, setAssignAdminSearch] = useState("");
+  const [assignAdminLoading, setAssignAdminLoading] = useState(false);
+  const [deploymentFeeCompanyId, setDeploymentFeeCompanyId] = useState("");
+  const [deploymentFeeWaived, setDeploymentFeeWaived] = useState(true);
+  const [deploymentFeeLoading, setDeploymentFeeLoading] = useState(false);
   const [statementModalCompany, setStatementModalCompany] = useState<{ id: string; name: string; initialView?: 'statement' | 'renewal' } | null>(null);
   const [togglingHiringFor, setTogglingHiringFor] = useState<string | null>(null);
   const [pendingHiringToggle, setPendingHiringToggle] = useState<{ 
@@ -143,6 +187,31 @@ export default function RCFB2BAdminDashboard() {
     () => companies.find((company) => company.id === selectedCompanyId) || null,
     [companies, selectedCompanyId],
   );
+
+  const selectablePlatformUsers = useMemo(
+    () => platformUsers.filter((platformUser) => !!platformUser.email),
+    [platformUsers],
+  );
+
+  const filteredCreateAdminUsers = useMemo(() => {
+    const query = createCompanyAdminSearch.trim().toLowerCase();
+    if (!query) return selectablePlatformUsers;
+    return selectablePlatformUsers.filter((platformUser) => {
+      const email = (platformUser.email || "").toLowerCase();
+      const fullName = (platformUser.full_name || "").toLowerCase();
+      return email.includes(query) || fullName.includes(query);
+    });
+  }, [createCompanyAdminSearch, selectablePlatformUsers]);
+
+  const filteredAssignAdminUsers = useMemo(() => {
+    const query = assignAdminSearch.trim().toLowerCase();
+    if (!query) return selectablePlatformUsers;
+    return selectablePlatformUsers.filter((platformUser) => {
+      const email = (platformUser.email || "").toLowerCase();
+      const fullName = (platformUser.full_name || "").toLowerCase();
+      return email.includes(query) || fullName.includes(query);
+    });
+  }, [assignAdminSearch, selectablePlatformUsers]);
 
   const fetchCompanies = useCallback(async () => {
     setCompaniesLoading(true);
@@ -372,6 +441,231 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
+  const handleSetTrial = async () => {
+    const selectedId = trialCompanyId || selectedCompanyId;
+    const limit = Number(trialUserLimit || "10");
+
+    if (!selectedId) {
+      toast({
+        title: "Select a company",
+        description: "Choose a company before setting a trial period.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!trialEndsAt) {
+      toast({
+        title: "Trial end date required",
+        description: "Set a valid trial end date/time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Number.isFinite(limit) || limit < 1) {
+      toast({
+        title: "Invalid trial user limit",
+        description: "Trial user limit must be at least 1.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTrialLoadingAction(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rcf-company-billing-admin", {
+        body: {
+          company_id: selectedId,
+          action: "set_trial",
+          trial_ends_at: new Date(trialEndsAt).toISOString(),
+          trial_user_limit: Math.floor(limit),
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Trial configured",
+        description: `Trial active until ${new Date(data.trial_ends_at).toLocaleString()} with ${data.trial_user_limit} users.`,
+      });
+
+      await fetchCompanies();
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to set trial",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setTrialLoadingAction(false);
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    if (!createCompanyName.trim()) {
+      toast({
+        title: "Company name required",
+        description: "Enter a company name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!createCompanySubdomain.trim()) {
+      toast({
+        title: "Subdomain required",
+        description: "Enter a subdomain for this company.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!createCompanyAdminUserId) {
+      toast({
+        title: "Admin user required",
+        description: "Select an RCF user to assign as admin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreateCompanyLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rcf-company-billing-admin", {
+        body: {
+          action: "create_company",
+          company_name: createCompanyName.trim(),
+          subdomain: createCompanySubdomain.trim(),
+          admin_user_id: createCompanyAdminUserId,
+          waive_deployment_fee: createCompanyWaiveDeploymentFee,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Company created",
+        description: `${data?.company?.name || createCompanyName.trim()} was created and admin assigned.`,
+      });
+
+      setCreateCompanyName("");
+      setCreateCompanySubdomain("");
+      setCreateCompanyAdminUserId("");
+      setCreateCompanyAdminSearch("");
+      setCreateCompanyWaiveDeploymentFee(false);
+      await Promise.all([fetchCompanies(), fetchPlatformUsers()]);
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to create company",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setCreateCompanyLoading(false);
+    }
+  };
+
+  const handleAssignAdmin = async () => {
+    const targetCompanyId = assignAdminCompanyId || selectedCompanyId;
+    if (!targetCompanyId) {
+      toast({
+        title: "Select a company",
+        description: "Choose a company to assign an admin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!assignAdminUserId) {
+      toast({
+        title: "Select a user",
+        description: "Choose an RCF user to promote to admin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAssignAdminLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rcf-company-billing-admin", {
+        body: {
+          action: "assign_admin",
+          company_id: targetCompanyId,
+          admin_user_id: assignAdminUserId,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Admin assigned",
+        description: `${data?.admin_email || "Selected user"} now has admin access.`,
+      });
+
+      setAssignAdminUserId("");
+      setAssignAdminSearch("");
+      await Promise.all([
+        fetchCompanies(),
+        fetchCompanyUsers(targetCompanyId),
+        fetchPlatformUsers(),
+      ]);
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to assign admin",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setAssignAdminLoading(false);
+    }
+  };
+
+  const handleSetDeploymentFeeWaiver = async () => {
+    const selectedId = deploymentFeeCompanyId || selectedCompanyId;
+
+    if (!selectedId) {
+      toast({
+        title: "Select a company",
+        description: "Choose a company before updating deployment fee waiver.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeploymentFeeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rcf-company-billing-admin", {
+        body: {
+          action: "set_deployment_fee_waived",
+          company_id: selectedId,
+          deployment_fee_waived: deploymentFeeWaived,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: deploymentFeeWaived ? "Deployment fee waived" : "Deployment fee restored",
+        description: deploymentFeeWaived
+          ? "This company will not be charged the $5,000 deployment fee."
+          : "This company will be charged the $5,000 deployment fee after payment setup.",
+      });
+
+      await fetchCompanies();
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to update deployment fee",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setDeploymentFeeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!loading && isAllowed) {
       fetchCompanies();
@@ -503,6 +797,168 @@ export default function RCFB2BAdminDashboard() {
                     Execute
                   </Button>
                 </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5 border-t pt-4">
+                  <Select value={trialCompanyId} onValueChange={setTrialCompanyId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Trial company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="datetime-local"
+                    value={trialEndsAt}
+                    onChange={(event) => setTrialEndsAt(event.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Trial user limit"
+                    value={trialUserLimit}
+                    onChange={(event) => setTrialUserLimit(event.target.value)}
+                  />
+                  <div className="lg:col-span-2">
+                    <Button
+                      variant="secondary"
+                      disabled={trialLoadingAction}
+                      onClick={handleSetTrial}
+                      className="w-full"
+                    >
+                      {trialLoadingAction ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Set Trial (Custom)
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5 border-t pt-4">
+                  <Input
+                    placeholder="New company name"
+                    value={createCompanyName}
+                    onChange={(event) => setCreateCompanyName(event.target.value)}
+                  />
+                  <Input
+                    placeholder="Subdomain (e.g. acme-team)"
+                    value={createCompanySubdomain}
+                    onChange={(event) => setCreateCompanySubdomain(event.target.value)}
+                  />
+                  <Input
+                    placeholder="Search admin by name or email"
+                    value={createCompanyAdminSearch}
+                    onChange={(event) => setCreateCompanyAdminSearch(event.target.value)}
+                  />
+                  <Select value={createCompanyAdminUserId} onValueChange={setCreateCompanyAdminUserId}>
+                    <SelectTrigger className="md:col-span-2">
+                      <SelectValue placeholder="Select admin user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredCreateAdminUsers.map((platformUser) => (
+                        <SelectItem key={platformUser.id} value={platformUser.id}>
+                          {platformUser.full_name
+                            ? `${platformUser.full_name} (${platformUser.email})`
+                            : platformUser.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                    <Switch
+                      checked={createCompanyWaiveDeploymentFee}
+                      onCheckedChange={setCreateCompanyWaiveDeploymentFee}
+                    />
+                    <span className="text-sm">Waive one-time $5,000 deployment fee</span>
+                  </div>
+                  <div className="lg:col-span-4">
+                    <Button
+                      disabled={createCompanyLoading}
+                      onClick={handleCreateCompany}
+                      className="w-full"
+                    >
+                      {createCompanyLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Create Business
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5 border-t pt-4">
+                  <Select value={assignAdminCompanyId} onValueChange={setAssignAdminCompanyId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Company for admin assignment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Search user by name or email"
+                    value={assignAdminSearch}
+                    onChange={(event) => setAssignAdminSearch(event.target.value)}
+                  />
+                  <Select value={assignAdminUserId} onValueChange={setAssignAdminUserId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select RCF user to make admin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredAssignAdminUsers.map((platformUser) => (
+                        <SelectItem key={platformUser.id} value={platformUser.id}>
+                          {platformUser.full_name
+                            ? `${platformUser.full_name} (${platformUser.email})`
+                            : platformUser.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="lg:col-span-2">
+                    <Button
+                      variant="secondary"
+                      disabled={assignAdminLoading}
+                      onClick={handleAssignAdmin}
+                      className="w-full"
+                    >
+                      {assignAdminLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Assign Selected User as Company Admin
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5 border-t pt-4">
+                  <Select value={deploymentFeeCompanyId} onValueChange={setDeploymentFeeCompanyId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Company for deployment fee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                    <Switch checked={deploymentFeeWaived} onCheckedChange={setDeploymentFeeWaived} />
+                    <span className="text-sm">Waive $5,000 deployment fee</span>
+                  </div>
+                  <div className="lg:col-span-3">
+                    <Button
+                      variant="secondary"
+                      disabled={deploymentFeeLoading}
+                      onClick={handleSetDeploymentFeeWaiver}
+                      className="w-full"
+                    >
+                      {deploymentFeeLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Save Deployment Fee Rule
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -527,6 +983,8 @@ export default function RCFB2BAdminDashboard() {
                           <TableHead>Owners</TableHead>
                           <TableHead>Admin-Level</TableHead>
                           <TableHead>Credits</TableHead>
+                          <TableHead>Trial</TableHead>
+                          <TableHead>Deployment Fee</TableHead>
                           <TableHead>Hiring Platform</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
@@ -540,6 +998,42 @@ export default function RCFB2BAdminDashboard() {
                             <TableCell>{company.ownerCount}</TableCell>
                             <TableCell>{company.adminLevelCount}</TableCell>
                             <TableCell>{formatUsd(company.credit_balance)}</TableCell>
+                            <TableCell>
+                              {company.b2b_trial_enabled ? (
+                                <div className="space-y-1">
+                                  <Badge className="bg-blue-600 text-white">Active</Badge>
+                                  <p className="text-xs text-muted-foreground">
+                                    Ends {company.b2b_trial_ends_at ? new Date(company.b2b_trial_ends_at).toLocaleDateString() : 'N/A'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">Limit {company.b2b_trial_user_limit} users</p>
+                                </div>
+                              ) : company.b2b_trial_converted_at ? (
+                                <div className="space-y-1">
+                                  <Badge variant="outline">Converted</Badge>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(company.b2b_trial_converted_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              ) : (
+                                <Badge variant="outline">None</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {company.deployment_fee_charged_at ? (
+                                <div className="space-y-1">
+                                  <Badge className="bg-emerald-600 text-white">Charged</Badge>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(company.deployment_fee_charged_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              ) : company.deployment_fee_waived ? (
+                                <Badge variant="outline">Waived</Badge>
+                              ) : company.requires_post_setup_deployment_fee ? (
+                                <Badge className="bg-amber-600 text-white">Pending $5,000</Badge>
+                              ) : (
+                                <Badge variant="outline">Not required</Badge>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 {company.hiring_subscription_enabled ? (
@@ -677,7 +1171,7 @@ export default function RCFB2BAdminDashboard() {
                         ))}
                         {companies.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                               No companies found.
                             </TableCell>
                           </TableRow>

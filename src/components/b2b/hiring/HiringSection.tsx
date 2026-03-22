@@ -15,6 +15,7 @@ import {
   Lock,
   Sparkles,
   ChevronDown,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +50,7 @@ import OffersTab from './OffersTab';
 import EmailTemplatesTab from './EmailTemplatesTab';
 import HiringAnalyticsTab from './HiringAnalyticsTab';
 import LegacyCandidatesTab from './LegacyCandidatesTab';
+import HiringIntegrationsTab from './HiringIntegrationsTab';
 
 interface HiringSectionProps {
   company: { 
@@ -68,7 +70,7 @@ interface HiringSectionProps {
   onSubscriptionUpdated?: () => void;
 }
 
-type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics' | 'legacy';
+type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 'templates' | 'analytics' | 'legacy' | 'integrations';
 
 export default function HiringSection({ company, companyUser, onSubscriptionUpdated }: HiringSectionProps) {
   const { activeTour, currentStepIndex, startTour } = useHelpTour();
@@ -453,6 +455,10 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Legacy</span>
                 </TabsTrigger>
+                <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3">
+                  <Link2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Integrations</span>
+                </TabsTrigger>
               </TabsList>
               </div>
             </Tabs>
@@ -542,7 +548,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                 </p>
                 {showCompanySpecificProrationNote && (
                   <p className="text-xs text-center text-muted-foreground leading-relaxed">
-                    You are paying ${proratedCost.toFixed(2)} this month. Starting next cycle, billing will be $500.00 per month.
+                    You are paying ${proratedCost.toFixed(2)} this month. Starting next cycle, billing will be $1,000.00 per month.
                   </p>
                 )}
               </CardContent>
@@ -588,10 +594,23 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-3 pt-2">
-                {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
-                  <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+                {subscribeError?.type === 'auth_required' && (
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      if (subscribeError.actionUrl) {
+                        window.location.href = subscribeError.actionUrl;
+                        return;
+                      }
+                      setSubscribeError(null);
+                      window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                      setTimeout(() => {
+                        document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 400);
+                    }}
+                  >
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Complete Bank Authentication
+                    {subscribeError.actionUrl ? 'Complete Bank Authentication' : 'Open Billing Settings'}
                   </Button>
                 )}
                 {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
@@ -632,11 +651,11 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                       <p className="text-sm leading-relaxed">
                         Your portal renews on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
                         Today's charge is prorated to{' '}
-                        <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                        <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$1,000/month</strong> renewal is on that date.
                       </p>
                     ) : (
                       <p className="text-sm leading-relaxed">
-                        You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                        You'll be charged <strong>$1,000/month</strong> starting today. Billing credits are applied first.
                       </p>
                     )}
 
@@ -679,13 +698,13 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                         {isProrated ? (
                           <>
                             <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.</p>
-                            <p><strong>When is the next $500 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews.</p>
+                            <p><strong>When is the next $1,000 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews.</p>
                             {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
                             <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
                           </>
                         ) : (
                           <>
-                            <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date.</p>
+                            <p><strong>When am I billed?</strong> $1,000 is charged today and every month on the same date.</p>
                             <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
                           </>
                         )}
@@ -782,11 +801,11 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                   {isProrated ? (
                     <>
                       <p className="text-3xl font-bold">${proratedCost.toFixed(2)}<span className="text-base font-normal text-muted-foreground"> today</span></p>
-                      <p className="text-sm text-muted-foreground mt-1">then $500/month &bull; Cancel anytime</p>
+                      <p className="text-sm text-muted-foreground mt-1">then $1,000/month &bull; Cancel anytime</p>
                     </>
                   ) : (
                     <>
-                      <p className="text-3xl font-bold">$500<span className="text-base font-normal text-muted-foreground">/month</span></p>
+                      <p className="text-3xl font-bold">$1,000<span className="text-base font-normal text-muted-foreground">/month</span></p>
                       <p className="text-sm text-muted-foreground mt-1">Cancel anytime</p>
                     </>
                   )}
@@ -827,7 +846,7 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                 : 'Payment will be processed securely via Stripe. Billing credits will be applied first if available.'
               }
               {showCompanySpecificProrationNote
-                ? ` This month is prorated at $${proratedCost.toFixed(2)}. Following months are $500.00.`
+                ? ` This month is prorated at $${proratedCost.toFixed(2)}. Following months are $1,000.00.`
                 : ''
               }
             </p>
@@ -874,10 +893,23 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-3 pt-2">
-              {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
-                <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+              {subscribeError?.type === 'auth_required' && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    if (subscribeError.actionUrl) {
+                      window.location.href = subscribeError.actionUrl;
+                      return;
+                    }
+                    setSubscribeError(null);
+                    window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                    setTimeout(() => {
+                      document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 400);
+                  }}
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Complete Bank Authentication
+                  {subscribeError.actionUrl ? 'Complete Bank Authentication' : 'Open Billing Settings'}
                 </Button>
               )}
               {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
@@ -918,11 +950,11 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                     <p className="text-sm leading-relaxed">
                       Your portal renews on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
                       Today's charge is prorated to{' '}
-                      <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                      <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$1,000/month</strong> renewal is on that date.
                     </p>
                   ) : (
                     <p className="text-sm leading-relaxed">
-                      You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                      You'll be charged <strong>$1,000/month</strong> starting today. Billing credits are applied first.
                     </p>
                   )}
 
@@ -965,13 +997,13 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                       {isProrated ? (
                         <>
                           <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.</p>
-                          <p><strong>When is the next $500 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
+                          <p><strong>When is the next $1,000 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $1,000/month Hiring cycle begins from that date.</p>
                           {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
                           <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
                         </>
                       ) : (
                         <>
-                          <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
+                          <p><strong>When am I billed?</strong> $1,000 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
                           <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
                         </>
                       )}
@@ -1052,6 +1084,10 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Legacy</span>
             </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Integrations</span>
+            </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="jobs" className="mt-0">
@@ -1117,6 +1153,13 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
         <TabsContent value="legacy" className="mt-0">
           <LegacyCandidatesTab company={company} />
         </TabsContent>
+
+        <TabsContent value="integrations" className="mt-0">
+          <HiringIntegrationsTab
+            company={company}
+            companyUser={companyUser}
+          />
+        </TabsContent>
       </Tabs>
 
       {/* Subscription Ending Warning Banner */}
@@ -1179,10 +1222,23 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 pt-2">
-            {subscribeError?.type === 'auth_required' && subscribeError.actionUrl && (
-              <Button className="w-full" onClick={() => { window.location.href = subscribeError.actionUrl!; }}>
+            {subscribeError?.type === 'auth_required' && (
+              <Button
+                className="w-full"
+                onClick={() => {
+                  if (subscribeError.actionUrl) {
+                    window.location.href = subscribeError.actionUrl;
+                    return;
+                  }
+                  setSubscribeError(null);
+                  window.dispatchEvent(new CustomEvent('rcf:b2b-guide-tab-change', { detail: { tab: 'settings' } }));
+                  setTimeout(() => {
+                    document.getElementById('payment-method-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 400);
+                }}
+              >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Complete Bank Authentication
+                {subscribeError.actionUrl ? 'Complete Bank Authentication' : 'Open Billing Settings'}
               </Button>
             )}
             {(subscribeError?.type === 'no_payment_method' || subscribeError?.type === 'card_declined') && (
@@ -1223,11 +1279,11 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                   <p className="text-sm leading-relaxed">
                     Your portal renews on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
                     Today's charge is prorated to{' '}
-                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$1,000/month</strong> renewal is on that date.
                   </p>
                 ) : (
                   <p className="text-sm leading-relaxed">
-                    You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                    You'll be charged <strong>$1,000/month</strong> starting today. Billing credits are applied first.
                   </p>
                 )}
 
@@ -1270,13 +1326,13 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                     {isProrated ? (
                       <>
                         <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal on {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.</p>
-                        <p><strong>When is the next $500 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
+                        <p><strong>When is the next $1,000 charge?</strong> On {portalRenewalAt!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $1,000/month Hiring cycle begins from that date.</p>
                         {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
                         <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
                       </>
                     ) : (
                       <>
-                        <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
+                        <p><strong>When am I billed?</strong> $1,000 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
                         <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
                       </>
                     )}

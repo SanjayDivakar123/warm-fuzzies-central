@@ -34,6 +34,15 @@ interface Company {
   portal_access_lock_reason?: string | null;
   portal_access_locked_at?: string | null;
   portal_access_outstanding_balance?: number;
+  b2b_trial_enabled?: boolean;
+  b2b_trial_starts_at?: string | null;
+  b2b_trial_ends_at?: string | null;
+  b2b_trial_user_limit?: number;
+  b2b_trial_converted_at?: string | null;
+  requires_post_setup_deployment_fee?: boolean;
+  deployment_fee_waived?: boolean;
+  deployment_fee_waived_at?: string | null;
+  deployment_fee_charged_at?: string | null;
 }
 
 interface CompanyUser {

@@ -929,6 +929,7 @@ export default function JobPostingsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

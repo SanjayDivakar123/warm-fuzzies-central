@@ -22,6 +22,8 @@ function isValidUUID(str: string): boolean {
 const ALLOWED_SUPER_ADMINS = new Set([
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ]);
 
 serve(async (req) => {

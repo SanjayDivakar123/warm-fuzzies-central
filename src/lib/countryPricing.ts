@@ -190,7 +190,7 @@ export const COUNTRY_PRICING_BY_CODE: Record<string, CountryPricing> = {
   UA: { countryCode: "UA", country: "Ukraine", currency: "UAH", premium: 499, pro: 1299, b2b: 549, usdApprox: 15 },
   AE: { countryCode: "AE", country: "United Arab Emirates", currency: "AED", premium: 55, pro: 145, b2b: 55, usdApprox: 15 },
   GB: { countryCode: "GB", country: "United Kingdom", currency: "GBP", premium: 15, pro: 39, b2b: 16, usdApprox: 20 },
-  US: { countryCode: "US", country: "United States", currency: "USD", premium: 19, pro: 49, b2b: 20, usdApprox: 20 },
+  US: { countryCode: "US", country: "United States", currency: "USD", premium: 124.99, pro: 199.99, b2b: 20, usdApprox: 20 },
   UY: { countryCode: "UY", country: "Uruguay", currency: "UYU", premium: 499, pro: 1299, b2b: 549, usdApprox: 14 },
   VE: { countryCode: "VE", country: "Venezuela", currency: "VES", premium: 250, pro: 650, b2b: 275, usdApprox: 8 },
   VN: { countryCode: "VN", country: "Vietnam", currency: "VND", premium: 149000, pro: 399000, b2b: 169000, usdApprox: 7 },

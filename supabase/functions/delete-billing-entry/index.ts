@@ -10,6 +10,8 @@ const corsHeaders = {
 const ALLOWED_SUPER_ADMINS = new Set([
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ]);
 
 function isValidUUID(value: string): boolean {
