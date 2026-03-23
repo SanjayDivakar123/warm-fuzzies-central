@@ -40,7 +40,6 @@ export default function HyattProposal() {
                 className="mb-4 h-10 w-auto object-contain md:h-12"
               />
               <Badge className="mb-4 w-fit border-emerald-300/40 bg-emerald-500/25 px-3 py-1 text-emerald-50">Client Proposal</Badge>
-              <p className="text-slate-200 text-sm md:text-base tracking-wide">/client/RCF-HYATT-2026-03-001</p>
               <h1 className="mt-3 text-4xl md:text-6xl font-bold text-white leading-tight">Hyatt Proposal</h1>
               <p className="mt-3 max-w-2xl text-slate-100 text-lg md:text-xl">RoleColorFinder (RCF)</p>
             </div>
@@ -102,20 +101,49 @@ export default function HyattProposal() {
               </p>
               <h3 className="text-xl font-semibold mt-6 mb-3 text-slate-900">Core Framework</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-slate-700 shadow-sm"><span className="font-semibold text-slate-900">Motivator (Red)</span> - Drives energy, momentum, and people engagement</div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-slate-700 shadow-sm"><span className="font-semibold text-slate-900">Executor (Yellow)</span> - Delivers results and ensures execution</div>
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-slate-700 shadow-sm"><span className="font-semibold text-slate-900">Architect (Green)</span> - Builds systems, structure, and strategy</div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-slate-700 shadow-sm"><span className="font-semibold text-slate-900">Visionary (Blue)</span> - Guides direction, innovation, and long-term thinking</div>
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-slate-700 shadow-sm flex flex-col">
+                  <span className="font-semibold text-slate-900 mb-1">Motivator (Red)</span>
+                  <span className="text-sm leading-relaxed">Drives energy, momentum, and people engagement. Motivators energize teams and create the culture that moves organizations forward.</span>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-700 shadow-sm flex flex-col">
+                  <span className="font-semibold text-slate-900 mb-1">Executor (Yellow)</span>
+                  <span className="text-sm leading-relaxed">Delivers results and ensures execution. Executors are the implementation force that turns strategy into action and meets critical deadlines.</span>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-slate-700 shadow-sm flex flex-col">
+                  <span className="font-semibold text-slate-900 mb-1">Architect (Green)</span>
+                  <span className="text-sm leading-relaxed">Builds systems, structure, and strategy. Architects design the frameworks and processes that allow organizations to scale with clarity.</span>
+                </div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-slate-700 shadow-sm flex flex-col">
+                  <span className="font-semibold text-slate-900 mb-1">Visionary (Blue)</span>
+                  <span className="text-sm leading-relaxed">Guides direction, innovation, and long-term thinking. Visionaries identify opportunities and chart the course for sustainable growth.</span>
+                </div>
               </div>
             </section>
 
             <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-8 shadow-lg shadow-slate-200/50">
-              <h2 className="mb-4 border-l-4 border-amber-500 pl-4 text-2xl font-semibold text-slate-900">SYSTEM CAPABILITIES</h2>
+              <h2 className="mb-2 border-l-4 border-amber-500 pl-4 text-2xl font-semibold text-slate-900">SYSTEM CAPABILITIES</h2>
+              <p className="mb-6 text-slate-600 pl-5">Four integrated modules that work together to align people, performance, and growth.</p>
               <div className="grid gap-4 md:grid-cols-2">
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">Role Intelligence</h3><p className="text-slate-700">Understand how individuals naturally operate and contribute within a team.</p></CardContent></Card>
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">Team Alignment</h3><p className="text-slate-700">Identify gaps, overlaps, and inefficiencies across teams and departments.</p></CardContent></Card>
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">Execution Optimization</h3><p className="text-slate-700">Improve how teams collaborate, communicate, and perform.</p></CardContent></Card>
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">Hiring Intelligence</h3><p className="text-slate-700">Evaluate candidates based on role fit and long-term performance potential.</p></CardContent></Card>
+                <div className="group rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 transition-shadow hover:shadow-md">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500 text-white text-lg font-bold shadow-sm">RI</div>
+                  <h3 className="text-lg font-bold mb-2 text-slate-900">Role Intelligence</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">Understand how individuals naturally operate and contribute within a team. Surface each person's innate strengths and working style.</p>
+                </div>
+                <div className="group rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 transition-shadow hover:shadow-md">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500 text-white text-lg font-bold shadow-sm">TA</div>
+                  <h3 className="text-lg font-bold mb-2 text-slate-900">Team Alignment</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">Identify gaps, overlaps, and inefficiencies across teams and departments. Build cohesive units that complement each other's strengths.</p>
+                </div>
+                <div className="group rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50 p-6 transition-shadow hover:shadow-md">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500 text-white text-lg font-bold shadow-sm">EO</div>
+                  <h3 className="text-lg font-bold mb-2 text-slate-900">Execution Optimization</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">Improve how teams collaborate, communicate, and perform. Reduce friction and drive measurable improvements in day-to-day execution.</p>
+                </div>
+                <div className="group rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-6 transition-shadow hover:shadow-md">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white text-lg font-bold shadow-sm">HI</div>
+                  <h3 className="text-lg font-bold mb-2 text-slate-900">Hiring Intelligence</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">Evaluate candidates based on role fit and long-term performance potential. Make hiring decisions backed by data, not guesswork.</p>
+                </div>
               </div>
             </section>
 
@@ -140,13 +168,43 @@ export default function HyattProposal() {
               />
             </section>
 
-            <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-8 shadow-lg shadow-slate-200/50">
-              <h2 className="mb-3 border-l-4 border-indigo-500 pl-4 text-2xl font-semibold text-slate-900">IMPLEMENTATION MODEL</h2>
-              <p className="mb-3 text-slate-700">RCF is implemented as an ongoing system across the organization.</p>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">1. Deployment</h3><ul className="list-disc pl-5 space-y-1 text-slate-700"><li>Platform setup and system configuration</li><li>Employee onboarding and role mapping</li></ul></CardContent></Card>
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">2. Integration</h3><ul className="list-disc pl-5 space-y-1 text-slate-700"><li>Integration into hiring workflows</li><li>Team-level insights and reporting</li></ul></CardContent></Card>
-                <Card className="rounded-2xl border-slate-200/90 bg-white"><CardContent className="p-5"><h3 className="font-semibold mb-2 text-slate-900">3. Scale</h3><ul className="list-disc pl-5 space-y-1 text-slate-700"><li>Expansion across properties and departments</li><li>Continuous optimization and performance tracking</li></ul></CardContent></Card>
+            <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-10 shadow-lg shadow-slate-200/50">
+              <h2 className="mb-2 border-l-4 border-indigo-500 pl-4 text-2xl font-semibold text-slate-900">IMPLEMENTATION MODEL</h2>
+              <p className="mb-8 text-slate-600 pl-5">RCF is implemented as an ongoing system across the organization.</p>
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card className="rounded-2xl border-slate-200/90 bg-slate-50/60 shadow-sm">
+                  <CardContent className="p-7 flex flex-col h-full">
+                    <p className="text-6xl font-bold text-indigo-600/20 leading-none mb-2">1.</p>
+                    <h3 className="text-2xl font-bold mb-4 text-slate-900">Deployment</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-slate-600 text-sm leading-relaxed">
+                      <li>Platform setup and system configuration</li>
+                      <li>Employee onboarding and role mapping</li>
+                      <li>Initial team assessments and RoleColor profiling</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-2xl border-slate-200/90 bg-slate-50/60 shadow-sm">
+                  <CardContent className="p-7 flex flex-col h-full">
+                    <p className="text-6xl font-bold text-indigo-600/20 leading-none mb-2">2.</p>
+                    <h3 className="text-2xl font-bold mb-4 text-slate-900">Integration</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-slate-600 text-sm leading-relaxed">
+                      <li>Full integration into existing hiring workflows</li>
+                      <li>Department-level team insights and reporting</li>
+                      <li>Manager training and role alignment sessions</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-2xl border-slate-200/90 bg-slate-50/60 shadow-sm">
+                  <CardContent className="p-7 flex flex-col h-full">
+                    <p className="text-6xl font-bold text-indigo-600/20 leading-none mb-2">3.</p>
+                    <h3 className="text-2xl font-bold mb-4 text-slate-900">Scale</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-slate-600 text-sm leading-relaxed">
+                      <li>Expansion across properties and departments</li>
+                      <li>Continuous optimization and performance tracking</li>
+                      <li>Ongoing analytics and leadership reporting</li>
+                    </ul>
+                  </CardContent>
+                </Card>
               </div>
             </section>
 
@@ -187,15 +245,30 @@ export default function HyattProposal() {
               </ol>
             </section>
 
-            <section className="rounded-3xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 md:p-8 shadow-xl shadow-slate-400/40">
-              <h2 className="text-2xl font-semibold mb-3 text-white">CLOSING</h2>
+            <section className="rounded-3xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 md:p-10 shadow-xl shadow-slate-400/40">
+              <h2 className="text-2xl font-semibold mb-4 text-white border-l-4 border-emerald-400 pl-4">CLOSING</h2>
               <p className="text-slate-200 leading-relaxed">
                 RoleColorFinder is designed to become a foundational system for how organizations structure teams,
-                hire effectively, and scale performance.
+                hire effectively, and scale performance across every property and department.
               </p>
-              <p className="text-slate-200 leading-relaxed mt-3">
-                We look forward to partnering with Hyatt to implement a system that drives long-term operational excellence.
+              <p className="text-slate-300 leading-relaxed mt-4">
+                The hospitality industry demands consistent execution, strong team alignment, and high-quality hiring at scale.
+                RCF addresses all three with a single integrated platform built for long-term operational impact — not a one-time
+                workshop or assessment, but a living system embedded into how Hyatt operates every day.
               </p>
+              <p className="text-slate-300 leading-relaxed mt-4">
+                We look forward to partnering with Hyatt to build a high-performing team culture — one that is measurable,
+                scalable, and aligned with the world-class guest experience Hyatt is known for delivering.
+              </p>
+              <p className="text-slate-300 leading-relaxed mt-4">
+                This proposal is the starting point. Our team is ready to move quickly, work closely with your leadership,
+                and deliver results from day one. We are confident this partnership will set a new standard for how Hyatt
+                develops and deploys talent across its portfolio.
+              </p>
+              <div className="mt-8 border-t border-slate-700 pt-6">
+                <p className="text-emerald-300 font-semibold">Ready to move forward?</p>
+                <p className="text-slate-400 text-sm mt-1">Reach out to Kody Krueger, Head of Sales, to confirm next steps and begin onboarding planning.</p>
+              </div>
             </section>
 
             <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-8 shadow-lg shadow-slate-200/50">
