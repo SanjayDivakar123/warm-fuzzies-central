@@ -236,6 +236,51 @@ export type Database = {
           },
         ]
       }
+      client_proposals: {
+        Row: {
+          id: string
+          proposal_id: string
+          slug: string
+          proposal_title: string
+          company_name: string
+          submitted_by: string
+          background_image_url: string
+          pricing: Json
+          closing_text: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          proposal_id: string
+          slug: string
+          proposal_title: string
+          company_name: string
+          submitted_by?: string
+          background_image_url?: string
+          pricing?: Json
+          closing_text?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          proposal_id?: string
+          slug?: string
+          proposal_title?: string
+          company_name?: string
+          submitted_by?: string
+          background_image_url?: string
+          pricing?: Json
+          closing_text?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       billing_transactions: {
         Row: {
           amount: number
