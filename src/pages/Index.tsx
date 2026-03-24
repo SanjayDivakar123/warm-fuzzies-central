@@ -804,7 +804,7 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
                 {
                   id: "4",
                   title: "What does it cost?",
-                  content: "The basic assessment is completely free! We also offer Premium reports ($19) with detailed insights and action plans, and Pro Deep Dive reports ($49) with comprehensive team-building recommendations."
+                  content: "The basic assessment is completely free! We also offer Premium reports ($124.99) with detailed insights and action plans, and Pro Deep Dive reports ($199.99) with comprehensive team-building recommendations."
                 },
                 {
                   id: "5",

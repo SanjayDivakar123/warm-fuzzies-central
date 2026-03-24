@@ -70,6 +70,12 @@ interface UsersTabProps {
 }
 
 const MAX_INVITES = 3;
+const RCF_SUPER_ADMIN_EMAILS = [
+  'sanjay@rolecolorfinder.com',
+  'tristan@rolecolorfinder.com',
+  'aaron@rolecolor.com',
+  'kody@rolecolor.com',
+];
 
 const PREDEFINED_SKILLS = [
   "UI Design",
@@ -768,8 +774,44 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     return (currentUserId && user?.user_id === currentUserId) || (currentUserEmail && rowEmail === currentUserEmail);
   };
 
+  const isRcfSuperAdminAccount = (user: any) => {
+    const rowEmail = (user?.email || '').toLowerCase();
+    return RCF_SUPER_ADMIN_EMAILS.includes(rowEmail);
+  };
+
+  const canManageAdminLevelUser = (user: any) => {
+    if (!permissions.canManageAllRoles) return false;
+    if (user?.role === 'employee') return false;
+    if (isCurrentUserRecord(user)) return false;
+    if (user?.id === superAdminId) return false;
+    if (isRcfSuperAdminAccount(user)) return false;
+
+    // Admins keep all permissions except managing/removing admin or super-admin accounts.
+    if (user?.role === 'admin' && !isSuperAdmin) return false;
+
+    return true;
+  };
+
   const handleDeleteAdmin = async () => {
     if (!adminDeleteTarget) return;
+
+    if (isRcfSuperAdminAccount(adminDeleteTarget)) {
+      toast({
+        title: "Action blocked",
+        description: "You cannot remove an RCF super-admin account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (adminDeleteTarget.role === 'admin' && !isSuperAdmin) {
+      toast({
+        title: "Action blocked",
+        description: "Only the company owner can remove admin accounts.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (isCurrentUserRecord(adminDeleteTarget)) {
       toast({
@@ -1696,7 +1738,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                               <TooltipContent>Promote to Admin</TooltipContent>
                             </Tooltip>
                           )}
-                          {user.role !== "employee" && permissions.canManageAllRoles && !isCurrentUserRecord(user) && user.id !== superAdminId && (
+                          {canManageAdminLevelUser(user) && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 

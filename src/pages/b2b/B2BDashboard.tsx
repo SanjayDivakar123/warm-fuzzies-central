@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,6 +48,28 @@ import {
 
 const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'settings']);
 
+const getEdgeErrorMessage = async (error: unknown): Promise<string> => {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const payload = await error.context.json();
+      if (payload?.error && typeof payload.error === 'string') {
+        return payload.error;
+      }
+      if (payload?.message && typeof payload.message === 'string') {
+        return payload.message;
+      }
+    } catch {
+      // Ignore parse errors and fall through.
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Unexpected error';
+};
+
 // Inner component that uses the B2B theme
 function B2BDashboardContent() {
   const { company, companyUser, loading, isAdmin, permissions, refreshCompany, allCompanies, switchCompany } = useCompany();
@@ -71,6 +94,17 @@ function B2BDashboardContent() {
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [resolvingBillingLock, setResolvingBillingLock] = useState(false);
+  const [paymentGateLoading, setPaymentGateLoading] = useState(false);
+  const [paymentMethodRequired, setPaymentMethodRequired] = useState(false);
+  const [paymentGateReason, setPaymentGateReason] = useState<'missing_payment_method' | 'trial_ended_no_payment_method'>('missing_payment_method');
+  const [openingPaymentSetup, setOpeningPaymentSetup] = useState(false);
+  const [deploymentFeeRequired, setDeploymentFeeRequired] = useState(false);
+  const [deploymentFeeLoading, setDeploymentFeeLoading] = useState(false);
+  const [deploymentFeeError, setDeploymentFeeError] = useState<string | null>(null);
+  const [deploymentFeeActionUrl, setDeploymentFeeActionUrl] = useState<string | null>(null);
+  const deploymentFeeAttemptRef = useRef<string | null>(null);
+  const deploymentFeeAutoAttemptRef = useRef<string | null>(null);
+  const deploymentFeeGateProbeRef = useRef<string | null>(null);
   const switchingCompanyIdRef = useRef<string | null>(null);
   const autoResolveKeyRef = useRef<string | null>(null);
 
@@ -373,6 +407,284 @@ function B2BDashboardContent() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [activeTab, settingsDirty]);
 
+  useEffect(() => {
+    const checkPaymentGate = async () => {
+      if (!company?.id || !companyUser || company.name === 'RoleColorFinderLLC') {
+        setPaymentMethodRequired(false);
+        setPaymentGateReason('missing_payment_method');
+        return;
+      }
+
+      const trialEndTs = company.b2b_trial_ends_at ? new Date(company.b2b_trial_ends_at).getTime() : NaN;
+      const trialActive = Boolean(
+        company.b2b_trial_enabled &&
+        Number.isFinite(trialEndTs) &&
+        trialEndTs > Date.now()
+      );
+
+      if (trialActive) {
+        // Trial is active, so we allow portal access without requiring a card on file yet.
+        setPaymentMethodRequired(false);
+        setPaymentGateReason('missing_payment_method');
+        setDeploymentFeeRequired(false);
+        setDeploymentFeeError(null);
+        return;
+      }
+
+      setPaymentGateLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-payment-method', {
+          body: {
+            company_id: company.id,
+            action: 'get_payment_method',
+          },
+        });
+
+        if (error) throw error;
+        const missingPaymentMethod = !Boolean(data?.hasPaymentMethod);
+        setPaymentMethodRequired(missingPaymentMethod);
+
+        if (missingPaymentMethod) {
+          setDeploymentFeeRequired(false);
+          setDeploymentFeeError(null);
+          const trialEnded = Boolean(
+            company.b2b_trial_enabled &&
+            Number.isFinite(trialEndTs) &&
+            trialEndTs <= Date.now()
+          );
+          setPaymentGateReason(trialEnded ? 'trial_ended_no_payment_method' : 'missing_payment_method');
+          return;
+        }
+
+        const canManageBilling = ['admin', 'hr', 'partner'].includes(companyUser.role);
+        if (canManageBilling) {
+          const probeKey = `${company.id}:has-payment-method`;
+
+          if (deploymentFeeGateProbeRef.current !== probeKey) {
+            deploymentFeeGateProbeRef.current = probeKey;
+
+            try {
+              const { data: deploymentData, error: deploymentError } = await supabase.functions.invoke('manage-payment-method', {
+                body: {
+                  company_id: company.id,
+                  action: 'charge_deployment_fee_if_needed',
+                },
+              });
+
+              if (deploymentError) throw deploymentError;
+              if (deploymentData?.requiresAction || deploymentData?.status === 'requires_action') {
+                setDeploymentFeeRequired(true);
+                setDeploymentFeeActionUrl(deploymentData?.actionUrl || null);
+                setDeploymentFeeError('Card requires verification before the deployment fee can be charged.');
+                return;
+              }
+              if (deploymentData?.error) throw new Error(deploymentData.error);
+
+              const status = deploymentData?.status;
+              const isResolved = ['not_required', 'waived', 'already_charged', 'charged'].includes(status);
+
+              setDeploymentFeeRequired(!isResolved);
+              if (isResolved) {
+                setDeploymentFeeError(null);
+              }
+
+              if (status === 'charged') {
+                await refreshCompany();
+              }
+            } catch (deploymentChargeError: any) {
+              setDeploymentFeeRequired(true);
+              setDeploymentFeeError(
+                deploymentChargeError?.message ||
+                  'We could not process the one-time $5,000 deployment fee. Please verify the payment method and retry.'
+              );
+            }
+          }
+        } else {
+          const requiresDeploymentFee = Boolean(
+            company.requires_post_setup_deployment_fee &&
+            !company.deployment_fee_waived &&
+            !company.deployment_fee_charged_at
+          );
+
+          setDeploymentFeeRequired(requiresDeploymentFee);
+          if (!requiresDeploymentFee) {
+            setDeploymentFeeError(null);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to verify payment method gate', error);
+        // Fail closed to enforce required billing setup before portal usage.
+        setPaymentMethodRequired(true);
+        setDeploymentFeeRequired(false);
+        const trialEnded = Boolean(
+          company.b2b_trial_enabled &&
+          Number.isFinite(trialEndTs) &&
+          trialEndTs <= Date.now()
+        );
+        setPaymentGateReason(trialEnded ? 'trial_ended_no_payment_method' : 'missing_payment_method');
+      } finally {
+        setPaymentGateLoading(false);
+      }
+    };
+
+    void checkPaymentGate();
+  }, [company?.id, company?.name, companyUser?.id, companyUser?.role]);
+
+  const chargeDeploymentFeeIfNeeded = async (options?: { silent?: boolean }) => {
+    if (!company?.id) return false;
+    const silent = options?.silent === true;
+
+    setDeploymentFeeLoading(true);
+    setDeploymentFeeError(null);
+    setDeploymentFeeActionUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-payment-method', {
+        body: {
+          company_id: company.id,
+          action: 'charge_deployment_fee_if_needed',
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.requiresAction || data?.status === 'requires_action') {
+        setDeploymentFeeRequired(true);
+        setDeploymentFeeActionUrl(data?.actionUrl || null);
+        setDeploymentFeeError('Card requires verification before the deployment fee can be charged.');
+
+        if (!silent) {
+          toast({
+            title: 'Card Requires Verification',
+            description: data?.actionUrl
+              ? 'Complete bank authentication, then return and retry.'
+              : 'Your bank requires verification. Open Billing Settings to update/verify your payment method.',
+            variant: 'destructive',
+          });
+        }
+        return false;
+      }
+
+      if (data?.error) throw new Error(data.error);
+
+      setDeploymentFeeRequired(false);
+      setDeploymentFeeActionUrl(null);
+      await refreshCompany();
+
+      if (!silent && data?.charged) {
+        toast({
+          title: 'Deployment fee paid',
+          description: 'The one-time $5,000 deployment fee was successfully charged.',
+        });
+      }
+
+      return true;
+    } catch (error: unknown) {
+      const parsedMessage = await getEdgeErrorMessage(error);
+      const message =
+        parsedMessage ||
+        'We could not process the one-time $5,000 deployment fee. Please verify the payment method and try again.';
+      setDeploymentFeeRequired(true);
+      setDeploymentFeeError(message);
+
+      if (!silent) {
+        toast({
+          title: 'Deployment fee charge failed',
+          description: message,
+          variant: 'destructive',
+        });
+      }
+
+      return false;
+    } finally {
+      setDeploymentFeeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const paymentSetup = searchParams.get('payment_setup');
+    if (paymentSetup !== 'success' || !company?.id || !companyUser) return;
+
+    const requiresDeploymentFee = Boolean(
+      company.requires_post_setup_deployment_fee &&
+      !company.deployment_fee_waived &&
+      !company.deployment_fee_charged_at
+    );
+
+    if (!requiresDeploymentFee) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('payment_setup');
+      setSearchParams(nextParams, { replace: true });
+      return;
+    }
+
+    const canManageBilling = ['admin', 'hr', 'partner'].includes(companyUser.role);
+    if (!canManageBilling) return;
+
+    const attemptKey = `${company.id}:${paymentSetup}`;
+    if (deploymentFeeAttemptRef.current === attemptKey) return;
+    deploymentFeeAttemptRef.current = attemptKey;
+
+    void (async () => {
+      await chargeDeploymentFeeIfNeeded({ silent: false });
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('payment_setup');
+      setSearchParams(nextParams, { replace: true });
+    })();
+  }, [company?.id, company?.requires_post_setup_deployment_fee, company?.deployment_fee_waived, company?.deployment_fee_charged_at, companyUser?.role, searchParams]);
+
+  useEffect(() => {
+    if (!company?.id) {
+      deploymentFeeAutoAttemptRef.current = null;
+      return;
+    }
+
+    // Reset auto-attempt key once fee is no longer pending.
+    if (!deploymentFeeRequired) {
+      deploymentFeeAutoAttemptRef.current = null;
+      return;
+    }
+
+    if (paymentMethodRequired || paymentGateLoading || deploymentFeeLoading) return;
+
+    const canManageBilling = ['admin', 'hr', 'partner'].includes(companyUser?.role || '');
+    if (!canManageBilling) return;
+
+    const attemptKey = `${company.id}:auto`;
+    if (deploymentFeeAutoAttemptRef.current === attemptKey) return;
+    deploymentFeeAutoAttemptRef.current = attemptKey;
+
+    // Catch scenarios where card setup happened in another flow and no payment_setup query param is present.
+    void chargeDeploymentFeeIfNeeded({ silent: true });
+  }, [company?.id, companyUser?.role, deploymentFeeRequired, paymentMethodRequired, paymentGateLoading, deploymentFeeLoading]);
+
+  const openPaymentMethodSetup = async () => {
+    if (!company?.id) return;
+    setOpeningPaymentSetup(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-payment-method', {
+        body: {
+          company_id: company.id,
+          action: 'setup_payment_method',
+          success_url: `${window.location.origin}/b2b/company-portal?company=${company.id}&tab=settings&payment_setup=success`,
+          cancel_url: `${window.location.origin}/b2b/company-portal?company=${company.id}&tab=settings&payment_setup=cancelled`,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.url) throw new Error('Unable to open payment setup.');
+      window.location.href = data.url;
+    } catch (error: unknown) {
+      const message = await getEdgeErrorMessage(error);
+      toast({
+        title: 'Unable to start payment setup',
+        description: message || 'Please try again.',
+        variant: 'destructive',
+      });
+      setOpeningPaymentSetup(false);
+    }
+  };
+
   // Keep showing spinner if we're still waiting for the requested company to resolve
   const requestedCompanyId = searchParams.get('company');
   const awaitingSwitch = !loading && requestedCompanyId && company?.id !== requestedCompanyId;
@@ -403,6 +715,102 @@ function B2BDashboardContent() {
             <Button variant="outline" onClick={() => window.location.href = '/b2b/signin'} className="w-full">
               <Building2 className="h-4 w-4 mr-2" />
               Sign in to Existing Company
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (paymentGateLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (paymentMethodRequired) {
+    const canManageBilling = ['admin', 'hr', 'partner'].includes(companyUser.role);
+    const title = paymentGateReason === 'trial_ended_no_payment_method'
+      ? 'Trial Ended - Portal Access Paused'
+      : 'Payment Method Required';
+    const description = paymentGateReason === 'trial_ended_no_payment_method'
+      ? 'Your trial has ended. Add a card or bank account to restore portal access.'
+      : 'Super-admin access has been granted, but a valid payment method must be added before this B2B portal can be used.';
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-lg border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>
+              {description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {canManageBilling ? (
+              <Button className="w-full" onClick={openPaymentMethodSetup} disabled={openingPaymentSetup}>
+                {openingPaymentSetup ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Add Card / Bank via Stripe
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                A company admin or HR manager must add the Stripe payment method first.
+              </p>
+            )}
+            <Button variant="outline" className="w-full" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (deploymentFeeRequired) {
+    const canManageBilling = ['admin', 'hr', 'partner'].includes(companyUser.role);
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-lg border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Deployment Fee Required</CardTitle>
+            <CardDescription>
+              A one-time $5,000 deployment fee is required before portal access is enabled.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {deploymentFeeError ? (
+              <p className="text-sm text-destructive">{deploymentFeeError}</p>
+            ) : null}
+            {canManageBilling && deploymentFeeActionUrl ? (
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => { window.location.href = deploymentFeeActionUrl; }}
+              >
+                Complete Bank Authentication
+              </Button>
+            ) : null}
+            {canManageBilling ? (
+              <Button
+                className="w-full"
+                onClick={() => void chargeDeploymentFeeIfNeeded({ silent: false })}
+                disabled={deploymentFeeLoading}
+              >
+                {deploymentFeeLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Retry $5,000 Deployment Fee Charge
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                A company admin or HR manager must complete the deployment fee payment.
+              </p>
+            )}
+            <Button variant="outline" className="w-full" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
             </Button>
           </CardContent>
         </Card>

@@ -13,6 +13,7 @@ const logStep = (step: string, details?: unknown) => {
 };
 
 const MANAGEMENT_ROLES = ["admin", "hr", "partner"] as const;
+const DEPLOYMENT_FEE_CENTS = 500000;
 
 const isMissingStripeCustomerError = (error: unknown) => {
   const message =
@@ -71,7 +72,7 @@ serve(async (req) => {
       .eq("id", company_id)
       .single();
 
-    if (companyError || !company) throw new Error("Company not found");
+    if (companyError || !company) throw new Error(companyError?.message || "Company not found");
 
     logStep("Company found", { companyId: company.id, name: company.name });
 
@@ -124,15 +125,35 @@ serve(async (req) => {
       await saveCustomerId(customerId);
     }
 
+    const getDefaultPaymentMethodId = async () => {
+      try {
+        const customerObj = await stripe.customers.retrieve(customerId) as any;
+        const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
+        const invoiceDefaultId = typeof invoiceDefault === "string" ? invoiceDefault : invoiceDefault?.id;
+        if (typeof invoiceDefaultId === "string" && invoiceDefaultId.startsWith("pm_")) {
+          return invoiceDefaultId;
+        }
+      } catch (customerRetrieveError) {
+        logStep("Failed to retrieve customer invoice default", { customerId, error: customerRetrieveError });
+      }
+      return null;
+    };
+
+    const listSupportedPaymentMethods = async () => {
+      const [cards, bankAccounts] = await Promise.all([
+        stripe.paymentMethods.list({ customer: customerId, type: "card" }),
+        stripe.paymentMethods.list({ customer: customerId, type: "us_bank_account" }),
+      ]);
+
+      return [...cards.data, ...bankAccounts.data];
+    };
+
     // Handle different actions
     if (action === "get_payment_method") {
       // Get current payment method
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: "card",
-      });
+      const paymentMethods = await listSupportedPaymentMethods();
 
-      if (paymentMethods.data.length === 0) {
+      if (paymentMethods.length === 0) {
         return new Response(JSON.stringify({ 
           hasPaymentMethod: false 
         }), {
@@ -141,30 +162,26 @@ serve(async (req) => {
         });
       }
 
-      let defaultPaymentMethodId: string | null = null;
-      try {
-        const customerObj = await stripe.customers.retrieve(customerId) as any;
-        const invoiceDefault = customerObj?.invoice_settings?.default_payment_method;
-        const invoiceDefaultId = typeof invoiceDefault === "string" ? invoiceDefault : invoiceDefault?.id;
-        if (typeof invoiceDefaultId === "string" && invoiceDefaultId.startsWith("pm_")) {
-          defaultPaymentMethodId = invoiceDefaultId;
-        }
-      } catch (customerRetrieveError) {
-        logStep("Failed to retrieve customer invoice default", { customerId, error: customerRetrieveError });
-      }
+      const defaultPaymentMethodId = await getDefaultPaymentMethodId();
 
       const pm = defaultPaymentMethodId
-        ? (paymentMethods.data.find((method) => method.id === defaultPaymentMethodId) || paymentMethods.data[0])
-        : paymentMethods.data[0];
+        ? (paymentMethods.find((method) => method.id === defaultPaymentMethodId) || paymentMethods[0])
+        : paymentMethods[0];
 
-      logStep("Payment method found", { brand: pm.card?.brand, last4: pm.card?.last4 });
+      logStep("Payment method found", {
+        type: pm.type,
+        brand: pm.card?.brand,
+        last4: pm.card?.last4 || pm.us_bank_account?.last4,
+      });
 
       return new Response(JSON.stringify({ 
         hasPaymentMethod: true,
         paymentMethod: {
           id: pm.id,
+          type: pm.type,
           brand: pm.card?.brand,
-          last4: pm.card?.last4,
+          bankName: pm.us_bank_account?.bank_name,
+          last4: pm.card?.last4 || pm.us_bank_account?.last4,
           expMonth: pm.card?.exp_month,
           expYear: pm.card?.exp_year,
         }
@@ -177,18 +194,34 @@ serve(async (req) => {
     if (action === "setup_payment_method") {
       // Create a Checkout Session in setup mode
       const origin = req.headers.get("origin") || success_url?.split('/').slice(0, 3).join('/') || "https://rolecolorfinder.com";
-      
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: "setup",
-        payment_method_types: ["card"],
-        success_url: success_url || `${origin}/b2b/dashboard?payment_setup=success`,
-        cancel_url: cancel_url || `${origin}/b2b/dashboard?payment_setup=cancelled`,
-        metadata: {
-          company_id: company.id,
-          type: "payment_method_setup"
-        }
-      });
+
+      let session;
+      try {
+        session = await stripe.checkout.sessions.create({
+          customer: customerId,
+          mode: "setup",
+          payment_method_types: ["card", "us_bank_account"],
+          success_url: success_url || `${origin}/b2b/dashboard?payment_setup=success`,
+          cancel_url: cancel_url || `${origin}/b2b/dashboard?payment_setup=cancelled`,
+          metadata: {
+            company_id: company.id,
+            type: "payment_method_setup"
+          }
+        });
+      } catch (setupError) {
+        logStep("Card+bank setup unavailable; falling back to card-only", { error: setupError });
+        session = await stripe.checkout.sessions.create({
+          customer: customerId,
+          mode: "setup",
+          payment_method_types: ["card"],
+          success_url: success_url || `${origin}/b2b/dashboard?payment_setup=success`,
+          cancel_url: cancel_url || `${origin}/b2b/dashboard?payment_setup=cancelled`,
+          metadata: {
+            company_id: company.id,
+            type: "payment_method_setup"
+          }
+        });
+      }
 
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
@@ -202,7 +235,241 @@ serve(async (req) => {
       });
     }
 
-    throw new Error("Invalid action. Use 'get_payment_method' or 'setup_payment_method'");
+    if (action === "charge_deployment_fee_if_needed") {
+      // Read deployment-fee state in a separate query so setup/get actions do not
+      // fail when migration columns are not present yet.
+      let deploymentFeeRequired = false;
+      let deploymentFeeWaived = false;
+      let deploymentFeeChargedAt: string | null = null;
+
+      const { data: feeState, error: feeStateError } = await supabase
+        .from("companies")
+        .select("requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_charged_at")
+        .eq("id", company.id)
+        .maybeSingle();
+
+      if (feeStateError) {
+        logStep("Deployment fee columns unavailable; using backward-compatible inference", {
+          companyId: company.id,
+          error: feeStateError.message,
+        });
+      } else if (feeState) {
+        deploymentFeeRequired = Boolean((feeState as any).requires_post_setup_deployment_fee);
+        deploymentFeeWaived = Boolean((feeState as any).deployment_fee_waived);
+        deploymentFeeChargedAt = ((feeState as any).deployment_fee_charged_at as string | null) || null;
+      }
+
+      if (!deploymentFeeRequired && !deploymentFeeWaived && !deploymentFeeChargedAt) {
+        const { data: priorChargeRecord } = await supabase
+          .from("billing_transactions")
+          .select("id")
+          .eq("company_id", company.id)
+          .eq("type", "deployment_fee_charge")
+          .limit(1)
+          .maybeSingle();
+
+        if (priorChargeRecord?.id) {
+          deploymentFeeChargedAt = new Date().toISOString();
+        }
+      }
+
+      if (!deploymentFeeRequired && !deploymentFeeWaived && !deploymentFeeChargedAt) {
+        const { data: historyRows, error: historyError } = await supabase
+          .from("billing_transactions")
+          .select("type, created_at")
+          .eq("company_id", company.id)
+          .in("type", [
+            "super_admin_company_created",
+            "super_admin_assign_admin",
+            "deployment_fee_waived",
+            "deployment_fee_unwaived",
+            "deployment_fee_charge",
+          ])
+          .order("created_at", { ascending: false })
+          .limit(30);
+
+        if (historyError) {
+          logStep("Failed to load deployment fee inference history", {
+            companyId: company.id,
+            error: historyError.message,
+          });
+        } else if (historyRows?.length) {
+          const latestWaiverToggle = historyRows.find(
+            (row: any) => row.type === "deployment_fee_waived" || row.type === "deployment_fee_unwaived",
+          );
+
+          if (latestWaiverToggle?.type === "deployment_fee_waived") {
+            deploymentFeeWaived = true;
+          }
+
+          const anyDeploymentFeeCharge = historyRows.some((row: any) => row.type === "deployment_fee_charge");
+          if (anyDeploymentFeeCharge) {
+            deploymentFeeChargedAt = new Date().toISOString();
+          }
+
+          const adminManagedBootstrap = historyRows.some(
+            (row: any) => row.type === "super_admin_company_created" || row.type === "super_admin_assign_admin",
+          );
+
+          if (adminManagedBootstrap && !deploymentFeeWaived && !deploymentFeeChargedAt) {
+            deploymentFeeRequired = true;
+          }
+        }
+      }
+
+      // Backward-compatibility: older super-admin-created companies may predate
+      // the requires_post_setup_deployment_fee flag. Infer requirement from history.
+      if (!deploymentFeeRequired && !deploymentFeeWaived && !deploymentFeeChargedAt) {
+        const { data: legacyCreationRecord } = await supabase
+          .from("billing_transactions")
+          .select("id")
+          .eq("company_id", company.id)
+          .eq("type", "super_admin_company_created")
+          .limit(1)
+          .maybeSingle();
+
+        if (legacyCreationRecord?.id) {
+          deploymentFeeRequired = true;
+          const { error: markRequiredError } = await supabase
+            .from("companies")
+            .update({ requires_post_setup_deployment_fee: true })
+            .eq("id", company.id);
+
+          if (markRequiredError) {
+            logStep("Failed to persist inferred deployment fee requirement", {
+              companyId: company.id,
+              error: markRequiredError.message,
+            });
+          }
+        }
+      }
+
+      if (!deploymentFeeRequired) {
+        return new Response(JSON.stringify({
+          success: true,
+          status: "not_required",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      if (deploymentFeeWaived) {
+        return new Response(JSON.stringify({
+          success: true,
+          status: "waived",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      if (deploymentFeeChargedAt) {
+        return new Response(JSON.stringify({
+          success: true,
+          status: "already_charged",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      const paymentMethods = await listSupportedPaymentMethods();
+      if (paymentMethods.length === 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          status: "no_payment_method",
+          error: "No payment method on file",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      const defaultPaymentMethodId = await getDefaultPaymentMethodId();
+      const selectedPaymentMethod = defaultPaymentMethodId
+        ? (paymentMethods.find((method) => method.id === defaultPaymentMethodId) || paymentMethods[0])
+        : paymentMethods[0];
+
+      let paymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: DEPLOYMENT_FEE_CENTS,
+          currency: "usd",
+          customer: customerId,
+          payment_method: selectedPaymentMethod.id,
+          off_session: true,
+          confirm: true,
+          description: `One-time deployment fee for ${company.name}`,
+          metadata: {
+            company_id: company.id,
+            type: "deployment_fee_charge",
+          },
+        }, {
+          idempotencyKey: `deployment-fee-${company.id}`,
+        });
+      } catch (stripeErr: any) {
+        const pi = stripeErr?.payment_intent;
+        const requiresAction =
+          pi?.status === "requires_action" ||
+          stripeErr?.code === "authentication_required" ||
+          stripeErr?.code === "payment_intent_authentication_failure";
+
+        if (requiresAction) {
+          const actionUrl = pi?.next_action?.redirect_to_url?.url ?? null;
+          return new Response(JSON.stringify({
+            success: false,
+            status: "requires_action",
+            requiresAction: true,
+            actionUrl,
+            clientSecret: pi?.client_secret,
+            error: "Card requires verification before the deployment fee can be charged.",
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
+        throw stripeErr;
+      }
+
+      if (paymentIntent.status !== "succeeded") {
+        throw new Error(`Deployment fee charge failed with status ${paymentIntent.status}`);
+      }
+
+      await supabase
+        .from("companies")
+        .update({
+          deployment_fee_charged_at: new Date().toISOString(),
+          deployment_fee_payment_intent_id: paymentIntent.id,
+          requires_post_setup_deployment_fee: false,
+        })
+        .eq("id", company.id);
+
+      const { error: billingTransactionError } = await supabase.from("billing_transactions").insert({
+        company_id: company.id,
+        type: "deployment_fee_charge",
+        amount: DEPLOYMENT_FEE_CENTS,
+        stripe_payment_intent_id: paymentIntent.id,
+        description: "One-time deployment fee charged after payment method setup",
+      });
+
+      if (billingTransactionError) {
+        logStep("Failed to insert deployment fee billing transaction", { error: billingTransactionError.message });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        status: "charged",
+        amount_cents: DEPLOYMENT_FEE_CENTS,
+        payment_intent_id: paymentIntent.id,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    throw new Error("Invalid action. Use 'get_payment_method', 'setup_payment_method', or 'charge_deployment_fee_if_needed'");
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

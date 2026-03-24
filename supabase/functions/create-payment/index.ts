@@ -79,12 +79,12 @@ serve(async (req) => {
     const pricing = {
       premium: {
         name: "Premium Leadership Assessment",
-        amount: 1900, // $19.00
+        amount: 12499, // $124.99
         description: "Complete 25-question assessment with detailed insights"
       },
       pro: {
         name: "Pro Deep Dive Assessment", 
-        amount: 4900, // $49.00
+        amount: 19999, // $199.99
         description: "Ultimate 50-question assessment with comprehensive 3-page report"
       },
       team: {

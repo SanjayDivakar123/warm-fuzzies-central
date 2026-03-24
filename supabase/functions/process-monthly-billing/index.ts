@@ -2,8 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import {
-  getBillablePortalUsers,
-  MONTHLY_RATE_DOLLARS,
+  CORE_PLATFORM_MONTHLY_DOLLARS,
+  HIRING_INTELLIGENCE_MONTHLY_DOLLARS,
+  getActiveRoleScalingCharge,
+  getOutcomeBasedCharge,
   getNextRenewalAt,
   getPreviousRenewalAt,
   isUnlimitedCompany,
@@ -15,6 +17,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const TRIAL_ASSESSMENT_PRICE_DOLLARS = 20;
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -106,7 +110,7 @@ serve(async (req) => {
     // Get all companies with billing state. Exact-date gating happens per company below.
     const { data: companies, error: companiesError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, created_at, seats_purchased, credit_balance, stripe_customer_id, portal_billing_anchor_at, portal_billing_next_renewal_at, portal_access_locked, portal_access_outstanding_balance");
+      .select("id, name, admin_email, created_at, seats_purchased, credit_balance, stripe_customer_id, portal_billing_anchor_at, portal_billing_next_renewal_at, portal_access_locked, portal_access_outstanding_balance, hiring_subscription_enabled, hiring_subscription_status, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at");
 
     if (companiesError) throw new Error(`Failed to fetch companies: ${companiesError.message}`);
 
@@ -125,7 +129,10 @@ serve(async (req) => {
 
     for (const company of companies || []) {
       let activeUsers = 0;
-      let billableUsers = 0;
+      let activeRoleCount = 0;
+      let successfulHires = 0;
+      let trialAssessedUserCount = 0;
+      let trialUsageCharge = 0;
       let totalCharge = 0;
       let creditsUsed = 0;
       let cardCharged = 0;
@@ -162,6 +169,36 @@ serve(async (req) => {
         }
 
         if (nextRenewalAt.getTime() > now.getTime()) {
+          results.push({
+            companyId: company.id,
+            companyName: company.name,
+            activeUsers: 0,
+            totalCharge: 0,
+            creditsUsed: 0,
+            cardCharged: 0,
+            success: true,
+          });
+          continue;
+        }
+
+        const trialEndsAt = company.b2b_trial_ends_at ? new Date(company.b2b_trial_ends_at) : null;
+        const trialIsActive = Boolean(
+          company.b2b_trial_enabled &&
+          trialEndsAt &&
+          !Number.isNaN(trialEndsAt.getTime()) &&
+          trialEndsAt.getTime() > now.getTime(),
+        );
+
+        if (trialIsActive) {
+          const nextPeriodRenewalAt = getNextRenewalAt(anchorAt, nextRenewalAt);
+          await clearPortalLock(company.id, nextPeriodRenewalAt.toISOString());
+          await supabase
+            .from("companies")
+            .update({
+              portal_billing_next_renewal_at: nextPeriodRenewalAt.toISOString(),
+            })
+            .eq("id", company.id);
+
           results.push({
             companyId: company.id,
             companyName: company.name,
@@ -238,7 +275,7 @@ serve(async (req) => {
 
         const billingPeriodId = insertedPeriods.id;
 
-        // Count all non-revoked company users so invited users remain billable until revoked.
+        // Keep active user count for analytics/auditing.
         const { count: activeUserCount, error: countError } = await supabase
           .from("company_users")
           .select("*", { count: "exact", head: true })
@@ -270,14 +307,77 @@ serve(async (req) => {
         }
 
         activeUsers = activeUserCount || 0;
-        billableUsers = getBillablePortalUsers(activeUsers, company.seats_purchased);
-        totalCharge = toMoney(billableUsers * MONTHLY_RATE_DOLLARS);
+
+        const { count: activeRoleResult, error: activeRoleError } = await supabase
+          .from("job_postings")
+          .select("*", { count: "exact", head: true })
+          .eq("company_id", company.id)
+          .eq("status", "open");
+
+        if (activeRoleError) {
+          throw new Error(`Failed to count active job roles: ${activeRoleError.message}`);
+        }
+
+        activeRoleCount = activeRoleResult || 0;
+
+        const { count: successfulHireResult, error: successfulHireError } = await supabase
+          .from("candidate_applications")
+          .select("id, job_postings!inner(company_id)", { count: "exact", head: true })
+          .eq("job_postings.company_id", company.id)
+          .gte("hired_at", periodStartIso)
+          .lt("hired_at", periodEndIso)
+          .not("hired_at", "is", null);
+
+        if (successfulHireError) {
+          throw new Error(`Failed to count successful hires: ${successfulHireError.message}`);
+        }
+
+        successfulHires = successfulHireResult || 0;
+
+        const trialHasEndedAndNeedsConversion = Boolean(
+          company.b2b_trial_enabled &&
+          trialEndsAt &&
+          !Number.isNaN(trialEndsAt.getTime()) &&
+          trialEndsAt.getTime() <= now.getTime() &&
+          !company.b2b_trial_converted_at,
+        );
+
+        if (trialHasEndedAndNeedsConversion) {
+          const { count: trialAssessedCount, error: trialAssessedError } = await supabase
+            .from("company_users")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", company.id)
+            .not("assessment_result_id", "is", null);
+
+          if (trialAssessedError) {
+            throw new Error(`Failed to count trial assessed users: ${trialAssessedError.message}`);
+          }
+
+          trialAssessedUserCount = trialAssessedCount || 0;
+          trialUsageCharge = toMoney(trialAssessedUserCount * TRIAL_ASSESSMENT_PRICE_DOLLARS);
+        }
+
+        const hasHiringIntelligence = company.hiring_subscription_enabled &&
+          ["active", "trialing", "admin_override"].includes(company.hiring_subscription_status || "");
+
+        const coreCharge = CORE_PLATFORM_MONTHLY_DOLLARS;
+        const hiringBaseCharge = hasHiringIntelligence ? HIRING_INTELLIGENCE_MONTHLY_DOLLARS : 0;
+        const activeRoleScalingCharge = hasHiringIntelligence ? getActiveRoleScalingCharge(activeRoleCount) : 0;
+        const outcomeBasedCharge = hasHiringIntelligence ? getOutcomeBasedCharge(successfulHires) : 0;
+
+        totalCharge = toMoney(coreCharge + hiringBaseCharge + activeRoleScalingCharge + outcomeBasedCharge + trialUsageCharge);
         const creditBalance = toMoney(Number(company.credit_balance || 0));
 
         logStep("Calculating charges", { 
           activeUsers, 
-          billableUsers,
-          seatsPurchased: company.seats_purchased,
+          activeRoleCount,
+          successfulHires,
+          trialAssessedUserCount,
+          trialUsageCharge,
+          coreCharge,
+          hiringBaseCharge,
+          activeRoleScalingCharge,
+          outcomeBasedCharge,
           totalCharge, 
           creditBalance 
         });
@@ -297,7 +397,7 @@ serve(async (req) => {
             billing_period_id: billingPeriodId,
             type: "monthly_billing_credits",
             amount: -totalCharge,
-            description: `Portal renewal for ${billableUsers} billable users - used credits`
+            description: `Portal renewal used credits (core: $${coreCharge.toFixed(2)}, hiring base: $${hiringBaseCharge.toFixed(2)}, scaling: $${activeRoleScalingCharge.toFixed(2)}, outcomes: $${outcomeBasedCharge.toFixed(2)}, trial conversion: $${trialUsageCharge.toFixed(2)})`
           });
 
           const nextPeriodRenewalAt = getNextRenewalAt(anchorAt, nextRenewalAt);
@@ -305,7 +405,7 @@ serve(async (req) => {
             .from("company_portal_billing_periods")
             .update({
               status: "succeeded",
-              billed_user_count: billableUsers,
+              billed_user_count: activeUsers,
               total_amount: totalCharge,
               credits_applied: creditsUsed,
               card_charged: 0,
@@ -316,6 +416,16 @@ serve(async (req) => {
             .eq("id", billingPeriodId);
 
           await clearPortalLock(company.id, nextPeriodRenewalAt.toISOString());
+
+          if (trialUsageCharge > 0 || (company.b2b_trial_enabled && !company.b2b_trial_converted_at)) {
+            await supabase
+              .from("companies")
+              .update({
+                b2b_trial_enabled: false,
+                b2b_trial_converted_at: new Date().toISOString(),
+              })
+              .eq("id", company.id);
+          }
 
           logStep("Charged via credits", { creditsUsed, newBalance });
         } else {
@@ -353,7 +463,7 @@ serve(async (req) => {
                 failureReason,
                 cardCharged,
                 creditsUsed,
-                billableUsers,
+                activeUsers,
                 totalCharge,
               );
               await setPortalLock(company.id, cardCharged, failureReason);
@@ -379,13 +489,16 @@ serve(async (req) => {
                 payment_method: defaultPaymentMethodId,
                 off_session: true,
                 confirm: true,
-                description: `Portal renewal for ${billableUsers} billable users - ${company.name}`,
+                description: `Portal renewal charge - ${company.name}`,
                 metadata: {
                   company_id: company.id,
                   type: "portal_monthly_billing",
                   renewal_at: periodEndIso,
                   active_users: activeUsers.toString(),
-                  billable_users: billableUsers.toString(),
+                  active_roles: activeRoleCount.toString(),
+                  successful_hires: successfulHires.toString(),
+                  trial_conversion_assessed_users: trialAssessedUserCount.toString(),
+                  trial_conversion_charge: trialUsageCharge.toFixed(2),
                 },
               }, {
                 idempotencyKey,
@@ -399,7 +512,7 @@ serve(async (req) => {
                   failureReason,
                   cardCharged,
                   creditsUsed,
-                  billableUsers,
+                  activeUsers,
                   totalCharge,
                 );
                 await setPortalLock(company.id, cardCharged, "Monthly renewal payment failed. Update the card on file or add credits to restore access.");
@@ -423,7 +536,7 @@ serve(async (req) => {
                 type: "monthly_billing_card",
                 amount: cardCharged,
                 stripe_payment_intent_id: paymentIntent.id,
-                description: `Portal renewal for ${billableUsers} billable users - card charge`,
+                description: `Portal renewal card charge (core: $${coreCharge.toFixed(2)}, hiring base: $${hiringBaseCharge.toFixed(2)}, scaling: $${activeRoleScalingCharge.toFixed(2)}, outcomes: $${outcomeBasedCharge.toFixed(2)}, trial conversion: $${trialUsageCharge.toFixed(2)})`,
               });
 
               const nextPeriodRenewalAt = getNextRenewalAt(anchorAt, nextRenewalAt);
@@ -431,7 +544,7 @@ serve(async (req) => {
                 .from("company_portal_billing_periods")
                 .update({
                   status: "succeeded",
-                  billed_user_count: billableUsers,
+                  billed_user_count: activeUsers,
                   total_amount: totalCharge,
                   credits_applied: creditsUsed,
                   card_charged: cardCharged,
@@ -444,6 +557,17 @@ serve(async (req) => {
                 .eq("id", billingPeriodId);
 
               await clearPortalLock(company.id, nextPeriodRenewalAt.toISOString());
+
+              if (trialUsageCharge > 0 || (company.b2b_trial_enabled && !company.b2b_trial_converted_at)) {
+                await supabase
+                  .from("companies")
+                  .update({
+                    b2b_trial_enabled: false,
+                    b2b_trial_converted_at: new Date().toISOString(),
+                  })
+                  .eq("id", company.id);
+              }
+
               logStep("Charged via card", { cardCharged, paymentIntentId: paymentIntent.id });
             } catch (paymentError) {
               const paymentMessage = paymentError instanceof Error ? paymentError.message : String(paymentError);
@@ -453,7 +577,7 @@ serve(async (req) => {
                 `Monthly renewal failed - ${paymentMessage}`,
                 cardCharged,
                 creditsUsed,
-                billableUsers,
+                activeUsers,
                 totalCharge,
               );
               await setPortalLock(company.id, cardCharged, "Monthly renewal payment failed. Update the card on file or add credits to restore access.");

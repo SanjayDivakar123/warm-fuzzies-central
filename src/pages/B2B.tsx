@@ -12,7 +12,7 @@ import { Loader2, Building2, Users, Shield, Sparkles, Tag, Check, ArrowRight, Za
 import { motion } from 'framer-motion';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { Navbar } from '@/components/navigation/Navbar';
-import { detectCountryCode, getLocalizedPrice, getCountryPricing, formatCurrency } from '@/lib/countryPricing';
+import { formatCurrency } from '@/lib/countryPricing';
 
 const PROMO_CODES = new Set([
   'LEADERSWELCOME',
@@ -20,15 +20,23 @@ const PROMO_CODES = new Set([
 ]);
 
 const MIN_BILLABLE_SEATS = 2;
+const ONE_TIME_DEPLOYMENT_FEE = 5000;
+const ONBOARDING_FEE_PER_EMPLOYEE = 20;
+const CORE_PLATFORM_MONTHLY = 500;
+const HIRING_INTELLIGENCE_MONTHLY = 1000;
+const INCLUDED_ACTIVE_JOB_ROLES = 10;
+const SCALE_BLOCK_SIZE = 10;
+const SCALE_BLOCK_MONTHLY = 1000;
+const OUTCOME_BASED_PER_HIRE = 20;
 
 export default function B2B() {
   const [companyName, setCompanyName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [assessmentType, setAssessmentType] = useState<'25q' | '50q'>('25q');
   const [promoCode, setPromoCode] = useState('');
+  const [initialEmployeeCount, setInitialEmployeeCount] = useState(MIN_BILLABLE_SEATS);
   const [loading, setLoading] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
-  const [countryCode, setCountryCode] = useState('US');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -46,21 +54,6 @@ export default function B2B() {
     setCheckingAccess(false);
   }, [user]);
 
-  useEffect(() => {
-    let mounted = true;
-    detectCountryCode()
-      .then((code) => {
-        if (mounted) setCountryCode(code);
-      })
-      .catch(() => {
-        if (mounted) setCountryCode('US');
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   const generateSubdomain = (name: string) => {
     return name
       .toLowerCase()
@@ -70,10 +63,10 @@ export default function B2B() {
   };
 
   const isPromoValid = PROMO_CODES.has(promoCode.toUpperCase().trim());
-  const seatCount = MIN_BILLABLE_SEATS;
-  const localizedSeatPrice = getLocalizedPrice('b2b', countryCode);
-  const countryPricing = getCountryPricing(countryCode);
-  const totalPrice = isPromoValid ? 0 : seatCount * localizedSeatPrice.displayAmount;
+  const employeeCount = Math.max(MIN_BILLABLE_SEATS, Number(initialEmployeeCount) || MIN_BILLABLE_SEATS);
+  const oneTimeInvestment = ONE_TIME_DEPLOYMENT_FEE + (employeeCount * ONBOARDING_FEE_PER_EMPLOYEE);
+  const monthlyInvestment = CORE_PLATFORM_MONTHLY + HIRING_INTELLIGENCE_MONTHLY;
+  const totalPrice = isPromoValid ? 0 : oneTimeInvestment;
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +94,7 @@ export default function B2B() {
             name: companyName,
             subdomain,
             admin_email: adminEmail,
-            seats_purchased: MIN_BILLABLE_SEATS,
+            seats_purchased: employeeCount,
             assessment_type: assessmentType,
             user_id: user.id,
           },
@@ -128,47 +121,20 @@ export default function B2B() {
       }
 
       // Otherwise, redirect to Stripe checkout
-      const localizedPayload = {
+      const paymentPayload = {
         companyName,
         adminEmail,
-        seats: MIN_BILLABLE_SEATS,
+        seats: employeeCount,
         assessmentType,
         userId: user.id,
         subdomain,
         successUrl: `${window.location.origin}/b2b/payment-success`,
         cancelUrl: `${window.location.origin}/b2b`,
-        countryCode,
-        stripeCurrency: localizedSeatPrice.stripeCurrency,
-        stripeAmountMinor: localizedSeatPrice.stripeAmountMinor,
-        displayCurrency: localizedSeatPrice.displayCurrency,
-        displayAmount: localizedSeatPrice.displayAmount,
-        billingCountry: localizedSeatPrice.country,
       };
 
-      let { data, error } = await supabase.functions.invoke('create-b2b-payment', {
-        body: localizedPayload,
+      const { data, error } = await supabase.functions.invoke('create-b2b-payment', {
+        body: paymentPayload,
       });
-
-      if (error) {
-        console.warn('Localized B2B checkout failed, retrying with default USD payload', error);
-        const fallbackPayload = {
-          companyName,
-          adminEmail,
-          seats: MIN_BILLABLE_SEATS,
-          assessmentType,
-          userId: user.id,
-          subdomain,
-          successUrl: `${window.location.origin}/b2b/payment-success`,
-          cancelUrl: `${window.location.origin}/b2b`,
-        };
-
-        const retry = await supabase.functions.invoke('create-b2b-payment', {
-          body: fallbackPayload,
-        });
-
-        data = retry.data;
-        error = retry.error;
-      }
 
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -394,6 +360,20 @@ export default function B2B() {
                       </div>
                     </div>
 
+                    {/* Initial Employee Count */}
+                    <div className="space-y-2">
+                      <Label htmlFor="initialEmployeeCount" className="text-sm font-medium">Initial Employee Onboarding Count</Label>
+                      <Input
+                        id="initialEmployeeCount"
+                        type="number"
+                        min={MIN_BILLABLE_SEATS}
+                        value={initialEmployeeCount}
+                        onChange={(e) => setInitialEmployeeCount(Math.max(MIN_BILLABLE_SEATS, Number(e.target.value) || MIN_BILLABLE_SEATS))}
+                        className="h-12 bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                      />
+                      <p className="text-xs text-muted-foreground">Minimum {MIN_BILLABLE_SEATS} employees at launch.</p>
+                    </div>
+
                     {/* Promo Code - Collapsible style */}
                     <div className="space-y-2">
                       <Label htmlFor="promoCode" className="text-sm font-medium flex items-center gap-2">
@@ -430,24 +410,30 @@ export default function B2B() {
                           </span>
                         </div>
                       )}
+                      <div className="mb-4 space-y-1 text-xs text-muted-foreground">
+                        <p>One-Time Deployment: {formatCurrency(ONE_TIME_DEPLOYMENT_FEE, 'USD')}</p>
+                        <p>Employee Onboarding: {formatCurrency(ONBOARDING_FEE_PER_EMPLOYEE, 'USD')} x {employeeCount}</p>
+                        <p>Monthly Core Platform Access: {formatCurrency(CORE_PLATFORM_MONTHLY, 'USD')}/month</p>
+                        <p>Monthly Hiring Intelligence: {formatCurrency(HIRING_INTELLIGENCE_MONTHLY, 'USD')}/month</p>
+                        <p>Includes up to {INCLUDED_ACTIVE_JOB_ROLES} active job roles and up to 1,000 applicants per role</p>
+                        <p>Scaling: +{formatCurrency(SCALE_BLOCK_MONTHLY, 'USD')}/month per additional {SCALE_BLOCK_SIZE} active job roles</p>
+                        <p>Outcome-Based Pricing: {formatCurrency(OUTCOME_BASED_PER_HIRE, 'USD')} per successful hire</p>
+                      </div>
                       <div className="flex justify-between items-end">
-                        <span className="text-sm font-medium">Due now</span>
+                        <span className="text-sm font-medium">One-time due now</span>
                         <div className="text-right">
                           {isPromoValid ? (
                             <div className="flex items-baseline gap-2">
-                              <span className="text-lg line-through text-muted-foreground">{formatCurrency(seatCount * localizedSeatPrice.displayAmount, localizedSeatPrice.displayCurrency)}</span>
+                              <span className="text-lg line-through text-muted-foreground">{formatCurrency(oneTimeInvestment, 'USD')}</span>
                               <span className="text-3xl font-bold text-role-green">$0</span>
                             </div>
                           ) : (
-                            <span className="text-3xl font-bold">{formatCurrency(totalPrice, localizedSeatPrice.displayCurrency)}</span>
+                            <span className="text-3xl font-bold">{formatCurrency(totalPrice, 'USD')}</span>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">minimum 2 users billed at signup</p>
-                          <p className="text-xs text-muted-foreground">{countryPricing.country} pricing</p>
+                          <p className="text-xs text-muted-foreground mt-1">Includes deployment and onboarding for {employeeCount} employees.</p>
+                          <p className="text-xs text-muted-foreground">Recurring monthly investment starts at {formatCurrency(monthlyInvestment, 'USD')}/month.</p>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        Additional invited users are charged immediately with a prorated amount until your renewal date.
-                      </p>
                     </div>
 
                     {/* Submit Button */}
@@ -463,14 +449,14 @@ export default function B2B() {
                         </>
                       ) : (
                         <>
-                          {isPromoValid ? 'Create Free Portal' : `Start for ${formatCurrency(totalPrice, localizedSeatPrice.displayCurrency)}/mo`}
+                          {isPromoValid ? 'Create Free Portal' : `Start for ${formatCurrency(totalPrice, 'USD')} one-time`}
                           <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </Button>
 
                     <p className="text-xs text-center text-muted-foreground">
-                      No credit card required for promo codes • Cancel anytime
+                      No credit card required for promo codes • Monthly and outcome-based fees are billed after launch
                     </p>
                   </form>
                 </CardContent>

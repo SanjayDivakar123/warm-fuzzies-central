@@ -15,6 +15,10 @@ const STRIPE_ALLOWED_CURRENCIES = new Set([
 ]);
 
 const MIN_BILLABLE_SEATS = 2;
+const DEPLOYMENT_FEE_CENTS = 500000;
+const ONBOARDING_FEE_PER_EMPLOYEE_CENTS = 2000;
+const CORE_PLATFORM_MONTHLY_DOLLARS = 500;
+const HIRING_INTELLIGENCE_MONTHLY_DOLLARS = 1000;
 
 serve(async (req) => {
   console.log("=== CREATE B2B PAYMENT FUNCTION STARTED ===");
@@ -35,12 +39,6 @@ serve(async (req) => {
       subdomain,
       successUrl, 
       cancelUrl,
-      countryCode,
-      stripeCurrency,
-      stripeAmountMinor,
-      displayCurrency,
-      displayAmount,
-      billingCountry,
     } = body;
 
     // Validate required fields
@@ -60,16 +58,11 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const pricePerSeat =
-      typeof stripeAmountMinor === "number" && stripeAmountMinor > 0
-        ? Math.round(stripeAmountMinor)
-        : 2000;
-    const requestedCurrency = typeof stripeCurrency === "string" ? stripeCurrency.toLowerCase() : "usd";
-    const checkoutCurrency = STRIPE_ALLOWED_CURRENCIES.has(requestedCurrency) ? requestedCurrency : "usd";
-    const safePricePerSeat = Number.isFinite(pricePerSeat) && pricePerSeat > 0 ? pricePerSeat : 2000;
-    const totalAmount = safePricePerSeat * seatCount;
+    const checkoutCurrency = STRIPE_ALLOWED_CURRENCIES.has("usd") ? "usd" : "usd";
+    const onboardingTotalCents = ONBOARDING_FEE_PER_EMPLOYEE_CENTS * seatCount;
+    const totalAmount = DEPLOYMENT_FEE_CENTS + onboardingTotalCents;
 
-    console.log(`Creating baseline checkout for ${seatCount} seats at ${totalAmount} ${checkoutCurrency}`);
+    console.log(`Creating one-time checkout for deployment + ${seatCount} onboarding seats at ${totalAmount} ${checkoutCurrency}`);
 
     // Create Stripe checkout session with company details in metadata
     const session = await stripe.checkout.sessions.create({
@@ -78,10 +71,21 @@ serve(async (req) => {
           price_data: {
             currency: checkoutCurrency,
             product_data: {
-              name: "RoleColorFinder B2B - Team Seats",
-              description: `${seatCount} baseline employee seats for ${companyName}`,
+              name: "RoleColorFinder B2B - Platform Deployment",
+              description: "One-time platform deployment investment",
             },
-            unit_amount: safePricePerSeat,
+            unit_amount: DEPLOYMENT_FEE_CENTS,
+          },
+          quantity: 1,
+        },
+        {
+          price_data: {
+            currency: checkoutCurrency,
+            product_data: {
+              name: "RoleColorFinder B2B - Employee Onboarding",
+              description: `${seatCount} employees at $20 one-time onboarding per employee`,
+            },
+            unit_amount: ONBOARDING_FEE_PER_EMPLOYEE_CENTS,
           },
           quantity: seatCount,
         },
@@ -98,10 +102,10 @@ serve(async (req) => {
         user_id: userId,
         subdomain: subdomain,
         type: "b2b_company_creation",
-        country_code: countryCode || "US",
-        billing_country: billingCountry || "United States",
-        display_currency: displayCurrency || "USD",
-        display_amount: typeof displayAmount === "number" ? displayAmount.toString() : "",
+        currency: "USD",
+        one_time_total_usd: (totalAmount / 100).toFixed(2),
+        monthly_core_platform_usd: CORE_PLATFORM_MONTHLY_DOLLARS.toString(),
+        monthly_hiring_intelligence_usd: HIRING_INTELLIGENCE_MONTHLY_DOLLARS.toString(),
       },
       customer_email: adminEmail,
     });

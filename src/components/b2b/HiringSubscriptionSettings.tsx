@@ -103,7 +103,7 @@ export default function HiringSubscriptionSettings({
     created_at: string;
   };
 
-  const hiringCost = 500;
+  const hiringCost = 1000;
   const creditBalance = typeof company.credit_balance === 'number' ? company.credit_balance : parseFloat((company.credit_balance as unknown as string) ?? '0');
   const creditContribution = Math.min(creditBalance, hiringCost);
   const cardCharge = hiringCost - creditContribution;
@@ -234,7 +234,7 @@ export default function HiringSubscriptionSettings({
   const isShortWindow = isProrated && daysUntilPortalRenewal! < 7;
   const billableProrationDays = Math.min(daysUntilPortalRenewal ?? 0, 30);
   const proratedCost = isProrated
-    ? Math.round((billableProrationDays / 30) * 500 * 100) / 100
+    ? Math.round((billableProrationDays / 30) * 1000 * 100) / 100
     : hiringCost;
   const effectiveCreditContribution = Math.min(creditBalance, proratedCost);
   const effectiveCardCharge = proratedCost - effectiveCreditContribution;
@@ -672,7 +672,7 @@ export default function HiringSubscriptionSettings({
       return {
         type: 'card_declined',
         title: 'Transaction Declined',
-        description: 'Your card was declined. This may be due to insufficient funds, a frozen card, or your bank blocking the $500 charge. Please update your payment method and try again.',
+        description: 'Your card was declined. This may be due to insufficient funds, a frozen card, or your bank blocking the $1,000 charge. Please update your payment method and try again.',
       };
     }
     return {
@@ -892,7 +892,7 @@ export default function HiringSubscriptionSettings({
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">{isAdminOverride ? 'Access Source' : 'Monthly Subscription'}</span>
                   </div>
-                  <span className="font-semibold">{isAdminOverride ? 'Manual admin override' : isInternalAdminCompany ? '$0/month (Internal)' : '$500/month'}</span>
+                  <span className="font-semibold">{isAdminOverride ? 'Manual admin override' : isInternalAdminCompany ? '$0/month (Internal)' : '$1,000/month'}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
@@ -1031,13 +1031,13 @@ export default function HiringSubscriptionSettings({
                         ? '$0 per month (Internal Admin)'
                         : isProrated
                           ? `$${proratedCost.toFixed(2)} today`
-                          : '$500 per month'}
+                          : '$1,000 per month'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isInternalAdminCompany
                         ? 'No charge for internal admin company'
                         : isProrated
-                          ? `Prorated for ${daysUntilPortalRenewal} day${daysUntilPortalRenewal === 1 ? '' : 's'} until renewal, then $500/month`
+                          ? `Prorated for ${daysUntilPortalRenewal} day${daysUntilPortalRenewal === 1 ? '' : 's'} until renewal, then $1,000/month`
                           : 'Cancel anytime'}
                     </p>
                   </div>
@@ -1078,7 +1078,7 @@ export default function HiringSubscriptionSettings({
                     ? 'Internal admin company billing is free and no credit charges are applied.'
                     : effectiveCreditContribution > 0
                       ? `$${effectiveCreditContribution.toFixed(2)} in billing credits will be applied. Your card will be charged $${effectiveCardCharge.toFixed(2)}.`
-                      : `Payment will be processed via Stripe. ${isProrated ? `Today's charge is $${proratedCost.toFixed(2)}.` : '$500/month will be charged.'} Billing credits will be applied first if available.`}
+                      : `Payment will be processed via Stripe. ${isProrated ? `Today's charge is $${proratedCost.toFixed(2)}.` : '$1,000/month will be charged.'} Billing credits will be applied first if available.`}
                 </p>
               </div>
             </>
@@ -1222,11 +1222,11 @@ export default function HiringSubscriptionSettings({
                   <p className="text-sm leading-relaxed">
                     Your portal renews on {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} ({Math.ceil(daysUntilPortalRenewal!)} day{Math.ceil(daysUntilPortalRenewal!) !== 1 ? 's' : ''} away).
                     Today's charge is prorated to{' '}
-                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$500/month</strong> renewal is on that date.
+                    <strong>${proratedCost.toFixed(2)}</strong>. Your first full <strong>$1,000/month</strong> renewal is on that date.
                   </p>
                 ) : (
                   <p className="text-sm leading-relaxed">
-                    You'll be charged <strong>$500/month</strong> starting today. Billing credits are applied first.
+                    You'll be charged <strong>$1,000/month</strong> starting today. Billing credits are applied first.
                   </p>
                 )}
 
@@ -1269,13 +1269,13 @@ export default function HiringSubscriptionSettings({
                     {isProrated ? (
                       <>
                         <p><strong>Why am I charged a partial amount?</strong> Your first payment is prorated to cover only the days remaining until your portal renewal on {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.</p>
-                        <p><strong>When is the next $500 charge?</strong> On {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $500/month Hiring cycle begins from that date.</p>
+                        <p><strong>When is the next $1,000 charge?</strong> On {portalRenewalDate!.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, when your portal renews. A standard $1,000/month Hiring cycle begins from that date.</p>
                         {isShortWindow && <p><strong>Why can't I cancel right away?</strong> With fewer than 7 days until renewal, you're committing through that renewal date so you get at least one full monthly cycle.</p>}
                         <p><strong>How do credits work?</strong> Billing credits are applied to today's prorated charge. Future renewals use the normal credit-first flow.</p>
                       </>
                     ) : (
                       <>
-                        <p><strong>When am I billed?</strong> $500 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
+                        <p><strong>When am I billed?</strong> $1,000 is charged today and every month on the same date. Billing credits are applied before your card is charged.</p>
                         <p><strong>Can I cancel?</strong> Yes, at any time. You'll retain access through the end of your current billing period.</p>
                       </>
                     )}

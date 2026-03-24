@@ -71,7 +71,7 @@ serve(async (req) => {
     // Get company details
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, created_at, credit_balance, stripe_customer_id, seats_purchased, portal_billing_anchor_at, portal_billing_next_renewal_at")
+      .select("id, name, admin_email, created_at, credit_balance, stripe_customer_id, seats_purchased, portal_billing_anchor_at, portal_billing_next_renewal_at, b2b_trial_enabled, b2b_trial_ends_at, b2b_trial_user_limit")
       .eq("id", company_id)
       .single();
 
@@ -104,6 +104,42 @@ serve(async (req) => {
 
     const includedBaselineSeats = getPortalSeatBaseline(company.seats_purchased || 0);
     logStep("Seat check", { activeUserCount, includedBaselineSeats, configuredSeats: company.seats_purchased || 0 });
+
+    const trialEndsAt = company.b2b_trial_ends_at ? new Date(company.b2b_trial_ends_at) : null;
+    const trialIsActive = Boolean(
+      company.b2b_trial_enabled &&
+      trialEndsAt &&
+      !Number.isNaN(trialEndsAt.getTime()) &&
+      trialEndsAt.getTime() > Date.now(),
+    );
+    const trialUserLimit = Math.max(1, Number(company.b2b_trial_user_limit || 10));
+
+    if (trialIsActive) {
+      if ((activeUserCount ?? 0) >= trialUserLimit) {
+        return new Response(JSON.stringify({
+          success: false,
+          errorCode: "TRIAL_USER_LIMIT_REACHED",
+          error: `Trial user limit reached (${trialUserLimit}). Ask an admin to extend the trial or add payment for more users.`,
+          trialUserLimit,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        charged: false,
+        usedCredits: false,
+        withinTrial: true,
+        trialUserLimit,
+        seatsUsed: activeUserCount ?? 0,
+        message: `Active trial in progress (${(activeUserCount ?? 0)}/${trialUserLimit} users). No charge for this invite.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // The first two active users are included in the baseline due-now charge.
     if ((activeUserCount ?? 0) < includedBaselineSeats) {

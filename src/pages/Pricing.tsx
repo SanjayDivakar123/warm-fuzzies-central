@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  BarChart3,
-  Building2,
   Check,
   Palette,
   ShieldCheckIcon,
   Star,
   UserCheck,
-  Users,
-  Zap,
 } from "lucide-react";
 
 import { Navbar } from "@/components/navigation/Navbar";
@@ -109,8 +105,6 @@ export default function PricingPage() {
 
   const premiumPrice = useMemo(() => getLocalizedPrice("premium", countryCode), [countryCode]);
   const proPrice = useMemo(() => getLocalizedPrice("pro", countryCode), [countryCode]);
-  const b2bPrice = useMemo(() => getLocalizedPrice("b2b", countryCode), [countryCode]);
-
   const individualPlans: PlanCardProps[] = [
     {
       name: "Free Assessment",
@@ -190,51 +184,73 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div id="for-teams" className="mb-12 sm:mb-16 scroll-mt-24">
-          <div className="text-center mb-8">
-            <p className="text-muted-foreground mb-2">For Teams</p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Empower Your Entire Organization</h2>
-          </div>
+        <div id="for-teams" className="scroll-mt-24 pt-20 sm:pt-24">
+          <section className="mx-auto w-full max-w-[1200px] rounded-2xl border border-slate-700/70 bg-[#0B0F14] px-5 py-10 sm:px-8 sm:py-14 text-white">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-[7fr_3fr] md:gap-8 lg:gap-10">
+              <div className="order-1">
+                <h2 className="text-[40px] leading-[1.06] sm:text-[48px] lg:text-[54px] font-extrabold tracking-tight text-white">
+                  Build High-Performance Teams
+                </h2>
+                <p className="mt-4 text-[18px] leading-relaxed text-slate-300">
+                  Role clarity. Execution. Hiring that actually works.
+                </p>
 
-          <div className="relative max-w-4xl mx-auto">
-            <BorderTrail
-              className={cn("bg-gradient-to-l from-secondary via-secondary/80 to-secondary/20")}
-              size={80}
-              transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-            />
-            <div className="bg-muted/40 rounded-xl p-8">
-              <div className="flex flex-col lg:flex-row gap-8">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="h-6 w-6 text-primary" />
-                    <h3 className="text-2xl font-bold text-foreground">RoleColor for Teams</h3>
+                <div className="mt-10 max-w-2xl rounded-2xl border border-slate-600/80 bg-[#11161D] p-6 sm:p-8">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Monthly Platform</p>
+
+                  <div className="mt-5 space-y-6">
+                    <div>
+                      <p className="text-[40px] sm:text-[46px] leading-none font-extrabold text-white">$500/mo</p>
+                      <p className="mt-2 text-[15px] text-slate-400">Core Platform</p>
+                    </div>
+                    <div>
+                      <p className="text-[40px] sm:text-[46px] leading-none font-extrabold text-white">$1,000/mo</p>
+                      <p className="mt-2 text-[15px] text-slate-400">Hiring Intelligence</p>
+                    </div>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-start gap-3"><Users className="h-5 w-5 text-primary mt-0.5" /><p className="text-sm">Team Assessments</p></div>
-                    <div className="flex items-start gap-3"><BarChart3 className="h-5 w-5 text-primary mt-0.5" /><p className="text-sm">Team Analytics</p></div>
-                    <div className="flex items-start gap-3"><Zap className="h-5 w-5 text-primary mt-0.5" /><p className="text-sm">AI Work Assignment</p></div>
-                    <div className="flex items-start gap-3"><Palette className="h-5 w-5 text-primary mt-0.5" /><p className="text-sm">Custom Branding</p></div>
-                  </div>
+
+                  <div className="mt-7 h-px w-full bg-slate-700/70" />
+
+                  <ul className="mt-5 space-y-2 text-[15px] text-slate-300">
+                    <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-sky-400" />Up to 10 active roles</li>
+                    <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-sky-400" />Up to 1,000 applicants per role</li>
+                  </ul>
+
+                  <p className="mt-4 text-[14px] text-slate-400">+ $1,000/mo per additional 10 roles</p>
                 </div>
 
-                <div className="lg:min-w-72 flex flex-col justify-center">
-                  <div className="bg-background/50 rounded-lg p-6 text-center border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-2">Starting at</p>
-                    <div className="flex items-baseline justify-center gap-1 mb-2">
-                      <span className="text-4xl font-bold tracking-tight text-foreground">{b2bPrice.displayFormatted}</span>
-                      <span className="text-muted-foreground">/user/month</span>
-                    </div>
-                    <Button className="w-full rounded-full mb-3" asChild>
-                      <Link to="/b2b">Get Started</Link>
-                    </Button>
-                    <Button variant="outline" className="w-full rounded-full" asChild>
-                      <Link to="/contact">Contact Sales</Link>
-                    </Button>
-                  </div>
+                <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                  <Button className="h-12 rounded-xl bg-white px-6 text-base font-semibold text-black hover:bg-slate-100" asChild>
+                    <a href="https://app.apollo.io/#/meet/sales/b2bdemo" target="_blank" rel="noopener noreferrer">Book Demo</a>
+                  </Button>
                 </div>
               </div>
+
+              <div className="order-2 flex flex-col gap-4 sm:gap-5 md:pt-6">
+                <article className="order-2 md:order-1 rounded-xl border border-slate-600/80 bg-[#11161D] p-5 sm:p-6">
+                  <h3 className="text-[19px] font-semibold text-white">One-Time Setup</h3>
+                  <div className="mt-4 space-y-2 text-[16px] leading-relaxed text-slate-200">
+                    <p><span className="font-semibold text-white">$5,000</span> - Platform deployment</p>
+                    <p><span className="font-semibold text-white">$20</span> - per employee onboarding</p>
+                  </div>
+                </article>
+
+                <article className="order-1 md:order-2 rounded-xl border border-sky-500/35 bg-[#141C28] p-5 sm:p-6 shadow-[0_0_0_1px_rgba(56,189,248,0.14),0_6px_18px_rgba(0,0,0,0.24)]">
+                  <h3 className="text-[19px] font-semibold text-white">Pay for Results</h3>
+                  <div className="mt-4">
+                    <p className="text-[34px] leading-none font-extrabold text-white">$20</p>
+                    <p className="mt-2 text-[15px] text-slate-300">per successful hire</p>
+                    <p className="mt-3 text-[14px] text-slate-200">You only pay when it works</p>
+                  </div>
+                </article>
+              </div>
             </div>
-          </div>
+
+            <div className="mt-10 space-y-2 text-center md:text-left">
+              <p className="text-sm font-medium text-slate-200">Most teams recover cost within 1-2 hires</p>
+              <p className="text-sm text-slate-400">Used by growing teams across hiring, sales, and leadership</p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

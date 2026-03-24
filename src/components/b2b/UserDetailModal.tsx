@@ -23,6 +23,13 @@ import {
   Plus
 } from 'lucide-react';
 
+const RCF_SUPER_ADMIN_EMAILS = [
+  'sanjay@rolecolorfinder.com',
+  'tristan@rolecolorfinder.com',
+  'aaron@rolecolor.com',
+  'kody@rolecolor.com',
+];
+
 interface UserDetailModalProps {
   user: any;
   open: boolean;
@@ -101,6 +108,19 @@ export default function UserDetailModal({
     const rowEmail = (user?.email || '').toLowerCase();
     return (currentUserId && user?.user_id === currentUserId) || (currentUserEmail && rowEmail === currentUserEmail);
   };
+
+  const isRcfSuperAdminAccount = () => {
+    const rowEmail = (user?.email || '').toLowerCase();
+    return RCF_SUPER_ADMIN_EMAILS.includes(rowEmail);
+  };
+
+  const canManageThisAdminLevelUser =
+    user.role !== 'employee' &&
+    canManageAllRoles &&
+    user.id !== superAdminId &&
+    !isCurrentUserRecord() &&
+    !isRcfSuperAdminAccount() &&
+    !(user.role === 'admin' && !isSuperAdmin);
 
   const handleAddSkill = (skill: string) => {
     if (skill && !skills.includes(skill)) {
@@ -384,7 +404,7 @@ export default function UserDetailModal({
                 </Button>
               )}
 
-              {user.role !== 'employee' && canManageAllRoles && user.id !== superAdminId && !isCurrentUserRecord() && (
+              {canManageThisAdminLevelUser && (
                 <Button
                   variant="outline"
                   size="sm"

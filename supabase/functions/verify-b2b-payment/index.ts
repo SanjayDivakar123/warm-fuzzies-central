@@ -46,6 +46,7 @@ serve(async (req) => {
     const {
       company_name,
       admin_email,
+      seats,
       assessment_type,
       user_id,
       subdomain,
@@ -90,6 +91,8 @@ serve(async (req) => {
       ? session.customer
       : (session.customer as any)?.id ?? null;
 
+    const onboardingSeats = Math.max(MIN_BILLABLE_SEATS, Number(seats || MIN_BILLABLE_SEATS));
+
     // Create the company
     const { data: newCompany, error: companyError } = await supabase
       .from("companies")
@@ -97,7 +100,7 @@ serve(async (req) => {
         name: company_name,
         subdomain: subdomain,
         admin_email: admin_email,
-        seats_purchased: MIN_BILLABLE_SEATS,
+        seats_purchased: onboardingSeats,
         assessment_type: assessment_type || "25q",
         ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
       })

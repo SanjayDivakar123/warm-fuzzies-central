@@ -179,3 +179,9 @@ verify_jwt = true
 
 [functions.create-probation-reminder]
 verify_jwt = true
+
+[functions.sync-bamboohr-hiring]
+verify_jwt = true
+
+[functions.run-bamboohr-auto-sync]
+verify_jwt = false

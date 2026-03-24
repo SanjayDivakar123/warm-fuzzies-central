@@ -10,6 +10,8 @@ const corsHeaders = {
 const ALLOWED_SUPER_ADMINS = new Set([
   "sanjay@rolecolorfinder.com",
   "tristan@rolecolorfinder.com",
+  "aaron@rolecolor.com",
+  "kody@rolecolor.com",
 ]);
 
 serve(async (req) => {
@@ -60,7 +62,7 @@ serve(async (req) => {
       await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end")
+          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_waived_at, deployment_fee_charged_at")
           .order("created_at", { ascending: false }),
         supabase.from("company_users").select("company_id, role, status"),
       ]);
@@ -122,6 +124,15 @@ serve(async (req) => {
         hiring_subscription_enabled: company.hiring_subscription_enabled || false,
         hiring_subscription_status: company.hiring_subscription_status || null,
         hiring_subscription_cancel_at_period_end: company.hiring_subscription_cancel_at_period_end || false,
+        b2b_trial_enabled: company.b2b_trial_enabled || false,
+        b2b_trial_starts_at: company.b2b_trial_starts_at || null,
+        b2b_trial_ends_at: company.b2b_trial_ends_at || null,
+        b2b_trial_user_limit: Number(company.b2b_trial_user_limit || 10),
+        b2b_trial_converted_at: company.b2b_trial_converted_at || null,
+        requires_post_setup_deployment_fee: company.requires_post_setup_deployment_fee || false,
+        deployment_fee_waived: company.deployment_fee_waived || false,
+        deployment_fee_waived_at: company.deployment_fee_waived_at || null,
+        deployment_fee_charged_at: company.deployment_fee_charged_at || null,
         ...stats,
       };
     });

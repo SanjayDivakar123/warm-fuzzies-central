@@ -167,10 +167,10 @@ const CareerFinderSection = ({ user, assessments, navigate }: CareerFinderSectio
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <PaymentButton productType="premium" variant="default" size="lg">
-                    Get Premium Assessment ($19)
+                    Get Premium Assessment ($124.99)
                   </PaymentButton>
                   <PaymentButton productType="pro" variant="outline" size="lg">
-                    Get Pro Assessment ($49)
+                    Get Pro Assessment ($199.99)
                   </PaymentButton>
                 </div>
               </div>
@@ -707,7 +707,7 @@ const Dashboard = () => {
   // Admin, HR, and Partner roles can access the admin dashboard
   const adminCompanies = activeCompanies.filter(c => ['admin', 'hr', 'partner'].includes(c.role));
   const employeeCompanies = activeCompanies.filter(c => c.role === 'employee');
-  const isRcfSuperAdmin = ['sanjay@rolecolorfinder.com', 'tristan@rolecolorfinder.com'].includes((user?.email || '').toLowerCase());
+  const isRcfSuperAdmin = ['sanjay@rolecolorfinder.com', 'tristan@rolecolorfinder.com', 'aaron@rolecolor.com', 'kody@rolecolor.com'].includes((user?.email || '').toLowerCase());
 
   // Get role display label
   const getRoleBadge = (role: string) => {

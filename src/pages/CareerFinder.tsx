@@ -222,10 +222,10 @@ export default function CareerFinder() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <PaymentButton productType="premium" variant="default" size="lg">
-                      Get Premium Assessment ($19)
+                      Get Premium Assessment ($124.99)
                     </PaymentButton>
                     <PaymentButton productType="pro" variant="outline" size="lg">
-                      Get Pro Assessment ($49)
+                      Get Pro Assessment ($199.99)
                     </PaymentButton>
                   </div>
                 </div>
