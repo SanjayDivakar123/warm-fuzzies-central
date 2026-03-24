@@ -214,7 +214,7 @@ export default function B2B() {
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-role-blue/10 rounded-full blur-3xl" />
         </div>
         
-        <div className="relative z-10 py-16 px-4">
+        <div className="relative z-10 pt-28 pb-16 px-4">
           <div className="max-w-6xl mx-auto">
             
             {/* Two-column layout */}

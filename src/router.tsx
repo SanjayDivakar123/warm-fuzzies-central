@@ -84,6 +84,8 @@ import CareerFinderResults from "@/pages/CareerFinderResults";
 import CareerResumeResults from "@/pages/CareerResumeResults";
 import CareerPaymentSuccess from "@/pages/CareerPaymentSuccess";
 import HyattProposal from "@/pages/client/HyattProposal";
+import ClientProposal from "@/pages/client/ClientProposal";
+import ProposalManager from "@/pages/admin/ProposalManager";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -269,6 +271,10 @@ export const routeConfig = [
     element: <Layout><UserManagement /></Layout>,
   },
   {
+    path: "/admin/proposals",
+    element: <Layout><ProposalManager /></Layout>,
+  },
+  {
     path: "/b2b",
     element: <Layout><B2B /></Layout>,
   },
@@ -348,6 +354,10 @@ export const routeConfig = [
   {
     path: "/client/RCF-HYATT-2026-03-001",
     element: <HyattProposal />,
+  },
+  {
+    path: "/client/:slug",
+    element: <ClientProposal />,
   },
   {
     path: "/:username",

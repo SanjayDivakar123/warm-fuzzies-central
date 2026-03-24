@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, UserPlus, PenSquare } from "lucide-react";
+import { Users, FileText, UserPlus, PenSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
@@ -201,6 +201,23 @@ export default function AdminDashboard() {
             <CardContent>
               <Button className="w-full">
                 Create Blog Post
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/proposals")}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                Client Proposals
+              </CardTitle>
+              <CardDescription>
+                Create and manage shareable client proposal pages
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full">
+                Manage Proposals
               </Button>
             </CardContent>
           </Card>
