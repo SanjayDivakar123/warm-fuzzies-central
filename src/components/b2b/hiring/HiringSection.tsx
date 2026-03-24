@@ -451,10 +451,6 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Analytics</span>
                 </TabsTrigger>
-                <TabsTrigger value="legacy" className="flex items-center gap-1.5 px-3">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Legacy</span>
-                </TabsTrigger>
                 <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3">
                   <Link2 className="h-4 w-4" />
                   <span className="hidden sm:inline">Integrations</span>
@@ -1079,10 +1075,6 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
             <TabsTrigger value="analytics" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-analytics">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="legacy" className="flex items-center gap-1.5 px-3" data-tour="hiring-tab-legacy">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Legacy</span>
             </TabsTrigger>
             <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3">
               <Link2 className="h-4 w-4" />
