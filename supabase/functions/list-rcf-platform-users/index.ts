@@ -1,18 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isSuperAdminEmail, normalizeEmail, resolveFullName } from "../_shared/superAdmin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const ALLOWED_SUPER_ADMINS = new Set([
-  "sanjay@rolecolorfinder.com",
-  "tristan@rolecolorfinder.com",
-  "aaron@rolecolor.com",
-  "kody@rolecolor.com",
-]);
 
 type CompanyMembership = {
   email: string;
@@ -30,22 +24,6 @@ type AuthUserSummary = {
   created_at?: string | null;
   last_sign_in_at?: string | null;
   email_confirmed_at?: string | null;
-};
-
-const resolveFullName = (metadata: Record<string, unknown> | null | undefined): string | null => {
-  if (!metadata) return null;
-
-  const direct =
-    (metadata.full_name as string | undefined) ||
-    (metadata.name as string | undefined) ||
-    (metadata.display_name as string | undefined);
-
-  if (direct && direct.trim()) return direct.trim();
-
-  const first = (metadata.first_name as string | undefined)?.trim() || "";
-  const last = (metadata.last_name as string | undefined)?.trim() || "";
-  const combined = `${first} ${last}`.trim();
-  return combined || null;
 };
 
 serve(async (req) => {
@@ -82,8 +60,10 @@ serve(async (req) => {
       });
     }
 
-    const callerEmail = (user.email || "").toLowerCase();
-    if (!ALLOWED_SUPER_ADMINS.has(callerEmail)) {
+    const callerEmail = normalizeEmail(user.email);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    if (!(await isSuperAdminEmail(supabase, callerEmail))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -95,8 +75,6 @@ serve(async (req) => {
     const ownersOnly = Boolean(body?.owners_only);
     const adminLevelOnly = Boolean(body?.admin_level_only);
     const nonB2BOnly = Boolean(body?.non_b2b_only);
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { data: memberships, error: membershipsError } = await supabase
       .from("company_users")
@@ -176,7 +154,17 @@ serve(async (req) => {
         if (ownersOnly && !entry.is_b2b_owner) return false;
         if (adminLevelOnly && !entry.is_b2b_admin_level) return false;
         if (nonB2BOnly && entry.b2b_company_count > 0) return false;
-        if (search && !(entry.email || "").toLowerCase().includes(search)) return false;
+        if (search) {
+          const searchable = [
+            entry.email || "",
+            entry.full_name || "",
+            ...(entry.b2b_companies || []),
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          if (!searchable.includes(search)) return false;
+        }
         return true;
       })
       .sort((a, b) => (a.email || "").localeCompare(b.email || ""));

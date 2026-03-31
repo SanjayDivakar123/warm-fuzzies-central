@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/sanjaydivakar/Documents/GitHub/RoleColorFinderDevelopment/src -type f \\\\\\(-name *Route* -o -name *route* -o -name *App.tsx -o -name App.jsx \\\\\\))",
+      "Bash(ls /Users/sanjaydivakar/Documents/GitHub/RoleColorFinderDevelopment/src/*.tsx)",
+      "Bash(/tmp/proposal_summary.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(npx tsc:*)",
+      "Bash(supabase db:*)",
+      "Bash(supabase migration:*)",
+      "Bash(supabase functions:*)",
+      "Bash(open -a Docker)"
+    ]
+  }
+}

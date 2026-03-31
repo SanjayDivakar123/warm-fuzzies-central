@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle2 } from "lucide-react";
 import type { Proposal, ProposalPricing } from "@/pages/admin/ProposalManager";
 
 function interpolate(text: string, companyName: string): string {
@@ -11,30 +13,37 @@ function interpolate(text: string, companyName: string): string {
 
 export default function ClientProposal() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [alreadyPaid, setAlreadyPaid] = useState(false);
 
   useEffect(() => {
     if (!slug) { setNotFound(true); return; }
 
-    supabase
-      .from("client_proposals")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setNotFound(true);
-        } else {
-          const p: Proposal = {
-            ...data,
-            pricing: data.pricing as unknown as ProposalPricing,
-            status: (data.status ?? "active") as "active" | "draft",
-          };
-          setProposal(p);
-          document.title = `${p.proposal_title} | RoleColorFinder`;
-        }
-      });
+    Promise.all([
+      supabase.from("client_proposals").select("*").eq("slug", slug).maybeSingle(),
+      supabase.from("proposal_acceptances")
+        .select("id")
+        .eq("proposal_slug", slug)
+        .eq("payment_status", "paid")
+        .limit(1),
+    ]).then(([proposalRes, paidRes]) => {
+      if (proposalRes.error || !proposalRes.data) {
+        setNotFound(true);
+        return;
+      }
+      const p: Proposal = {
+        ...proposalRes.data,
+        pricing: proposalRes.data.pricing as unknown as ProposalPricing,
+        status: (proposalRes.data.status ?? "active") as "active" | "draft",
+      };
+      setProposal(p);
+      document.title = `${p.proposal_title} | RoleColorFinder`;
+      if (!paidRes.error && (paidRes.data ?? []).length > 0) {
+        setAlreadyPaid(true);
+      }
+    });
   }, [slug]);
 
   if (notFound) {
@@ -333,6 +342,51 @@ export default function ClientProposal() {
               </p>
               </div>
             </section>
+
+            {/* ---- Accept CTA ---- */}
+            {alreadyPaid ? (
+              <section className="rounded-3xl border border-slate-700 bg-gradient-to-r from-slate-900 to-slate-800 p-8 md:p-12 shadow-xl text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="h-14 w-14 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-white">Proposal Already Accepted</h2>
+                <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                  This proposal has been accepted and the platform deployment payment has been completed.
+                  A member of the RoleColorFinder team will be in touch shortly to begin onboarding.
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-700/40 bg-emerald-900/30 px-5 py-2 text-sm text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" /> Payment Received · Account Setup In Progress
+                </div>
+              </section>
+            ) : (
+              <section className="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-900 to-slate-900 p-8 md:p-12 shadow-xl text-center space-y-5">
+                <div className="flex justify-center">
+                  <div className="h-14 w-14 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                  </div>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white">
+                  Ready to Move Forward?
+                </h2>
+                <p className="text-slate-300 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
+                  Accept this proposal to review and sign your Letter of Intent and Letter of Engagement,
+                  then complete the $5,000 platform deployment payment to begin onboarding.
+                </p>
+                <Button
+                  size="lg"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-10 h-13 text-base gap-2 shadow-lg shadow-emerald-900/40"
+                  onClick={() => navigate(`/client/${slug}/loi`)}
+                >
+                  <CheckCircle2 className="h-5 w-5" />
+                  Accept Proposal &amp; Sign Agreement
+                </Button>
+                <p className="text-slate-500 text-xs">
+                  You will be asked to sign a Letter of Intent and Letter of Engagement before payment.
+                </p>
+              </section>
+            )}
 
             {/* ---- Footer ---- */}
             <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-8 shadow-lg shadow-slate-200/50">

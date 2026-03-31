@@ -345,18 +345,19 @@ export default function BlogEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-4xl">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto py-10 px-6 max-w-4xl">
         <div className="mb-8">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => navigate("/admin/blogs")}
-            className="mb-4"
+            className="mb-4 h-9 px-2 hover:bg-gray-100"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Blog Management
           </Button>
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-3xl font-bold text-gray-900">
             {id ? "Edit Blog Post" : "Create New Blog Post"}
           </h1>
         </div>

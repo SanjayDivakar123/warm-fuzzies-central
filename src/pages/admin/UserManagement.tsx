@@ -198,113 +198,109 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto py-10 px-6 max-w-6xl">
+        <div className="flex items-center gap-4 mb-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin")}
+            className="h-9 w-9 p-0 hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4 text-gray-700" />
+          </Button>
           <div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/admin")}
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-4xl font-bold">User Management</h1>
-            <p className="text-muted-foreground">Manage user roles and permissions</p>
+            <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+            <p className="text-gray-600 text-sm mt-1">Manage user roles and permissions</p>
           </div>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>All Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-mono text-sm">{user.id.substring(0, 12)}...</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {user.roles.map((role) => (
-                          <Badge key={role} variant="secondary">
-                            {role}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Select onValueChange={(value) => addRole(user.id, value as UserRole)}>
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Add role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="blogger">Blogger</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
-                          </SelectContent>
-                        </Select>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="font-semibold text-gray-900 text-sm">User ID</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-sm">Roles</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-sm">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <TableCell className="font-mono text-sm text-gray-600">{user.id.substring(0, 12)}...</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {user.roles.map((role) => (
+                        <Badge key={role} className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Select onValueChange={(value) => addRole(user.id, value as UserRole)}>
+                        <SelectTrigger className="w-[140px] h-8 text-xs">
+                          <SelectValue placeholder="Add role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="blogger">Blogger</SelectItem>
+                          <SelectItem value="user">User</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                        <Dialog>
-                          <DialogTrigger asChild>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            onClick={() => setSelectedUserForAssessment(user.id)}
+                          >
+                            <Gift className="h-3.5 w-3.5" />
+                            Grant
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Grant Free Assessment</DialogTitle>
+                            <DialogDescription>
+                              Select an assessment type to grant to this user
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label>Assessment Type</Label>
+                              <Select value={assessmentType} onValueChange={setAssessmentType}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="free">Free Assessment</SelectItem>
+                                  <SelectItem value="premium">Premium (25Q)</SelectItem>
+                                  <SelectItem value="pro">Pro (50Q)</SelectItem>
+                                  <SelectItem value="leadership">Leadership</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
                             <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedUserForAssessment(user.id)}
+                              onClick={() => grantFreeAssessment(user.id, assessmentType)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
                             >
-                              <Gift className="h-4 w-4 mr-2" />
                               Grant Assessment
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Grant Free Assessment</DialogTitle>
-                              <DialogDescription>
-                                Select an assessment type to grant to this user
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Assessment Type</Label>
-                                <Select value={assessmentType} onValueChange={setAssessmentType}>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="free">Free Assessment</SelectItem>
-                                    <SelectItem value="premium">Premium (25Q)</SelectItem>
-                                    <SelectItem value="pro">Pro (50Q)</SelectItem>
-                                    <SelectItem value="leadership">Leadership</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                onClick={() => grantFreeAssessment(user.id, assessmentType)}
-                              >
-                                Grant Assessment
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

@@ -1,18 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const ALLOWED_SUPER_ADMINS = new Set([
-  "sanjay@rolecolorfinder.com",
-  "tristan@rolecolorfinder.com",
-  "aaron@rolecolor.com",
-  "kody@rolecolor.com",
-]);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -48,21 +42,21 @@ serve(async (req) => {
       });
     }
 
-    const callerEmail = (user.email || "").toLowerCase();
-    if (!ALLOWED_SUPER_ADMINS.has(callerEmail)) {
+    const callerEmail = normalizeEmail(user.email);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    if (!(await isSuperAdminEmail(supabase, callerEmail))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
     const [{ data: companies, error: companiesError }, { data: companyUsers, error: companyUsersError }] =
       await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_waived_at, deployment_fee_charged_at")
+          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_waived_at, deployment_fee_charged_at, plan_tier, archived_at, require_2fa, notes")
           .order("created_at", { ascending: false }),
         supabase.from("company_users").select("company_id, role, status"),
       ]);
@@ -133,6 +127,10 @@ serve(async (req) => {
         deployment_fee_waived: company.deployment_fee_waived || false,
         deployment_fee_waived_at: company.deployment_fee_waived_at || null,
         deployment_fee_charged_at: company.deployment_fee_charged_at || null,
+        plan_tier: company.plan_tier || "free",
+        archived_at: company.archived_at || null,
+        require_2fa: company.require_2fa || false,
+        notes: company.notes || "",
         ...stats,
       };
     });

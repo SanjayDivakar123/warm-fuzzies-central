@@ -144,10 +144,30 @@
     </script>
 
     <!-- Apollo Website Tracker -->
-    <script>function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");
-o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,
-o.onload=function(){window.trackingFunctions.onLoad({appId:"69aee94805f743001d8528a1"})},
-document.head.appendChild(o)}initApollo();</script>
+    <script>
+      function initApollo() {
+        try {
+          if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
+          var n = Math.random().toString(36).substring(7);
+          var o = document.createElement("script");
+          o.src = "https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache=" + n;
+          o.async = true;
+          o.defer = true;
+          o.onload = function() {
+            if (window.trackingFunctions?.onLoad) {
+              window.trackingFunctions.onLoad({ appId: "69aee94805f743001d8528a1" });
+            }
+          };
+          o.onerror = function() {
+            console.warn("Apollo tracker failed to load.");
+          };
+          document.head.appendChild(o);
+        } catch (error) {
+          console.warn("Apollo tracker init error:", error);
+        }
+      }
+      initApollo();
+    </script>
   </head>
 
   <body>
