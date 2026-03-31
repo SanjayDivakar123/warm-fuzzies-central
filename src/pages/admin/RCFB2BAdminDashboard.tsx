@@ -704,24 +704,24 @@ export default function RCFB2BAdminDashboard() {
   if (!isAllowed) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto py-10 px-6 max-w-6xl">
+        <div className="mb-8 flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Shield className="h-7 w-7 text-primary" />
-              RCF Super-Admin B2B
+            <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-900">
+              <Shield className="h-6 w-6 text-blue-600" />
+              B2B Dashboard
             </h1>
-            <p className="text-muted-foreground">
-              Global visibility across B2B companies and platform user accounts.
+            <p className="text-gray-600 text-sm">
+              Manage companies, users, and platform settings
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/admin/proposals")}>
-              Client Proposals
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin/proposals")}>
+              Proposals
             </Button>
-            <Button variant="outline" onClick={() => navigate("/dashboard")}>
-              Back to Dashboard
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
+              Back
             </Button>
           </div>
         </div>

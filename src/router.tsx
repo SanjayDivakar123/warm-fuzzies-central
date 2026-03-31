@@ -83,8 +83,12 @@ import CareerFinder from "@/pages/CareerFinder";
 import CareerFinderResults from "@/pages/CareerFinderResults";
 import CareerResumeResults from "@/pages/CareerResumeResults";
 import CareerPaymentSuccess from "@/pages/CareerPaymentSuccess";
-import HyattProposal from "@/pages/client/HyattProposal";
 import ClientProposal from "@/pages/client/ClientProposal";
+import ProposalAgreement from "@/pages/client/ProposalAgreement";
+import ProposalLOI from "@/pages/client/ProposalLOI";
+import ProposalLOE from "@/pages/client/ProposalLOE";
+import ProposalPayment from "@/pages/client/ProposalPayment";
+import ProposalSuccess from "@/pages/client/ProposalSuccess";
 import ProposalManager from "@/pages/admin/ProposalManager";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
@@ -352,12 +356,28 @@ export const routeConfig = [
     element: <PublicJobDetailPage />,
   },
   {
-    path: "/client/RCF-HYATT-2026-03-001",
-    element: <HyattProposal />,
-  },
-  {
     path: "/client/:slug",
     element: <ClientProposal />,
+  },
+  {
+    path: "/client/:slug/agreement",
+    element: <ProposalAgreement />,
+  },
+  {
+    path: "/client/:slug/loi",
+    element: <ProposalLOI />,
+  },
+  {
+    path: "/client/:slug/loe",
+    element: <ProposalLOE />,
+  },
+  {
+    path: "/client/:slug/payment",
+    element: <ProposalPayment />,
+  },
+  {
+    path: "/client/:slug/success",
+    element: <ProposalSuccess />,
   },
   {
     path: "/:username",

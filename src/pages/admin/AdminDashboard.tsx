@@ -102,125 +102,70 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage users, blog posts, and system settings</p>
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto py-10 px-6 max-w-6xl">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <p className="text-gray-600">System overview and quick access to management tools</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Blog Posts</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalBlogPosts}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Published Posts</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.publishedPosts}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Draft Posts</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.draftPosts}</div>
-            </CardContent>
-          </Card>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-4 mb-10">
+          <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+            <p className="text-gray-600 text-sm font-medium">Total Users</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+            <p className="text-gray-600 text-sm font-medium">Total Posts</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalBlogPosts}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+            <p className="text-gray-600 text-sm font-medium">Published</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{stats.publishedPosts}</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
+            <p className="text-blue-700 text-sm font-medium">Drafts</p>
+            <p className="text-3xl font-bold text-blue-900 mt-2">{stats.draftPosts}</p>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/users")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Manage Users
-              </CardTitle>
-              <CardDescription>
-                View and manage user accounts, roles, and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                Go to User Management
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Quick Access Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            onClick={() => navigate("/admin/users")}
+            className="p-5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left"
+          >
+            <Users className="h-6 w-6 text-blue-600 mb-3" />
+            <h3 className="font-semibold text-gray-900 text-sm">Users</h3>
+            <p className="text-xs text-gray-600 mt-1">Manage accounts</p>
+          </button>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/blogs")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Manage Blogs
-              </CardTitle>
-              <CardDescription>
-                View, edit, and manage all blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                Go to Blog Management
-              </Button>
-            </CardContent>
-          </Card>
+          <button
+            onClick={() => navigate("/admin/blogs")}
+            className="p-5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left"
+          >
+            <FileText className="h-6 w-6 text-emerald-600 mb-3" />
+            <h3 className="font-semibold text-gray-900 text-sm">Blog Posts</h3>
+            <p className="text-xs text-gray-600 mt-1">View all posts</p>
+          </button>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/blog/new")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PenSquare className="h-5 w-5" />
-                Create New Blog Post
-              </CardTitle>
-              <CardDescription>
-                Write and publish a new blog post
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                Create Blog Post
-              </Button>
-            </CardContent>
-          </Card>
+          <button
+            onClick={() => navigate("/admin/blog/new")}
+            className="p-5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left"
+          >
+            <PenSquare className="h-6 w-6 text-purple-600 mb-3" />
+            <h3 className="font-semibold text-gray-900 text-sm">New Post</h3>
+            <p className="text-xs text-gray-600 mt-1">Create article</p>
+          </button>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/proposals")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Client Proposals
-              </CardTitle>
-              <CardDescription>
-                Create and manage shareable client proposal pages
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                Manage Proposals
-              </Button>
-            </CardContent>
-          </Card>
+          <button
+            onClick={() => navigate("/admin/proposals")}
+            className="p-5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all text-left"
+          >
+            <Send className="h-6 w-6 text-orange-600 mb-3" />
+            <h3 className="font-semibold text-gray-900 text-sm">Proposals</h3>
+            <p className="text-xs text-gray-600 mt-1">Client proposals</p>
+          </button>
         </div>
       </div>
     </div>

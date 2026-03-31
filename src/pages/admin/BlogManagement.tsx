@@ -115,96 +115,94 @@ export default function BlogManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/admin")}
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-4xl font-bold">Blog Management</h1>
-            <p className="text-muted-foreground">Manage all blog posts</p>
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto py-10 px-6 max-w-6xl">
+        <div className="flex items-center gap-4 mb-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin")}
+            className="h-9 w-9 p-0 hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4 text-gray-700" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900">Blog Posts</h1>
+            <p className="text-gray-600 text-sm mt-1">Create and manage blog posts</p>
           </div>
-          <Button onClick={() => navigate("/admin/blog/new")}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Blog Post
+          <Button onClick={() => navigate("/admin/blog/new")} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <PlusCircle className="h-4 w-4" />
+            New Post
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Blog Posts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="font-semibold text-gray-900 text-sm">Title</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-sm">Status</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-sm">Published</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-sm">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {posts.length === 0 ? (
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Published Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableCell colSpan={4} className="text-center text-gray-600 py-8">
+                    No blog posts yet. Create your first post!
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {posts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                      No blog posts yet. Create your first post!
+              ) : (
+                posts.map((post) => (
+                  <TableRow key={post.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <TableCell className="font-medium text-gray-900">{post.title}</TableCell>
+                    <TableCell>
+                      <Badge className={`text-xs ${post.status === "published" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                        {post.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {post.published_at
+                        ? format(new Date(post.published_at), "MMM dd, yyyy")
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {post.status === "published" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
+                            onClick={() => navigate(`/blog/${post.id}`)}
+                          >
+                            <Eye className="h-4 w-4 text-gray-600" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-gray-100"
+                          onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
+                        >
+                          <Edit className="h-4 w-4 text-gray-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-red-50"
+                          onClick={() => deletePost(post.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  posts.map((post) => (
-                    <TableRow key={post.id}>
-                      <TableCell className="font-medium">{post.title}</TableCell>
-                      <TableCell>
-                        <Badge variant={post.status === "published" ? "default" : "secondary"}>
-                          {post.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {post.published_at
-                          ? format(new Date(post.published_at), "MMM dd, yyyy")
-                          : "Not published"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {post.status === "published" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/blog/${post.id}`)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deletePost(post.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
