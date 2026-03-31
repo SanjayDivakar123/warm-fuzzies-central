@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
+import { logAdminAction } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,6 +85,17 @@ serve(async (req) => {
             })
             .eq("id", companyId);
 
+          await logAdminAction({
+            supabase,
+            actorId: user.id,
+            actorEmail: userEmail,
+            actionType: "hiring_toggle",
+            targetType: "company",
+            targetId: companyId,
+            targetLabel: company.name,
+            metadata: { action, status: subscription.status },
+          });
+
           return new Response(JSON.stringify({ 
             success: true,
             action: "enabled",
@@ -104,6 +116,17 @@ serve(async (req) => {
             })
             .eq("id", companyId);
 
+          await logAdminAction({
+            supabase,
+            actorId: user.id,
+            actorEmail: userEmail,
+            actionType: "hiring_toggle",
+            targetType: "company",
+            targetId: companyId,
+            targetLabel: company.name,
+            metadata: { action, status: "admin_override" },
+          });
+
           return new Response(JSON.stringify({ 
             success: true,
             action: "enabled",
@@ -123,6 +146,17 @@ serve(async (req) => {
             hiring_subscription_cancel_at_period_end: false,
           })
           .eq("id", companyId);
+
+        await logAdminAction({
+          supabase,
+          actorId: user.id,
+          actorEmail: userEmail,
+          actionType: "hiring_toggle",
+          targetType: "company",
+          targetId: companyId,
+          targetLabel: company.name,
+          metadata: { action, status: "admin_override" },
+        });
 
         return new Response(JSON.stringify({ 
           success: true,
@@ -154,6 +188,22 @@ serve(async (req) => {
                 : null,
             })
             .eq("id", companyId);
+
+          await logAdminAction({
+            supabase,
+            actorId: user.id,
+            actorEmail: userEmail,
+            actionType: "hiring_toggle",
+            targetType: "company",
+            targetId: companyId,
+            targetLabel: company.name,
+            metadata: {
+              action,
+              period_end: subscription.current_period_end 
+                ? new Date(subscription.current_period_end * 1000).toISOString()
+                : null,
+            },
+          });
 
           return new Response(JSON.stringify({ 
             success: true,
@@ -195,6 +245,17 @@ serve(async (req) => {
           hiring_subscription_cancel_at_period_end: false,
         })
         .eq("id", companyId);
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: userEmail,
+        actionType: "hiring_toggle",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: company.name,
+        metadata: { action, status: "cancelled" },
+      });
 
       console.log("Hiring platform disabled immediately for company:", companyId);
 

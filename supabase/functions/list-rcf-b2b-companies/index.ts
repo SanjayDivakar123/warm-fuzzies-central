@@ -56,7 +56,7 @@ serve(async (req) => {
       await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_waived_at, deployment_fee_charged_at")
+          .select("id, name, subdomain, admin_email, created_at, seats_purchased, credit_balance, hiring_subscription_enabled, hiring_subscription_status, hiring_subscription_cancel_at_period_end, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, requires_post_setup_deployment_fee, deployment_fee_waived, deployment_fee_waived_at, deployment_fee_charged_at, plan_tier, archived_at, require_2fa, notes")
           .order("created_at", { ascending: false }),
         supabase.from("company_users").select("company_id, role, status"),
       ]);
@@ -127,6 +127,10 @@ serve(async (req) => {
         deployment_fee_waived: company.deployment_fee_waived || false,
         deployment_fee_waived_at: company.deployment_fee_waived_at || null,
         deployment_fee_charged_at: company.deployment_fee_charged_at || null,
+        plan_tier: company.plan_tier || "free",
+        archived_at: company.archived_at || null,
+        require_2fa: company.require_2fa || false,
+        notes: company.notes || "",
         ...stats,
       };
     });

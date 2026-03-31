@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
+import { logAdminAction } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -184,6 +185,21 @@ serve(async (req) => {
         description: description || `Super-admin created company and assigned admin ${adminUserEmail}`,
       });
 
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "company_create",
+        targetType: "company",
+        targetId: createdCompany.id,
+        targetLabel: createdCompany.name,
+        metadata: {
+          subdomain: createdCompany.subdomain,
+          admin_email: createdCompany.admin_email,
+          waive_deployment_fee: waiveDeploymentFeeInput,
+        },
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -261,6 +277,20 @@ serve(async (req) => {
         description: description || `Super-admin assigned ${resolvedEmail} as company admin`,
       });
 
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "admin_assign",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: resolvedEmail,
+        metadata: {
+          admin_user_id: adminUserId,
+          admin_email: resolvedEmail,
+        },
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -309,6 +339,20 @@ serve(async (req) => {
         description: deploymentFeeWaived
           ? "Super-admin waived one-time deployment fee"
           : "Super-admin removed deployment fee waiver",
+      });
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "fee_waiver",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: companyId,
+        metadata: {
+          deployment_fee_waived: deploymentFeeWaived,
+          already_charged: alreadyCharged,
+        },
       });
 
       return new Response(
@@ -370,6 +414,20 @@ serve(async (req) => {
         console.error("Failed to write super_admin_trial_configured log:", trialLogError.message);
       }
 
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "trial_set",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: company.name,
+        metadata: {
+          trial_ends_at: trialEndsAt.toISOString(),
+          trial_user_limit: trialUserLimit,
+        },
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -415,6 +473,23 @@ serve(async (req) => {
           description: description || null,
         },
       }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "billing_change",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: company.name,
+        metadata: {
+          mode: "add_free_credits",
+          amount_cents: amountCents,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+          description,
+        },
+      });
 
       return new Response(
         JSON.stringify({
@@ -462,6 +537,23 @@ serve(async (req) => {
           description: description || null,
         },
       }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "billing_change",
+        targetType: "company",
+        targetId: companyId,
+        targetLabel: company.name,
+        metadata: {
+          mode: "remove_credits",
+          amount_cents: amountCents,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+          description,
+        },
+      });
 
       return new Response(
         JSON.stringify({
@@ -577,6 +669,24 @@ serve(async (req) => {
         payment_intent_id: paymentIntent.id,
       },
     }).then(({ error }) => { if (error) console.error('Audit log failed:', error.message); });
+
+    await logAdminAction({
+      supabase,
+      actorId: user.id,
+      actorEmail: callerEmail,
+      actionType: "billing_change",
+      targetType: "company",
+      targetId: companyId,
+      targetLabel: company.name,
+      metadata: {
+        mode: "charge_card",
+        amount_cents: amountCents,
+        payment_intent_id: paymentIntent.id,
+        previous_balance: currentBalance,
+        new_balance: newBalance,
+        description,
+      },
+    });
 
     return new Response(
       JSON.stringify({

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { exportToCSV, exportToJSON } from "@/lib/adminExport";
 
 interface ProposalAcceptance {
   id: string;
@@ -61,7 +62,13 @@ export interface Proposal {
   pricing: ProposalPricing;
   closing_text: string;
   created_at: string;
-  status: "active" | "draft";
+  updated_at?: string;
+  version?: number;
+  parent_proposal_id?: string | null;
+  linked_company_id?: string | null;
+  viewed_at?: string | null;
+  accepted_at?: string | null;
+  status: "draft" | "sent" | "viewed" | "accepted" | "rejected";
 }
 
 type ProposalForm = Omit<Proposal, "id" | "created_at">;
@@ -100,7 +107,7 @@ const blankForm = (): ProposalForm => ({
   proposal_id: "",
   background_image_url:
     "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80",
-  status: "active",
+  status: "draft",
   pricing: { ...defaultPricing },
   closing_text: defaultClosing,
 });
@@ -131,6 +138,16 @@ function formatDate(iso: string) {
     day: "numeric",
   });
 }
+
+const proposalStages: Proposal["status"][] = ["draft", "sent", "viewed", "accepted", "rejected"];
+
+const stageBadgeClass: Record<Proposal["status"], string> = {
+  draft: "bg-slate-100 text-slate-700",
+  sent: "bg-blue-100 text-blue-700",
+  viewed: "bg-violet-100 text-violet-700",
+  accepted: "bg-emerald-100 text-emerald-700",
+  rejected: "bg-rose-100 text-rose-700",
+};
 
 /* -------------------------------------------------------------------------- */
 /*                              Main Component                                */
@@ -170,7 +187,7 @@ export default function ProposalManager() {
         (proposalsRes.data ?? []).map((row) => ({
           ...row,
           pricing: row.pricing as unknown as ProposalPricing,
-          status: (row.status ?? "active") as "active" | "draft",
+          status: ((row.status ?? "sent") === "active" ? "sent" : (row.status ?? "sent")) as Proposal["status"],
         }))
       );
     }
@@ -283,15 +300,31 @@ export default function ProposalManager() {
       };
 
       if (editingId) {
+        const previousProposal = proposals.find((proposal) => proposal.id === editingId);
+        if (!previousProposal) {
+          throw new Error("Previous proposal version not found.");
+        }
         const { error } = await supabase
           .from("client_proposals")
-          .update(payload)
-          .eq("id", editingId);
+          .insert({
+            ...payload,
+            version: (previousProposal.version || 1) + 1,
+            parent_proposal_id: previousProposal.parent_proposal_id || previousProposal.id,
+            linked_company_id: previousProposal.linked_company_id || null,
+            viewed_at: previousProposal.viewed_at || null,
+            accepted_at: previousProposal.accepted_at || null,
+          });
         if (error) throw error;
       } else {
+        const linkedCompany = proposals.find((proposal) => proposal.company_name === formData.company_name);
         const { error } = await supabase
           .from("client_proposals")
-          .insert(payload);
+          .insert({
+            ...payload,
+            version: 1,
+            parent_proposal_id: null,
+            linked_company_id: linkedCompany?.linked_company_id || null,
+          });
         if (error) throw error;
       }
 
@@ -315,6 +348,35 @@ export default function ProposalManager() {
       setDeleteConfirm(null);
       toast({ title: "Proposal deleted" });
     }
+  }
+
+  async function handleStatusChange(proposal: Proposal, status: Proposal["status"]) {
+    const payload: Partial<Proposal> = {
+      status,
+      viewed_at: status === "viewed" ? new Date().toISOString() : proposal.viewed_at || null,
+      accepted_at: status === "accepted" ? new Date().toISOString() : status === "rejected" ? null : proposal.accepted_at || null,
+    };
+
+    const { error } = await supabase.from("client_proposals").update(payload).eq("id", proposal.id);
+    if (error) {
+      toast({ title: "Status update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    await supabase.rpc("log_admin_action", {
+      p_action_type: "proposal_stage_change",
+      p_target_type: "platform",
+      p_target_id: proposal.id,
+      p_target_label: proposal.proposal_title,
+      p_metadata: { from: proposal.status, to: status },
+    });
+    await loadProposals();
+  }
+
+  function openLinkedCompany(companyId: string | null | undefined) {
+    if (!companyId) return;
+    localStorage.setItem("rcf_super_admin_company_context", companyId);
+    localStorage.setItem("rcf_super_admin_active_tab", "companies");
+    navigate("/admin/rcf-b2b");
   }
 
   function copyLink(slug: string) {
@@ -374,6 +436,28 @@ export default function ProposalManager() {
       return searchableText.includes(query);
     });
   }, [acceptances, proposals, searchQuery]);
+
+  const proposalHistoryByFamily = useMemo(() => {
+    return proposals.reduce<Record<string, Proposal[]>>((accumulator, proposal) => {
+      const key = proposal.parent_proposal_id || proposal.id;
+      accumulator[key] = [...(accumulator[key] || []), proposal].sort((a, b) => (b.version || 1) - (a.version || 1));
+      return accumulator;
+    }, {});
+  }, [proposals]);
+
+  function handleExport(format: "csv" | "json") {
+    const exporter = format === "csv" ? exportToCSV : exportToJSON;
+    exporter(
+      filteredProposals.map((proposal) => ({
+        title: proposal.proposal_title,
+        company: proposal.company_name,
+        status: proposal.status,
+        created_at: proposal.created_at,
+        accepted_at: proposal.accepted_at || "",
+      })),
+      `proposals-export.${format}`,
+    );
+  }
 
   function downloadLOI(p: Proposal, acc: ProposalAcceptance) {
     if (!acc.loi_signed_name) return;
@@ -436,12 +520,16 @@ export default function ProposalManager() {
               <p className="text-gray-600 text-sm mt-1">Create and manage client proposals</p>
             </div>
           </div>
-          <Button
-            onClick={openNew}
-            className="gap-2 h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            <Plus className="h-4 w-4" /> New Proposal
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => handleExport("csv")}>Export CSV</Button>
+            <Button variant="outline" onClick={() => handleExport("json")}>Export JSON</Button>
+            <Button
+              onClick={openNew}
+              className="gap-2 h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4" /> New Proposal
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -451,12 +539,12 @@ export default function ProposalManager() {
             <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.length}</p>
           </div>
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
-            <p className="text-gray-600 text-sm font-medium">Active</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "active").length}</p>
+            <p className="text-gray-600 text-sm font-medium">Sent</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "sent").length}</p>
           </div>
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
-            <p className="text-gray-600 text-sm font-medium">Draft</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "draft").length}</p>
+            <p className="text-gray-600 text-sm font-medium">Accepted</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "accepted").length}</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
             <p className="text-blue-700 text-sm font-medium">Paid Clients</p>
@@ -496,6 +584,17 @@ export default function ProposalManager() {
           </div>
         </div>
 
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-sm font-semibold text-gray-900">Proposal pipeline</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+            {proposalStages.map((stage) => (
+              <Badge key={stage} className={stageBadgeClass[stage]}>
+                {stage}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
         {/* Proposals Table */}
         {proposals.length === 0 ? (
           <div className="text-center py-16 border border-gray-200 rounded-lg bg-gray-50">
@@ -521,6 +620,7 @@ export default function ProposalManager() {
               const propAcceptances = acceptances.filter((a) => a.proposal_slug === p.slug);
               const completedAcceptances = propAcceptances.filter((a) => a.status === "completed");
               const isExpanded = expandedAcceptances.has(p.id);
+              const historyRows = proposalHistoryByFamily[p.parent_proposal_id || p.id] || [p];
 
               return (
                 <div key={p.id} className="border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
@@ -532,12 +632,26 @@ export default function ProposalManager() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-base font-semibold text-gray-900 truncate">{p.proposal_title}</h3>
-                          <Badge className={`text-xs font-semibold ${p.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                            {p.status}
-                          </Badge>
+                          <Select value={p.status} onValueChange={(value) => void handleStatusChange(p, value as Proposal["status"])}>
+                            <SelectTrigger className={`h-8 w-[150px] border-0 px-2 text-xs font-semibold ${stageBadgeClass[p.status]}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {proposalStages.map((stage) => (
+                                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Badge variant="outline">v{p.version || 1}</Badge>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                          <span>{p.company_name}</span>
+                          <button
+                            type="button"
+                            className="rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
+                            onClick={() => openLinkedCompany(p.linked_company_id)}
+                          >
+                            {p.company_name}
+                          </button>
                           <span className="text-gray-400">•</span>
                           <code className="font-mono text-gray-700 font-medium">{p.proposal_id}</code>
                           <span className="text-gray-400">•</span>
@@ -553,8 +667,28 @@ export default function ProposalManager() {
                   </button>
 
                   {/* Expandable Acceptances */}
-                  {isExpanded && propAcceptances.length > 0 && (
+                  {isExpanded && (
                     <div className="border-t border-gray-200 bg-gray-50 p-5 space-y-4">
+                      <div className="rounded-lg border border-gray-200 bg-white p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Version history</p>
+                            <p className="text-xs text-gray-600">Edits create a new version instead of overwriting the previous one.</p>
+                          </div>
+                          <Badge variant="outline">{historyRows.length} versions</Badge>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {historyRows.map((historyRow) => (
+                            <div key={historyRow.id} className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm">
+                              <div>
+                                <p className="font-medium text-gray-900">Version {historyRow.version || 1}</p>
+                                <p className="text-xs text-gray-500">{formatDate(historyRow.created_at)} • {historyRow.status}</p>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => copyLink(historyRow.slug)}>Copy Link</Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
                       {propAcceptances.map((acc) => (
                         <div key={acc.id} className="bg-white border border-gray-200 rounded-lg p-4">
@@ -626,6 +760,11 @@ export default function ProposalManager() {
                           </div>
                         </div>
                       ))}
+                      {propAcceptances.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+                          No acceptances yet for this proposal.
+                        </div>
+                      ) : null}
                     </div>
                   )}
 
@@ -742,8 +881,11 @@ export default function ProposalManager() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
+                      {proposalStages.map((stage) => (
+                        <SelectItem key={stage} value={stage}>
+                          {stage}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import Index from "@/pages/Index";
 import AnimatedAuth from "@/pages/AnimatedAuth";
 import Dashboard from "@/pages/Dashboard";
+import ChangePassword from "@/pages/ChangePassword";
 import FreeAssessment from "@/pages/FreeAssessment";
 import FreeResults from "@/pages/FreeResults";
 import CelebrityAssessment from "@/pages/CelebrityAssessment";
@@ -90,6 +91,7 @@ import ProposalLOE from "@/pages/client/ProposalLOE";
 import ProposalPayment from "@/pages/client/ProposalPayment";
 import ProposalSuccess from "@/pages/client/ProposalSuccess";
 import ProposalManager from "@/pages/admin/ProposalManager";
+import TwoFactorEnrollment from "@/pages/TwoFactorEnrollment";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -121,6 +123,14 @@ export const routeConfig = [
   {
     path: "/dashboard",
     element: <Layout><Dashboard /></Layout>,
+  },
+  {
+    path: "/change-password",
+    element: <Layout><ChangePassword /></Layout>,
+  },
+  {
+    path: "/two-factor-enrollment",
+    element: <Layout><TwoFactorEnrollment /></Layout>,
   },
   {
     path: "/free-assessment",

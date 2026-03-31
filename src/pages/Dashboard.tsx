@@ -75,6 +75,14 @@ interface CompanyAccess {
   status: 'invited' | 'active' | 'revoked';
   companyName: string;
   subdomain: string;
+  require2fa?: boolean;
+}
+
+interface DashboardAnnouncement {
+  id: string;
+  title: string;
+  body: string | null;
+  audience: string;
 }
 
 // Career Finder Section Component
@@ -425,6 +433,9 @@ const Dashboard = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
   const [googleLinking, setGoogleLinking] = useState(false);
+  const [announcements, setAnnouncements] = useState<DashboardAnnouncement[]>([]);
+  const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState<string[]>([]);
+  const [securityCheckComplete, setSecurityCheckComplete] = useState(false);
 
   // Check if user has Google linked
   const hasGoogleLinked = user?.app_metadata?.providers?.includes('google') || 
@@ -450,8 +461,78 @@ const Dashboard = () => {
       fetchInProgressAssessments();
       checkCompanyAccess();
       fetchUserProfile();
+      void fetchAnnouncements();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const storageKey = `dismissed_announcements_${user.id}`;
+    const stored = localStorage.getItem(storageKey);
+    setDismissedAnnouncementIds(stored ? JSON.parse(stored) : []);
+  }, [user]);
+
+  useEffect(() => {
+    const runSecurityChecks = async () => {
+      if (!user) return;
+
+      if (user.user_metadata?.temp_password) {
+        navigate("/change-password");
+        return;
+      }
+
+      try {
+        const factors = await supabase.auth.mfa.listFactors();
+        const hasVerifiedTotp = (factors.data?.totp || []).some((factor) => factor.status === "verified");
+        const companyRequires2fa = companyAccessList.some((company) => company.status === "active" && company.require2fa);
+        let superAdminRequires2fa = false;
+
+        try {
+          const [{ error: superAdminError }, { data: settingsRow }] = await Promise.all([
+            supabase.functions.invoke("manage-super-admins", { body: { action: "list" } }),
+            supabase.from("platform_settings").select("value").eq("key", "require_2fa_super_admins").maybeSingle(),
+          ]);
+          if (!superAdminError) {
+            superAdminRequires2fa = Boolean(
+              typeof settingsRow?.value === "boolean"
+                ? settingsRow.value
+                : (settingsRow?.value as { enabled?: boolean } | null)?.enabled,
+            );
+          }
+        } catch (error) {
+          console.error("Super admin 2FA check failed:", error);
+        }
+
+        if ((companyRequires2fa || superAdminRequires2fa) && !hasVerifiedTotp) {
+          navigate("/two-factor-enrollment");
+          return;
+        }
+      } catch (error) {
+        console.error("MFA check failed:", error);
+      } finally {
+        setSecurityCheckComplete(true);
+      }
+    };
+
+    void runSecurityChecks();
+  }, [companyAccessList, navigate, user]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("list-user-announcements");
+      if (error) throw error;
+      setAnnouncements((data?.announcements || []) as DashboardAnnouncement[]);
+    } catch (error) {
+      console.error("Failed to load announcements:", error);
+    }
+  };
+
+  const dismissAnnouncement = (announcementId: string) => {
+    if (!user) return;
+    const next = [...dismissedAnnouncementIds, announcementId];
+    setDismissedAnnouncementIds(next);
+    localStorage.setItem(`dismissed_announcements_${user.id}`, JSON.stringify(next));
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -493,7 +574,8 @@ const Dashboard = () => {
           companies:company_id (
             id,
             name,
-            subdomain
+            subdomain,
+            require_2fa
           )
         `)
         .in('status', ['active', 'invited'])
@@ -525,7 +607,7 @@ const Dashboard = () => {
       const accessList = companyUsers
         .filter(cu => cu.companies)
         .map(cu => {
-          const company = cu.companies as { id: string; name: string; subdomain: string };
+          const company = cu.companies as { id: string; name: string; subdomain: string; require_2fa?: boolean };
           return {
             id: cu.id,
             companyId: company.id,
@@ -533,6 +615,7 @@ const Dashboard = () => {
             status: cu.status as 'invited' | 'active' | 'revoked',
             companyName: company.name,
             subdomain: company.subdomain,
+            require2fa: Boolean(company.require_2fa),
           };
         });
 
@@ -958,7 +1041,7 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 p-3 sm:p-4 md:p-8 overflow-x-hidden overflow-y-auto">
-          {loading ? (
+          {loading || !securityCheckComplete ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="text-muted-foreground mt-2">Loading your dashboard...</p>
@@ -968,6 +1051,19 @@ const Dashboard = () => {
                 {/* Overview Section */}
                 {activeSection === 'overview' && (
                   <>
+                    {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).map((announcement) => (
+                      <Card key={announcement.id} className="border-blue-200 bg-blue-50/80">
+                        <CardContent className="flex items-start justify-between gap-4 p-4">
+                          <div>
+                            <p className="text-sm font-semibold text-blue-900">{announcement.title}</p>
+                            {announcement.body ? <p className="mt-1 text-sm text-blue-800 whitespace-pre-wrap">{announcement.body}</p> : null}
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => dismissAnnouncement(announcement.id)}>
+                            Dismiss
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
                     {/* Welcome Banner with Gradient */}
                     <div className="relative mb-6 sm:mb-8 p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />

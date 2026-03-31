@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
 import { INITIAL_SUPER_ADMIN_EMAILS, isSuperAdminEmail, normalizeEmail, resolveFullName } from "../_shared/superAdmin.ts";
+import { logAdminAction } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -219,6 +220,19 @@ serve(async (req) => {
       }
 
       const { data } = await selectSuperAdmins(supabase);
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "super_admin_add",
+        targetType: "platform",
+        targetId: targetUserId,
+        targetLabel: targetEmail,
+        metadata: {
+          full_name: fullName,
+        },
+      });
 
       return new Response(
         JSON.stringify({

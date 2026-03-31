@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
+import { logAdminAction } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -169,6 +170,18 @@ serve(async (req) => {
     }
 
     const emailSent = await sendResetEmail({ email: targetEmail, resetLink });
+
+    await logAdminAction({
+      supabase,
+      actorId: user.id,
+      actorEmail: callerEmail,
+      actionType: "password_reset",
+      targetType: "user",
+      targetLabel: targetEmail,
+      metadata: {
+        email_sent: emailSent,
+      },
+    });
 
     return new Response(
       JSON.stringify({

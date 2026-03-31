@@ -1,17 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { exportToCSV, exportToJSON } from "@/lib/adminExport";
+import { generateTempPassword, getPasswordStrength } from "@/lib/adminPasswords";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -34,22 +38,34 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowUpRight,
+  Archive,
+  ArchiveRestore,
+  Bell,
   Building2,
   Calendar,
   Check,
+  ChevronDown,
   ChevronsUpDown,
+  ClipboardCopy,
   CreditCard,
+  Eye,
   FileText,
   Globe2,
   Loader2,
   Mail,
   MessageSquareText,
   MoreVertical,
+  Pencil,
   RefreshCw,
+  Reply,
+  Save,
   Search,
   Shield,
+  ShieldAlert,
   ShieldCheck,
+  ShieldOff,
   Sparkles,
+  UserPlus,
   Users,
   UserCog,
   XCircle,
@@ -60,6 +76,8 @@ interface CompanySummary {
   id: string;
   name: string;
   subdomain: string;
+  admin_email?: string | null;
+  created_at?: string | null;
   memberCount: number;
   ownerCount: number;
   adminLevelCount: number;
@@ -76,6 +94,10 @@ interface CompanySummary {
   deployment_fee_waived: boolean;
   deployment_fee_waived_at: string | null;
   deployment_fee_charged_at: string | null;
+  plan_tier?: string;
+  archived_at?: string | null;
+  require_2fa?: boolean;
+  notes?: string;
 }
 
 interface CompanyUserRow {
@@ -85,15 +107,30 @@ interface CompanyUserRow {
   role: string;
   status: string;
   job_role: string | null;
+  invited_at?: string | null;
+  joined_at?: string | null;
+  invite_count?: number;
 }
 
 interface PlatformUserRow {
   id: string;
   email: string | null;
   full_name?: string | null;
+  created_at?: string | null;
+  last_sign_in_at?: string | null;
   is_b2b_owner: boolean;
   is_b2b_admin_level: boolean;
   b2b_company_count: number;
+  b2b_companies?: string[];
+}
+
+interface UserSessionRow {
+  id: string;
+  user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  ip?: string | null;
+  user_agent?: string | null;
 }
 
 interface ContactQueryRow {
@@ -106,6 +143,9 @@ interface ContactQueryRow {
   status: string;
   created_at: string;
   submitted_by_user_id: string | null;
+  assigned_to?: string | null;
+  reply_status?: string | null;
+  replied_at?: string | null;
 }
 
 interface SuperAdminRow {
@@ -116,6 +156,54 @@ interface SuperAdminRow {
   added_by: string | null;
   added_by_email: string | null;
   created_at: string;
+}
+
+interface AdminActionLogRow {
+  id: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  action_type: string;
+  target_type: string | null;
+  target_id: string | null;
+  target_label: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  total_count?: number;
+}
+
+interface AnnouncementRow {
+  id: string;
+  title: string;
+  body: string | null;
+  audience: string;
+  company_id: string | null;
+  scheduled_at: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface PlatformErrorRow {
+  id: string;
+  message: string;
+  context: Record<string, unknown>;
+  severity: number;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+interface IncidentRow {
+  id: string;
+  code: number;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+interface SessionManagerResponse {
+  sessions?: UserSessionRow[];
+  success?: boolean;
+  unavailable?: boolean;
+  error?: string;
 }
 
 const getErrorMessage = (error: unknown) => {
@@ -270,6 +358,64 @@ export default function RCFB2BAdminDashboard() {
   const [superAdminsLoading, setSuperAdminsLoading] = useState(false);
   const [selectedSuperAdminUserId, setSelectedSuperAdminUserId] = useState("");
   const [addingSuperAdmin, setAddingSuperAdmin] = useState(false);
+  const [includeArchivedCompanies, setIncludeArchivedCompanies] = useState(false);
+  const [companyEditOpen, setCompanyEditOpen] = useState(false);
+  const [companyEditLoading, setCompanyEditLoading] = useState(false);
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editCompanySubdomain, setEditCompanySubdomain] = useState("");
+  const [editCompanyPlanTier, setEditCompanyPlanTier] = useState("free");
+  const [companyNotesDraft, setCompanyNotesDraft] = useState("");
+  const [companyNotesSaving, setCompanyNotesSaving] = useState(false);
+  const [adminActionLogs, setAdminActionLogs] = useState<AdminActionLogRow[]>([]);
+  const [adminActionLogsLoading, setAdminActionLogsLoading] = useState(false);
+  const [adminActionTypeFilter, setAdminActionTypeFilter] = useState("all");
+  const [adminActionActorFilter, setAdminActionActorFilter] = useState("all");
+  const [adminActionDateFrom, setAdminActionDateFrom] = useState("");
+  const [adminActionDateTo, setAdminActionDateTo] = useState("");
+  const [adminActionPage, setAdminActionPage] = useState(1);
+  const [adminActionTotalCount, setAdminActionTotalCount] = useState(0);
+  const [announcements, setAnnouncements] = useState<AnnouncementRow[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementBody, setAnnouncementBody] = useState("");
+  const [announcementAudience, setAnnouncementAudience] = useState("all");
+  const [announcementCompanyId, setAnnouncementCompanyId] = useState("");
+  const [announcementScheduledAt, setAnnouncementScheduledAt] = useState("");
+  const [announcementActive, setAnnouncementActive] = useState(true);
+  const [announcementSaving, setAnnouncementSaving] = useState(false);
+  const [platformErrors, setPlatformErrors] = useState<PlatformErrorRow[]>([]);
+  const [incidents, setIncidents] = useState<IncidentRow[]>([]);
+  const [platformHealthLoading, setPlatformHealthLoading] = useState(false);
+  const [onCallEngineerEmail, setOnCallEngineerEmail] = useState("");
+  const [incidentCode, setIncidentCode] = useState("1");
+  const [incidentDescription, setIncidentDescription] = useState("");
+  const [incidentSaving, setIncidentSaving] = useState(false);
+  const [contactAssigneeFilter, setContactAssigneeFilter] = useState("all");
+  const [replyingContactId, setReplyingContactId] = useState<string | null>(null);
+  const [replyDraftById, setReplyDraftById] = useState<Record<string, string>>({});
+  const [sendingReplyId, setSendingReplyId] = useState<string | null>(null);
+  const [impersonationTarget, setImpersonationTarget] = useState<{ email: string; link: string } | null>(null);
+  const [impersonationLoadingFor, setImpersonationLoadingFor] = useState<string | null>(null);
+  const [expandedPlatformUserId, setExpandedPlatformUserId] = useState<string | null>(null);
+  const [userSessionsByUserId, setUserSessionsByUserId] = useState<Record<string, UserSessionRow[]>>({});
+  const [sessionUnavailableByUserId, setSessionUnavailableByUserId] = useState<Record<string, boolean>>({});
+  const [loadingSessionsFor, setLoadingSessionsFor] = useState<string | null>(null);
+  const [signingOutSessionFor, setSigningOutSessionFor] = useState<string | null>(null);
+  const [permissionAuditFilter, setPermissionAuditFilter] = useState<"all" | "super_admin" | "company_admin" | "owner">("all");
+  const [revokingAccessId, setRevokingAccessId] = useState<string | null>(null);
+  const [inviteActionUserId, setInviteActionUserId] = useState<string | null>(null);
+  const [requireSuperAdmin2fa, setRequireSuperAdmin2fa] = useState(false);
+  const [savingSuperAdmin2fa, setSavingSuperAdmin2fa] = useState(false);
+  const [createUserFullName, setCreateUserFullName] = useState("");
+  const [createUserEmail, setCreateUserEmail] = useState("");
+  const [createUserCompanyId, setCreateUserCompanyId] = useState("");
+  const [createUserCompanyRole, setCreateUserCompanyRole] = useState("employee");
+  const [createUserRoleColor, setCreateUserRoleColor] = useState("");
+  const [autoGeneratePassword, setAutoGeneratePassword] = useState(true);
+  const [manualPassword, setManualPassword] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState(generateTempPassword());
+  const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [createdUserSummary, setCreatedUserSummary] = useState<Record<string, string | null> | null>(null);
   const [pendingHiringToggle, setPendingHiringToggle] = useState<{ 
     companyId: string; 
     companyName: string; 
@@ -333,11 +479,20 @@ export default function RCFB2BAdminDashboard() {
     });
   }, [selectableSuperAdminCandidates, superAdminCandidateOptions, superAdmins]);
 
+  const assignableSuperAdmins = useMemo(
+    () => superAdmins.filter((admin) => !!admin.user_id),
+    [superAdmins],
+  );
+
   const filteredCompanies = useMemo(() => {
     const query = companySearch.trim().toLowerCase();
-    if (!query) return companies;
+    const visibleCompanies = includeArchivedCompanies
+      ? companies
+      : companies.filter((company) => !company.archived_at);
 
-    return companies.filter((company) => {
+    if (!query) return visibleCompanies;
+
+    return visibleCompanies.filter((company) => {
       const searchable = [
         company.name,
         company.subdomain,
@@ -348,7 +503,7 @@ export default function RCFB2BAdminDashboard() {
 
       return searchable.includes(query);
     });
-  }, [companies, companySearch]);
+  }, [companies, companySearch, includeArchivedCompanies]);
 
   const companyStats = useMemo(() => {
     const trialCount = companies.filter((company) => company.b2b_trial_enabled).length;
@@ -393,6 +548,50 @@ export default function RCFB2BAdminDashboard() {
       resolvedCount,
     };
   }, [contactQueries]);
+
+  const pendingInvites = useMemo(
+    () => companyUsers.filter((member) => !!member.invited_at && !member.joined_at),
+    [companyUsers],
+  );
+
+  const permissionAuditRows = useMemo(() => {
+    const rows = [
+      ...superAdmins.map((admin) => ({
+        id: `super-${admin.id}`,
+        email: admin.email,
+        roleType: "super_admin" as const,
+        company: "Platform",
+        grantedAt: admin.created_at,
+        grantedBy: admin.added_by_email || "—",
+        userId: admin.user_id,
+        companyId: null as string | null,
+      })),
+      ...platformUsers
+        .filter((entry) => entry.is_b2b_admin_level)
+        .map((entry) => ({
+          id: `company-${entry.id}`,
+          email: entry.email || "—",
+          roleType: (entry.is_b2b_owner ? "owner" : "company_admin") as const,
+          company: entry.b2b_companies?.join(", ") || "—",
+          grantedAt: entry.created_at || "",
+          grantedBy: "—",
+          userId: entry.id,
+          companyId: null as string | null,
+        })),
+    ];
+
+    if (permissionAuditFilter === "all") return rows;
+    return rows.filter((row) => row.roleType === permissionAuditFilter);
+  }, [permissionAuditFilter, platformUsers, superAdmins]);
+
+  const adminActorOptions = useMemo(
+    () =>
+      Array.from(new Set(adminActionLogs.map((item) => item.actor_email).filter(Boolean) as string[])).map((email) => ({
+        value: email,
+        label: email,
+      })),
+    [adminActionLogs],
+  );
 
   const tabItems = useMemo(
     () => [
@@ -541,6 +740,81 @@ export default function RCFB2BAdminDashboard() {
     }
   }, [toast]);
 
+  const fetchAdminActionLogs = useCallback(async () => {
+    setAdminActionLogsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("get_admin_action_logs", {
+        p_action_type: adminActionTypeFilter === "all" ? null : adminActionTypeFilter,
+        p_actor_email: adminActionActorFilter === "all" ? null : adminActionActorFilter,
+        p_date_from: adminActionDateFrom || null,
+        p_date_to: adminActionDateTo || null,
+        p_page: adminActionPage,
+        p_page_size: 25,
+      });
+
+      if (error) throw error;
+      const rows = (data || []) as AdminActionLogRow[];
+      setAdminActionLogs(rows);
+      setAdminActionTotalCount(rows[0]?.total_count || 0);
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to load action logs",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setAdminActionLogsLoading(false);
+    }
+  }, [adminActionActorFilter, adminActionDateFrom, adminActionDateTo, adminActionPage, adminActionTypeFilter, toast]);
+
+  const fetchAnnouncements = useCallback(async () => {
+    setAnnouncementsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("id, title, body, audience, company_id, scheduled_at, is_active, created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setAnnouncements((data || []) as AnnouncementRow[]);
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to load announcements",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, [toast]);
+
+  const fetchPlatformHealth = useCallback(async () => {
+    setPlatformHealthLoading(true);
+    try {
+      const [{ data: errors, error: errorsError }, { data: incidentsData, error: incidentsError }, { data: settingsData, error: settingsError }] = await Promise.all([
+        supabase.from("platform_errors").select("id, message, context, severity, resolved_at, created_at").order("created_at", { ascending: false }).limit(20),
+        supabase.from("incidents").select("id, code, description, status, created_at").order("created_at", { ascending: false }).limit(5),
+        supabase.from("platform_settings").select("key, value"),
+      ]);
+      if (errorsError) throw errorsError;
+      if (incidentsError) throw incidentsError;
+      if (settingsError) throw settingsError;
+      setPlatformErrors((errors || []) as PlatformErrorRow[]);
+      setIncidents((incidentsData || []) as IncidentRow[]);
+      const onCall = (settingsData || []).find((row) => row.key === "on_call_engineer");
+      setOnCallEngineerEmail(typeof onCall?.value === "string" ? onCall.value : (onCall?.value as { email?: string } | null)?.email || "");
+      const superAdmin2fa = (settingsData || []).find((row) => row.key === "require_2fa_super_admins");
+      setRequireSuperAdmin2fa(Boolean(typeof superAdmin2fa?.value === "boolean" ? superAdmin2fa.value : (superAdmin2fa?.value as { enabled?: boolean } | null)?.enabled));
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to load platform health",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setPlatformHealthLoading(false);
+    }
+  }, [toast]);
+
   const handleAddSuperAdmin = async () => {
     if (!selectedSuperAdminUserId) {
       toast({
@@ -609,7 +883,7 @@ export default function RCFB2BAdminDashboard() {
     try {
       let query = supabase
         .from("contact_queries")
-        .select("id, name, email, phone, message, source_page, status, created_at, submitted_by_user_id")
+        .select("id, name, email, phone, message, source_page, status, created_at, submitted_by_user_id, assigned_to, reply_status, replied_at")
         .order("created_at", { ascending: false })
         .limit(200);
 
@@ -620,6 +894,10 @@ export default function RCFB2BAdminDashboard() {
       if (contactSearch.trim()) {
         const escapedSearch = contactSearch.trim().replace(/,/g, " ");
         query = query.or(`name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,message.ilike.%${escapedSearch}%`);
+      }
+
+      if (contactAssigneeFilter !== "all") {
+        query = query.eq("assigned_to", contactAssigneeFilter);
       }
 
       const { data, error } = await query;
@@ -634,7 +912,7 @@ export default function RCFB2BAdminDashboard() {
     } finally {
       setContactQueriesLoading(false);
     }
-  }, [contactSearch, contactStatusFilter, toast]);
+  }, [contactAssigneeFilter, contactSearch, contactStatusFilter, toast]);
 
   const updateContactQueryStatus = async (id: string, status: "new" | "reviewed" | "resolved") => {
     setUpdatingContactId(id);
@@ -966,13 +1244,472 @@ export default function RCFB2BAdminDashboard() {
     }
   };
 
+  const handleSaveCompanyEdits = async (archiveMode?: "archive" | "unarchive") => {
+    if (!selectedCompany) return;
+    setCompanyEditLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("update-company", {
+        body: {
+          company_id: selectedCompany.id,
+          name: editCompanyName.trim(),
+          subdomain: editCompanySubdomain.trim(),
+          plan_tier: editCompanyPlanTier,
+          archive: archiveMode === "archive",
+          unarchive: archiveMode === "unarchive",
+        },
+      });
+      if (error) throw error;
+      toast({
+        title: "Company updated",
+        description: `${data?.company?.name || selectedCompany.name} was updated.`,
+      });
+      setCompanyEditOpen(false);
+      await fetchCompanies();
+    } catch (error: unknown) {
+      toast({
+        title: "Failed to update company",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setCompanyEditLoading(false);
+    }
+  };
+
+  const saveCompanyNotes = useCallback(async () => {
+    if (!selectedCompany) return;
+    setCompanyNotesSaving(true);
+    try {
+      const { error } = await supabase.functions.invoke("update-company", {
+        body: {
+          company_id: selectedCompany.id,
+          notes: companyNotesDraft,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "Notes save failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setCompanyNotesSaving(false);
+    }
+  }, [companyNotesDraft, selectedCompany, toast]);
+
+  const handleExport = (format: "csv" | "json", tab: string) => {
+    const exportFn = format === "csv" ? exportToCSV : exportToJSON;
+    if (tab === "companies") {
+      exportFn(filteredCompanies.map((company) => ({
+        name: company.name,
+        subdomain: company.subdomain,
+        plan: company.plan_tier || "free",
+        trial_status: company.b2b_trial_enabled ? "trial" : "off",
+        hiring_enabled: company.hiring_subscription_enabled,
+        deployment_fee_status: company.deployment_fee_waived ? "waived" : company.deployment_fee_charged_at ? "charged" : "pending",
+        member_count: company.memberCount,
+        created_at: company.created_at || "",
+      })), `companies-export.${format}`);
+      return;
+    }
+    if (tab === "company-users") {
+      exportFn(companyUsers.map((member) => ({
+        name: member.full_name,
+        email: member.email,
+        role: member.role,
+        status: member.status,
+        job_role: member.job_role,
+      })), `company-users-export.${format}`);
+      return;
+    }
+    if (tab === "platform-users") {
+      const superAdminSet = new Set(superAdmins.map((admin) => admin.email.toLowerCase()));
+      exportFn(platformUsers.map((member) => ({
+        name: member.full_name,
+        email: member.email,
+        is_super_admin: member.email ? superAdminSet.has(member.email.toLowerCase()) : false,
+        created_at: member.created_at || "",
+        last_sign_in: member.last_sign_in_at || "",
+      })), `platform-users-export.${format}`);
+      return;
+    }
+    if (tab === "contact-queries") {
+      exportFn(contactQueries.map((query) => ({
+        submitter: query.name,
+        email: query.email,
+        status: query.status,
+        created_at: query.created_at,
+        message_preview: query.message.slice(0, 140),
+      })), `contact-queries-export.${format}`);
+      return;
+    }
+    if (tab === "admin-action-logs") {
+      exportFn(adminActionLogs.map((row) => ({
+        created_at: row.created_at,
+        actor_email: row.actor_email,
+        action_type: row.action_type,
+        target_type: row.target_type,
+        target_label: row.target_label,
+        metadata: JSON.stringify(row.metadata || {}),
+      })), `admin-action-logs.${format}`);
+    }
+  };
+
+  const handleSaveAnnouncement = async () => {
+    setAnnouncementSaving(true);
+    try {
+      const { error } = await supabase.from("announcements").insert({
+        title: announcementTitle,
+        body: announcementBody,
+        audience: announcementAudience,
+        company_id: announcementAudience === "company" ? announcementCompanyId || null : null,
+        scheduled_at: announcementScheduledAt || null,
+        is_active: announcementActive,
+        created_by: user?.id || null,
+      });
+      if (error) throw error;
+      toast({ title: "Announcement created" });
+      setAnnouncementTitle("");
+      setAnnouncementBody("");
+      setAnnouncementAudience("all");
+      setAnnouncementCompanyId("");
+      setAnnouncementScheduledAt("");
+      setAnnouncementActive(true);
+      await fetchAnnouncements();
+    } catch (error) {
+      toast({
+        title: "Announcement failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setAnnouncementSaving(false);
+    }
+  };
+
+  const handleGenerateImpersonationLink = async (email: string) => {
+    setImpersonationLoadingFor(email);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-impersonation-link", { body: { email } });
+      if (error) throw error;
+      setImpersonationTarget({ email, link: data.link });
+    } catch (error) {
+      toast({
+        title: "Impersonation failed",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setImpersonationLoadingFor(null);
+    }
+  };
+
+  const handleAssignContact = async (contactId: string, assignedTo: string) => {
+    try {
+      const { error } = await supabase
+        .from("contact_queries")
+        .update({ assigned_to: assignedTo || null })
+        .eq("id", contactId);
+      if (error) throw error;
+      await fetchContactQueries();
+    } catch (error) {
+      toast({
+        title: "Assignment failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendContactReply = async (contactId: string) => {
+    const body = replyDraftById[contactId]?.trim();
+    if (!body) return;
+    setSendingReplyId(contactId);
+    try {
+      const { error } = await supabase.functions.invoke("send-contact-reply", {
+        body: {
+          contact_query_id: contactId,
+          body,
+        },
+      });
+      if (error) throw error;
+      setReplyingContactId(null);
+      await fetchContactQueries();
+      toast({ title: "Reply recorded" });
+    } catch (error) {
+      toast({
+        title: "Reply failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setSendingReplyId(null);
+    }
+  };
+
+  const handleSaveOnCall = async () => {
+    try {
+      const { error } = await supabase
+        .from("platform_settings")
+        .upsert({ key: "on_call_engineer", value: onCallEngineerEmail, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      toast({ title: "On-call engineer updated" });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveSuperAdmin2fa = async (checked: boolean) => {
+    setRequireSuperAdmin2fa(checked);
+    setSavingSuperAdmin2fa(true);
+    try {
+      const [{ error }, { error: logError }] = await Promise.all([
+        supabase.from("platform_settings").upsert({
+          key: "require_2fa_super_admins",
+          value: checked,
+          updated_at: new Date().toISOString(),
+        }),
+        supabase.rpc("log_admin_action", {
+          p_action_type: "super_admin_2fa_toggle",
+          p_target_type: "platform",
+          p_target_id: null,
+          p_target_label: "require_2fa_super_admins",
+          p_metadata: { enabled: checked },
+        }),
+      ]);
+      if (error) throw error;
+      if (logError) throw logError;
+      toast({ title: "Super admin 2FA updated" });
+    } catch (error) {
+      setRequireSuperAdmin2fa(!checked);
+      toast({
+        title: "2FA update failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSuperAdmin2fa(false);
+    }
+  };
+
+  const handleCreateIncident = async () => {
+    setIncidentSaving(true);
+    try {
+      const { error } = await supabase.from("incidents").insert({
+        code: Number(incidentCode),
+        description: incidentDescription,
+        status: "open",
+        created_by: user?.id || null,
+      });
+      if (error) throw error;
+      setIncidentCode("1");
+      setIncidentDescription("");
+      await fetchPlatformHealth();
+      toast({ title: "Incident created" });
+    } catch (error) {
+      toast({
+        title: "Incident failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIncidentSaving(false);
+    }
+  };
+
+  const handleInviteAction = async (companyUserId: string, action: "resend" | "revoke") => {
+    setInviteActionUserId(companyUserId);
+    try {
+      if (action === "resend") {
+        const { data, error } = await supabase.functions.invoke("resend-invite", {
+          body: { user_id: companyUserId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      } else {
+        const { error } = await supabase.from("company_users").update({ status: "revoked" }).eq("id", companyUserId);
+        if (error) throw error;
+        await supabase.rpc("log_admin_action", {
+          p_action_type: "invite_revoke",
+          p_target_type: "user",
+          p_target_id: companyUserId,
+          p_target_label: companyUserId,
+          p_metadata: {},
+        });
+      }
+
+      await fetchCompanyUsers(selectedCompanyId);
+      toast({ title: action === "resend" ? "Invite resent" : "Invite revoked" });
+    } catch (error) {
+      toast({
+        title: action === "resend" ? "Resend failed" : "Revoke failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setInviteActionUserId(null);
+    }
+  };
+
+  const handleTogglePlatformUserExpansion = async (userId: string) => {
+    if (expandedPlatformUserId === userId) {
+      setExpandedPlatformUserId(null);
+      return;
+    }
+
+    setExpandedPlatformUserId(userId);
+    if (userSessionsByUserId[userId]) return;
+
+    setLoadingSessionsFor(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-user-sessions", {
+        body: { action: "list", user_id: userId },
+      });
+      if (error) throw error;
+      const payload = (data || {}) as SessionManagerResponse;
+      setUserSessionsByUserId((current) => ({ ...current, [userId]: payload.sessions || [] }));
+      setSessionUnavailableByUserId((current) => ({ ...current, [userId]: !!payload.unavailable }));
+
+      if (payload.unavailable) {
+        toast({
+          title: "Session access unavailable",
+          description: "This environment cannot inspect auth sessions directly right now.",
+        });
+      }
+    } catch (error) {
+      setUserSessionsByUserId((current) => ({ ...current, [userId]: [] }));
+      setSessionUnavailableByUserId((current) => ({ ...current, [userId]: true }));
+      toast({
+        title: "Session lookup failed",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSessionsFor(null);
+    }
+  };
+
+  const handleForceSignOut = async (userId: string, sessionId?: string) => {
+    setSigningOutSessionFor(sessionId || userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-user-sessions", {
+        body: {
+          action: "force_sign_out",
+          user_id: userId,
+          session_id: sessionId || null,
+        },
+      });
+      if (error) throw error;
+      const signOutPayload = (data || {}) as SessionManagerResponse;
+      if (signOutPayload.unavailable || signOutPayload.success === false) {
+        setSessionUnavailableByUserId((current) => ({ ...current, [userId]: true }));
+        toast({
+          title: "Sign out unavailable",
+          description: signOutPayload.error || "Session management is unavailable in this environment.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const { data: refreshedSessionsData } = await supabase.functions.invoke("manage-user-sessions", {
+        body: { action: "list", user_id: userId },
+      });
+      const payload = (refreshedSessionsData || {}) as SessionManagerResponse;
+      setUserSessionsByUserId((current) => ({ ...current, [userId]: payload.sessions || [] }));
+      setSessionUnavailableByUserId((current) => ({ ...current, [userId]: !!payload.unavailable }));
+      toast({ title: sessionId ? "Session signed out" : "All sessions signed out" });
+    } catch (error) {
+      toast({
+        title: "Sign out failed",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setSigningOutSessionFor(null);
+    }
+  };
+
+  const handleRevokeElevatedAccess = async (row: { id: string; roleType: "super_admin" | "company_admin" | "owner"; email: string; userId?: string | null; companyId?: string | null }) => {
+    setRevokingAccessId(row.id);
+    try {
+      const { error } = await supabase.functions.invoke("revoke-elevated-access", {
+        body: {
+          access_type: row.roleType,
+          user_id: row.userId || null,
+          email: row.email,
+          company_id: row.companyId || null,
+        },
+      });
+      if (error) throw error;
+      await Promise.all([fetchSuperAdmins(), fetchPlatformUsers()]);
+      toast({ title: "Access revoked" });
+    } catch (error) {
+      toast({
+        title: "Revoke failed",
+        description: await getEdgeErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setRevokingAccessId(null);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    setCreateUserLoading(true);
+    const passwordToUse = autoGeneratePassword ? generatedPassword : manualPassword;
+    try {
+      const { data, error } = await supabase.functions.invoke("create-rcf-user", {
+        body: {
+          full_name: createUserFullName,
+          email: createUserEmail,
+          password: passwordToUse,
+          company_id: createUserCompanyId || null,
+          company_role: createUserCompanyId ? createUserCompanyRole : null,
+          role_color: createUserRoleColor || null,
+        },
+      });
+      if (error) throw error;
+      setCreatedUserSummary({
+        full_name: createUserFullName,
+        email: createUserEmail,
+        company_name: companies.find((company) => company.id === createUserCompanyId)?.name || "None",
+        role: createUserCompanyId ? createUserCompanyRole : "—",
+        password: passwordToUse,
+      });
+      setCreateUserFullName("");
+      setCreateUserEmail("");
+      setCreateUserCompanyId("");
+      setCreateUserCompanyRole("employee");
+      setCreateUserRoleColor("");
+      setManualPassword("");
+      setGeneratedPassword(generateTempPassword());
+      await Promise.all([fetchPlatformUsers(), fetchSuperAdminCandidates()]);
+      toast({ title: "User created", description: `${data?.user?.email || createUserEmail} is ready.` });
+    } catch (error) {
+      toast({
+        title: "Create user failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setCreateUserLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (accessChecked && isAllowed) {
       fetchCompanies();
       fetchPlatformUsers();
       fetchSuperAdminCandidates();
+      fetchAdminActionLogs();
+      fetchAnnouncements();
+      fetchPlatformHealth();
     }
-  }, [accessChecked, fetchCompanies, fetchPlatformUsers, fetchSuperAdminCandidates, isAllowed]);
+  }, [accessChecked, fetchAdminActionLogs, fetchAnnouncements, fetchCompanies, fetchPlatformHealth, fetchPlatformUsers, fetchSuperAdminCandidates, isAllowed]);
 
   useEffect(() => {
     fetchCompanyUsers(selectedCompanyId);
@@ -992,7 +1729,39 @@ export default function RCFB2BAdminDashboard() {
       fetchContactQueries();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [accessChecked, activeTab, contactSearch, contactStatusFilter, fetchContactQueries, isAllowed]);
+  }, [accessChecked, activeTab, contactSearch, contactStatusFilter, fetchContactQueries, isAllowed, contactAssigneeFilter]);
+
+  useEffect(() => {
+    if (!selectedCompany) return;
+    setEditCompanyName(selectedCompany.name);
+    setEditCompanySubdomain(selectedCompany.subdomain);
+    setEditCompanyPlanTier(selectedCompany.plan_tier || "free");
+    setCompanyNotesDraft(selectedCompany.notes || "");
+  }, [selectedCompany]);
+
+  useEffect(() => {
+    if (companies.length === 0 || selectedCompanyId) return;
+    const storedCompanyId = localStorage.getItem("rcf_super_admin_company_context");
+    const storedTab = localStorage.getItem("rcf_super_admin_active_tab");
+    if (storedCompanyId && companies.some((company) => company.id === storedCompanyId)) {
+      applyCompanyContext(storedCompanyId);
+    }
+    if (storedTab && tabItems.some((tab) => tab.value === storedTab && !("href" in tab))) {
+      setActiveTab(storedTab);
+    }
+    localStorage.removeItem("rcf_super_admin_company_context");
+    localStorage.removeItem("rcf_super_admin_active_tab");
+  }, [applyCompanyContext, companies, selectedCompanyId, tabItems]);
+
+  useEffect(() => {
+    if (!selectedCompany) return;
+    const timeout = setTimeout(() => {
+      if (companyNotesDraft !== (selectedCompany.notes || "")) {
+        void saveCompanyNotes();
+      }
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [companyNotesDraft, saveCompanyNotes, selectedCompany]);
 
   if (loading || !accessChecked) {
     return (
@@ -1106,7 +1875,8 @@ export default function RCFB2BAdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid h-auto grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 xl:grid-cols-5">
+          <div className="flex flex-col gap-4">
+            <TabsList className="grid h-auto grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 xl:grid-cols-5">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               const isLink = "href" in tab;
@@ -1151,7 +1921,8 @@ export default function RCFB2BAdminDashboard() {
                 </TabsTrigger>
               );
             })}
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="companies">
             <div className="space-y-6">
@@ -1191,14 +1962,96 @@ export default function RCFB2BAdminDashboard() {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-slate-950">{selectedCompany.name}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-950">{selectedCompany.name}</p>
+                            <Badge variant="outline">{selectedCompany.plan_tier || "free"}</Badge>
+                            {selectedCompany.archived_at ? <Badge variant="destructive">Archived</Badge> : null}
+                            {selectedCompany.require_2fa ? <Badge variant="secondary">2FA Required</Badge> : null}
+                          </div>
                           <p className="text-sm text-slate-500">{selectedCompany.subdomain}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs">
                           <Badge variant="outline">{selectedCompany.memberCount} members</Badge>
                           <Badge variant="outline">{selectedCompany.ownerCount} owners</Badge>
                           <Badge variant="outline">{selectedCompany.adminLevelCount} admin-level</Badge>
+                          <Button variant="outline" size="sm" onClick={() => setCompanyEditOpen((current) => !current)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleSaveCompanyEdits(selectedCompany.archived_at ? "unarchive" : "archive")}
+                            disabled={companyEditLoading}
+                          >
+                            {selectedCompany.archived_at ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                            {selectedCompany.archived_at ? "Unarchive" : "Archive"}
+                          </Button>
                         </div>
+                      </div>
+                      {companyEditOpen ? (
+                        <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-3">
+                          <Input value={editCompanyName} onChange={(event) => setEditCompanyName(event.target.value)} placeholder="Company name" />
+                          <Input value={editCompanySubdomain} onChange={(event) => setEditCompanySubdomain(event.target.value)} placeholder="Subdomain" />
+                          <Select value={editCompanyPlanTier} onValueChange={setEditCompanyPlanTier}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="free">Free</SelectItem>
+                              <SelectItem value="trial">Trial</SelectItem>
+                              <SelectItem value="pro">Pro</SelectItem>
+                              <SelectItem value="enterprise">Enterprise</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="md:col-span-3 flex justify-end">
+                            <Button onClick={() => void handleSaveCompanyEdits()} disabled={companyEditLoading}>
+                              {companyEditLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                              Save Company
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">Require 2FA for all company users</p>
+                            <p className="text-xs text-slate-500">Enforce MFA enrollment before workspace access.</p>
+                          </div>
+                          <Switch
+                            checked={Boolean(selectedCompany.require_2fa)}
+                            disabled={companyEditLoading}
+                            onCheckedChange={async (checked) => {
+                              setCompanyEditLoading(true);
+                              try {
+                                const { error } = await supabase.functions.invoke("update-company", {
+                                  body: {
+                                    company_id: selectedCompany.id,
+                                    require_2fa: checked,
+                                  },
+                                });
+                                if (error) throw error;
+                                await fetchCompanies();
+                                toast({ title: "Company 2FA updated" });
+                              } catch (error) {
+                                toast({
+                                  title: "2FA update failed",
+                                  description: getErrorMessage(error),
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setCompanyEditLoading(false);
+                              }
+                            }}
+                          />
+                        </div>
+                        <Label htmlFor="company-notes">Internal notes (super admin only)</Label>
+                        <Textarea
+                          id="company-notes"
+                          value={companyNotesDraft}
+                          onChange={(event) => setCompanyNotesDraft(event.target.value)}
+                          placeholder="Add internal CRM notes for this company"
+                          className="min-h-[120px] bg-white"
+                        />
+                        <div className="text-xs text-slate-500">{companyNotesSaving ? "Saving..." : "Auto-saves after you stop typing."}</div>
                       </div>
                     </div>
                   ) : null}
@@ -1439,6 +2292,331 @@ export default function RCFB2BAdminDashboard() {
                         </div>
                       </AccordionContent>
                     </AccordionItem>
+
+                    <AccordionItem value="create-user" className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4">
+                      <AccordionTrigger className="py-4 text-left hover:no-underline">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-xl bg-white p-2 text-slate-700">
+                            <UserPlus className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">Create User</div>
+                            <div className="text-xs text-slate-500">Create a regular platform user with a temporary password.</div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="grid gap-3">
+                          <Input placeholder="Full name" value={createUserFullName} onChange={(event) => setCreateUserFullName(event.target.value)} />
+                          <Input placeholder="Email" type="email" value={createUserEmail} onChange={(event) => setCreateUserEmail(event.target.value)} />
+                          <SearchableSelect
+                            value={createUserCompanyId}
+                            onChange={setCreateUserCompanyId}
+                            options={[{ value: "", label: "No company" }, ...companyOptions]}
+                            placeholder="Optional company"
+                            searchPlaceholder="Search companies..."
+                            emptyText="No companies found."
+                          />
+                          {createUserCompanyId ? (
+                            <Select value={createUserCompanyRole} onValueChange={setCreateUserCompanyRole}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="employee">Member</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="partner">Owner</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : null}
+                          <Select value={createUserRoleColor} onValueChange={setCreateUserRoleColor}>
+                            <SelectTrigger><SelectValue placeholder="Optional RoleColor" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="red">Red - Motivator</SelectItem>
+                              <SelectItem value="yellow">Yellow - Executor</SelectItem>
+                              <SelectItem value="green">Green - Architect</SelectItem>
+                              <SelectItem value="blue">Blue - Visionary</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                            <Switch checked={autoGeneratePassword} onCheckedChange={setAutoGeneratePassword} />
+                            <span className="text-sm text-slate-700">Generate temp password</span>
+                          </div>
+                          {autoGeneratePassword ? (
+                            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+                              <div className="flex items-center gap-2">
+                                <Input readOnly value={generatedPassword} />
+                                <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(generatedPassword)}>
+                                  <ClipboardCopy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-4 gap-1">
+                                {Array.from({ length: 4 }).map((_, index) => (
+                                  <div key={index} className={`h-1 rounded-full ${index < getPasswordStrength(generatedPassword) ? "bg-emerald-500" : "bg-slate-200"}`} />
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <Input type="password" placeholder="Manual password" value={manualPassword} onChange={(event) => setManualPassword(event.target.value)} />
+                          )}
+                          <Button disabled={createUserLoading} onClick={handleCreateUser}>
+                            {createUserLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                            Create User
+                          </Button>
+                          {createdUserSummary ? (
+                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-slate-700">
+                              <p className="font-semibold text-emerald-700">User created successfully</p>
+                              <p className="mt-2">Name: {createdUserSummary.full_name}</p>
+                              <p>Email: {createdUserSummary.email}</p>
+                              <p>Company: {createdUserSummary.company_name}</p>
+                              <p>Role: {createdUserSummary.role}</p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <Input readOnly value={createdUserSummary.password || ""} />
+                                <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(createdUserSummary.password || "")}>
+                                  <ClipboardCopy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="announcements" className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4">
+                      <AccordionTrigger className="py-4 text-left hover:no-underline">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-xl bg-white p-2 text-slate-700">
+                            <Bell className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">Announcements</div>
+                            <div className="text-xs text-slate-500">Publish in-app messages to users, companies, or super admins.</div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="grid gap-3">
+                          <Input placeholder="Announcement title" value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} />
+                          <Textarea placeholder="Announcement body (markdown supported)" value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} />
+                          <Select value={announcementAudience} onValueChange={setAnnouncementAudience}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All users</SelectItem>
+                              <SelectItem value="company">Specific company</SelectItem>
+                              <SelectItem value="admins">Super admins only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {announcementAudience === "company" ? (
+                            <SearchableSelect
+                              value={announcementCompanyId}
+                              onChange={setAnnouncementCompanyId}
+                              options={companyOptions}
+                              placeholder="Select company audience"
+                              searchPlaceholder="Search companies..."
+                              emptyText="No companies found."
+                            />
+                          ) : null}
+                          <Input type="datetime-local" value={announcementScheduledAt} onChange={(event) => setAnnouncementScheduledAt(event.target.value)} />
+                          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                            <Switch checked={announcementActive} onCheckedChange={setAnnouncementActive} />
+                            <span className="text-sm text-slate-700">Active</span>
+                          </div>
+                          <Button disabled={announcementSaving} onClick={handleSaveAnnouncement}>
+                            {announcementSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bell className="mr-2 h-4 w-4" />}
+                            Publish Announcement
+                          </Button>
+                          <div className="space-y-2">
+                            {announcements.slice(0, 5).map((announcement) => (
+                              <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-medium text-slate-900">{announcement.title}</span>
+                                  <Badge variant={announcement.is_active ? "default" : "secondary"}>{announcement.is_active ? "Active" : "Inactive"}</Badge>
+                                </div>
+                                <p className="mt-1 text-slate-500">{announcement.audience}</p>
+                                <div className="mt-3 flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      const { error } = await supabase.from("announcements").update({ is_active: !announcement.is_active }).eq("id", announcement.id);
+                                      if (!error) void fetchAnnouncements();
+                                    }}
+                                  >
+                                    {announcement.is_active ? "Deactivate" : "Activate"}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      const { error } = await supabase.from("announcements").delete().eq("id", announcement.id);
+                                      if (!error) void fetchAnnouncements();
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="platform-health" className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4">
+                      <AccordionTrigger className="py-4 text-left hover:no-underline">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-xl bg-white p-2 text-slate-700">
+                            <ShieldAlert className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">Platform Health</div>
+                            <div className="text-xs text-slate-500">Track on-call ownership, recent errors, and incident logging.</div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="grid gap-4">
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">On-call engineer</p>
+                            <div className="mt-3 flex flex-col gap-3 md:flex-row">
+                              <Select value={onCallEngineerEmail} onValueChange={setOnCallEngineerEmail}>
+                                <SelectTrigger><SelectValue placeholder="Select super admin" /></SelectTrigger>
+                                <SelectContent>
+                                  {superAdmins.map((admin) => (
+                                    <SelectItem key={admin.id} value={admin.email}>{admin.email}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button variant="outline" onClick={handleSaveOnCall}>Save On-call</Button>
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Super admin security</p>
+                            <div className="mt-3 flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">Require 2FA for all super admins</p>
+                                <p className="text-xs text-slate-500">Blocks dashboard access until MFA is enrolled.</p>
+                              </div>
+                              <Switch checked={requireSuperAdmin2fa} disabled={savingSuperAdmin2fa} onCheckedChange={(checked) => void handleSaveSuperAdmin2fa(checked)} />
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Recent errors</p>
+                            <div className="mt-3 space-y-2">
+                              {platformErrors.map((errorRow) => (
+                                <div key={errorRow.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium text-slate-900">{errorRow.message}</span>
+                                    <Badge variant={errorRow.resolved_at ? "secondary" : "destructive"}>sev {errorRow.severity}</Badge>
+                                  </div>
+                                  <p className="mt-1 text-slate-500">{formatShortDate(errorRow.created_at)}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Create incident</p>
+                            <div className="mt-3 grid gap-3">
+                              <Select value={incidentCode} onValueChange={setIncidentCode}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="0">Code 0</SelectItem>
+                                  <SelectItem value="1">Code 1</SelectItem>
+                                  <SelectItem value="2">Code 2</SelectItem>
+                                  <SelectItem value="3">Code 3</SelectItem>
+                                  <SelectItem value="4">Code 4</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Textarea placeholder="Incident description" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} />
+                              <Button onClick={handleCreateIncident} disabled={incidentSaving}>
+                                {incidentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Log Incident
+                              </Button>
+                            </div>
+                            <div className="mt-4 space-y-2">
+                              {incidents.map((incident) => (
+                                <div key={incident.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium text-slate-900">{incident.description}</span>
+                                    <Badge variant="outline">{incident.status}</Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="admin-logs" className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4">
+                      <AccordionTrigger className="py-4 text-left hover:no-underline">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-xl bg-white p-2 text-slate-700">
+                            <Eye className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">Admin Action Log</div>
+                            <div className="text-xs text-slate-500">Review mutation history across billing, access, replies, and impersonation.</div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="grid gap-3 md:grid-cols-4">
+                          <Select value={adminActionTypeFilter} onValueChange={setAdminActionTypeFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All actions</SelectItem>
+                              <SelectItem value="billing_change">Billing</SelectItem>
+                              <SelectItem value="trial_set">Trial</SelectItem>
+                              <SelectItem value="admin_assign">Admin Assign</SelectItem>
+                              <SelectItem value="user_create">User Create</SelectItem>
+                              <SelectItem value="password_reset">Password Reset</SelectItem>
+                              <SelectItem value="fee_waiver">Fee Waiver</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={adminActionActorFilter} onValueChange={setAdminActionActorFilter}>
+                            <SelectTrigger><SelectValue placeholder="Actor" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All actors</SelectItem>
+                              {adminActorOptions.map((actor) => (
+                                <SelectItem key={actor.value} value={actor.value}>{actor.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input type="date" value={adminActionDateFrom} onChange={(event) => setAdminActionDateFrom(event.target.value)} />
+                          <Input type="date" value={adminActionDateTo} onChange={(event) => setAdminActionDateTo(event.target.value)} />
+                          <div className="md:col-span-4 flex items-center justify-between">
+                            <div className="text-sm text-slate-500">{adminActionTotalCount} log entries</div>
+                            <div className="flex gap-2">
+                              <Button variant="outline" onClick={() => handleExport("csv", "admin-action-logs")}>Quick CSV</Button>
+                              <Button variant="outline" onClick={fetchAdminActionLogs}>Refresh Logs</Button>
+                            </div>
+                          </div>
+                          <div className="md:col-span-4 rounded-xl border border-slate-200 bg-white">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>When</TableHead>
+                                  <TableHead>Actor</TableHead>
+                                  <TableHead>Action</TableHead>
+                                  <TableHead>Target</TableHead>
+                                  <TableHead>Metadata</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {adminActionLogs.map((log) => (
+                                  <TableRow key={log.id}>
+                                    <TableCell>{formatShortDate(log.created_at)}</TableCell>
+                                    <TableCell>{log.actor_email || "Unknown"}</TableCell>
+                                    <TableCell><Badge variant="outline">{log.action_type}</Badge></TableCell>
+                                    <TableCell>{log.target_label || "—"}</TableCell>
+                                    <TableCell className="max-w-[280px] truncate text-xs text-slate-500">{JSON.stringify(log.metadata)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   </Accordion>
                 </CardContent>
               </Card>
@@ -1459,6 +2637,10 @@ export default function RCFB2BAdminDashboard() {
                         onChange={(event) => setCompanySearch(event.target.value)}
                       />
                     </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                      <Switch checked={includeArchivedCompanies} onCheckedChange={setIncludeArchivedCompanies} />
+                      <span className="text-sm text-slate-700">Include archived</span>
+                    </div>
                     <Button variant="outline" onClick={fetchCompanies} disabled={companiesLoading} className="border-slate-200">
                       {companiesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       <span className="ml-2">Refresh companies</span>
@@ -1466,7 +2648,7 @@ export default function RCFB2BAdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-3 md:grid-cols-4">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Visible companies</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{filteredCompanies.length}</p>
@@ -1758,51 +2940,83 @@ export default function RCFB2BAdminDashboard() {
                     </Button>
                   )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {!selectedCompanyId ? (
                     <div className="py-8 text-center text-muted-foreground">Select a company to view users.</div>
                   ) : companyUsersLoading ? (
                     <div className="py-8 text-center text-muted-foreground">Loading users...</div>
                   ) : (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Email</TableHead>
-                              <TableHead>Role</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Job Role</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {companyUsers.map((member) => (
-                              <TableRow key={member.id}>
-                                <TableCell>{member.full_name || "—"}</TableCell>
-                                <TableCell>{member.email}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{member.role}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={member.status === "active" ? "default" : "secondary"}>
-                                    {member.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{member.job_role || "—"}</TableCell>
-                              </TableRow>
-                            ))}
-                            {companyUsers.length === 0 && (
-                              <TableRow>
-                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                                  No users found for this company.
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
+                    <>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">Pending Invites</p>
+                            <p className="text-xs text-slate-500">Invited users who have not joined yet.</p>
+                          </div>
+                          <Badge variant="outline">{pendingInvites.length}</Badge>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {pendingInvites.slice(0, 5).map((invite) => (
+                            <div key={invite.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 md:flex-row md:items-center md:justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">{invite.email}</p>
+                                <p className="text-xs text-slate-500">Invited {formatShortDate(invite.invited_at || null)}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" disabled={inviteActionUserId === invite.id} onClick={() => void handleInviteAction(invite.id, "resend")}>
+                                  {inviteActionUserId === invite.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                  Resend
+                                </Button>
+                                <Button variant="outline" size="sm" disabled={inviteActionUserId === invite.id} onClick={() => void handleInviteAction(invite.id, "revoke")}>
+                                  {inviteActionUserId === invite.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                  Revoke
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          {pendingInvites.length === 0 ? <p className="text-sm text-slate-500">No pending invites for this company.</p> : null}
+                        </div>
                       </div>
-                    </div>
+                      <div className="overflow-hidden rounded-2xl border border-slate-200">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Job Role</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {companyUsers.map((member) => (
+                                <TableRow key={member.id}>
+                                  <TableCell>{member.full_name || "—"}</TableCell>
+                                  <TableCell>{member.email}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{member.role}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={member.status === "active" ? "default" : "secondary"}>
+                                      {member.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{member.job_role || "—"}</TableCell>
+                                </TableRow>
+                              ))}
+                              {companyUsers.length === 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                    No users found for this company.
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -1942,7 +3156,19 @@ export default function RCFB2BAdminDashboard() {
                 <CardHeader>
                   <CardTitle>All Platform Users</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  {impersonationTarget ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-semibold text-amber-800">Impersonation link — opens a session as this user. Link expires in 1 hour.</p>
+                      <p className="mt-1 text-xs text-amber-700">You are generating an impersonation link. This action is logged.</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Input readOnly value={impersonationTarget.link} />
+                        <Button variant="outline" onClick={() => navigator.clipboard.writeText(impersonationTarget.link)}>
+                          <ClipboardCopy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                   {platformUsersLoading ? (
                     <div className="py-8 text-center text-muted-foreground">Loading platform users...</div>
                   ) : (
@@ -1951,41 +3177,144 @@ export default function RCFB2BAdminDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Email</TableHead>
+                              <TableHead>User</TableHead>
                               <TableHead>B2B Flags</TableHead>
                               <TableHead>Company Count</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {platformUsers.map((platformUser) => (
-                              <TableRow key={platformUser.id}>
-                                <TableCell>{platformUser.email}</TableCell>
-                                <TableCell>
-                                  <div className="flex flex-wrap gap-2">
-                                    {platformUser.is_b2b_owner && <Badge>B2B Owner</Badge>}
-                                    {platformUser.is_b2b_admin_level && <Badge variant="secondary">Admin-Level</Badge>}
-                                    {!platformUser.is_b2b_admin_level && <Badge variant="outline">No B2B Admin Access</Badge>}
-                                  </div>
-                                </TableCell>
-                                <TableCell>{platformUser.b2b_company_count}</TableCell>
-                                <TableCell>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={!platformUser.email || sendingResetTo === platformUser.email}
-                                    onClick={() => handleSendPasswordReset(platformUser.email)}
-                                  >
-                                    {sendingResetTo === platformUser.email ? (
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Mail className="mr-2 h-4 w-4" />
-                                    )}
-                                    Send Reset
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {platformUsers.map((platformUser) => {
+                              const isExpanded = expandedPlatformUserId === platformUser.id;
+                              const sessions = userSessionsByUserId[platformUser.id] || [];
+                              const sessionAccessUnavailable = sessionUnavailableByUserId[platformUser.id];
+                              const isSuperAdminTarget = superAdmins.some((admin) => admin.email.toLowerCase() === (platformUser.email || "").toLowerCase());
+
+                              return (
+                                <Fragment key={platformUser.id}>
+                                  <TableRow key={platformUser.id}>
+                                    <TableCell>
+                                      <div>
+                                        <p className="font-medium text-slate-900">{platformUser.full_name || "Unnamed user"}</p>
+                                        <p className="text-sm text-slate-500">{platformUser.email}</p>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-2">
+                                        {platformUser.is_b2b_owner && <Badge>B2B Owner</Badge>}
+                                        {platformUser.is_b2b_admin_level && <Badge variant="secondary">Admin-Level</Badge>}
+                                        {!platformUser.is_b2b_admin_level && <Badge variant="outline">No B2B Admin Access</Badge>}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{platformUser.b2b_company_count}</TableCell>
+                                    <TableCell>
+                                      <div className="flex flex-wrap gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => void handleTogglePlatformUserExpansion(platformUser.id)}
+                                          disabled={loadingSessionsFor === platformUser.id}
+                                        >
+                                          {loadingSessionsFor === platformUser.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronDown className="mr-2 h-4 w-4" />}
+                                          Sessions
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          disabled={!platformUser.email || sendingResetTo === platformUser.email}
+                                          onClick={() => handleSendPasswordReset(platformUser.email)}
+                                        >
+                                          {sendingResetTo === platformUser.email ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <Mail className="mr-2 h-4 w-4" />
+                                          )}
+                                          Send Reset
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          disabled={!platformUser.email || isSuperAdminTarget || impersonationLoadingFor === platformUser.email}
+                                          onClick={() => platformUser.email && handleGenerateImpersonationLink(platformUser.email)}
+                                        >
+                                          {impersonationLoadingFor === platformUser.email ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+                                          View As
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                  {isExpanded ? (
+                                    <TableRow key={`${platformUser.id}-sessions`}>
+                                      <TableCell colSpan={4} className="bg-slate-50">
+                                        <div className="space-y-3 p-2">
+                                          <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                              <p className="text-sm font-semibold text-slate-900">Active sessions</p>
+                                              <p className="text-xs text-slate-500">Review recent devices and force sign-out when needed.</p>
+                                            </div>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              disabled={signingOutSessionFor === platformUser.id || sessionAccessUnavailable}
+                                              onClick={() => void handleForceSignOut(platformUser.id)}
+                                            >
+                                              {signingOutSessionFor === platformUser.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                                              Sign Out All Sessions
+                                            </Button>
+                                          </div>
+                                          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                            {sessionAccessUnavailable ? (
+                                              <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                                Session inspection is temporarily unavailable in this environment, so sign-out controls are disabled.
+                                              </div>
+                                            ) : null}
+                                            <Table>
+                                              <TableHeader>
+                                                <TableRow>
+                                                  <TableHead>Device</TableHead>
+                                                  <TableHead>IP</TableHead>
+                                                  <TableHead>Created</TableHead>
+                                                  <TableHead>Last Active</TableHead>
+                                                  <TableHead>Action</TableHead>
+                                                </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                {sessions.map((session) => (
+                                                  <TableRow key={session.id}>
+                                                    <TableCell className="max-w-[320px] truncate">{session.user_agent || "Unknown device"}</TableCell>
+                                                    <TableCell>{session.ip || "—"}</TableCell>
+                                                    <TableCell>{formatShortDate(session.created_at)}</TableCell>
+                                                    <TableCell>{formatShortDate(session.updated_at)}</TableCell>
+                                                    <TableCell>
+                                                      <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={signingOutSessionFor === session.id || sessionAccessUnavailable}
+                                                        onClick={() => void handleForceSignOut(platformUser.id, session.id)}
+                                                      >
+                                                        {signingOutSessionFor === session.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                                                        Force Sign Out
+                                                      </Button>
+                                                    </TableCell>
+                                                  </TableRow>
+                                                ))}
+                                                {sessions.length === 0 ? (
+                                                  <TableRow>
+                                                    <TableCell colSpan={5} className="py-6 text-center text-sm text-slate-500">
+                                                      No active sessions found for this user.
+                                                    </TableCell>
+                                                  </TableRow>
+                                                ) : null}
+                                              </TableBody>
+                                            </Table>
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ) : null}
+                                </Fragment>
+                              );
+                            })}
                             {platformUsers.length === 0 && (
                               <TableRow>
                                 <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
@@ -1998,6 +3327,66 @@ export default function RCFB2BAdminDashboard() {
                       </div>
                     </div>
                   )}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Permission Audit View</p>
+                        <p className="text-xs text-slate-500">Elevated access across super admins and company-level admins.</p>
+                      </div>
+                      <Select value={permissionAuditFilter} onValueChange={(value) => setPermissionAuditFilter(value as typeof permissionAuditFilter)}>
+                        <SelectTrigger className="w-[180px] bg-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All elevated users</SelectItem>
+                          <SelectItem value="super_admin">Super admins</SelectItem>
+                          <SelectItem value="company_admin">Company admins</SelectItem>
+                          <SelectItem value="owner">Owners</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role Type</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Granted At</TableHead>
+                            <TableHead>Granted By</TableHead>
+                            <TableHead>Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {permissionAuditRows.map((row) => (
+                            <TableRow key={row.id}>
+                              <TableCell>{row.email}</TableCell>
+                              <TableCell><Badge variant={row.roleType === "super_admin" ? "default" : "secondary"}>{row.roleType}</Badge></TableCell>
+                              <TableCell>{row.company}</TableCell>
+                              <TableCell>{formatShortDate(row.grantedAt || null)}</TableCell>
+                              <TableCell>{row.grantedBy}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={revokingAccessId === row.id}
+                                  onClick={() => void handleRevokeElevatedAccess(row)}
+                                >
+                                  {revokingAccessId === row.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                                  Revoke
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {permissionAuditRows.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="py-6 text-center text-sm text-slate-500">
+                                No elevated users match this filter.
+                              </TableCell>
+                            </TableRow>
+                          ) : null}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -2062,6 +3451,17 @@ export default function RCFB2BAdminDashboard() {
                         <SelectItem value="resolved">Resolved</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Select value={contactAssigneeFilter} onValueChange={setContactAssigneeFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Assignee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All assignees</SelectItem>
+                        {assignableSuperAdmins.map((admin) => (
+                          <SelectItem key={admin.id} value={admin.user_id as string}>{admin.email}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button onClick={fetchContactQueries} disabled={contactQueriesLoading}>
                       {contactQueriesLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -2091,59 +3491,116 @@ export default function RCFB2BAdminDashboard() {
                               <TableHead>Name</TableHead>
                               <TableHead>Email</TableHead>
                               <TableHead>Phone</TableHead>
-                              <TableHead>Message</TableHead>
                               <TableHead>Source</TableHead>
+                              <TableHead>Assigned</TableHead>
+                              <TableHead>Message</TableHead>
                               <TableHead>Status</TableHead>
+                              <TableHead>Reply</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {contactQueries.map((query) => (
-                              <TableRow key={query.id}>
-                                <TableCell>{new Date(query.created_at).toLocaleString()}</TableCell>
-                                <TableCell>{query.name}</TableCell>
-                                <TableCell>{query.email}</TableCell>
-                                <TableCell>{query.phone || "-"}</TableCell>
-                                <TableCell className="max-w-sm whitespace-normal break-words">{query.message}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{query.source_page}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant={
-                                      query.status === "new"
-                                        ? "destructive"
-                                        : query.status === "reviewed"
-                                          ? "secondary"
-                                          : "default"
-                                    }
-                                  >
-                                    {query.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Select
-                                    value={query.status}
-                                    onValueChange={(value) =>
-                                      updateContactQueryStatus(query.id, value as "new" | "reviewed" | "resolved")
-                                    }
-                                    disabled={updatingContactId === query.id}
-                                  >
-                                    <SelectTrigger className="w-[140px]">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="new">New</SelectItem>
-                                      <SelectItem value="reviewed">Reviewed</SelectItem>
-                                      <SelectItem value="resolved">Resolved</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                              </TableRow>
+                              <Fragment key={query.id}>
+                                <TableRow>
+                                  <TableCell>{new Date(query.created_at).toLocaleString()}</TableCell>
+                                  <TableCell>{query.name}</TableCell>
+                                  <TableCell>{query.email}</TableCell>
+                                  <TableCell>{query.phone || "-"}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{query.source_page}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Select
+                                      value={query.assigned_to || "unassigned"}
+                                      onValueChange={(value) => void handleAssignContact(query.id, value === "unassigned" ? "" : value)}
+                                    >
+                                      <SelectTrigger className="w-[180px]">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                        {assignableSuperAdmins.map((admin) => (
+                                          <SelectItem key={admin.id} value={admin.user_id as string}>{admin.email}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell className="max-w-sm whitespace-normal break-words">{query.message}</TableCell>
+                                  <TableCell>
+                                    <Select
+                                      value={query.status}
+                                      onValueChange={(value) =>
+                                        updateContactQueryStatus(query.id, value as "new" | "reviewed" | "resolved")
+                                      }
+                                      disabled={updatingContactId === query.id}
+                                    >
+                                      <SelectTrigger className="w-[140px]">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="new">New</SelectItem>
+                                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                                        <SelectItem value="resolved">Resolved</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={query.reply_status === "replied" ? "default" : "secondary"}>
+                                      {query.reply_status || "pending"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setReplyingContactId(replyingContactId === query.id ? null : query.id);
+                                        if (!replyDraftById[query.id]) {
+                                          setReplyDraftById((current) => ({
+                                            ...current,
+                                            [query.id]: `Hi ${query.name},\n\nThanks for reaching out to RoleColorFinder.\n\n[your reply here]\n\nBest,\nRCF Team`,
+                                          }));
+                                        }
+                                      }}
+                                    >
+                                      <Reply className="mr-2 h-4 w-4" />
+                                      Reply
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                                {replyingContactId === query.id ? (
+                                  <TableRow>
+                                    <TableCell colSpan={9} className="bg-slate-50">
+                                      <div className="space-y-3 p-2">
+                                        <Label htmlFor={`reply-${query.id}`}>Reply to {query.email}</Label>
+                                        <Textarea
+                                          id={`reply-${query.id}`}
+                                          value={replyDraftById[query.id] || ""}
+                                          onChange={(event) =>
+                                            setReplyDraftById((current) => ({
+                                              ...current,
+                                              [query.id]: event.target.value,
+                                            }))
+                                          }
+                                          className="min-h-[160px] bg-white"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                          <Button variant="outline" onClick={() => setReplyingContactId(null)}>Cancel</Button>
+                                          <Button disabled={sendingReplyId === query.id} onClick={() => void handleSendContactReply(query.id)}>
+                                            {sendingReplyId === query.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Reply className="mr-2 h-4 w-4" />}
+                                            Send Reply
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ) : null}
+                              </Fragment>
                             ))}
                             {contactQueries.length === 0 && (
                               <TableRow>
-                                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                                <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                                   No contact queries yet.
                                 </TableCell>
                               </TableRow>
