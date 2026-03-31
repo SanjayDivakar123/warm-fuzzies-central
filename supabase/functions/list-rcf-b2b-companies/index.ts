@@ -1,18 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const ALLOWED_SUPER_ADMINS = new Set([
-  "sanjay@rolecolorfinder.com",
-  "tristan@rolecolorfinder.com",
-  "aaron@rolecolor.com",
-  "kody@rolecolor.com",
-]);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -48,15 +42,15 @@ serve(async (req) => {
       });
     }
 
-    const callerEmail = (user.email || "").toLowerCase();
-    if (!ALLOWED_SUPER_ADMINS.has(callerEmail)) {
+    const callerEmail = normalizeEmail(user.email);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    if (!(await isSuperAdminEmail(supabase, callerEmail))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const [{ data: companies, error: companiesError }, { data: companyUsers, error: companyUsersError }] =
       await Promise.all([

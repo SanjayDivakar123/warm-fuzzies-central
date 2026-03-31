@@ -1,19 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const ALLOWED_SUPER_ADMIN_EMAILS = [
-  "sanjay@rolecolorfinder.com",
-  "tristan@rolecolorfinder.com",
-  "aaron@rolecolor.com",
-  "kody@rolecolor.com",
-];
 
 serve(async (req) => {
   console.log("=== SUPER ADMIN TOGGLE HIRING FUNCTION STARTED ===");
@@ -36,8 +30,8 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     // Verify user is a super admin
-    const userEmail = user.email?.toLowerCase() || "";
-    if (!ALLOWED_SUPER_ADMIN_EMAILS.includes(userEmail)) {
+    const userEmail = normalizeEmail(user.email);
+    if (!(await isSuperAdminEmail(supabase, userEmail))) {
       throw new Error("Unauthorized: Only super admins can perform this action");
     }
 

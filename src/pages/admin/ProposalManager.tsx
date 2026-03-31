@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,11 +20,6 @@ interface ProposalAcceptance {
   status: string;
   created_at: string;
 }
-
-const ALLOWED_SUPER_ADMIN_EMAILS = [
-  "sanjay@rolecolorfinder.com",
-  "tristan@rolecolorfinder.com",
-];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { generateLOIPdf, generateLOEPdf } from "@/lib/proposalPdfExport";
-import { Plus, ExternalLink, Trash2, Edit, Copy, FileText, ArrowLeft, Link, User, ChevronDown, ChevronUp, Download, CheckCircle2, Clock } from "lucide-react";
+import { Plus, ExternalLink, Trash2, Edit, Copy, FileText, ArrowLeft, Download, CheckCircle2, Clock, Search, X, ChevronDown } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -156,6 +151,7 @@ export default function ProposalManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProposalForm>(blankForm());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   /* ------------------------------------------------------------------ */
   /*                           Auth + data load                          */
@@ -191,8 +187,11 @@ export default function ProposalManager() {
       try {
         if (!user) { navigate("/auth"); return; }
 
-        // Super admins via email allowlist
-        if (ALLOWED_SUPER_ADMIN_EMAILS.includes((user.email ?? "").toLowerCase())) {
+        const { error: superAdminError } = await supabase.functions.invoke("manage-super-admins", {
+          body: { action: "list" },
+        });
+
+        if (!superAdminError) {
           setIsAdmin(true);
           await loadProposals();
           setLoading(false);
@@ -343,6 +342,39 @@ export default function ProposalManager() {
     return map[status] ?? "bg-slate-100 text-slate-600";
   }
 
+  const filteredProposals = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return proposals;
+
+    return proposals.filter((proposal) => {
+      const proposalAcceptances = acceptances.filter((acceptance) => acceptance.proposal_slug === proposal.slug);
+      const acceptanceTerms = proposalAcceptances.flatMap((acceptance) => [
+        acceptance.first_name ?? "",
+        acceptance.last_name ?? "",
+        acceptance.email ?? "",
+        acceptance.phone ?? "",
+        acceptance.loi_signed_name ?? "",
+        acceptance.loe_signed_name ?? "",
+        acceptance.designation ?? "",
+        acceptance.status ?? "",
+      ]);
+
+      const searchableText = [
+        proposal.proposal_title,
+        proposal.company_name,
+        proposal.proposal_id,
+        proposal.slug,
+        proposal.submitted_by,
+        proposal.status,
+        ...acceptanceTerms,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [acceptances, proposals, searchQuery]);
+
   function downloadLOI(p: Proposal, acc: ProposalAcceptance) {
     if (!acc.loi_signed_name) return;
     try {
@@ -416,19 +448,51 @@ export default function ProposalManager() {
         <div className="grid grid-cols-4 gap-4 mb-10">
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
             <p className="text-gray-600 text-sm font-medium">Total</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{proposals.length}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.length}</p>
           </div>
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
             <p className="text-gray-600 text-sm font-medium">Active</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{proposals.filter((p) => p.status === "active").length}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "active").length}</p>
           </div>
           <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
             <p className="text-gray-600 text-sm font-medium">Draft</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{proposals.filter((p) => p.status === "draft").length}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{filteredProposals.filter((p) => p.status === "draft").length}</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
             <p className="text-blue-700 text-sm font-medium">Paid Clients</p>
-            <p className="text-3xl font-bold text-blue-900 mt-2">{acceptances.filter((a) => a.payment_status === "paid").length}</p>
+            <p className="text-3xl font-bold text-blue-900 mt-2">
+              {acceptances.filter((a) => a.payment_status === "paid" && filteredProposals.some((p) => p.slug === a.proposal_slug)).length}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Search proposals</h2>
+              <p className="text-sm text-gray-600">
+                Find by proposal title, company, proposal ID, slug, or client contact details.
+              </p>
+            </div>
+            <div className="relative w-full md:max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search proposals..."
+                className="bg-white pl-9 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -442,9 +506,18 @@ export default function ProposalManager() {
               <Plus className="h-4 w-4" /> New Proposal
             </Button>
           </div>
+        ) : filteredProposals.length === 0 ? (
+          <div className="text-center py-16 border border-gray-200 rounded-lg bg-gray-50">
+            <Search className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">No proposals match your search</h3>
+            <p className="text-gray-600 text-sm mb-6">Try a company name, proposal ID, slug, or client contact detail.</p>
+            <Button variant="outline" onClick={() => setSearchQuery("")}>
+              Clear Search
+            </Button>
+          </div>
         ) : (
           <div className="space-y-3">
-            {proposals.map((p) => {
+            {filteredProposals.map((p) => {
               const propAcceptances = acceptances.filter((a) => a.proposal_slug === p.slug);
               const completedAcceptances = propAcceptances.filter((a) => a.status === "completed");
               const isExpanded = expandedAcceptances.has(p.id);

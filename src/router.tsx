@@ -100,6 +100,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
+const WorkspaceLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    <ScrollToTop />
+    {children}
+    <BackToTop />
+  </>
+);
+
 // Export route configuration array for use in App.tsx
 export const routeConfig = [
   {
@@ -268,7 +276,7 @@ export const routeConfig = [
   },
   {
     path: "/admin/rcf-b2b",
-    element: <Layout><RCFB2BAdminDashboard /></Layout>,
+    element: <WorkspaceLayout><RCFB2BAdminDashboard /></WorkspaceLayout>,
   },
   {
     path: "/admin/users",
