@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2 } from "lucide-react";
-import type { Proposal, ProposalPricing } from "@/pages/admin/ProposalManager";
+import type { Proposal } from "@/pages/admin/ProposalManager";
+import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
 
 function interpolate(text: string, companyName: string): string {
   return text.replace(/\{\{companyName\}\}/g, companyName);
@@ -22,7 +23,7 @@ export default function ClientProposal() {
     if (!slug) { setNotFound(true); return; }
 
     Promise.all([
-      supabase.from("client_proposals").select("*").eq("slug", slug).maybeSingle(),
+      fetchLatestProposalBySlug(slug),
       supabase.from("proposal_acceptances")
         .select("id")
         .eq("proposal_slug", slug)
@@ -33,11 +34,7 @@ export default function ClientProposal() {
         setNotFound(true);
         return;
       }
-      const p: Proposal = {
-        ...proposalRes.data,
-        pricing: proposalRes.data.pricing as unknown as ProposalPricing,
-        status: (proposalRes.data.status ?? "active") as "active" | "draft",
-      };
+      const p: Proposal = proposalRes.data;
       setProposal(p);
       document.title = `${p.proposal_title} | RoleColorFinder`;
       if (!paidRes.error && (paidRes.data ?? []).length > 0) {
@@ -121,7 +118,7 @@ export default function ClientProposal() {
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-white/90 p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Submitted by</p>
-                  <p className="text-base font-semibold text-slate-900">{proposal.submittedBy}</p>
+                  <p className="text-base font-semibold text-slate-900">{proposal.submitted_by}</p>
                 </div>
               </div>
             </section>

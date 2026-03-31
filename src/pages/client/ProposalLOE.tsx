@@ -10,7 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateLOEPdf } from "@/lib/proposalPdfExport";
 import { Download, ShieldCheck, PenLine, CheckCircle2, ChevronDown } from "lucide-react";
-import type { Proposal, ProposalPricing } from "@/pages/admin/ProposalManager";
+import type { Proposal } from "@/pages/admin/ProposalManager";
+import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
 
 export default function ProposalLOE() {
   const { slug } = useParams<{ slug: string }>();
@@ -37,7 +38,7 @@ export default function ProposalLOE() {
     if (!acceptanceId) { navigate(`/client/${slug}/loi`); return; }
 
     Promise.all([
-      supabase.from("client_proposals").select("*").eq("slug", slug).maybeSingle(),
+      fetchLatestProposalBySlug(slug),
       supabase.from("proposal_acceptances")
         .select("id")
         .eq("proposal_slug", slug)
@@ -52,11 +53,7 @@ export default function ProposalLOE() {
         return;
       }
 
-      setProposal({
-        ...proposalRes.data,
-        pricing: proposalRes.data.pricing as unknown as ProposalPricing,
-        status: (proposalRes.data.status ?? "active") as "active" | "draft",
-      });
+      setProposal(proposalRes.data);
       document.title = `Letter of Engagement — ${proposalRes.data.proposal_title} | RoleColorFinder`;
     });
   }, [slug, acceptanceId, navigate]);
