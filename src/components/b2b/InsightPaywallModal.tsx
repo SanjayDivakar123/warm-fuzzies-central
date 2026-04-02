@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Lightbulb, CreditCard, Sparkles, Check, Lock } from 'lucide-react';
 import { addInsightCredits } from '@/lib/insightMetering';
 import { useToast } from '@/hooks/use-toast';
-import { convertUsdToLocalB2B, detectCountryCode, formatCurrency } from '@/lib/countryPricing';
+import { formatCurrency } from '@/lib/countryPricing';
 
 interface InsightPaywallModalProps {
   open: boolean;
@@ -32,41 +32,13 @@ export default function InsightPaywallModal({
 }: InsightPaywallModalProps) {
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<number>(5);
-  const [countryCode, setCountryCode] = useState('US');
   const { toast } = useToast();
 
-  useEffect(() => {
-    let mounted = true;
-    detectCountryCode()
-      .then((code) => {
-        if (mounted) setCountryCode(code);
-      })
-      .catch(() => {
-        if (mounted) setCountryCode('US');
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const basePackages = [
-    { credits: 5, usdPrice: 5, popular: false },
-    { credits: 10, usdPrice: 9, popular: true, savings: '10%' },
-    { credits: 25, usdPrice: 20, popular: false, savings: '20%' },
-  ];
-
-  const packages = useMemo(() => {
-    return basePackages.map((pkg) => {
-      const local = convertUsdToLocalB2B(pkg.usdPrice, countryCode);
-      return {
-        ...pkg,
-        localPrice: local.amountLocal,
-        currency: local.currency,
-        country: local.country,
-      };
-    });
-  }, [countryCode]);
+  const packages = useMemo(() => [
+    { credits: 5, usdPrice: 5, localPrice: 5, currency: 'USD', popular: false },
+    { credits: 10, usdPrice: 9, localPrice: 9, currency: 'USD', popular: true, savings: '10%' },
+    { credits: 25, usdPrice: 20, localPrice: 20, currency: 'USD', popular: false, savings: '20%' },
+  ], []);
 
   const handlePurchase = async () => {
     setPurchasing(true);
@@ -75,9 +47,8 @@ export default function InsightPaywallModal({
       const selectedPkg = packages.find((pkg) => pkg.credits === selectedPackage);
       const success = await addInsightCredits(companyId, selectedPackage, {
         amountUsd: selectedPkg?.usdPrice ?? selectedPackage,
-        amountLocal: selectedPkg?.localPrice,
-        currency: selectedPkg?.currency,
-        countryCode,
+        amountLocal: selectedPkg?.usdPrice,
+        currency: 'USD',
       });
       
       if (success) {
@@ -171,10 +142,6 @@ export default function InsightPaywallModal({
                 </CardContent>
               </Card>
             ))}
-          </div>
-
-          <div className="text-xs text-muted-foreground text-center">
-            Prices shown for your location.
           </div>
 
           <div className="text-xs text-muted-foreground text-center">

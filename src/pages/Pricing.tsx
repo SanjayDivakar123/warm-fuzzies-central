@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Check,
@@ -14,7 +14,7 @@ import { BorderTrail } from "@/components/ui/border-trail";
 import { Button } from "@/components/ui/button";
 import { PaymentButton } from "@/components/payment/PaymentButton";
 import { cn } from "@/lib/utils";
-import { detectCountryCode, getLocalizedPrice } from "@/lib/countryPricing";
+import { getLocalizedPrice } from "@/lib/countryPricing";
 
 interface PlanCardProps {
   name: string;
@@ -87,24 +87,8 @@ function PlanCard({
 }
 
 export default function PricingPage() {
-  const [countryCode, setCountryCode] = useState("US");
-
-  useEffect(() => {
-    let mounted = true;
-    detectCountryCode()
-      .then((code) => {
-        if (mounted) setCountryCode(code);
-      })
-      .catch(() => {
-        if (mounted) setCountryCode("US");
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const premiumPrice = useMemo(() => getLocalizedPrice("premium", countryCode), [countryCode]);
-  const proPrice = useMemo(() => getLocalizedPrice("pro", countryCode), [countryCode]);
+  const premiumPrice = useMemo(() => getLocalizedPrice("premium"), []);
+  const proPrice = useMemo(() => getLocalizedPrice("pro"), []);
   const individualPlans: PlanCardProps[] = [
     {
       name: "Free Assessment",
