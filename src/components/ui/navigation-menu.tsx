@@ -47,11 +47,22 @@ const navigationMenuTriggerStyle = cva(
 const NavigationMenuTrigger = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => {
+  const { onClick, ...rest } = props
+  return (
   <NavigationMenuPrimitive.Trigger
     ref={ref}
     className={cn(navigationMenuTriggerStyle(), "group", className)}
-    {...props}
+    {...rest}
+    onClick={(event) => {
+      // Radix toggles the menu closed on trigger click when already open. Hover already
+      // keeps it open; without this, a click while the pointer is still over the trigger
+      // collapses the panel. preventDefault skips Radix's internal toggle (see composeEventHandlers).
+      if (event.currentTarget.getAttribute("data-state") === "open") {
+        event.preventDefault()
+      }
+      onClick?.(event)
+    }}
   >
     {children}{" "}
     <ChevronDown
@@ -59,7 +70,8 @@ const NavigationMenuTrigger = React.forwardRef<
       aria-hidden="true"
     />
   </NavigationMenuPrimitive.Trigger>
-))
+  )
+})
 NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName
 
 const NavigationMenuContent = React.forwardRef<

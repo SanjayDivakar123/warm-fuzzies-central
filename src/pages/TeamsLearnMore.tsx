@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BrainCircuit,
@@ -18,12 +19,24 @@ import { Navbar } from "@/components/navigation/Navbar";
 import { Button } from "@/components/ui/button";
 import { TeamPerformanceChart } from "@/components/TeamPerformanceChart";
 import { B2BInsightsDemoPreview } from "@/components/marketing/B2BInsightsDemoPreview";
+import { ViewportFadeSections } from "@/components/marketing/ViewportFadeSections";
 
-function BentoCard({ className, children }: { className?: string; children: React.ReactNode }) {
+function BentoCard({
+  className,
+  children,
+  tight,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  /** Denser padding for one-screen slides */
+  tight?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20",
+        tight
+          ? "rounded-xl border border-border bg-card p-2.5 sm:p-3 shadow-sm"
+          : "rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20",
         className
       )}
     >
@@ -32,32 +45,40 @@ function BentoCard({ className, children }: { className?: string; children: Reac
   );
 }
 
-function SectionBlock({
-  id,
+function SlideChrome({
   eyebrow,
   title,
   children,
+  maxWidthClassName = "max-w-6xl",
 }: {
-  id: string;
   eyebrow: string;
   title: string;
   children: React.ReactNode;
+  /** Wider slides (e.g. B2B story) use more of the viewport. */
+  maxWidthClassName?: string;
 }) {
   return (
-    <motion.section
-      id={id}
-      className="scroll-mt-28 py-14 sm:py-20 border-b border-border/60 last:border-0"
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
+    <div
+      className={cn(
+        "h-full min-h-0 flex flex-col px-3 sm:px-5 lg:px-8 mx-auto w-full pb-2 sm:pb-3 overflow-hidden",
+        maxWidthClassName
+      )}
     >
-      <div className="container mx-auto max-w-6xl px-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">{eyebrow}</p>
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground mb-8">{title}</h2>
-        {children}
+      {/* Center the whole slide (title + body) so every stage matches Guesswork optically */}
+      <div className="flex-1 min-h-0 flex flex-col justify-center w-full overflow-hidden">
+        <div className="w-full min-h-0 max-h-full overflow-hidden flex flex-col">
+          <div className="shrink-0 mb-1 sm:mb-1.5">
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary leading-none">
+              {eyebrow}
+            </p>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold tracking-tight text-foreground leading-tight mt-0.5">
+              {title}
+            </h2>
+          </div>
+          <div className="flex-1 min-h-0 w-full overflow-hidden">{children}</div>
+        </div>
       </div>
-    </motion.section>
+    </div>
   );
 }
 
@@ -105,107 +126,128 @@ const PORTAL_FEATURES = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TeamsLearnMore() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <div className="container mx-auto max-w-6xl px-4 pt-36 sm:pt-44 pb-8 text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">RoleColor™ for Teams</p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-          Transform your team with clarity.
-        </h1>
-        <p className="mt-3 text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
-          Scroll through four ideas, then see everything the B2B portal includes.
-        </p>
-      </div>
-
-      {/* 1 — Guesswork */}
-      <SectionBlock id="guesswork" eyebrow="01" title="Guesswork">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <BentoCard className="flex flex-col items-center justify-center text-center min-h-[160px]">
-            <p className="text-5xl sm:text-6xl font-black text-foreground tabular-nums">78%</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">Leader-reported engagement</p>
-            <p className="mt-1 text-xs text-muted-foreground max-w-[12rem]">Often assumed, rarely validated with data.</p>
-          </BentoCard>
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mb-3">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Secure in feeling, not in fact</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Most teams operate on gut instinct about who is engaged, who collaborates well, and who fits their role. None of it is measured until something breaks.
-            </p>
-          </BentoCard>
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-3">
-              <TrendingDown className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-3">Other assumptions</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <span className="font-bold text-foreground">82%</span> think communication is working
-              </li>
-              <li>
-                <span className="font-bold text-foreground">70%</span> assume people are in the right roles
-              </li>
-            </ul>
-            <p className="mt-3 text-xs italic text-muted-foreground">None of these are measured. All of them are guessed.</p>
-          </BentoCard>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BentoCard className="p-0 overflow-hidden">
-            <TeamPerformanceChart />
-          </BentoCard>
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mb-3">
-              <Zap className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">The gap in one chart</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Perceived performance stays high while actual performance falls as work gets harder. Optimized performance is what becomes possible when you align people to how they actually work.
-            </p>
-            <div className="rounded-xl bg-muted/50 border border-border p-4 text-xs text-muted-foreground space-y-2">
-              <p>
-                <span className="font-semibold text-foreground">Leaders believe </span>~78% average engagement.
+  const viewportSlides = useMemo(
+    () => [
+      <SlideChrome key="guesswork" eyebrow="01" title="Guesswork" maxWidthClassName="max-w-[min(100%,86rem)]">
+        <div className="grid min-h-0 flex-1 w-full grid-cols-1 gap-3 sm:gap-4 lg:h-full lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-5 lg:items-start content-stretch">
+          {/* Left: three facts stacked and fully visible */}
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:gap-2.5 lg:self-start">
+            <BentoCard tight className="flex min-h-0 flex-row items-center gap-2.5 px-2 py-2 text-left sm:gap-3">
+              <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tabular-nums leading-none shrink-0">
+                78%
               </p>
-              <p>
-                <span className="font-semibold text-foreground">Reality: </span>21% engagement and 86% collaboration pain are common benchmarks in the literature.
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">With RoleColor™ </span>teams can close that gap with visibility, not hope.
-              </p>
-            </div>
-          </BentoCard>
-        </div>
-      </SectionBlock>
-
-      {/* 2 — Insight */}
-      <SectionBlock id="insight" eyebrow="02" title="Insight">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <BentoCard>
-            <p className="text-4xl font-black text-red-500 tabular-nums">21%</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Average engagement</p>
-            <p className="mt-1 text-xs text-muted-foreground">Across many organizations, real engagement is far below what leaders assume.</p>
-          </BentoCard>
-          <BentoCard>
-            <p className="text-4xl font-black text-orange-500 tabular-nums">86%</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Collaboration friction</p>
-            <p className="mt-1 text-xs text-muted-foreground">Teams cite working together as a top pain when roles and strengths are unclear.</p>
-          </BentoCard>
-          <BentoCard>
-            <p className="text-4xl font-black text-red-500 tabular-nums">50%</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Performance drop</p>
-            <p className="mt-1 text-xs text-muted-foreground">From early onboarding to peak complexity, output often falls without clear cause.</p>
-          </BentoCard>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-          <div className="space-y-4 min-w-0">
-            <BentoCard>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mb-3">
-                <Fingerprint className="h-5 w-5 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-semibold text-foreground leading-tight">Leader-reported engagement</p>
+                <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                  Often assumed, rarely validated with data.
+                </p>
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Why it happens</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+            </BentoCard>
+            <BentoCard tight className="min-h-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 mb-1">
+                <Shield className="h-3 w-3 text-primary" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5 leading-tight">
+                Secure in feeling, not in fact
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Most teams operate on gut instinct about who is engaged, who collaborates well, and who fits their role. None
+                of it is measured until something breaks.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="min-h-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted mb-1">
+                <TrendingDown className="h-3 w-3 text-muted-foreground" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5">Other assumptions</h3>
+              <ul className="space-y-0 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                <li>
+                  <span className="font-bold text-foreground">82%</span> think communication is working
+                </li>
+                <li>
+                  <span className="font-bold text-foreground">70%</span> assume people are in the right roles
+                </li>
+              </ul>
+              <p className="mt-0.5 text-[9px] italic text-muted-foreground leading-snug">
+                None of these are measured. All of them are guessed.
+              </p>
+            </BentoCard>
+          </div>
+
+          {/* Right: single card — tall chart for a stronger visual gap */}
+          <div className="flex min-h-0 w-full min-w-0 flex-col lg:h-full lg:self-stretch">
+            <BentoCard tight className="flex h-full min-h-0 flex-col overflow-hidden p-0">
+              <div className="shrink-0 border-b border-border/50 px-3 pt-2 pb-1 sm:px-4">
+                <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  The Performance Gap
+                </p>
+                <h3 className="text-[11px] sm:text-xs lg:text-sm font-bold text-foreground leading-snug mt-1 line-clamp-2">
+                  The Gap Between How Teams Are Perceived, How They Operate, and How They Could Perform
+                </h3>
+              </div>
+              <div className="flex min-h-[170px] flex-[1.15] flex-col border-b border-border/40 sm:min-h-[190px] lg:min-h-[210px]">
+                <TeamPerformanceChart viewport />
+              </div>
+              <div className="shrink-0 px-3 py-1.5 sm:px-4 sm:py-2">
+                <div className="mb-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                  <Zap className="h-3 w-3 text-primary" />
+                </div>
+                <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5">The gap in one chart</h3>
+                <p className="mb-1.5 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                  Perceived performance stays high while actual performance falls as work gets harder. Optimized performance is
+                  what becomes possible when you align people to how they actually work.
+                </p>
+                <div className="space-y-0.5 rounded-md border border-border bg-muted/50 p-1.5 text-[9px] sm:text-[10px] text-muted-foreground leading-snug">
+                  <p>
+                    <span className="font-semibold text-foreground">Leaders believe </span>~78% average engagement.
+                  </p>
+                  <p>
+                    <span className="font-semibold text-foreground">Reality: </span>21% engagement and 86% collaboration pain
+                    are common benchmarks in the literature.
+                  </p>
+                  <p>
+                    <span className="font-semibold text-foreground">With RoleColor™ </span>teams can close that gap with
+                    visibility, not hope.
+                  </p>
+                </div>
+              </div>
+            </BentoCard>
+          </div>
+        </div>
+      </SlideChrome>,
+
+      <SlideChrome key="insight" eyebrow="02" title="Insight">
+        <div className="flex flex-col gap-2 lg:gap-4 w-full min-h-0 h-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 lg:gap-4 lg:flex-1 lg:h-full">
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-red-500 tabular-nums leading-none">21%</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Average engagement</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Across many organizations, real engagement is far below what leaders assume.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-orange-500 tabular-nums leading-none">86%</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Collaboration friction</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Teams cite working together as a top pain when roles and strengths are unclear.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-red-500 tabular-nums leading-none">50%</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Performance drop</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                From early onboarding to peak complexity, output often falls without clear cause.
+              </p>
+            </BentoCard>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-4 items-stretch content-stretch lg:flex-1 lg:h-full">
+            <BentoCard tight className="shrink-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 mb-1">
+                <Fingerprint className="h-3 w-3 text-primary" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5">Why it happens</h3>
+              <ul className="space-y-0.5 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
                 {[
                   "No shared framework for role clarity",
                   "Tasks go to whoever is available, not whoever is wired for the work",
@@ -213,142 +255,172 @@ export default function TeamsLearnMore() {
                   "Hiring repeats the same composition mistakes",
                   "Reviews reward activity, not fit",
                 ].map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <span className="text-primary mt-0.5">•</span>
+                  <li key={item} className="flex gap-1">
+                    <span className="text-primary shrink-0 mt-0.5">•</span>
                     {item}
                   </li>
                 ))}
               </ul>
             </BentoCard>
-            <BentoCard>
-              <p className="text-lg font-semibold text-foreground leading-snug">
+            <BentoCard tight className="shrink-0 py-2">
+              <p className="text-xs sm:text-sm font-semibold text-foreground leading-snug">
                 Performance does not drop from lack of effort. It drops from misalignment.
               </p>
-              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                On the Assessments tab, admins open <span className="font-medium text-foreground">Insights</span> to read
-                AI team leadership analysis: team overview, each person&apos;s fit, and recommendations. The preview on
-                the right mirrors that experience with sample data.
+              <p className="mt-1.5 text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
+                Insight means seeing how your team actually thinks, works, and collaborates, not how you wish they did. That
+                is the job RoleColor does at scale.
               </p>
             </BentoCard>
           </div>
-          <B2BInsightsDemoPreview />
         </div>
-      </SectionBlock>
+      </SlideChrome>,
 
-      {/* 3 — Alignment */}
-      <SectionBlock id="alignment" eyebrow="03" title="Alignment">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <BentoCard>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_0_3px_rgba(96,165,250,0.25)]" />
-              <span className="font-semibold text-foreground">Blues</span>
-            </div>
-            <p className="text-sm text-muted-foreground">Strategy, vision, and direction under pressure.</p>
-          </BentoCard>
-          <BentoCard>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-3 w-3 rounded-full bg-green-400 shadow-[0_0_0_3px_rgba(74,222,128,0.25)]" />
-              <span className="font-semibold text-foreground">Greens</span>
-            </div>
-            <p className="text-sm text-muted-foreground">Execution, reliability, and follow-through.</p>
-          </BentoCard>
-          <BentoCard>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-3 w-3 rounded-full bg-red-400 shadow-[0_0_0_3px_rgba(248,113,113,0.25)]" />
-              <span className="font-semibold text-foreground">Reds</span>
-            </div>
-            <p className="text-sm text-muted-foreground">Urgency, results, and driving hard problems.</p>
-          </BentoCard>
+      <SlideChrome key="alignment" eyebrow="03" title="Alignment">
+        <div className="flex flex-col gap-2 lg:gap-4 w-full min-h-0 h-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 lg:gap-4 lg:flex-1 lg:h-full">
+            <BentoCard tight className="py-2 shrink-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="h-2 w-2 rounded-full bg-blue-400 shadow-[0_0_0_2px_rgba(96,165,250,0.25)]" />
+                <span className="text-[11px] sm:text-xs font-semibold text-foreground">Blues</span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Strategy, vision, and direction under pressure.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_0_2px_rgba(74,222,128,0.25)]" />
+                <span className="text-[11px] sm:text-xs font-semibold text-foreground">Greens</span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Execution, reliability, and follow-through.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="h-2 w-2 rounded-full bg-red-400 shadow-[0_0_0_2px_rgba(248,113,113,0.25)]" />
+                <span className="text-[11px] sm:text-xs font-semibold text-foreground">Reds</span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                Urgency, results, and driving hard problems.
+              </p>
+            </BentoCard>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-4 items-stretch content-stretch lg:flex-1 lg:h-full">
+            <BentoCard tight className="shrink-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 mb-1">
+                <Sparkles className="h-3 w-3 text-primary" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5">The full color map</h3>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground mb-1.5 leading-snug">
+                Yellows connect people and culture. Together, the four colors describe how work really gets done on your team.
+              </p>
+              <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.25)]" />
+                <span className="text-[11px] font-semibold text-foreground">Yellows</span>
+                <span className="text-[10px] text-muted-foreground">relationships and team glue.</span>
+              </div>
+              <p className="text-[11px] font-semibold text-primary">Match the work to the wiring.</p>
+            </BentoCard>
+            <BentoCard tight className="shrink-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted mb-1">
+                <BrainCircuit className="h-3 w-3 text-foreground" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-0.5">AI Work Matrix</h3>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground mb-1.5 leading-snug">
+                Tasks and projects route to the people whose profiles fit the work. The system learns your team over time.
+              </p>
+              <div className="space-y-1 text-[10px] sm:text-[11px]">
+                {[
+                  { from: "Available person", to: "Right-color person" },
+                  { from: "Gut-feel assignment", to: "Profile-matched task" },
+                  { from: "Random project teams", to: "Complementary strengths" },
+                ].map(({ from, to }) => (
+                  <div key={to} className="flex flex-col border-l-2 border-primary/30 pl-1.5">
+                    <span className="text-[9px] text-muted-foreground line-through leading-tight">{from}</span>
+                    <span className="font-medium text-foreground leading-tight">{to}</span>
+                  </div>
+                ))}
+              </div>
+            </BentoCard>
+          </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mb-3">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-3">The full color map</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Yellows connect people and culture. Together, the four colors describe how work really gets done on your team.
-            </p>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="h-3 w-3 rounded-full bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.25)]" />
-              <span className="font-semibold text-foreground">Yellows</span>
-              <span className="text-sm text-muted-foreground">— relationships and team glue.</span>
-            </div>
-            <p className="text-sm font-semibold text-primary">Match the work to the wiring.</p>
-          </BentoCard>
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-3">
-              <BrainCircuit className="h-5 w-5 text-foreground" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">AI Work Matrix</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Tasks and projects route to the people whose profiles fit the work. The system learns your team over time.
-            </p>
-            <div className="space-y-2 text-sm">
-              {[
-                { from: "Available person", to: "Right-color person" },
-                { from: "Gut-feel assignment", to: "Profile-matched task" },
-                { from: "Random project teams", to: "Complementary strengths" },
-              ].map(({ from, to }) => (
-                <div key={to} className="flex flex-col border-l-2 border-primary/30 pl-3">
-                  <span className="text-xs text-muted-foreground line-through">{from}</span>
-                  <span className="font-medium text-foreground">{to}</span>
-                </div>
-              ))}
-            </div>
-          </BentoCard>
-        </div>
-      </SectionBlock>
+      </SlideChrome>,
 
-      {/* 4 — Performance */}
-      <SectionBlock id="performance" eyebrow="04" title="Performance">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <BentoCard>
-            <p className="text-4xl font-black text-primary tabular-nums">5x</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Target likelihood</p>
-            <p className="mt-1 text-xs text-muted-foreground">When people land in roles that fit how they work.</p>
-          </BentoCard>
-          <BentoCard>
-            <p className="text-4xl font-black text-primary tabular-nums">40%</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Faster projects</p>
-            <p className="mt-1 text-xs text-muted-foreground">With teams composed for complementary strengths.</p>
-          </BentoCard>
-          <BentoCard>
-            <p className="text-4xl font-black text-primary tabular-nums">60%</p>
-            <p className="mt-2 text-sm font-medium text-foreground">Lower turnover</p>
-            <p className="mt-1 text-xs text-muted-foreground">When hiring closes real gaps in team composition.</p>
-          </BentoCard>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BentoCard>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mb-3">
-              <Users className="h-5 w-5 text-primary" />
+      <SlideChrome key="performance" eyebrow="04" title="Performance">
+        <div className="flex flex-col gap-2 lg:gap-4 w-full min-h-0 h-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 lg:gap-4 lg:flex-1 lg:h-full">
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-primary tabular-nums leading-none">5x</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Target likelihood</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                When people land in roles that fit how they work.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-primary tabular-nums leading-none">40%</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Faster projects</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                With teams composed for complementary strengths.
+              </p>
+            </BentoCard>
+            <BentoCard tight className="py-2 shrink-0">
+              <p className="text-xl sm:text-2xl font-black text-primary tabular-nums leading-none">60%</p>
+              <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-foreground">Lower turnover</p>
+              <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                When hiring closes real gaps in team composition.
+              </p>
+            </BentoCard>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-4 items-stretch content-stretch lg:flex-1 lg:h-full">
+            <BentoCard tight className="shrink-0 py-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 mb-1">
+                <Users className="h-3 w-3 text-primary" />
+              </div>
+              <h3 className="text-[11px] sm:text-xs font-semibold text-foreground mb-1">From guesswork to system</h3>
+              <div className="space-y-1 text-[10px] sm:text-[11px]">
+                {[
+                  { before: "Guessing who's engaged", after: "Live color distribution map" },
+                  { before: "Tasks by availability", after: "AI-matched by strength" },
+                  { before: "Hiring by resume alone", after: "Hiring to fill team gaps" },
+                  { before: "Reviews by gut feel", after: "Reports by color profile" },
+                ].map(({ before, after }) => (
+                  <div key={after} className="flex flex-col border-l-2 border-border pl-1.5">
+                    <span className="text-[9px] text-muted-foreground line-through leading-tight">{before}</span>
+                    <span className="font-medium text-foreground leading-tight">{after}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
+                <span className="font-semibold text-foreground">$12 USD</span> per platform member, billed monthly (see pricing
+                below). Deployment and hiring tiers are customizable. Clarity creates performance; performance creates growth.
+              </p>
+            </BentoCard>
+            <div className="w-full min-w-0 lg:h-full">
+              <B2BInsightsDemoPreview dense />
             </div>
-            <h3 className="font-semibold text-foreground mb-3">From guesswork to system</h3>
-            <div className="space-y-2 text-sm">
-              {[
-                { before: "Guessing who's engaged", after: "Live color distribution map" },
-                { before: "Tasks by availability", after: "AI-matched by strength" },
-                { before: "Hiring by resume alone", after: "Hiring to fill team gaps" },
-                { before: "Reviews by gut feel", after: "Reports by color profile" },
-              ].map(({ before, after }) => (
-                <div key={after} className="flex flex-col border-l-2 border-border pl-3">
-                  <span className="text-xs text-muted-foreground line-through">{before}</span>
-                  <span className="font-medium text-foreground">{after}</span>
-                </div>
-              ))}
-            </div>
-          </BentoCard>
-          <BentoCard className="bg-muted/40">
-            <h3 className="font-semibold text-foreground mb-2">With RoleColor™</h3>
-            <p className="text-3xl font-black text-foreground">$12 USD</p>
-            <p className="text-sm text-muted-foreground">per platform member, billed monthly. Deployment and hiring tiers are customizable.</p>
-            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              Clarity creates performance. Performance creates growth.
-            </p>
-          </BentoCard>
+          </div>
         </div>
-      </SectionBlock>
+      </SlideChrome>,
+    ],
+    []
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+
+      <div className="container mx-auto max-w-6xl px-4 pt-32 sm:pt-36 pb-6 sm:pb-8 text-center">
+        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">RoleColor™ for Teams</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+          Transform your team with clarity.
+        </h1>
+        <p className="mt-2 sm:mt-3 text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
+          Scroll slowly: each idea fills the screen, then fades into the next. After that, the full platform breakdown is below.
+        </p>
+      </div>
+
+      <ViewportFadeSections sections={viewportSlides} />
 
       {/* Platform features */}
       <motion.div
@@ -409,11 +481,7 @@ export default function TeamsLearnMore() {
           </div>
         </BentoCard>
 
-        <div className="rounded-2xl border border-border bg-muted/40 p-5 mb-10 text-sm text-muted-foreground">
-          <p className="font-semibold text-foreground mb-1">Fully customizable pricing</p>
-          Platform deployment, core platform access, and hiring intelligence tiers are all scoped to your team's size and needs, making it{" "}
-          <span className="font-semibold text-foreground">as low as $12 USD per platform member</span>. Talk to us and we'll build the right plan together.
-        </div>
+      
 
         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
           <Button size="lg" className="w-full sm:w-auto rounded-full px-10" asChild>

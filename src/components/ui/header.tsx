@@ -127,13 +127,24 @@ function Header1() {
   }, [user]);
 
   useEffect(() => {
-    const onScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+    const compute = () => {
+      const storyPin = document.documentElement.hasAttribute("data-rc-story-pin");
+      // While the Teams story is pinned, ignore scrollY so the bar stays one style
+      // through all crossfade stages (scroll position still moves during scrub).
+      setIsScrolled(storyPin ? true : window.scrollY > 24);
     };
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    compute();
+    window.addEventListener("scroll", compute, { passive: true });
+    const obs = new MutationObserver(compute);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-rc-story-pin"],
+    });
+    return () => {
+      window.removeEventListener("scroll", compute);
+      obs.disconnect();
+    };
   }, []);
 
   return (
