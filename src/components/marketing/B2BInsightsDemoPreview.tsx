@@ -73,22 +73,25 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
   const [scrollTransition, setScrollTransition] = useState<{ duration: number }>({ duration: 0.35 });
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const reportViewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const johnRowRef = useRef<HTMLDivElement>(null);
+  const johnNameRef = useRef<HTMLSpanElement>(null);
   const runIdRef = useRef(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const measureMaxScroll = useCallback(() => {
-    const vp = viewportRef.current;
+    const vp = reportViewportRef.current;
     const inner = contentRef.current;
     if (!vp || !inner) return 0;
-    // Small extra nudge so the last lines of the report sit fully in view
-    return Math.min(0, vp.clientHeight - inner.scrollHeight - 10);
+    // Measure against the actual report viewport so the footer close bar does not
+    // steal the last lines of content.
+    return Math.min(0, vp.clientHeight - inner.scrollHeight - 8);
   }, []);
 
   /** Scroll offset (≤0) so John’s row sits under the modal header for the name click. */
   const computeScrollToJohnRow = useCallback(() => {
-    const vp = viewportRef.current;
+    const vp = reportViewportRef.current;
     const row = johnRowRef.current;
     const inner = contentRef.current;
     if (!vp || !row || !inner) return 0;
@@ -98,6 +101,34 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
     const delta = wantTop - rowRect.top;
     const maxY = Math.min(0, vp.clientHeight - inner.scrollHeight);
     return Math.max(maxY, Math.min(0, delta));
+  }, []);
+
+  const getCursorTargetForInsightsButton = useCallback(() => {
+    const root = viewportRef.current;
+    const button = root?.querySelector("[data-demo-insights-btn]");
+    if (!root || !(button instanceof HTMLElement)) {
+      return { x: 86, y: 26 };
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    const x = ((buttonRect.left + buttonRect.width / 2 - rootRect.left) / rootRect.width) * 100;
+    const y = ((buttonRect.top + buttonRect.height / 2 - rootRect.top) / rootRect.height) * 100;
+    return { x, y };
+  }, []);
+
+  const getCursorTargetForJohnName = useCallback(() => {
+    const root = viewportRef.current;
+    const name = johnNameRef.current;
+    if (!root || !name) {
+      return { x: 35, y: 52 };
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const nameRect = name.getBoundingClientRect();
+    const x = ((nameRect.left + Math.min(nameRect.width * 0.45, 72) - rootRect.left) / rootRect.width) * 100;
+    const y = ((nameRect.top + nameRect.height / 2 - rootRect.top) / rootRect.height) * 100;
+    return { x, y };
   }, []);
 
   useLayoutEffect(() => {
@@ -137,7 +168,8 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
         await wait(500);
         if (cancelled()) return;
 
-        setC({ x: 86, y: 26, clicking: false });
+        const insightsTarget = getCursorTargetForInsightsButton();
+        setC({ x: insightsTarget.x, y: insightsTarget.y, clicking: false });
         await wait(950);
         if (cancelled()) return;
 
@@ -153,7 +185,7 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
         setJohnExpanded(false);
         setScrollY(0);
         setScrollTransition({ duration: 0.35 });
-        await wait(750);
+        await wait(1800);
         if (cancelled()) return;
 
         // ——— Scroll report so “John Smith” is in view (still collapsed) ———
@@ -162,18 +194,19 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
         );
         if (cancelled()) return;
 
-        setScrollTransition({ duration: 1.05 });
+        setScrollTransition({ duration: 1.55 });
         const toJohn = computeScrollToJohnRow();
         setScrollY(toJohn);
-        await wait(1150);
+        await wait(1700);
         if (cancelled()) return;
 
         // ——— Cursor onto John Smith name, click to expand ———
-        setC({ visible: true, x: 48, y: 42, clicking: false });
-        await wait(600);
+        const johnTarget = getCursorTargetForJohnName();
+        setC({ visible: true, x: johnTarget.x + 8, y: johnTarget.y - 6, clicking: false });
+        await wait(500);
         if (cancelled()) return;
 
-        setC({ x: 36, y: 52, clicking: false });
+        setC({ x: johnTarget.x, y: johnTarget.y, clicking: false });
         await wait(750);
         if (cancelled()) return;
 
@@ -182,13 +215,13 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
         if (cancelled()) return;
         setC({ clicking: false });
         setJohnExpanded(true);
-        await wait(480);
+        await wait(900);
         if (cancelled()) return;
 
         setC({ visible: false });
 
         // ——— Faster scroll through full report to the bottom ———
-        await wait(320);
+        await wait(420);
         if (cancelled()) return;
 
         await new Promise<void>((resolve) =>
@@ -203,14 +236,14 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
           const dur = Math.max(5, Math.min(10.5, scrollDistance / 48));
           setScrollTransition({ duration: dur });
           setScrollY(maxY);
-          await wait(dur * 1000 + 550);
+          await wait(dur * 1000 + 350);
         } else {
-          await wait(1400);
+          await wait(900);
         }
         if (cancelled()) return;
 
         // Hold on last content, then restart
-        await wait(3200);
+        await wait(1500);
         if (cancelled()) return;
       }
     }
@@ -222,14 +255,14 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
       timersRef.current.forEach(clearTimeout);
       timersRef.current = [];
     };
-  }, [computeScrollToJohnRow, measureMaxScroll]);
+  }, [computeScrollToJohnRow, getCursorTargetForInsightsButton, getCursorTargetForJohnName, measureMaxScroll]);
 
   return (
-    <div className="relative w-full max-w-xl mx-auto lg:mx-0 lg:max-w-none">
+    <div className="relative flex h-full w-full max-w-xl flex-col mx-auto lg:mx-0 lg:max-w-none">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-center lg:text-left">
         Demo preview (illustrative)
       </p>
-      <div className="rounded-xl border border-border bg-muted/40 p-2 shadow-md">
+      <div className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-muted/40 p-2 shadow-md">
         <div className="flex items-center gap-2 rounded-t-lg bg-muted/80 px-3 py-2 border-b border-border">
           <div className="flex gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
@@ -244,8 +277,8 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
         <div
           ref={viewportRef}
           className={cn(
-            "relative overflow-hidden rounded-b-lg bg-background",
-            dense ? "h-[min(240px,32vh)] sm:h-[280px]" : "h-[min(440px,58vh)] sm:h-[500px]"
+            "relative flex-1 min-h-0 overflow-hidden rounded-b-lg bg-background",
+            dense ? "h-[min(260px,36vh)] sm:h-full" : "h-[min(440px,58vh)] sm:h-[500px]"
           )}
         >
           <FakeCursor state={cursor} />
@@ -333,7 +366,7 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
                   </div>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-hidden relative">
+                <div ref={reportViewportRef} className="flex-1 min-h-0 overflow-hidden relative">
                   <motion.div
                     ref={contentRef}
                     className="px-4 sm:px-5 pb-10 space-y-5 sm:space-y-6 will-change-transform"
@@ -448,7 +481,7 @@ export function B2BInsightsDemoPreview({ dense = false }: { dense?: boolean }) {
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="font-semibold text-sm">John Smith</span>
+                                <span ref={johnNameRef} className="font-semibold text-sm">John Smith</span>
                                 <Badge
                                   className="text-[9px] border-0 h-5 px-1.5"
                                   style={{ backgroundColor: JOHN_COLOR, color: "white" }}

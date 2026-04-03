@@ -129,9 +129,9 @@ function Header1() {
   useEffect(() => {
     const compute = () => {
       const storyPin = document.documentElement.hasAttribute("data-rc-story-pin");
-      // While the Teams story is pinned, ignore scrollY so the bar stays one style
-      // through all crossfade stages (scroll position still moves during scrub).
-      setIsScrolled(storyPin ? true : window.scrollY > 24);
+      // While the Teams story is pinned, keep the header in its top/flush state
+      // even though scrollY is still changing during the scrubbed GSAP sequence.
+      setIsScrolled(storyPin ? false : window.scrollY > 24);
     };
 
     compute();

@@ -70,7 +70,7 @@ export function TeamPerformanceChart({
   viewport?: boolean;
 }) {
   const chartHeight = viewport
-    ? "h-full min-h-[150px] flex-1 aspect-auto w-full"
+    ? "h-full min-h-[140px] flex-1 aspect-auto w-full"
     : compact
       ? "h-[200px] w-full"
       : "h-[280px] w-full";
@@ -80,7 +80,7 @@ export function TeamPerformanceChart({
     <div
       className={
         viewport
-          ? "flex h-full min-h-0 w-full flex-1 flex-col p-2 sm:p-2.5 pb-1"
+          ? "pointer-events-auto flex h-full min-h-0 w-full flex-1 flex-col p-2 sm:p-2.5 pb-1"
           : compact
             ? "w-full"
             : "rounded-2xl border border-border bg-muted/50 p-6 sm:p-8"
@@ -117,15 +117,15 @@ export function TeamPerformanceChart({
             dataKey="stage"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: viewport ? 9 : 11 }}
-            tickMargin={viewport ? 6 : 10}
+            tick={{ fontSize: viewport ? 8 : 11 }}
+            tickMargin={viewport ? 5 : 10}
             interval={0}
             className="text-muted-foreground"
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: viewport ? 9 : 11 }}
+            tick={{ fontSize: viewport ? 8 : 11 }}
             tickFormatter={(v) => `${v}%`}
             domain={yDomain}
             tickMargin={8}
@@ -168,7 +168,7 @@ export function TeamPerformanceChart({
       <div
         className={cn(
           "flex flex-wrap items-center justify-center text-muted-foreground",
-          viewport ? "mt-0.5 gap-1 text-[8px] leading-tight" : "mt-4 gap-4 text-xs"
+          viewport ? "mt-0.5 gap-1 text-[7px] leading-tight" : "mt-4 gap-4 text-xs"
         )}
       >
         {Object.entries(chartConfig).map(([key, cfg]) => (

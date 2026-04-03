@@ -232,7 +232,7 @@ const TEAM_FEATURES_GRID: {
   },
   {
     icon: Sparkles,
-    title: "Custom Enterprie Deployment",
+    title: "Custom Enterprise Deployment",
     bullets: [
       "Launch a fully branded experience for your entire team",
       "Seamlessly integrate with your existing workflows",
