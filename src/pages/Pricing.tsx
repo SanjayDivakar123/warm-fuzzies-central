@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BarChart2,
@@ -12,11 +12,13 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { Navbar } from "@/components/navigation/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { BorderTrail } from "@/components/ui/border-trail";
 import { Button } from "@/components/ui/button";
+import { FeatureCard } from "@/components/ui/grid-feature-cards";
 import { PaymentButton } from "@/components/payment/PaymentButton";
 import { cn } from "@/lib/utils";
 import { getLocalizedPrice } from "@/lib/countryPricing";
@@ -203,30 +205,50 @@ export default function PricingPage() {
   );
 }
 
-const TEAM_FEATURES_GRID = [
+const TEAM_FEATURES_GRID: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  title: string;
+  bullets: string[];
+}[] = [
   {
     icon: ClipboardList,
-    title: "Team Assessments + Insights",
-    description:
-      "Every team member completes a 25 or 50 question assessment and receives a personalized color profile. You get a full picture of how your team thinks, works, and leads. Not just individual snapshots, but a unified view of the whole.",
+    title: "Team Intelligence + Insights",
+    bullets: [
+      "Understand why your team isn't performing at its best",
+      "Identify hidden role gaps across your organization",
+      "See how individuals actually work, not how they think they work",
+      "Get a clear, unified view of how your entire organization operates",
+    ],
   },
   {
     icon: BarChart2,
-    title: "Team Analytics",
-    description:
-      "See your organization's live color distribution map. Spot where you're strong, where gaps exist, and where role misalignment is quietly costing you. Analytics update in real time as your team evolves.",
+    title: "Performance Diagnostics",
+    bullets: [
+      "Spot inefficiencies before they slow your team down",
+      "Detect imbalances that lead to bottlenecks and misalignment",
+      "Understand where collaboration is breaking down",
+      "Track how team structure impacts performance over time",
+    ],
   },
   {
     icon: Sparkles,
-    title: "Custom Branding",
-    description:
-      "Your portal, your identity. Deploy RoleColor under your own brand with a custom domain, logo, and colors so the experience feels like it was built for your organization.",
+    title: "Custom Enterprie Deployment",
+    bullets: [
+      "Launch a fully branded experience for your entire team",
+      "Seamlessly integrate with your existing workflows",
+      "Scale across departments without friction",
+      "Onboard hundreds of employees with a single import",
+    ],
   },
   {
     icon: BrainCircuit,
-    title: "AI Work Matrix",
-    description:
-      "Stop guessing who should own what. The AI Work Matrix automatically matches tasks, projects, and initiatives to the team members whose color profile is built for that kind of work, reducing friction and accelerating output.",
+    title: "The Excecution Engine",
+    bullets: [
+      "Assign work based on strengths, not assumptions",
+      "Match tasks to the people best suited to execute them",
+      "Build teams with complementary strengths automatically",
+      "Increase output quality without increasing headcount",
+    ],
   },
 ];
 
@@ -244,45 +266,23 @@ function TeamsSection() {
         </p>
       </div>
 
-      <div className="relative mx-auto max-w-5xl rounded-2xl border border-border bg-muted/50 p-6 sm:p-8 overflow-hidden">
-        {/* Decorative crosses */}
-        <svg className="absolute top-4 right-4 h-8 w-8 text-foreground/10" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <line x1="16" y1="2" x2="16" y2="30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <line x1="2" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-        <svg className="absolute bottom-4 left-4 h-8 w-8 text-foreground/10" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <line x1="16" y1="2" x2="16" y2="30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <line x1="2" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
+      <div className="relative mx-auto max-w-5xl rounded-2xl border border-border bg-muted/50 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
           {/* Left — features */}
-          <div>
+          <div className="p-6 sm:p-8">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-5 w-5 text-primary" />
               <h3 className="text-xl font-bold text-foreground">RoleColor™ for Teams</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              Get your own branded company portal with full admin controls, team analytics, and AI-powered work assignment tools.
+              Most teams don't fail from lack of talent. They fail from how they work together.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {TEAM_FEATURES_GRID.map(({ icon: Icon, title, description }) => (
-                <div key={title} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground mb-1">{title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TeamsFeaturesAnimated />
           </div>
 
           {/* Right — price + CTAs */}
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center p-6 sm:p-8">
             <div className="rounded-2xl border border-border bg-background p-6 text-center shadow-sm">
               <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Starting at</p>
               <p className="text-5xl font-extrabold text-foreground leading-none">$12</p>
@@ -305,5 +305,56 @@ function TeamsSection() {
       </div>
 
     </>
+  );
+}
+
+function TeamsFeaturesAnimated() {
+  return (
+    <AnimatedContainer delay={0.2}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {TEAM_FEATURES_GRID.map(({ icon: Icon, title, bullets }) => (
+          <div key={title} className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-2">{title}</p>
+              <ul className="space-y-1">
+                {bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="mt-0.5 h-3 w-3 flex-shrink-0 text-primary" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </AnimatedContainer>
+  );
+}
+
+function AnimatedContainer({
+  className,
+  delay = 0.1,
+  children,
+}: {
+  delay?: number;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  if (shouldReduceMotion) return <>{children}</>;
+  return (
+    <motion.div
+      initial={{ filter: "blur(4px)", translateY: -8, opacity: 0 }}
+      whileInView={{ filter: "blur(0px)", translateY: 0, opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ delay, duration: 0.8 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }
