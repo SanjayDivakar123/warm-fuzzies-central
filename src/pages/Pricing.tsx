@@ -1,11 +1,16 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
+  BarChart2,
+  BrainCircuit,
   Check,
+  ClipboardList,
   Palette,
   ShieldCheckIcon,
+  Sparkles,
   Star,
   UserCheck,
+  Users,
 } from "lucide-react";
 
 import { Navbar } from "@/components/navigation/Navbar";
@@ -191,74 +196,114 @@ export default function PricingPage() {
         </div>
 
         <div id="for-teams" className="scroll-mt-24 pt-20 sm:pt-24">
-          <section className="mx-auto w-full max-w-[1200px] rounded-2xl border border-slate-700/70 bg-[#0B0F14] px-5 py-10 sm:px-8 sm:py-14 text-white">
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-[7fr_3fr] md:gap-8 lg:gap-10">
-              <div className="order-1">
-                <h2 className="text-[40px] leading-[1.06] sm:text-[48px] lg:text-[54px] font-extrabold tracking-tight text-white">
-                  Build High-Performance Teams
-                </h2>
-                <p className="mt-4 text-[18px] leading-relaxed text-slate-300">
-                  Role clarity. Execution. Hiring that actually works.
-                </p>
-
-                <div className="mt-10 max-w-2xl rounded-2xl border border-slate-600/80 bg-[#11161D] p-6 sm:p-8">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Monthly Platform</p>
-
-                  <div className="mt-5 space-y-6">
-                    <div>
-                      <p className="text-[40px] sm:text-[46px] leading-none font-extrabold text-white">$500/mo</p>
-                      <p className="mt-2 text-[15px] text-slate-400">Core Platform</p>
-                    </div>
-                    <div>
-                      <p className="text-[40px] sm:text-[46px] leading-none font-extrabold text-white">$1,000/mo</p>
-                      <p className="mt-2 text-[15px] text-slate-400">Hiring Intelligence</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-7 h-px w-full bg-slate-700/70" />
-
-                  <ul className="mt-5 space-y-2 text-[15px] text-slate-300">
-                    <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-sky-400" />Up to 10 active roles</li>
-                    <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-sky-400" />Up to 1,000 applicants per role</li>
-                  </ul>
-
-                  <p className="mt-4 text-[14px] text-slate-400">+ $1,000/mo per additional 10 roles</p>
-                </div>
-
-                <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-                  <Button className="h-12 rounded-xl bg-white px-6 text-base font-semibold text-black hover:bg-slate-100" asChild>
-                    <a href="https://app.apollo.io/#/meet/sales/b2bdemo" target="_blank" rel="noopener noreferrer">Book Demo</a>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="order-2 flex flex-col gap-4 sm:gap-5 md:pt-6">
-                <article className="order-2 md:order-1 rounded-xl border border-slate-600/80 bg-[#11161D] p-5 sm:p-6">
-                  <h3 className="text-[19px] font-semibold text-white">One-Time Setup</h3>
-                  <div className="mt-4 space-y-2 text-[16px] leading-relaxed text-slate-200">
-                    <p><span className="font-semibold text-white">$5,000</span> - Platform deployment</p>
-                    <p><span className="font-semibold text-white">$20</span> - per employee onboarding</p>
-                  </div>
-                </article>
-
-                <article className="order-1 md:order-2 rounded-xl border border-sky-500/35 bg-[#141C28] p-5 sm:p-6 shadow-[0_0_0_1px_rgba(56,189,248,0.14),0_6px_18px_rgba(0,0,0,0.24)]">
-                  <h3 className="text-[19px] font-semibold text-white">Pay for Results</h3>
-                  <div className="mt-4">
-                    <p className="text-[34px] leading-none font-extrabold text-white">$20</p>
-                    <p className="mt-2 text-[15px] text-slate-300">per successful hire</p>
-                    <p className="mt-3 text-[14px] text-slate-200">You only pay when it works</p>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <div className="mt-10 space-y-2 text-center md:text-left">
-              <p className="text-sm font-medium text-slate-200">Most teams recover cost within 1-2 hires</p>
-              <p className="text-sm text-slate-400">Used by growing teams across hiring, sales, and leadership</p>
-            </div>
-          </section>
+          <TeamsSection />
         </div>
       </div>
     </div>
+  );
+}
+
+const TEAM_FEATURES_GRID = [
+  {
+    icon: ClipboardList,
+    title: "Team Assessments + Insights",
+    description:
+      "Every team member completes a 25 or 50 question assessment and receives a personalized color profile. You get a full picture of how your team thinks, works, and leads. Not just individual snapshots, but a unified view of the whole.",
+  },
+  {
+    icon: BarChart2,
+    title: "Team Analytics",
+    description:
+      "See your organization's live color distribution map. Spot where you're strong, where gaps exist, and where role misalignment is quietly costing you. Analytics update in real time as your team evolves.",
+  },
+  {
+    icon: Sparkles,
+    title: "Custom Branding",
+    description:
+      "Your portal, your identity. Deploy RoleColor under your own brand with a custom domain, logo, and colors so the experience feels like it was built for your organization.",
+  },
+  {
+    icon: BrainCircuit,
+    title: "AI Work Matrix",
+    description:
+      "Stop guessing who should own what. The AI Work Matrix automatically matches tasks, projects, and initiatives to the team members whose color profile is built for that kind of work, reducing friction and accelerating output.",
+  },
+];
+
+
+function TeamsSection() {
+  return (
+    <>
+      <div className="text-center mb-8">
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">For Teams</p>
+        <h2 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          Empower Your Entire Organization
+        </h2>
+        <p className="mt-3 max-w-2xl mx-auto text-base sm:text-lg text-muted-foreground">
+          Unlock team dynamics, improve collaboration, and build high-performing teams with our B2B platform.
+        </p>
+      </div>
+
+      <div className="relative mx-auto max-w-5xl rounded-2xl border border-border bg-muted/50 p-6 sm:p-8 overflow-hidden">
+        {/* Decorative crosses */}
+        <svg className="absolute top-4 right-4 h-8 w-8 text-foreground/10" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <line x1="16" y1="2" x2="16" y2="30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="2" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        <svg className="absolute bottom-4 left-4 h-8 w-8 text-foreground/10" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <line x1="16" y1="2" x2="16" y2="30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="2" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
+          {/* Left — features */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-bold text-foreground">RoleColor™ for Teams</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Get your own branded company portal with full admin controls, team analytics, and AI-powered work assignment tools.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {TEAM_FEATURES_GRID.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-1">{title}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — price + CTAs */}
+          <div className="flex flex-col justify-center">
+            <div className="rounded-2xl border border-border bg-background p-6 text-center shadow-sm">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Starting at</p>
+              <p className="text-5xl font-extrabold text-foreground leading-none">$12</p>
+              <p className="mt-1 text-sm text-muted-foreground">USD / platform member</p>
+              <p className="mt-1 text-xs text-muted-foreground">billed monthly</p>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <Button className="w-full rounded-full" asChild>
+                  <a href="https://app.apollo.io/#/meet/sales/b2bdemo" target="_blank" rel="noopener noreferrer">
+                    Book a Demo
+                  </a>
+                </Button>
+                <Button className="w-full rounded-full" variant="outline" asChild>
+                  <Link to="/pricing/teams">Learn More</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </>
   );
 }

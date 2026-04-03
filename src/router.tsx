@@ -80,6 +80,7 @@ import PublicJobDetailPage from "@/pages/careers/PublicJobDetailPage";
 import PublicRoleColorProfile from "@/pages/PublicRoleColorProfile";
 
 // Career Finder pages
+import TeamsLearnMore from "@/pages/TeamsLearnMore";
 import CareerFinder from "@/pages/CareerFinder";
 import CareerFinderResults from "@/pages/CareerFinderResults";
 import CareerResumeResults from "@/pages/CareerResumeResults";
@@ -187,6 +188,10 @@ export const routeConfig = [
   {
     path: "/pricing",
     element: <Layout><Pricing /></Layout>,
+  },
+  {
+    path: "/pricing/teams",
+    element: <Layout><TeamsLearnMore /></Layout>,
   },
   {
     path: "/quiz",
