@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SendToFriendCard from "@/components/reports/SendToFriendCard";
 import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
-import { getLocalizedPrice, detectCountryCode } from "@/lib/countryPricing";
+import { getLocalizedPrice } from "@/lib/countryPricing";
 
 interface FreeResults {
   dominantColor: string;
@@ -75,25 +75,8 @@ const FreeResults = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [countryCode, setCountryCode] = useState("US");
-
-  useEffect(() => {
-    let mounted = true;
-    detectCountryCode()
-      .then((code) => {
-        if (mounted) setCountryCode(code);
-      })
-      .catch(() => {
-        if (mounted) setCountryCode("US");
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const premiumPrice = useMemo(() => getLocalizedPrice("premium", countryCode), [countryCode]);
-  const proPrice = useMemo(() => getLocalizedPrice("pro", countryCode), [countryCode]);
+  const premiumPrice = useMemo(() => getLocalizedPrice("premium"), []);
+  const proPrice = useMemo(() => getLocalizedPrice("pro"), []);
 
   const handleSaveResult = async () => {
     if (!user || !results || !resultName.trim()) {

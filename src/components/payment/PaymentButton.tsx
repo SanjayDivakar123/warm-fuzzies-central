@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { detectCountryCode, getLocalizedPrice } from "@/lib/countryPricing";
+import { getLocalizedPrice } from "@/lib/countryPricing";
 
 interface PaymentButtonProps {
   productType: "premium" | "pro" | "team" | "career";
@@ -59,53 +59,33 @@ export const PaymentButton = ({
         : `${window.location.origin}/pricing`;
 
       const pricingProductType = productType === "team" ? "b2b" : (productType as "premium" | "pro" | "career");
-      const countryCode = await detectCountryCode();
-      const localizedPricing =
+      const usdPricing =
         pricingProductType === "premium" || pricingProductType === "pro"
-          ? getLocalizedPrice(pricingProductType, countryCode)
+          ? getLocalizedPrice(pricingProductType)
           : null;
-      
+
       const paymentData = {
         productType,
         successUrl,
         cancelUrl,
-        countryCode,
-        ...(localizedPricing && {
-          stripeCurrency: localizedPricing.stripeCurrency,
-          stripeAmountMinor: localizedPricing.stripeAmountMinor,
-          displayCurrency: localizedPricing.displayCurrency,
-          displayAmount: localizedPricing.displayAmount,
-          billingCountry: localizedPricing.country,
+        ...(usdPricing && {
+          stripeCurrency: usdPricing.stripeCurrency,
+          stripeAmountMinor: usdPricing.stripeAmountMinor,
+          displayCurrency: usdPricing.displayCurrency,
+          displayAmount: usdPricing.displayAmount,
+          billingCountry: usdPricing.country,
         }),
         ...(customAmount && { customAmount }),
-        ...(customDescription && { customDescription })
+        ...(customDescription && { customDescription }),
       };
-      
+
       console.log("Creating payment with data:", paymentData);
-      
+
       let { data, error } = await supabase.functions.invoke('create-payment', {
-        body: paymentData
+        body: paymentData,
       });
 
       console.log("Payment response:", { data, error });
-
-      if (error) {
-        console.warn("Localized payment failed, retrying with default USD payload", error);
-        const fallbackPayload = {
-          productType,
-          successUrl,
-          cancelUrl,
-          ...(customAmount && { customAmount }),
-          ...(customDescription && { customDescription }),
-        };
-
-        const retry = await supabase.functions.invoke('create-payment', {
-          body: fallbackPayload,
-        });
-
-        data = retry.data;
-        error = retry.error;
-      }
 
       if (error) {
         console.error("Payment creation error:", error);
