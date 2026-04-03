@@ -29,6 +29,20 @@ interface PlanCardProps {
   ctaAction: "free" | "premium" | "pro";
 }
 
+function DecorativeCross({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn("absolute h-8 w-8 text-foreground/10", className)}
+      viewBox="0 0 32 32"
+      fill="none"
+      aria-hidden="true"
+    >
+      <line x1="16" y1="2" x2="16" y2="30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="2" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function PlanCard({
   name,
   price,
@@ -42,7 +56,15 @@ function PlanCard({
   ctaAction,
 }: PlanCardProps) {
   return (
-    <div className="relative flex-1 overflow-hidden rounded-xl bg-muted/40 p-6 text-left transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:bg-muted/60">
+    <div className="relative flex-1 overflow-hidden rounded-xl border border-border bg-muted/50 p-6 text-left transition-all duration-300 ease-in-out hover:bg-muted/80 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-1 hover:border-primary/30">
+      {/* Green top accent */}
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-primary rounded-t-xl" />
+
+      {/* Decorative crosses */}
+      <DecorativeCross className="top-3 right-3" />
+      <DecorativeCross className="bottom-3 left-3" />
+      <DecorativeCross className="bottom-3 right-3 opacity-60" />
+
       <div className="relative z-10">
         <div className="mb-2 flex items-center gap-2">
           <Icon className="h-5 w-5 text-primary" />
@@ -150,7 +172,7 @@ export default function PricingPage() {
             <p className="mt-3 text-base sm:text-lg text-muted-foreground">Choose the plan that fits you or your team.</p>
           </div>
 
-          <div className="relative max-w-5xl mx-auto">
+          <div className="relative max-w-5xl mx-auto rounded-2xl p-1">
             <BorderTrail
               className={cn("bg-gradient-to-l from-primary via-primary/80 to-primary/20")}
               size={80}
