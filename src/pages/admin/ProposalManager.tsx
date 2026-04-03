@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { exportToCSV, exportToJSON } from "@/lib/adminExport";
+import { getErrorMessage, hydrateClientProposal } from "@/lib/clientProposals";
 
 interface ProposalAcceptance {
   id: string;
@@ -183,13 +184,7 @@ export default function ProposalManager() {
     if (proposalsRes.error) {
       toast({ title: "Failed to load proposals", variant: "destructive" });
     } else {
-      setProposals(
-        (proposalsRes.data ?? []).map((row) => ({
-          ...row,
-          pricing: row.pricing as unknown as ProposalPricing,
-          status: ((row.status ?? "sent") === "active" ? "sent" : (row.status ?? "sent")) as Proposal["status"],
-        }))
-      );
+      setProposals((proposalsRes.data ?? []).map((row) => hydrateClientProposal(row)));
     }
 
     if (!acceptancesRes.error) {
@@ -332,8 +327,7 @@ export default function ProposalManager() {
       setSheetOpen(false);
       toast({ title: editingId ? "Proposal updated" : "Proposal created", description: `Live at /client/${formData.slug}` });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Save failed", description: msg, variant: "destructive" });
+      toast({ title: "Save failed", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }

@@ -32,6 +32,7 @@ import RolesTab from '@/components/b2b/RolesTab';
 import EmployeeTasksView from '@/components/b2b/EmployeeTasksView';
 import KeyboardShortcutsModal from '@/components/b2b/KeyboardShortcutsModal';
 import CreditNotificationModal from '@/components/b2b/CreditNotificationModal';
+import TeamFrictionMapTab from '@/components/b2b/TeamFrictionMapTab';
 import { useKeyboardShortcuts, B2B_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import { B2BThemeProvider, useB2BTheme } from '@/contexts/B2BThemeContext';
 import { HelpButton, useAutoStartTour } from '@/components/help';
@@ -46,7 +47,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'settings']);
+const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'friction-map', 'settings']);
 
 const getEdgeErrorMessage = async (error: unknown): Promise<string> => {
   if (error instanceof FunctionsHttpError) {
@@ -1167,6 +1168,14 @@ function B2BDashboardContent() {
                   Analytics
                 </TabsTrigger>
               )}
+              {permissions.canViewOverview && (
+                <TabsTrigger 
+                  value="friction-map" 
+                  className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
+                >
+                  Friction Map
+                </TabsTrigger>
+              )}
               {permissions.canManageSettings && (
                 <TabsTrigger 
                   value="settings" 
@@ -1239,6 +1248,10 @@ function B2BDashboardContent() {
 
           <TabsContent value="analytics" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <AdvancedAnalyticsDashboard companyId={company.id} />
+          </TabsContent>
+
+          <TabsContent value="friction-map" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
+            <TeamFrictionMapTab company={company} />
           </TabsContent>
         </Tabs>
           </>

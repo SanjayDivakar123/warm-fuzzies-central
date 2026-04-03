@@ -239,7 +239,7 @@ function drawTitleBlock(
   pdf.setFontSize(8);
   pdf.setTextColor(100, 116, 139);
   pdf.text('"Client"', col1, infoY + 12);
-  pdf.text('"RCF"  ·  Miami, FL, USA', col2, infoY + 12);
+  pdf.text('"RCF"  ·  Greenwich, CT, USA', col2, infoY + 12);
 
   cur.y = infoY + 20;
   cur.rule();
@@ -370,7 +370,7 @@ function drawSignatureBlock(
   pdf.setFontSize(7.5);
   pdf.setTextColor(100, 116, 139);
   pdf.text("Authorised Signatory", PAGE_W / 2 + 4, boxY + 38);
-  pdf.text("Miami, FL, USA", PAGE_W / 2 + 4, boxY + 43);
+  pdf.text("Greenwich, CT, USA", PAGE_W / 2 + 4, boxY + 43);
 
   // Timestamp
   pdf.setFont("helvetica", "normal");

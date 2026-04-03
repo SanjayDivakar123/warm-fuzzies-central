@@ -7,19 +7,16 @@ async function listSessionsForUser(
   supabase: Awaited<ReturnType<typeof requireSuperAdmin>>["supabase"],
   targetUserId: string,
 ) {
-  const { data, error } = await supabase
-    .schema("auth")
-    .from("sessions")
-    .select("id, user_id, created_at, updated_at, ip, user_agent")
-    .eq("user_id", targetUserId)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await supabase.rpc("list_auth_sessions", {
+    p_target_user_id: targetUserId,
+  });
 
   if (error) {
-    console.warn("Session inspection unavailable:", error.message);
+    console.error("Session inspection failed:", error.message);
     return {
       sessions: [],
-      unavailable: true,
-      error: "Session inspection is unavailable in this environment.",
+      unavailable: false,
+      error: error.message || "Failed to inspect auth sessions.",
     };
   }
 
@@ -58,18 +55,18 @@ serve(async (req) => {
     }
 
     if (action === "force_sign_out") {
-      let query = supabase.schema("auth").from("sessions").delete().eq("user_id", targetUserId);
-      if (sessionId) {
-        query = query.eq("id", sessionId);
-      }
-      const { error } = await query;
+      const { data, error } = await supabase.rpc("revoke_auth_sessions", {
+        p_target_user_id: targetUserId,
+        p_session_id: sessionId,
+      });
+
       if (error) {
-        console.warn("Session sign-out unavailable:", error.message);
+        console.error("Session sign-out failed:", error.message);
         return new Response(
           JSON.stringify({
             success: false,
-            unavailable: true,
-            error: "Session management is unavailable in this environment.",
+            unavailable: false,
+            error: error.message || "Failed to revoke auth sessions.",
           }),
           {
             status: 200,

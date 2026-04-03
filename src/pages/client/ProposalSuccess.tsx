@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Clock, Mail } from "lucide-react";
-import type { Proposal, ProposalPricing } from "@/pages/admin/ProposalManager";
+import type { Proposal } from "@/pages/admin/ProposalManager";
+import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
 
 interface ContactForm {
   first_name: string;
@@ -43,18 +44,9 @@ export default function ProposalSuccess() {
   useEffect(() => {
     if (!slug) return;
 
-    supabase
-      .from("client_proposals")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle()
-      .then(({ data }) => {
+    fetchLatestProposalBySlug(slug).then(({ data }) => {
         if (data) {
-          setProposal({
-            ...data,
-            pricing: data.pricing as unknown as ProposalPricing,
-            status: (data.status ?? "active") as "active" | "draft",
-          });
+          setProposal(data);
           document.title = `Welcome — ${data.proposal_title} | RoleColorFinder`;
         }
       });

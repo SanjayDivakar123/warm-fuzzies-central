@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Lock, ShieldCheck } from "lucide-react";
-import type { Proposal, ProposalPricing } from "@/pages/admin/ProposalManager";
+import type { Proposal } from "@/pages/admin/ProposalManager";
+import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
 
 export default function ProposalPayment() {
   const { slug } = useParams<{ slug: string }>();
@@ -25,18 +26,9 @@ export default function ProposalPayment() {
     // If no acceptance id, go back to agreement
     if (!acceptanceId) { navigate(`/client/${slug}/agreement`); return; }
 
-    supabase
-      .from("client_proposals")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    fetchLatestProposalBySlug(slug).then(({ data, error }) => {
         if (error || !data) { setNotFound(true); return; }
-        setProposal({
-          ...data,
-          pricing: data.pricing as unknown as ProposalPricing,
-          status: (data.status ?? "active") as "active" | "draft",
-        });
+        setProposal(data);
         document.title = `Payment — ${data.proposal_title} | RoleColorFinder`;
       });
   }, [slug, acceptanceId, navigate]);

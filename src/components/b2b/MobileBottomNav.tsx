@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Users, UserSearch, ClipboardList, Settings, Bell, BarChart3, Grid3x3, MoreHorizontal, X } from 'lucide-react';
+import { Home, Users, UserSearch, ClipboardList, Settings, Bell, BarChart3, Grid3x3, MoreHorizontal, Target, X } from 'lucide-react';
 
 interface Permissions {
   canViewOverview: boolean;
@@ -29,6 +29,7 @@ export default function MobileBottomNav({ activeTab, onChange, permissions }: Mo
     permissions.canManageReminders && { key: 'reminders', label: 'Reminders', icon: Bell },
     permissions.canUseWorkMatrix && { key: 'matrix', label: 'Work Matrix', icon: Grid3x3 },
     permissions.canViewOverview && { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+    permissions.canViewOverview && { key: 'friction-map', label: 'Friction', icon: Target },
     permissions.canManageSettings && { key: 'settings', label: 'Settings', icon: Settings },
   ].filter(Boolean) as Array<{ key: string; label: string; icon: React.ComponentType<{ className?: string }> }>;
 
