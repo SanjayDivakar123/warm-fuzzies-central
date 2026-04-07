@@ -8,13 +8,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MessageSquare, Bell, Check, Loader2, ExternalLink } from 'lucide-react';
 import SlackIntegrationSettings from './SlackIntegrationSettings';
+import ChatGPTIntegrationSettings from './ChatGPTIntegrationSettings';
 
 interface IntegrationsSettingsProps {
   company: any;
+  companyUser?: { id: string; role: string } | null;
   onSettingsSaved?: () => void;
 }
 
-export default function IntegrationsSettings({ company, onSettingsSaved }: IntegrationsSettingsProps) {
+export default function IntegrationsSettings({ company, companyUser, onSettingsSaved }: IntegrationsSettingsProps) {
   const [teamsEnabled, setTeamsEnabled] = useState(company.ms_teams_notifications_enabled || false);
   const [teamsWebhookUrl, setTeamsWebhookUrl] = useState(company.ms_teams_webhook_url || '');
   const [saving, setSaving] = useState(false);
@@ -96,9 +98,15 @@ export default function IntegrationsSettings({ company, onSettingsSaved }: Integ
 
   return (
     <div className="space-y-4">
+      <ChatGPTIntegrationSettings
+        company={company}
+        onSettingsSaved={onSettingsSaved}
+      />
+
       {/* Slack Integration - Full Featured */}
       <SlackIntegrationSettings 
         company={company} 
+        companyUser={companyUser}
         onSettingsSaved={onSettingsSaved} 
       />
 

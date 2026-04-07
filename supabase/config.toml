@@ -188,3 +188,69 @@ verify_jwt = true
 
 [functions.run-bamboohr-auto-sync]
 verify_jwt = false
+
+[functions.create-link-token]
+verify_jwt = true
+
+[functions.retrieve-token]
+verify_jwt = true
+
+[functions.sync-hris]
+verify_jwt = true
+
+[functions.sync-ats]
+verify_jwt = true
+
+[functions.test-merge-connection]
+verify_jwt = true
+
+[functions.webhook-handler]
+verify_jwt = false
+
+[functions.generate-ats-job-draft]
+verify_jwt = true
+
+[functions.run-merge-auto-sync]
+verify_jwt = false
+
+[functions.slack-oauth-init]
+verify_jwt = false
+
+[functions.slack-oauth-callback]
+verify_jwt = false
+
+[functions.chatgpt-mcp-server]
+verify_jwt = false
+
+[functions.chatgpt-oauth-init]
+verify_jwt = false
+
+[functions.chatgpt-oauth-callback]
+verify_jwt = false
+
+[functions.chatgpt-manage]
+verify_jwt = true
+
+[functions.slack-rolecolor]
+verify_jwt = false
+
+[functions.slack-teambalance]
+verify_jwt = false
+
+[functions.slack-rcf]
+verify_jwt = false
+
+[functions.slack-events]
+verify_jwt = false
+
+[functions.slack-interactivity]
+verify_jwt = false
+
+[functions.slack-admin-settings]
+verify_jwt = true
+
+[functions.slack-link-confirmation]
+verify_jwt = true
+
+[functions.slack-manage]
+verify_jwt = true

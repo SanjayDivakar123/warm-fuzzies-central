@@ -10,7 +10,7 @@ const SLACK_API_BASE = "https://slack.com/api";
 
 interface SlackNotificationRequest {
   company_id: string;
-  event_type: "assessment_completed" | "new_employee" | "reminder" | "task_assigned" | "dm_invite" | "share_results";
+  event_type: "assessment_completed" | "new_employee" | "reminder" | "task_assigned" | "dm_invite" | "share_results" | "test_connection";
   data: Record<string, any>;
 }
 
@@ -120,6 +120,31 @@ async function postToChannel(botToken: string, channelId: string, blocks: any[],
     return true;
   } catch (error) {
     console.error("Error posting to channel:", error);
+    return false;
+  }
+}
+
+async function postToWebhook(webhookUrl: string, blocks: any[], text: string): Promise<boolean> {
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        blocks,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to post to Slack webhook:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error posting to Slack webhook:", error);
     return false;
   }
 }
@@ -327,7 +352,8 @@ serve(async (req) => {
       );
     }
 
-    // Get company settings including bot token
+    // Get company settings and resolve either the new OAuth-backed Slack connection
+    // or the legacy per-company token fields as a fallback.
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("name, subdomain, subdomain_enabled, slack_notifications_enabled, slack_channel_id, slack_bot_token")
@@ -341,21 +367,32 @@ serve(async (req) => {
       );
     }
 
-    if (!company.slack_notifications_enabled) {
+    const { data: activeConnection } = await supabase
+      .from("slack_connections")
+      .select("bot_token, incoming_webhook_url, incoming_webhook_channel")
+      .eq("org_id", company_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const botToken = activeConnection?.bot_token || company.slack_bot_token;
+    const incomingWebhookUrl = activeConnection?.incoming_webhook_url || null;
+    const incomingWebhookChannel = activeConnection?.incoming_webhook_channel || null;
+    const hasSlackConnection = Boolean(activeConnection || company.slack_bot_token);
+    const notificationsEnabled = Boolean(activeConnection) || Boolean(company.slack_notifications_enabled);
+
+    if (!notificationsEnabled) {
       return new Response(
         JSON.stringify({ success: false, message: "Slack notifications disabled for this company" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!company.slack_bot_token) {
+    if (!hasSlackConnection) {
       return new Response(
         JSON.stringify({ success: false, message: "Slack bot token not configured" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const botToken = company.slack_bot_token;
     let success = false;
     let message = "";
 
@@ -404,7 +441,7 @@ serve(async (req) => {
         // Notify channel when someone completes their assessment
         const { employee_name, email, dominant_color, secondary_color, scores } = data;
         
-        if (!company.slack_channel_id) {
+        if (!incomingWebhookUrl && !company.slack_channel_id) {
           return new Response(
             JSON.stringify({ success: false, message: "No Slack channel configured for notifications" }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -419,12 +456,18 @@ serve(async (req) => {
           scores || {}
         );
         
-        success = await postToChannel(
-          botToken,
-          company.slack_channel_id,
-          completedBlocks,
-          `🎉 ${employee_name || email} completed their RoleColor assessment!`
-        );
+        success = incomingWebhookUrl
+          ? await postToWebhook(
+              incomingWebhookUrl,
+              completedBlocks,
+              `🎉 ${employee_name || email} completed their RoleColor assessment!`
+            )
+          : await postToChannel(
+              botToken,
+              company.slack_channel_id,
+              completedBlocks,
+              `🎉 ${employee_name || email} completed their RoleColor assessment!`
+            );
         
         message = success 
           ? "Assessment completion notification posted to channel" 
@@ -437,7 +480,7 @@ serve(async (req) => {
         const { employee_name, dominant_color, secondary_color, scores, strengths, share_url, channel_id } = data;
         const targetChannel = channel_id || company.slack_channel_id;
         
-        if (!targetChannel) {
+        if (!incomingWebhookUrl && !targetChannel) {
           return new Response(
             JSON.stringify({ success: false, message: "No channel specified for sharing results" }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -453,12 +496,18 @@ serve(async (req) => {
           share_url
         );
         
-        success = await postToChannel(
-          botToken,
-          targetChannel,
-          shareBlocks,
-          `${employee_name}'s RoleColor Profile`
-        );
+        success = incomingWebhookUrl
+          ? await postToWebhook(
+              incomingWebhookUrl,
+              shareBlocks,
+              `${employee_name}'s RoleColor Profile`
+            )
+          : await postToChannel(
+              botToken,
+              targetChannel,
+              shareBlocks,
+              `${employee_name}'s RoleColor Profile`
+            );
         
         message = success 
           ? "Results shared to channel" 
@@ -470,7 +519,7 @@ serve(async (req) => {
         // Notify when a new employee joins
         const { employee_name, email } = data;
         
-        if (!company.slack_channel_id) {
+        if (!incomingWebhookUrl && !company.slack_channel_id) {
           return new Response(
             JSON.stringify({ success: false, message: "No Slack channel configured" }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -487,12 +536,18 @@ serve(async (req) => {
           }
         ];
         
-        success = await postToChannel(
-          botToken,
-          company.slack_channel_id,
-          blocks,
-          `👋 ${employee_name || email} has joined ${company.name}!`
-        );
+        success = incomingWebhookUrl
+          ? await postToWebhook(
+              incomingWebhookUrl,
+              blocks,
+              `👋 ${employee_name || email} has joined ${company.name}!`
+            )
+          : await postToChannel(
+              botToken,
+              company.slack_channel_id,
+              blocks,
+              `👋 ${employee_name || email} has joined ${company.name}!`
+            );
         
         message = success ? "New employee notification sent" : "Failed to send notification";
         break;
@@ -501,6 +556,11 @@ serve(async (req) => {
       case "task_assigned": {
         // Notify about task assignment
         const { task_title, assignee_name, assignee_email, priority } = data;
+
+        if (!botToken) {
+          message = "Slack bot token missing";
+          break;
+        }
         
         // Try to DM the assignee
         const slackUserId = await getSlackUserByEmail(botToken, assignee_email);
@@ -546,6 +606,11 @@ serve(async (req) => {
       case "reminder": {
         // Send a reminder DM
         const { email, reminder_message } = data;
+
+        if (!botToken) {
+          message = "Slack bot token missing";
+          break;
+        }
         
         const slackUserId = await getSlackUserByEmail(botToken, email);
         
@@ -571,6 +636,43 @@ serve(async (req) => {
         } else {
           message = `Slack user not found for ${email}`;
         }
+        break;
+      }
+
+      case "test_connection": {
+        const blocks = [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "✅ *RoleColorFinder is connected!*",
+            },
+          },
+          {
+            type: "context",
+            elements: [
+              {
+                type: "mrkdwn",
+                text: incomingWebhookChannel
+                  ? `Posting into *${incomingWebhookChannel}*`
+                  : `Connected workspace: *${company.name}*`,
+              },
+            ],
+          },
+        ];
+
+        success = incomingWebhookUrl
+          ? await postToWebhook(incomingWebhookUrl, blocks, "✅ RoleColorFinder is connected!")
+          : company.slack_channel_id && botToken
+            ? await postToChannel(
+                botToken,
+                company.slack_channel_id,
+                blocks,
+                "✅ RoleColorFinder is connected!"
+              )
+            : false;
+
+        message = success ? "Test message sent" : "Failed to send test message";
         break;
       }
       

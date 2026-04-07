@@ -1771,6 +1771,34 @@ const Dashboard = () => {
                       </CardContent>
                     </Card>
 
+                    <Card className="relative overflow-hidden shadow-lg border-emerald-400/20 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-emerald-400/5 to-transparent rounded-full" />
+                      <CardHeader className="pb-3 relative z-10">
+                        <CardTitle className="text-lg flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-emerald-500/10">
+                            <Sparkles className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          ChatGPT Integration
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 relative z-10">
+                        <div className="text-sm text-muted-foreground">
+                          Connect ChatGPT so RoleColorFinder can personalize work, communication, and collaboration guidance using your RoleColor profile.
+                        </div>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="border-emerald-400/50 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                        >
+                          <Link to="/settings/integrations">
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Open Integrations
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+
                     <PublicRoleColorProfileSettings
                       userId={user.id}
                       userEmail={user.email}

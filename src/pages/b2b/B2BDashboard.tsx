@@ -1070,6 +1070,7 @@ function B2BDashboardContent() {
         ) : isPortalBillingLocked ? (
           <SettingsTab
             company={company}
+            companyUser={companyUser}
             onSettingsSaved={refreshCompany}
             billingOnly
             billingLock={{
@@ -1238,6 +1239,7 @@ function B2BDashboardContent() {
           <TabsContent value="settings" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
             <SettingsTab 
               company={company} 
+              companyUser={companyUser}
               onSettingsSaved={refreshCompany}
               scrollToSection={scrollToSection}
               onScrollComplete={() => setScrollToSection(null)}

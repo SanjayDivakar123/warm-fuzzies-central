@@ -27,8 +27,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { MERGE_ATS_INTEGRATIONS } from '@/lib/mergeCatalog';
 import { 
   Plus, 
   MoreHorizontal,
@@ -48,6 +50,7 @@ import {
   Share2,
   Copy,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
@@ -65,6 +68,18 @@ interface JobPostingsTabProps {
   onCloseCreateModal: () => void;
   onViewPipeline: (jobId: string) => void;
   onViewCandidates: (jobId: string) => void;
+}
+
+interface MergeConnectionSummary {
+  platformName: string;
+  category: 'hris' | 'ats';
+  connectionStatus: 'connected' | 'reconnect_required' | 'disconnected';
+}
+
+interface AtsTargetOption {
+  name: string;
+  integration: string;
+  connected: boolean;
 }
 
 const STATUS_CONFIG: Record<JobPostingStatus, { label: string; color: string; icon: typeof Play }> = {
@@ -125,6 +140,8 @@ export default function JobPostingsTab({
   
   // Company roles for auto-fill
   const [companyRoles, setCompanyRoles] = useState<{ id: string; name: string; skills: string[] }[]>([]);
+  const [mergeConnections, setMergeConnections] = useState<MergeConnectionSummary[]>([]);
+  const [defaultAtsPlatform, setDefaultAtsPlatform] = useState<string>('');
   
   // Form state
   const [formData, setFormData] = useState<Partial<JobPostingInsert>>({
@@ -143,6 +160,10 @@ export default function JobPostingsTab({
     company_role_id: undefined,
   });
   const [newSkill, setNewSkill] = useState('');
+  const [targetAtsPlatform, setTargetAtsPlatform] = useState<string>('');
+  const [saveAsDraft, setSaveAsDraft] = useState(true);
+  const [generatingAtsDraft, setGeneratingAtsDraft] = useState(false);
+  const [atsPostingNotes, setAtsPostingNotes] = useState<string[]>([]);
   
   const { toast } = useToast();
   const isHROrAdmin = companyUser?.role === 'admin' || companyUser?.role === 'hr';
@@ -150,7 +171,19 @@ export default function JobPostingsTab({
   useEffect(() => {
     fetchJobs();
     fetchCompanyRoles();
+    fetchDefaultAtsTarget();
   }, [company.id]);
+
+  useEffect(() => {
+    if (editingJob) {
+      setSaveAsDraft(editingJob.status === 'draft');
+      setAtsPostingNotes([]);
+    }
+  }, [editingJob]);
+
+  useEffect(() => {
+    setAtsPostingNotes([]);
+  }, [targetAtsPlatform]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -163,11 +196,11 @@ export default function JobPostingsTab({
 
       if (error) throw error;
       setJobs(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching jobs:', err);
       toast({
         title: 'Error loading jobs',
-        description: err.message,
+        description: err instanceof Error ? err.message : 'Failed to load jobs.',
         variant: 'destructive',
       });
     } finally {
@@ -190,6 +223,33 @@ export default function JobPostingsTab({
     }
   };
 
+  const fetchDefaultAtsTarget = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('retrieve-token', {
+        body: {
+          action: 'list_connections',
+          orgId: company.id,
+        },
+      });
+
+      if (error) throw error;
+
+      const connections = (data?.connections as MergeConnectionSummary[] | undefined) || [];
+      setMergeConnections(connections);
+
+      const atsConnection = connections.find(
+        (connection) => connection.category === 'ats' && connection.connectionStatus === 'connected',
+      );
+
+      if (atsConnection?.platformName) {
+        setDefaultAtsPlatform(atsConnection.platformName);
+        setTargetAtsPlatform((current) => current || atsConnection.platformName);
+      }
+    } catch (err) {
+      console.error('Error loading ATS target default:', err);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -207,8 +267,28 @@ export default function JobPostingsTab({
       company_role_id: undefined,
     });
     setNewSkill('');
+    setTargetAtsPlatform(defaultAtsPlatform);
+    setSaveAsDraft(true);
+    setAtsPostingNotes([]);
     setEditingJob(null);
   };
+
+  const atsTargetOptions: AtsTargetOption[] = MERGE_ATS_INTEGRATIONS
+    .map((integration) => ({
+      ...integration,
+      connected: mergeConnections.some(
+        (connection) =>
+          connection.category === 'ats' &&
+          connection.connectionStatus === 'connected' &&
+          connection.platformName === integration.name,
+      ),
+    }))
+    .sort((left, right) => {
+      if (left.connected !== right.connected) {
+        return left.connected ? -1 : 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
 
   const handleCompanyRoleSelect = (roleId: string) => {
     const role = companyRoles.find(r => r.id === roleId);
@@ -240,6 +320,90 @@ export default function JobPostingsTab({
     }));
   };
 
+  const handleGenerateAtsDraft = async () => {
+    if (!targetAtsPlatform) {
+      toast({
+        title: 'Choose an ATS first',
+        description: 'Select the ATS you plan to publish in so the AI can tailor the draft correctly.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.title?.trim()) {
+      toast({
+        title: 'Title required',
+        description: 'Add at least a job title before generating an ATS-tailored draft.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setGeneratingAtsDraft(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-ats-job-draft', {
+        body: {
+          orgId: company.id,
+          targetPlatform: targetAtsPlatform,
+          job: {
+            title: formData.title,
+            department: formData.department,
+            description: formData.description,
+            location: formData.location,
+            remotePolicy: formData.remote_policy,
+            employmentType: formData.employment_type,
+            requiredExperienceYears: formData.required_experience_years,
+            salaryMin: formData.salary_min,
+            salaryMax: formData.salary_max,
+            requiredSkills: formData.required_skills || [],
+            idealRoleColorPrimary: formData.ideal_role_color_primary,
+            idealRoleColorSecondary: formData.ideal_role_color_secondary,
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success || !data?.draft) {
+        throw new Error('The ATS draft generator returned an unexpected response.');
+      }
+
+      const draft = data.draft as {
+        title?: string;
+        description?: string;
+        required_skills?: string[];
+        posting_notes?: string[];
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        title: draft.title?.trim() || prev.title,
+        description: draft.description?.trim() || prev.description,
+        required_skills: Array.from(
+          new Set(
+            (draft.required_skills || prev.required_skills || [])
+              .map((skill) => skill.trim())
+              .filter(Boolean),
+          ),
+        ),
+      }));
+      setAtsPostingNotes((draft.posting_notes || []).filter(Boolean));
+
+      toast({
+        title: 'ATS draft ready',
+        description: `${targetAtsPlatform} copy has been tailored. Review it in RCF, then publish it manually in your ATS when ready.`,
+      });
+    } catch (err: unknown) {
+      console.error('Error generating ATS draft:', err);
+      toast({
+        title: 'Could not generate ATS draft',
+        description: err instanceof Error ? err.message : 'Failed to tailor the job post for the selected ATS.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingAtsDraft(false);
+    }
+  };
+
   const handleSaveJob = async () => {
     if (!formData.title?.trim()) {
       toast({
@@ -252,12 +416,25 @@ export default function JobPostingsTab({
 
     setSaving(true);
     try {
+      const nextStatus: JobPostingStatus =
+        editingJob && !['draft', 'open'].includes(editingJob.status)
+          ? editingJob.status
+          : saveAsDraft
+            ? 'draft'
+            : 'open';
+      const nextPublishedAt =
+        nextStatus === 'open'
+          ? editingJob?.published_at || new Date().toISOString()
+          : null;
+
       if (editingJob) {
         // Update existing job
         const { error } = await supabase
           .from('job_postings')
           .update({
             ...formData,
+            status: nextStatus,
+            published_at: nextPublishedAt,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editingJob.id);
@@ -266,7 +443,10 @@ export default function JobPostingsTab({
         
         toast({
           title: 'Job updated',
-          description: `"${formData.title}" has been updated.`,
+          description:
+            nextStatus === 'draft'
+              ? `"${formData.title}" has been updated and saved as a draft in RCF.`
+              : `"${formData.title}" has been updated and is live in RCF.`,
         });
       } else {
         // Create new job
@@ -287,7 +467,8 @@ export default function JobPostingsTab({
             ideal_role_color_primary: formData.ideal_role_color_primary,
             ideal_role_color_secondary: formData.ideal_role_color_secondary,
             company_role_id: formData.company_role_id,
-            status: 'draft',
+            status: nextStatus,
+            published_at: nextPublishedAt,
           })
           .select()
           .single();
@@ -317,18 +498,21 @@ export default function JobPostingsTab({
         
         toast({
           title: 'Job created',
-          description: `"${formData.title}" has been created with default pipeline stages.`,
+          description:
+            nextStatus === 'draft'
+              ? `"${formData.title}" has been created as a draft in RCF. Publish it manually in ${targetAtsPlatform || 'your ATS'} when you're ready, then let sync pull candidates back in.`
+              : `"${formData.title}" is live in RCF with default pipeline stages. Publish the matching role manually in ${targetAtsPlatform || 'your ATS'} so sync can pull applicants back into the pipeline.`,
         });
       }
 
       onCloseCreateModal();
       resetForm();
       fetchJobs();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving job:', err);
       toast({
         title: 'Error saving job',
-        description: err.message,
+        description: err instanceof Error ? err.message : 'Failed to save job.',
         variant: 'destructive',
       });
     } finally {
@@ -357,11 +541,11 @@ export default function JobPostingsTab({
       });
       
       fetchJobs();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating status:', err);
       toast({
         title: 'Error updating status',
-        description: err.message,
+        description: err instanceof Error ? err.message : 'Failed to update status.',
         variant: 'destructive',
       });
     }
@@ -386,11 +570,11 @@ export default function JobPostingsTab({
       });
       
       fetchJobs();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting job:', err);
       toast({
         title: 'Error deleting job',
-        description: err.message,
+        description: err instanceof Error ? err.message : 'Failed to delete job.',
         variant: 'destructive',
       });
     }
@@ -441,6 +625,13 @@ export default function JobPostingsTab({
     if (min) return `${fmt(min)}+`;
     return `Up to ${fmt(max!)}`;
   };
+
+  const isAtsImportedJob = (job: JobPosting) =>
+    (job as JobPosting & { external_source?: string | null }).external_source === 'merge_ats';
+
+  const connectedAtsCount = mergeConnections.filter(
+    (connection) => connection.category === 'ats' && connection.connectionStatus === 'connected',
+  ).length;
 
   if (loading) {
     return (
@@ -509,6 +700,7 @@ export default function JobPostingsTab({
             const StatusIcon = statusConfig.icon;
             const daysOpen = getDaysOpen(job);
             const salary = formatSalary(job.salary_min, job.salary_max);
+            const atsImported = isAtsImportedJob(job);
 
             return (
               <Card key={job.id} className="relative w-full max-w-xl md:max-w-none">
@@ -556,43 +748,52 @@ export default function JobPostingsTab({
                         )}
                         {isHROrAdmin && (
                           <>
-                            <DropdownMenuItem onClick={() => handleEditJob(job)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Job
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {job.status === 'draft' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'open')}>
-                                <Play className="h-4 w-4 mr-2" />
-                                Publish
+                            {atsImported ? (
+                              <DropdownMenuItem disabled>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Managed in connected ATS
                               </DropdownMenuItem>
+                            ) : (
+                              <>
+                                <DropdownMenuItem onClick={() => handleEditJob(job)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Job
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {job.status === 'draft' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'open')}>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Publish
+                                  </DropdownMenuItem>
+                                )}
+                                {job.status === 'open' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'paused')}>
+                                    <Pause className="h-4 w-4 mr-2" />
+                                    Pause
+                                  </DropdownMenuItem>
+                                )}
+                                {job.status === 'paused' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'open')}>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Resume
+                                  </DropdownMenuItem>
+                                )}
+                                {(job.status === 'open' || job.status === 'paused') && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'closed')}>
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Close
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteJob(job)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
                             )}
-                            {job.status === 'open' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'paused')}>
-                                <Pause className="h-4 w-4 mr-2" />
-                                Pause
-                              </DropdownMenuItem>
-                            )}
-                            {job.status === 'paused' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'open')}>
-                                <Play className="h-4 w-4 mr-2" />
-                                Resume
-                              </DropdownMenuItem>
-                            )}
-                            {(job.status === 'open' || job.status === 'paused') && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(job.id, 'closed')}>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Close
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteJob(job)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
                           </>
                         )}
                       </DropdownMenuContent>
@@ -604,6 +805,11 @@ export default function JobPostingsTab({
                       <StatusIcon className="h-3 w-3 mr-1" />
                       {statusConfig.label}
                     </Badge>
+                    {atsImported && (
+                      <Badge variant="outline" className="text-xs">
+                        ATS Import
+                      </Badge>
+                    )}
                     {job.ideal_role_color_primary && (
                       <Badge variant="outline" className="text-xs">
                         <span 
@@ -679,8 +885,8 @@ export default function JobPostingsTab({
             </DialogTitle>
             <DialogDescription>
               {editingJob 
-                ? 'Update the job details below.'
-                : 'Fill in the details to create a new job posting. Default pipeline stages will be created automatically.'}
+                ? 'Update the role in RCF, tailor it for the ATS you plan to use, and keep the pipeline in sync once candidates flow back from Merge.'
+                : 'Create the role in RCF, generate ATS-specific copy with AI if helpful, and manually publish it in your external ATS when ready.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -713,6 +919,84 @@ export default function JobPostingsTab({
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               />
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    ATS-tailored draft
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Pick the ATS you plan to publish in and we&apos;ll tailor the posting for that workflow. RCF keeps the draft here, and your team still posts it manually in the external ATS.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="lg:shrink-0"
+                  onClick={handleGenerateAtsDraft}
+                  disabled={generatingAtsDraft || !targetAtsPlatform || !formData.title?.trim()}
+                >
+                  {generatingAtsDraft ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Generate ATS Copy
+                </Button>
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="space-y-2">
+                  <Label>Target ATS</Label>
+                  <Select value={targetAtsPlatform} onValueChange={setTargetAtsPlatform}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an ATS to tailor this job post..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {atsTargetOptions.map((integration) => (
+                        <SelectItem key={integration.integration} value={integration.name}>
+                          {integration.connected ? `${integration.name} (Connected)` : integration.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {connectedAtsCount > 0
+                      ? 'Your connected ATS is pre-selected, but you can tailor this copy for any supported Merge ATS.'
+                      : 'Choose the ATS your team plans to publish in so the generated copy fits that workflow.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-background/80 px-4 py-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="save-as-draft" className="text-sm font-medium">
+                      Save as draft in RCF
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Keep this role private in RCF until your team is ready to open it publicly.
+                    </p>
+                  </div>
+                  <Switch
+                    id="save-as-draft"
+                    checked={saveAsDraft}
+                    onCheckedChange={setSaveAsDraft}
+                  />
+                </div>
+              </div>
+
+              {atsPostingNotes.length > 0 && (
+                <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <div className="text-sm font-medium">Manual publish notes for {targetAtsPlatform}</div>
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {atsPostingNotes.map((note) => (
+                      <li key={note}>• {note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Department */}
@@ -924,7 +1208,7 @@ export default function JobPostingsTab({
             </Button>
             <Button onClick={handleSaveJob} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingJob ? 'Update Job' : 'Create Job'}
+              {editingJob ? 'Save Job' : saveAsDraft ? 'Create Draft' : 'Create and Publish'}
             </Button>
           </DialogFooter>
         </DialogContent>

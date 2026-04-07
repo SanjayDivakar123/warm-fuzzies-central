@@ -18,6 +18,150 @@ function isValidUUID(value: string): boolean {
   return typeof value === "string" && uuidRegex.test(value);
 }
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function getDominantColor(results: any): string {
+  const candidate =
+    results?.dominantColor ||
+    results?.primaryColor ||
+    results?.role_color ||
+    results?.color ||
+    "blue";
+  return String(candidate).trim().toLowerCase() || "blue";
+}
+
+function getScores(results: any) {
+  const scores = results?.scores || {};
+  return {
+    yellow: Number(scores.yellow || 0),
+    red: Number(scores.red || 0),
+    green: Number(scores.green || 0),
+    blue: Number(scores.blue || 0),
+  };
+}
+
+function generateTeamInsightsHash(teamMembers: Array<{
+  id: string;
+  job_role: string | null;
+  dominantColor: string;
+  scores: { yellow: number; red: number; green: number; blue: number };
+}>): string {
+  const hashData = [...teamMembers]
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map((member) =>
+      `${member.id}:${member.job_role || ""}:${member.dominantColor}:${member.scores.yellow}-${member.scores.red}-${member.scores.green}-${member.scores.blue}`,
+    )
+    .join("|");
+
+  return btoa(hashData);
+}
+
+async function syncTeamInsightsCacheForEmailChange(supabase: any, params: {
+  companyId: string;
+  companyUserId: string;
+  oldEmail: string;
+  newEmail: string;
+}) {
+  const { data: teamInsight, error: insightError } = await supabase
+    .from("team_insights")
+    .select("id, insights")
+    .eq("company_id", params.companyId)
+    .maybeSingle();
+
+  if (insightError || !teamInsight?.id) {
+    return;
+  }
+
+  const { data: assessedUsers, error: assessedUsersError } = await supabase
+    .from("company_users")
+    .select(`
+      id,
+      email,
+      job_role,
+      assessment_result_id,
+      assessment_results:assessment_result_id(
+        results
+      )
+    `)
+    .eq("company_id", params.companyId)
+    .neq("status", "revoked")
+    .not("assessment_result_id", "is", null);
+
+  if (assessedUsersError) {
+    throw assessedUsersError;
+  }
+
+  const normalizedCurrentUsers = (assessedUsers || []).map((user: any) => {
+    const resultRecord = Array.isArray(user.assessment_results)
+      ? user.assessment_results[0]
+      : user.assessment_results;
+    const results = resultRecord?.results || {};
+
+    return {
+      id: user.id,
+      email: normalizeEmail(user.email),
+      job_role: user.job_role || null,
+      dominantColor: getDominantColor(results),
+      scores: getScores(results),
+    };
+  });
+
+  const insightsPayload = teamInsight.insights && typeof teamInsight.insights === "object"
+    ? structuredClone(teamInsight.insights)
+    : {};
+
+  const memberInsights = Array.isArray(insightsPayload.memberInsights)
+    ? insightsPayload.memberInsights
+    : [];
+
+  const currentUserByEmail = new Map(
+    normalizedCurrentUsers.map((user: any) => [normalizeEmail(user.email), user]),
+  );
+
+  insightsPayload.memberInsights = memberInsights.map((member: any) => {
+    const memberEmail = normalizeEmail(member.email || "");
+    const matchedCurrentUser =
+      member.memberId === params.companyUserId
+        ? normalizedCurrentUsers.find((user: any) => user.id === params.companyUserId) || null
+        : currentUserByEmail.get(memberEmail) || null;
+
+    if (member.memberId === params.companyUserId || memberEmail === params.oldEmail) {
+      return {
+        ...member,
+        memberId: params.companyUserId,
+        email: params.newEmail,
+      };
+    }
+
+    if (matchedCurrentUser?.id) {
+      return {
+        ...member,
+        memberId: matchedCurrentUser.id,
+        email: matchedCurrentUser.email,
+      };
+    }
+
+    return member;
+  });
+
+  const teamHash = generateTeamInsightsHash(normalizedCurrentUsers);
+
+  const { error: updateInsightError } = await supabase
+    .from("team_insights")
+    .update({
+      insights: insightsPayload,
+      team_hash: teamHash,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", teamInsight.id);
+
+  if (updateInsightError) {
+    throw updateInsightError;
+  }
+}
+
 async function findAuthUserIdByEmail(supabase: any, email: string): Promise<string | null> {
   const normalizedEmail = email.toLowerCase();
   let page = 1;
@@ -199,6 +343,13 @@ serve(async (req) => {
     if (updateError) {
       throw updateError;
     }
+
+    await syncTeamInsightsCacheForEmailChange(supabase, {
+      companyId: targetUser.company_id,
+      companyUserId,
+      oldEmail: normalizeEmail(targetUser.email),
+      newEmail,
+    });
 
     return new Response(
       JSON.stringify({

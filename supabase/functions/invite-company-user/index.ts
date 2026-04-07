@@ -664,40 +664,31 @@ serve(async (req) => {
       : await sendInviteEmail(normalizedEmail, inviteCode, company.name, company.subdomain, templateSettings);
 
     // === SLACK DM INVITE ===
-    // Send Slack DM invite if Slack is enabled for this company
+    // Attempt a Slack DM invite through the active Slack connection or the legacy fallback settings.
     let slackDmSent = false;
     try {
-      // Check if company has Slack enabled
-      const { data: companySlack } = await supabase
-        .from('companies')
-        .select('slack_notifications_enabled, slack_bot_token')
-        .eq('id', company_id)
-        .single();
+      console.log('Attempting to send Slack DM invite...');
+      
+      const slackResponse = await fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          company_id: company_id,
+          event_type: 'dm_invite',
+          data: {
+            email: email.toLowerCase().trim(),
+            invite_code: inviteCode,
+            full_name: full_name || null,
+          }
+        })
+      });
 
-      if (companySlack?.slack_notifications_enabled && companySlack?.slack_bot_token) {
-        console.log('Attempting to send Slack DM invite...');
-        
-        const slackResponse = await fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            company_id: company_id,
-            event_type: 'dm_invite',
-            data: {
-              email: email.toLowerCase().trim(),
-              invite_code: inviteCode,
-              full_name: full_name || null,
-            }
-          })
-        });
-
-        const slackResult = await slackResponse.json();
-        slackDmSent = slackResult.success === true;
-        console.log('Slack DM result:', slackResult);
-      }
+      const slackResult = await slackResponse.json();
+      slackDmSent = slackResult.success === true;
+      console.log('Slack DM result:', slackResult);
     } catch (slackError) {
       console.error('Slack DM error (non-fatal):', slackError);
     }
