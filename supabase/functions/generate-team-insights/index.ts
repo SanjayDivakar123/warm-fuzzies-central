@@ -8,7 +8,9 @@ const corsHeaders = {
 };
 
 interface TeamMember {
+  id: string;
   email: string;
+  fullName: string | null;
   jobRole: string | null;
   skills: string[] | null;
   dominantColor: string;
@@ -59,7 +61,7 @@ serve(async (req) => {
       const s = m.scores ?? {};
       const scores = `Y${s.yellow ?? 0}R${s.red ?? 0}G${s.green ?? 0}B${s.blue ?? 0}`;
       const skills = (m.skills || []).slice(0, 4).join(", ") || "—";
-      return `${i + 1}. ${m.email} | ${m.jobRole || "N/A"} | ${m.dominantColor || "blue"} (${m.colorLabel || "?"}) | ${scores} | ${skills}`;
+      return `${i + 1}. ID=${m.id} | ${m.email} | ${m.fullName || "N/A"} | ${m.jobRole || "N/A"} | ${m.dominantColor || "blue"} (${m.colorLabel || "?"}) | ${scores} | ${skills}`;
     }).join("\n");
 
     const systemPrompt = `You are an expert organizational psychologist and leadership consultant.
@@ -89,8 +91,9 @@ Return this JSON shape exactly:
   "teamChallenges": ["3-4 potential gaps/challenges"],
   "memberInsights": [
     {
+      "memberId": "exact member ID from the list above",
       "email": "member email",
-      "name": "Extract a display name from email (capitalize first part before @)",
+      "name": "Use their provided full name when available, otherwise a display name from email",
       "currentRole": "their current job role",
       "dominantColor": "their dominant color",
       "fitScore": "excellent|good|moderate|mismatch",
@@ -119,6 +122,7 @@ Role-leadership style alignment guidelines:
 - Data Analysts/Finance: Green (detail-oriented) or Blue (strategic) styles work well
 
 IMPORTANT: memberInsights MUST have exactly ${teamMembers.length} entries — one per member listed above. Do not skip or omit anyone.
+IMPORTANT: Copy each memberId exactly from the TEAM MEMBERS list above so the response can be mapped back to the same person even if their email changes later.
 Keep each entry reasonably concise, but maintain depth and specificity.
 
 Return ONLY the JSON object, no other text.`;

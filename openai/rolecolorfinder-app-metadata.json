@@ -1,0 +1,45 @@
+{
+  "name": "RoleColorFinder",
+  "tagline": "Know your team's RoleColor. Make every conversation count.",
+  "description": "RoleColorFinder helps teams understand how each person leads, executes, and communicates. Connect RCF to ChatGPT and unlock RoleColor-aware coaching for team health, org design, hiring, conflict resolution, succession planning, and communication.",
+  "category": "Productivity / HR & People",
+  "supported_modes": ["b2b", "personal"],
+  "mcp_server_url": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/chatgpt-mcp-server",
+  "oauth_init_url": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/chatgpt-oauth-init",
+  "oauth_callback_url": "https://qbuxoetprodjxpagfkoi.supabase.co/functions/v1/chatgpt-oauth-callback",
+  "manage_url_b2b": "https://rolecolorfinder.com/b2b/company-portal?tab=settings&settingsTab=integrations",
+  "manage_url_personal": "https://rolecolorfinder.com/settings/integrations",
+  "tools": [
+    "get_my_rolecolor",
+    "get_team_roster",
+    "get_team_composition",
+    "get_team_health_score",
+    "get_org_chart_by_rolecolor",
+    "get_team_gap_analysis",
+    "get_succession_plan",
+    "clone_team_blueprint",
+    "get_collaboration_score",
+    "compare_departments",
+    "get_compatibility",
+    "get_person_profile",
+    "get_conflict_advice",
+    "get_communication_style",
+    "suggest_hire_rolecolor",
+    "get_pending_assessments"
+  ],
+  "modes": {
+    "b2b": {
+      "label": "Business Portal",
+      "description": "Company admins connect ChatGPT to the full team roster, RoleColor distribution, and hiring context."
+    },
+    "personal": {
+      "label": "Personal Portal",
+      "description": "Individuals connect ChatGPT to their own RoleColor profile and optionally direct teammate context."
+    }
+  },
+  "submission_notes": [
+    "Business mode limits org-level tools to active admin/hr connections.",
+    "Personal mode limits access to the signed-in user's own profile and opted-in teammate context.",
+    "All tool calls are logged to chatgpt_tool_calls with sanitized inputs."
+  ]
+}

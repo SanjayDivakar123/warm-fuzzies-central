@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useHiringSubscribeInFlight } from '@/lib/hiringSubscribeLock';
 import { subscribeHiring } from '@/lib/subscribeHiring';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,6 +75,7 @@ type HiringTab = 'jobs' | 'pipeline' | 'candidates' | 'interviews' | 'offers' | 
 
 export default function HiringSection({ company, companyUser, onSubscriptionUpdated }: HiringSectionProps) {
   const { activeTour, currentStepIndex, startTour } = useHelpTour();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<HiringTab>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -222,6 +224,35 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
       setActiveTab(matched.tab);
     }
   }, [activeTour, currentStepIndex, activeTab]);
+
+  useEffect(() => {
+    const requestedHiringTab = searchParams.get('hiringTab');
+    const isSupportedHiringTab = (
+      value: string | null,
+    ): value is HiringTab =>
+      value === 'jobs' ||
+      value === 'pipeline' ||
+      value === 'candidates' ||
+      value === 'interviews' ||
+      value === 'offers' ||
+      value === 'templates' ||
+      value === 'analytics' ||
+      value === 'legacy' ||
+      value === 'integrations';
+
+    if (isSupportedHiringTab(requestedHiringTab)) {
+      setActiveTab((currentTab) => (currentTab === requestedHiringTab ? currentTab : requestedHiringTab));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('tab') !== 'hiring') return;
+    if (searchParams.get('hiringTab') === activeTab) return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('hiringTab', activeTab);
+    setSearchParams(nextParams, { replace: true });
+  }, [activeTab, searchParams, setSearchParams]);
 
   const classifySubscribeError = (msg: string, step?: string): typeof subscribeError => {
     const m = (msg || '').toLowerCase();

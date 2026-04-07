@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ import PaymentMethodCard from "./PaymentMethodCard";
 import ThemeExportImport from "./ThemeExportImport";
 import HiringSubscriptionSettings from "./HiringSubscriptionSettings";
 // Integrations infrastructure is kept, but hidden via feature flag
-const INTEGRATIONS_ENABLED = false;
+const INTEGRATIONS_ENABLED = true;
 // Reports infrastructure is kept, but hidden via feature flag
 const REPORTS_ENABLED = false;
 import IntegrationsSettings from "./admin/IntegrationsSettings";
@@ -62,6 +63,7 @@ import {
 
 interface SettingsTabProps {
   company: any;
+  companyUser?: { id: string; role: string } | null;
   onSettingsSaved?: () => void;
   scrollToSection?: string | null;
   onScrollComplete?: () => void;
@@ -76,8 +78,19 @@ interface SettingsTabProps {
   onResolveBillingLock?: (options?: { silent?: boolean }) => Promise<boolean>;
 }
 
+type SettingsSubtab = "branding" | "subscriptions" | "integrations" | "api" | "reports";
+
+const getAvailableSettingsTabs = (): SettingsSubtab[] => [
+  "branding",
+  "subscriptions",
+  ...(INTEGRATIONS_ENABLED ? (["integrations"] as SettingsSubtab[]) : []),
+  "api",
+  ...(REPORTS_ENABLED ? (["reports"] as SettingsSubtab[]) : []),
+];
+
 export default function SettingsTab({
   company,
+  companyUser,
   onSettingsSaved,
   scrollToSection,
   onScrollComplete,
@@ -87,6 +100,7 @@ export default function SettingsTab({
   billingLock = null,
   onResolveBillingLock,
 }: SettingsTabProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   type SaveableSettings = {
     logoUrl: string;
     logoUrlDark: string;
@@ -119,6 +133,12 @@ export default function SettingsTab({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const availableSettingsTabs = getAvailableSettingsTabs();
+  const resolveSettingsTab = (value: string | null): SettingsSubtab =>
+    availableSettingsTabs.includes(value as SettingsSubtab) ? (value as SettingsSubtab) : "branding";
+  const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubtab>(() =>
+    resolveSettingsTab(searchParams.get("settingsTab")),
+  );
   const [lastSavedSettings, setLastSavedSettings] = useState<SaveableSettings>({
     logoUrl: company.logo_url || "",
     logoUrlDark: company.logo_url_dark || "",
@@ -191,6 +211,11 @@ export default function SettingsTab({
   useEffect(() => {
     onDirtyChange?.(hasUnsavedChanges);
   }, [hasUnsavedChanges, onDirtyChange]);
+
+  useEffect(() => {
+    const nextTab = resolveSettingsTab(searchParams.get("settingsTab"));
+    setActiveSettingsTab((currentTab) => (currentTab === nextTab ? currentTab : nextTab));
+  }, [searchParams]);
 
   // Fetch current admin's notification preference
   useEffect(() => {
@@ -418,6 +443,19 @@ export default function SettingsTab({
     }
   }, [registerSaveHandler, handleSave]);
 
+  const handleSettingsTabChange = (value: string) => {
+    const nextTab = resolveSettingsTab(value);
+    setActiveSettingsTab(nextTab);
+
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextTab === "branding") {
+      nextParams.delete("settingsTab");
+    } else {
+      nextParams.set("settingsTab", nextTab);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
   if (billingOnly) {
     return (
       <div className="space-y-4">
@@ -484,8 +522,16 @@ export default function SettingsTab({
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="branding" className="space-y-4">
-        <TabsList className={"grid w-full grid-cols-3 lg:w-auto lg:inline-flex"}>
+      <Tabs value={activeSettingsTab} onValueChange={handleSettingsTabChange} className="space-y-4">
+        <TabsList
+          className={`grid w-full ${
+            availableSettingsTabs.length >= 5
+              ? "grid-cols-5"
+              : availableSettingsTabs.length === 4
+                ? "grid-cols-4"
+                : "grid-cols-3"
+          } lg:w-auto lg:inline-flex`}
+        >
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4 hidden sm:inline" />
             Branding
@@ -959,7 +1005,7 @@ export default function SettingsTab({
 
         {INTEGRATIONS_ENABLED && (
           <TabsContent value="integrations" className="space-y-4">
-            <IntegrationsSettings company={company} onSettingsSaved={onSettingsSaved} />
+            <IntegrationsSettings company={company} companyUser={companyUser} onSettingsSaved={onSettingsSaved} />
           </TabsContent>
         )}
 

@@ -81,6 +81,7 @@ interface PendingTeamMember {
 }
 
 interface MemberInsight {
+  memberId?: string;
   email: string;
   name?: string;
   currentRole: string;
@@ -159,9 +160,9 @@ const loadingStages = [
 
 // Generate a hash of team members to detect changes (includes scores to detect assessment changes)
 function generateTeamHash(teamMembers: TeamMember[]): string {
-  const sortedMembers = [...teamMembers].sort((a, b) => a.email.localeCompare(b.email));
+  const sortedMembers = [...teamMembers].sort((a, b) => a.id.localeCompare(b.id));
   const hashData = sortedMembers.map(m => 
-    `${m.email}:${m.job_role}:${m.dominantColor}:${m.scores.yellow}-${m.scores.red}-${m.scores.green}-${m.scores.blue}`
+    `${m.id}:${m.job_role}:${m.dominantColor}:${m.scores.yellow}-${m.scores.red}-${m.scores.green}-${m.scores.blue}`
   ).join('|');
   return btoa(hashData);
 }
@@ -193,24 +194,77 @@ export default function TeamInsightsModal({
 
   const toDisplayLimit = (used: number) => Math.max(3, used);
   const normalizeEmail = (email: string) => email.trim().toLowerCase();
+  const normalizeMemberId = (value?: string | null) => value?.trim() || null;
+
+  const normalizeInsightsForCurrentTeam = useCallback((sourceInsights: InsightData | null | undefined) => {
+    if (!sourceInsights) {
+      return null;
+    }
+
+    const teamById = new Map(teamMembers.map((member) => [member.id, member]));
+    const teamByEmail = new Map(teamMembers.map((member) => [normalizeEmail(member.email), member]));
+    const matchedIds = new Set<string>();
+    const signatureOfTeamMember = (member: TeamMember) =>
+      `${(member.job_role || '').trim().toLowerCase()}::${(member.dominantColor || '').trim().toLowerCase()}`;
+    const signatureOfInsight = (memberInsight: MemberInsight) =>
+      `${(memberInsight.currentRole || '').trim().toLowerCase()}::${(memberInsight.dominantColor || '').trim().toLowerCase()}`;
+
+    return {
+      ...sourceInsights,
+      memberInsights: (sourceInsights.memberInsights || []).map((memberInsight) => {
+        const matchById = normalizeMemberId(memberInsight.memberId)
+          ? teamById.get(normalizeMemberId(memberInsight.memberId)!)
+          : undefined;
+        const matchByEmail = teamByEmail.get(normalizeEmail(memberInsight.email));
+        let matchedMember = matchById || matchByEmail;
+
+        if (!matchedMember) {
+          const signatureMatches = teamMembers.filter(
+            (member) =>
+              !matchedIds.has(member.id) && signatureOfTeamMember(member) === signatureOfInsight(memberInsight),
+          );
+
+          if (signatureMatches.length === 1) {
+            matchedMember = signatureMatches[0];
+          }
+        }
+
+        if (!matchedMember) {
+          return memberInsight;
+        }
+
+        matchedIds.add(matchedMember.id);
+
+        return {
+          ...memberInsight,
+          memberId: matchedMember.id,
+          email: matchedMember.email,
+          name: memberInsight.name || matchedMember.full_name || undefined,
+          currentRole: matchedMember.job_role || memberInsight.currentRole,
+          dominantColor: matchedMember.dominantColor || memberInsight.dominantColor,
+        };
+      }),
+    } satisfies InsightData;
+  }, [teamMembers]);
 
   const getCoverageCounts = useCallback((cachedInsights: InsightData | null | undefined) => {
-    const cachedEmails = new Set(
-      (cachedInsights?.memberInsights || []).map((member) => normalizeEmail(member.email))
+    const normalizedInsights = normalizeInsightsForCurrentTeam(cachedInsights);
+    const cachedIdentifiers = new Set(
+      (normalizedInsights?.memberInsights || []).map((member) => normalizeMemberId(member.memberId) || normalizeEmail(member.email))
     );
-    const currentEmails = new Set(
-      teamMembers.map((member) => normalizeEmail(member.email))
+    const currentIdentifiers = new Set(
+      teamMembers.map((member) => member.id)
     );
 
     const notIncludedCount = teamMembers.filter(
-      (member) => !cachedEmails.has(normalizeEmail(member.email))
+      (member) => !cachedIdentifiers.has(member.id)
     ).length;
-    const removedCount = (cachedInsights?.memberInsights || []).filter(
-      (member) => !currentEmails.has(normalizeEmail(member.email))
+    const removedCount = (normalizedInsights?.memberInsights || []).filter(
+      (member) => !currentIdentifiers.has(normalizeMemberId(member.memberId) || normalizeEmail(member.email))
     ).length;
 
     return { notIncludedCount, removedCount };
-  }, [teamMembers]);
+  }, [normalizeInsightsForCurrentTeam, teamMembers]);
 
   const currentTeamHash = generateTeamHash(teamMembers);
   const hasMatchingCachedTeam =
@@ -282,7 +336,7 @@ export default function TeamInsightsModal({
 
       if (data) {
         setCachedHash(data.team_hash || null);
-        const cachedInsights = data.insights as unknown as InsightData;
+        const cachedInsights = normalizeInsightsForCurrentTeam(data.insights as unknown as InsightData) || (data.insights as unknown as InsightData);
         setInsights(cachedInsights);
 
         const teamChanged = data.team_hash !== currentTeamHash;
@@ -315,7 +369,7 @@ export default function TeamInsightsModal({
         .eq('company_id', companyId)
         .single();
 
-      const insightsJson = JSON.parse(JSON.stringify(insightsData));
+      const insightsJson = JSON.parse(JSON.stringify(normalizeInsightsForCurrentTeam(insightsData) || insightsData));
 
       if (existing) {
         // Update existing record
@@ -365,7 +419,9 @@ export default function TeamInsightsModal({
           .single();
         
         if (cachedData && cachedData.team_hash === currentTeamHash) {
-          const cachedInsights = cachedData.insights as unknown as InsightData;
+          const cachedInsights =
+            normalizeInsightsForCurrentTeam(cachedData.insights as unknown as InsightData) ||
+            (cachedData.insights as unknown as InsightData);
           const { notIncludedCount, removedCount } = getCoverageCounts(cachedInsights);
           if (notIncludedCount === 0 && removedCount === 0) {
             // Team unchanged and cached insights cover everyone.
@@ -423,6 +479,7 @@ export default function TeamInsightsModal({
         body: {
           companyId,
           teamMembers: teamMembers.map(m => ({
+            id: m.id,
             email: m.email,
             fullName: m.full_name,
             jobRole: m.job_role,
@@ -437,20 +494,21 @@ export default function TeamInsightsModal({
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
 
-      const insightsData = data.insights as InsightData;
+      const insightsData = normalizeInsightsForCurrentTeam(data.insights as InsightData) || (data.insights as InsightData);
 
       // Backfill any members the AI omitted so every team member has an entry
-      const returnedEmails = new Set(
-        (insightsData.memberInsights || []).map((m) => normalizeEmail(m.email))
+      const returnedMemberIds = new Set(
+        (insightsData.memberInsights || []).map((m) => normalizeMemberId(m.memberId) || normalizeEmail(m.email))
       );
       const missing = teamMembers.filter(
-        (m) => !returnedEmails.has(normalizeEmail(m.email))
+        (m) => !returnedMemberIds.has(m.id)
       );
       if (missing.length > 0) {
         console.warn(`AI omitted ${missing.length} member(s), backfilling with defaults`);
         for (const m of missing) {
           const color = m.dominantColor?.toLowerCase() || 'blue';
           insightsData.memberInsights.push({
+            memberId: m.id,
             email: m.email,
             name: m.full_name || m.email.split('@')[0] || 'User',
             currentRole: m.job_role || 'Not assigned',
@@ -519,7 +577,10 @@ export default function TeamInsightsModal({
       if (!data?.insights) throw new Error('No cached insights found');
 
       setLoadingProgress(100);
-      setInsights(data.insights as unknown as InsightData);
+      setInsights(
+        normalizeInsightsForCurrentTeam(data.insights as unknown as InsightData) ||
+          (data.insights as unknown as InsightData),
+      );
       setCachedHash(data.team_hash || null);
       toast({
         title: 'Insights re-do complete',
@@ -954,16 +1015,16 @@ export default function TeamInsightsModal({
                       );
                     })}
                     {(() => {
-                      const analyzedEmails = new Set(
-                        insights.memberInsights.map((m) => normalizeEmail(m.email))
+                      const analyzedMemberIds = new Set(
+                        insights.memberInsights.map((m) => normalizeMemberId(m.memberId) || normalizeEmail(m.email))
                       );
                       const unanalyzedMembers = teamMembers.filter(
-                        (m) => !analyzedEmails.has(normalizeEmail(m.email))
+                        (m) => !analyzedMemberIds.has(m.id)
                       );
 
                       return [...insights.memberInsights.map((member) => {
                         const memberData = teamMembers.find(
-                          (m) => normalizeEmail(m.email) === normalizeEmail(member.email)
+                          (m) => m.id === normalizeMemberId(member.memberId) || normalizeEmail(m.email) === normalizeEmail(member.email)
                         );
                         return { type: 'analyzed' as const, member, memberData };
                       }), ...unanalyzedMembers.map((m) => ({

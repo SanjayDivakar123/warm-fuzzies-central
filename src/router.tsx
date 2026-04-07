@@ -92,6 +92,9 @@ import ProposalPayment from "@/pages/client/ProposalPayment";
 import ProposalSuccess from "@/pages/client/ProposalSuccess";
 import ProposalManager from "@/pages/admin/ProposalManager";
 import TwoFactorEnrollment from "@/pages/TwoFactorEnrollment";
+import SlackLinkPage from "@/pages/SlackLinkPage";
+import PersonalIntegrationsPage from "@/pages/PersonalIntegrationsPage";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -123,6 +126,16 @@ export const routeConfig = [
   {
     path: "/dashboard",
     element: <Layout><Dashboard /></Layout>,
+  },
+  {
+    path: "/settings/integrations",
+    element: (
+      <Layout>
+        <ProtectedRoute>
+          <PersonalIntegrationsPage />
+        </ProtectedRoute>
+      </Layout>
+    ),
   },
   {
     path: "/change-password",
@@ -315,6 +328,10 @@ export const routeConfig = [
   {
     path: "/b2b/payment-success",
     element: <Layout><B2BPaymentSuccess /></Layout>,
+  },
+  {
+    path: "/settings/integrations/slack/link",
+    element: <WorkspaceLayout><SlackLinkPage /></WorkspaceLayout>,
   },
   {
     path: "/b2b/confirm-delete-company",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ export default function CompanyLogin() {
   const { company, loading, error, setEmployee } = useCompanyPortal();
   const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [inviteCode, setInviteCode] = useState('');
@@ -24,6 +25,19 @@ export default function CompanyLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
+
+  useEffect(() => {
+    const inviteCodeParam = searchParams.get('inviteCode');
+    const emailParam = searchParams.get('email');
+
+    if (inviteCodeParam) {
+      setInviteCode(inviteCodeParam.toUpperCase().slice(0, 8));
+    }
+
+    if (emailParam) {
+      setEmail(emailParam.toLowerCase());
+    }
+  }, [searchParams]);
 
   // Handle Google OAuth callback
   useEffect(() => {
