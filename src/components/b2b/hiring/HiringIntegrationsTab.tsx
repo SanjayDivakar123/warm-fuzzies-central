@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
   getClearbitLogoUrl,
+  getGoogleFaviconUrl,
   MERGE_ATS_INTEGRATIONS,
   MERGE_HRIS_INTEGRATIONS,
   TOTAL_SUPPORTED_MERGE_INTEGRATIONS,
@@ -210,7 +211,14 @@ const getMetadataCandidates = (
   integration: SupportedMergeIntegration,
   metadata: MergeMetadataRecord | null,
 ) =>
-  Array.from(new Set([metadata?.square_image, metadata?.image, getClearbitLogoUrl(integration.name)].filter(Boolean))) as string[];
+  Array.from(
+    new Set([
+      metadata?.square_image,
+      metadata?.image,
+      getGoogleFaviconUrl(integration.name),
+      getClearbitLogoUrl(integration.name),
+    ].filter(Boolean)),
+  ) as string[];
 
 const findSupportedIntegration = (category: MergeIntegrationCategory, platformName: string) =>
   SECTION_CONFIG.find((section) => section.category === category)?.integrations.find(

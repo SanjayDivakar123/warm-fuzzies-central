@@ -174,3 +174,8 @@ export const getClearbitLogoUrl = (platformName: string) => {
   const domain = MERGE_CLEARBIT_DOMAIN_MAP[platformName];
   return domain ? `https://logo.clearbit.com/${domain}` : null;
 };
+
+export const getGoogleFaviconUrl = (platformName: string) => {
+  const domain = MERGE_CLEARBIT_DOMAIN_MAP[platformName];
+  return domain ? `https://www.google.com/s2/favicons?sz=128&domain_url=${domain}` : null;
+};

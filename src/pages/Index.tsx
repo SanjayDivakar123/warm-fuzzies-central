@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import professionalTeamImage from "@/assets/professional-team.jpg";
 import roleColorAILogo from "@/assets/rolecolor-ai-logo.svg";
 import { HeroScrollDemo } from "@/components/ui/demo";
+import LogoCloud3Demo from "@/components/ui/logo-cloud-3-demo";
 import { ScrollReveal, ScrollRevealGroup } from "@/components/ui/scroll-reveal";
 import { TestimonialsCarousel } from "@/components/ui/testimonials-carousel";
 import { TestimonialsColumns } from "@/components/ui/testimonials-columns";
@@ -340,6 +341,12 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
       
       {/* Main Hero Section */}
       <HeroScrollDemo />
+
+      <section className="pb-8 md:pb-12" aria-label="Platforms we connect with">
+        <div className="container-wide">
+          <LogoCloud3Demo />
+        </div>
+      </section>
 
       {/* Philosophy Section - Enhanced */}
       <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
