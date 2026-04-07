@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MessageSquare, Bell, Check, Loader2, ExternalLink } from 'lucide-react';
 import SlackIntegrationSettings from './SlackIntegrationSettings';
-import ChatGPTIntegrationSettings from './ChatGPTIntegrationSettings';
 
 interface IntegrationsSettingsProps {
   company: any;
@@ -98,11 +97,6 @@ export default function IntegrationsSettings({ company, companyUser, onSettingsS
 
   return (
     <div className="space-y-4">
-      <ChatGPTIntegrationSettings
-        company={company}
-        onSettingsSaved={onSettingsSaved}
-      />
-
       {/* Slack Integration - Full Featured */}
       <SlackIntegrationSettings 
         company={company} 

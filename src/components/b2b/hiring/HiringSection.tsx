@@ -240,10 +240,10 @@ export default function HiringSection({ company, companyUser, onSubscriptionUpda
       value === 'legacy' ||
       value === 'integrations';
 
-    if (isSupportedHiringTab(requestedHiringTab) && requestedHiringTab !== activeTab) {
-      setActiveTab(requestedHiringTab);
+    if (isSupportedHiringTab(requestedHiringTab)) {
+      setActiveTab((currentTab) => (currentTab === requestedHiringTab ? currentTab : requestedHiringTab));
     }
-  }, [searchParams, activeTab]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get('tab') !== 'hiring') return;

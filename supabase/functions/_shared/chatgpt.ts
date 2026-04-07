@@ -18,6 +18,13 @@ const DEFAULT_B2B_TOOLS = [
   "get_my_rolecolor",
   "get_team_roster",
   "get_team_composition",
+  "get_team_health_score",
+  "get_org_chart_by_rolecolor",
+  "get_team_gap_analysis",
+  "get_succession_plan",
+  "clone_team_blueprint",
+  "get_collaboration_score",
+  "compare_departments",
   "get_compatibility",
   "get_person_profile",
   "get_conflict_advice",
@@ -256,6 +263,106 @@ const TOOL_METADATA = [
       type: "object",
       properties: {
         department: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_team_health_score",
+    title: "Get Team Health Score",
+    description: "Get a 0-100 team health score based on RoleColor coverage, balance, and assessment completion.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        department: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_org_chart_by_rolecolor",
+    title: "Get Org Chart By RoleColor",
+    description: "Get an org chart-style company map with RoleColor-enriched nodes and reporting lines where available.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        department: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_team_gap_analysis",
+    title: "Get Team Gap Analysis",
+    description: "Analyze missing or underrepresented RoleColors and explain what strengths the team lacks.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        department: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_succession_plan",
+    title: "Get Succession Plan",
+    description: "Model the RoleColor gap created if a specific person leaves and identify internal successors.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        person_query: { type: "string" },
+      },
+      required: ["person_query"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "clone_team_blueprint",
+    title: "Clone Team Blueprint",
+    description: "Build a RoleColor blueprint for recreating a strong team mix at a new team size.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        department: { type: "string" },
+        target_team_size: { type: "integer", minimum: 1 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_collaboration_score",
+    title: "Get Collaboration Score",
+    description: "Estimate collaboration strength between two people or two departments based on RoleColor compatibility.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        person_a_query: { type: "string" },
+        person_b_query: { type: "string" },
+        department_a: { type: "string" },
+        department_b: { type: "string" },
+        context: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "compare_departments",
+    title: "Compare Departments",
+    description: "Compare RoleColor balance, health, and gaps across departments side by side.",
+    scopes: ["team:read"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        departments: {
+          type: "array",
+          items: { type: "string" },
+        },
       },
       additionalProperties: false,
     },
@@ -617,7 +724,7 @@ export const upsertChatgptConnection = async (params: {
       org_id: params.orgId || existing.org_id,
       user_id: params.userId || existing.user_id,
       scopes_granted: params.scopesGranted || existing.scopes_granted || [],
-      enabled_tools: existing.enabled_tools?.length ? existing.enabled_tools : enabledTools,
+      enabled_tools: Array.from(new Set([...(existing.enabled_tools || []), ...enabledTools])),
       auto_inject_context: existing.auto_inject_context ?? true,
       share_profile: existing.share_profile ?? true,
       include_teammates: existing.include_teammates ?? false,
@@ -1192,6 +1299,370 @@ const buildBalanceInsight = (breakdown: ReturnType<typeof buildTeamBreakdown>) =
   };
 };
 
+const ROLE_ORDER = ["Red", "Yellow", "Green", "Blue"] as const;
+
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
+const roundNumber = (value: number, digits = 0) => {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+};
+
+const getWeekStartIso = () => {
+  const weekStart = new Date();
+  const day = weekStart.getUTCDay();
+  const diff = (day + 6) % 7;
+  weekStart.setUTCHours(0, 0, 0, 0);
+  weekStart.setUTCDate(weekStart.getUTCDate() - diff);
+  return weekStart.toISOString();
+};
+
+const getStrengthGapNarrative = (color: string) => {
+  switch (color) {
+    case "Blue":
+      return {
+        role_type: "Visionary",
+        missing_strengths: ["Long-term strategy", "Vision setting", "Future-state thinking"],
+        impact: "Without Blue energy, the team can execute well but under-invest in long-term direction and big-picture alignment.",
+      };
+    case "Green":
+      return {
+        role_type: "Architect",
+        missing_strengths: ["Systems thinking", "Risk management", "Decision quality"],
+        impact: "Without Green energy, the team can miss structural weaknesses and make avoidable process mistakes under pressure.",
+      };
+    case "Yellow":
+      return {
+        role_type: "Executor",
+        missing_strengths: ["Operational follow-through", "Delivery discipline", "Cadence management"],
+        impact: "Without Yellow energy, strong ideas may stall because no one naturally turns them into steady execution.",
+      };
+    default:
+      return {
+        role_type: "Motivator",
+        missing_strengths: ["Momentum building", "Change energy", "Cross-team influence"],
+        impact: "Without Red energy, the team can become thoughtful but slow to rally around action and difficult decisions.",
+      };
+  }
+};
+
+const calculateTeamHealthScore = (roster: TeamMemberRecord[]) => {
+  const assessedMembers = roster.filter((member) => Boolean(member.rolecolor));
+  const breakdown = buildTeamBreakdown(assessedMembers);
+  const assessedCount = assessedMembers.length;
+  const uniqueColors = ROLE_ORDER.filter((color) => breakdown[color].count > 0).length;
+  const completionRate = roster.length ? assessedCount / roster.length : 0;
+  const idealShare = 0.25;
+  const absoluteDeviation = assessedCount
+    ? ROLE_ORDER.reduce((sum, color) => sum + Math.abs(breakdown[color].count / assessedCount - idealShare), 0)
+    : 1.5;
+  const coverageScore = (uniqueColors / ROLE_ORDER.length) * 35;
+  const balanceScore = 40 * (1 - clamp(absoluteDeviation / 1.5, 0, 1));
+  const completionScore = completionRate * 25;
+  const score = clamp(Math.round(coverageScore + balanceScore + completionScore), 0, 100);
+  const balance = buildBalanceInsight(breakdown);
+  const missingColors = ROLE_ORDER.filter((color) => breakdown[color].count === 0);
+
+  return {
+    score,
+    updated_for_week_of: getWeekStartIso(),
+    total_members: roster.length,
+    assessed_members: assessedCount,
+    completion_rate: Math.round(completionRate * 100),
+    color_coverage: uniqueColors,
+    dominant_color: balance.dominantColor,
+    missing_colors: missingColors,
+    balance_insight: balance.insight,
+    factors: [
+      {
+        label: "Color coverage",
+        score: Math.round(coverageScore),
+        detail: `${uniqueColors} of 4 RoleColors are represented.`,
+      },
+      {
+        label: "Balance",
+        score: Math.round(balanceScore),
+        detail: assessedCount
+          ? `Distribution variance across assessed teammates is ${roundNumber(absoluteDeviation, 2)}.`
+          : "No assessed members yet, so balance cannot be measured.",
+      },
+      {
+        label: "Completion",
+        score: Math.round(completionScore),
+        detail: `${Math.round(completionRate * 100)}% of the team has completed a RoleColor assessment.`,
+      },
+    ],
+  };
+};
+
+const buildTeamGapAnalysis = (roster: TeamMemberRecord[]) => {
+  const assessedMembers = roster.filter((member) => Boolean(member.rolecolor));
+  const breakdown = buildTeamBreakdown(assessedMembers);
+  const missingRoles = ROLE_ORDER
+    .filter((color) => breakdown[color].count === 0)
+    .map((color) => ({
+      color,
+      count: 0,
+      ...getStrengthGapNarrative(color),
+    }));
+  const underrepresentedRoles = ROLE_ORDER
+    .filter((color) => breakdown[color].count > 0 && breakdown[color].percentage <= 15)
+    .map((color) => ({
+      color,
+      count: breakdown[color].count,
+      percentage: breakdown[color].percentage,
+      ...getStrengthGapNarrative(color),
+    }));
+  const balance = buildBalanceInsight(breakdown);
+
+  return {
+    assessed_members: assessedMembers.length,
+    total_members: roster.length,
+    dominant_color: balance.dominantColor,
+    breakdown,
+    missing_roles: missingRoles,
+    underrepresented_roles: underrepresentedRoles,
+    gap_summary: missingRoles.length
+      ? `You have ${missingRoles.map((role) => `0 ${role.role_type}s`).join(", ")} in this team snapshot.`
+      : underrepresentedRoles.length
+      ? `All RoleColors are present, but ${underrepresentedRoles.map((role) => role.role_type).join(" and ")} are still underweighted.`
+      : "All four RoleColors are represented with a healthy spread.",
+    recommended_actions: missingRoles.length
+      ? missingRoles.map((role) => `Add or develop a ${role.color} ${role.role_type} to strengthen ${role.missing_strengths[0].toLowerCase()}.`)
+      : underrepresentedRoles.map((role) => `Protect and grow ${role.color} ${role.role_type} talent so the team doesn't over-index on ${balance.dominantColor}.`),
+  };
+};
+
+const computeScaledColorTargets = (breakdown: ReturnType<typeof buildTeamBreakdown>, assessedCount: number, targetSize: number) => {
+  const weights = ROLE_ORDER.map((color) => ({
+    color,
+    raw: assessedCount ? (breakdown[color].count / assessedCount) * targetSize : targetSize / ROLE_ORDER.length,
+  }));
+  const base = weights.map((item) => ({
+    color: item.color,
+    count: Math.floor(item.raw),
+    fraction: item.raw - Math.floor(item.raw),
+  }));
+  let remaining = targetSize - base.reduce((sum, item) => sum + item.count, 0);
+
+  for (const item of [...base].sort((left, right) => right.fraction - left.fraction)) {
+    if (remaining <= 0) break;
+    item.count += 1;
+    remaining -= 1;
+  }
+
+  return base;
+};
+
+const buildCloneTeamBlueprint = (roster: TeamMemberRecord[], targetTeamSize: number) => {
+  const assessedMembers = roster.filter((member) => Boolean(member.rolecolor));
+  if (assessedMembers.length === 0) {
+    throw new HttpError(404, "No assessed team members were found to model a blueprint from");
+  }
+
+  const breakdown = buildTeamBreakdown(assessedMembers);
+  const targets = computeScaledColorTargets(breakdown, assessedMembers.length, targetTeamSize);
+
+  return {
+    source_team_size: roster.length,
+    source_assessed_size: assessedMembers.length,
+    target_team_size: targetTeamSize,
+    source_breakdown: breakdown,
+    blueprint: targets.map((item) => ({
+      color: item.color,
+      role_type: breakdown[item.color].role,
+      target_count: item.count,
+      current_share: breakdown[item.color].percentage,
+    })),
+    hiring_sequence: [...targets]
+      .sort((left, right) => right.count - left.count)
+      .map((item) => `Start with ${item.color} ${breakdown[item.color].role} talent to preserve the source team's operating rhythm.`),
+    operating_notes: [
+      "Protect the same balance of strategic, executional, architectural, and motivational energy as the source team scales.",
+      "Avoid cloning only the dominant color; keep the weaker but essential complementary styles in the plan.",
+    ],
+  };
+};
+
+const averagePairCompatibility = (left: TeamMemberRecord[], right: TeamMemberRecord[]) => {
+  const leftAssessed = left.filter((member) => Boolean(member.rolecolor));
+  const rightAssessed = right.filter((member) => Boolean(member.rolecolor));
+  const scores: number[] = [];
+
+  for (const leftMember of leftAssessed) {
+    for (const rightMember of rightAssessed) {
+      scores.push(scorePair(leftMember.rolecolor as string, rightMember.rolecolor as string));
+    }
+  }
+
+  return scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+};
+
+const buildDepartmentComparison = (roster: TeamMemberRecord[], requestedDepartments?: string[] | null) => {
+  const normalizedRequests = (requestedDepartments || [])
+    .map((department) => toText(department))
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLowerCase());
+  const departmentNames = Array.from(
+    new Set(
+      roster
+        .map((member) => toText(member.department))
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+  const departmentsToCompare = normalizedRequests.length
+    ? departmentNames.filter((department) => normalizedRequests.includes(department.toLowerCase()))
+    : departmentNames;
+
+  const comparison = departmentsToCompare.map((department) => {
+    const departmentRoster = roster.filter((member) => member.department?.toLowerCase() === department.toLowerCase());
+    const health = calculateTeamHealthScore(departmentRoster);
+    const gaps = buildTeamGapAnalysis(departmentRoster);
+
+    return {
+      department,
+      member_count: departmentRoster.length,
+      health_score: health.score,
+      completion_rate: health.completion_rate,
+      dominant_color: health.dominant_color,
+      missing_colors: health.missing_colors,
+      breakdown: gaps.breakdown,
+      key_gap: gaps.missing_roles[0]?.role_type || gaps.underrepresented_roles[0]?.role_type || null,
+    };
+  });
+
+  const bestHealth = [...comparison].sort((left, right) => right.health_score - left.health_score)[0] || null;
+  const biggestGap = [...comparison].sort((left, right) => left.health_score - right.health_score)[0] || null;
+
+  return {
+    departments: comparison,
+    summary: comparison.length
+      ? `${bestHealth?.department || "One team"} has the strongest current balance, while ${biggestGap?.department || "another team"} shows the biggest RoleColor gap.`
+      : "No departments with RoleColor data were found.",
+  };
+};
+
+const getHierarchyByOrg = async (supabase: SupabaseClient, orgId: string) => {
+  const byEmail = new Map<string, {
+    email: string;
+    merge_id: string | null;
+    manager_id: string | null;
+    department: string | null;
+    job_title: string | null;
+  }>();
+  const byMergeId = new Map<string, {
+    email: string;
+    merge_id: string | null;
+    manager_id: string | null;
+    department: string | null;
+    job_title: string | null;
+  }>();
+
+  try {
+    const { data, error } = await supabase
+      .from("hris_employees" as any)
+      .select("email, merge_id, manager_id, department, job_title")
+      .eq("org_id", orgId)
+      .eq("is_active", true);
+
+    if (error) {
+      return { byEmail, byMergeId };
+    }
+
+    for (const row of (data || []) as Array<{
+      email?: string | null;
+      merge_id?: string | null;
+      manager_id?: string | null;
+      department?: string | null;
+      job_title?: string | null;
+    }>) {
+      const email = normalizeEmail(row.email);
+      if (!email) continue;
+      const record = {
+        email,
+        merge_id: toText(row.merge_id),
+        manager_id: toText(row.manager_id),
+        department: toText(row.department),
+        job_title: toText(row.job_title),
+      };
+      byEmail.set(email, record);
+      if (record.merge_id) {
+        byMergeId.set(record.merge_id, record);
+      }
+    }
+  } catch {
+    return { byEmail, byMergeId };
+  }
+
+  return { byEmail, byMergeId };
+};
+
+const buildOrgChartByRoleColor = async (orgId: string, roster: TeamMemberRecord[]) => {
+  const supabase = createServiceSupabaseClient();
+  const hierarchy = await getHierarchyByOrg(supabase, orgId);
+  const rosterByEmail = new Map(
+    roster.map((member) => [normalizeEmail(member.email) || member.email.toLowerCase(), member]),
+  );
+
+  const nodes = roster.map((member, index) => {
+    const hrisRecord = hierarchy.byEmail.get(normalizeEmail(member.email) || member.email.toLowerCase()) || null;
+    const managerEmail = hrisRecord?.manager_id ? hierarchy.byMergeId.get(hrisRecord.manager_id)?.email || null : null;
+    const manager = managerEmail ? rosterByEmail.get(managerEmail) || null : null;
+
+    return {
+      node_id: `node_${index + 1}`,
+      person_id: member.id,
+      name: member.name,
+      email: member.email,
+      department: member.department,
+      job_title: member.jobTitle || hrisRecord?.job_title || null,
+      rolecolor: member.rolecolor,
+      role_type: member.roleType,
+      manager_email: manager?.email || managerEmail,
+      manager_name: manager?.name || null,
+      color_hex: member.colorHex,
+    };
+  });
+
+  const nodeIdByEmail = new Map(nodes.map((node) => [normalizeEmail(node.email) || node.email.toLowerCase(), node.node_id]));
+  const edges = nodes
+    .map((node) => {
+      const managerKey = normalizeEmail(node.manager_email) || "";
+      const managerNodeId = managerKey ? nodeIdByEmail.get(managerKey) || null : null;
+      if (!managerNodeId) return null;
+      return {
+        from: managerNodeId,
+        to: node.node_id,
+      };
+    })
+    .filter((edge): edge is { from: string; to: string } => Boolean(edge));
+
+  const mermaidLines = ["graph TD"];
+  for (const node of nodes) {
+    const label = `${node.name}<br/>${node.rolecolor || "Pending"} ${node.role_type || "RoleColor"}`;
+    mermaidLines.push(`  ${node.node_id}["${label.replace(/"/g, '\\"')}"]`);
+  }
+  for (const edge of edges) {
+    mermaidLines.push(`  ${edge.from} --> ${edge.to}`);
+  }
+  mermaidLines.push("  classDef red fill:#FEE2E2,stroke:#EF4444,color:#7F1D1D;");
+  mermaidLines.push("  classDef yellow fill:#FEF3C7,stroke:#EAB308,color:#78350F;");
+  mermaidLines.push("  classDef green fill:#DCFCE7,stroke:#10B981,color:#14532D;");
+  mermaidLines.push("  classDef blue fill:#DBEAFE,stroke:#3B82F6,color:#1E3A8A;");
+  mermaidLines.push("  classDef pending fill:#E5E7EB,stroke:#9CA3AF,color:#111827;");
+  for (const node of nodes) {
+    mermaidLines.push(`  class ${node.node_id} ${(node.rolecolor || "pending").toLowerCase()};`);
+  }
+
+  return {
+    node_count: nodes.length,
+    edge_count: edges.length,
+    nodes,
+    edges,
+    mermaid: mermaidLines.join("\n"),
+  };
+};
+
 const scorePair = (left: string, right: string) => {
   const pair = [left, right].sort().join("+");
   const matrix: Record<string, number> = {
@@ -1313,9 +1784,13 @@ const buildPersonProfile = (member: TeamMemberRecord) => {
   };
 };
 
+const getEnabledToolNames = (connection: ChatgptConnectionRecord) => {
+  const defaults = connection.connection_type === "b2b" ? [...DEFAULT_B2B_TOOLS] : [...DEFAULT_PERSONAL_TOOLS];
+  return Array.from(new Set([...(connection.enabled_tools || []), ...defaults].map((tool) => String(tool))));
+};
+
 const filterEnabledTools = (connection: ChatgptConnectionRecord) => {
-  const baseTools = connection.connection_type === "b2b" ? [...DEFAULT_B2B_TOOLS] : [...DEFAULT_PERSONAL_TOOLS];
-  const enabled = new Set((connection.enabled_tools || baseTools).map((tool) => String(tool)));
+  const enabled = new Set(getEnabledToolNames(connection));
 
   if (connection.connection_type === "personal" && !connection.share_profile) {
     enabled.delete("get_my_rolecolor");
@@ -1451,7 +1926,7 @@ export const buildBusinessConnectionState = async (connection: ChatgptConnection
       org_id: connection.org_id,
       connection_type: connection.connection_type,
       auto_inject_context: connection.auto_inject_context,
-      enabled_tools: connection.enabled_tools?.length ? connection.enabled_tools : getDefaultToolsForType("b2b"),
+      enabled_tools: getEnabledToolNames(connection),
       scopes_granted: connection.scopes_granted || [],
       last_sync_at: connection.last_sync_at,
       is_active: connection.is_active,
@@ -1492,7 +1967,7 @@ export const buildPersonalConnectionState = async (connection: ChatgptConnection
       connection_type: connection.connection_type,
       share_profile: connection.share_profile,
       include_teammates: connection.include_teammates,
-      enabled_tools: connection.enabled_tools?.length ? connection.enabled_tools : getDefaultToolsForType("personal"),
+      enabled_tools: getEnabledToolNames(connection),
       scopes_granted: connection.scopes_granted || [],
       last_sync_at: connection.last_sync_at,
       is_active: connection.is_active,
@@ -1624,6 +2099,40 @@ export const executeToolCall = async (connection: ChatgptConnectionRecord, toolN
           hire_recommendation: balance.hireRecommendation,
         };
       }
+      case "get_team_health_score": {
+        const department = toText(input.department);
+        const filtered = department
+          ? roster.filter((member) => member.department?.toLowerCase() === department.toLowerCase())
+          : roster;
+
+        return calculateTeamHealthScore(filtered);
+      }
+      case "get_org_chart_by_rolecolor": {
+        const department = toText(input.department);
+        const filtered = department
+          ? roster.filter((member) => member.department?.toLowerCase() === department.toLowerCase())
+          : roster;
+
+        if (!connection.org_id) {
+          throw new HttpError(400, "Business connection is missing its organization");
+        }
+
+        return {
+          department: department || null,
+          ...(await buildOrgChartByRoleColor(connection.org_id, filtered)),
+        };
+      }
+      case "get_team_gap_analysis": {
+        const department = toText(input.department);
+        const filtered = department
+          ? roster.filter((member) => member.department?.toLowerCase() === department.toLowerCase())
+          : roster;
+
+        return {
+          department: department || null,
+          ...buildTeamGapAnalysis(filtered),
+        };
+      }
       case "get_person_profile": {
         const query = toText(input.query);
         if (!query) {
@@ -1636,6 +2145,168 @@ export const executeToolCall = async (connection: ChatgptConnectionRecord, toolN
         }
 
         return buildPersonProfile(member);
+      }
+      case "get_succession_plan": {
+        const query = toText(input.person_query);
+        if (!query) {
+          throw new HttpError(400, "person_query is required");
+        }
+
+        const member = findMemberByQuery(roster, query);
+        if (!member) {
+          throw new HttpError(404, "No matching team member was found");
+        }
+
+        const remaining = roster.filter((candidate) => candidate.id !== member.id);
+        const beforeHealth = calculateTeamHealthScore(roster);
+        const afterHealth = calculateTeamHealthScore(remaining);
+        const gapInsight = member.rolecolor ? getStrengthGapNarrative(member.rolecolor) : null;
+        const internalSuccessors = remaining
+          .filter((candidate) => Boolean(candidate.rolecolor))
+          .map((candidate) => {
+            let readinessScore = 20;
+
+            if (member.rolecolor && candidate.rolecolor === member.rolecolor) {
+              readinessScore += 45;
+            }
+            if (member.department && candidate.department && member.department.toLowerCase() === candidate.department.toLowerCase()) {
+              readinessScore += 20;
+            }
+            if (member.jobTitle && candidate.jobTitle && member.jobTitle.toLowerCase() === candidate.jobTitle.toLowerCase()) {
+              readinessScore += 10;
+            }
+            if (member.rolecolor && candidate.rolecolor) {
+              readinessScore += Math.round(scorePair(member.rolecolor, candidate.rolecolor) / 10);
+            }
+
+            return {
+              name: candidate.name,
+              email: candidate.email,
+              department: candidate.department,
+              job_title: candidate.jobTitle,
+              rolecolor: candidate.rolecolor,
+              role_type: candidate.roleType,
+              readiness_score: clamp(readinessScore, 0, 100),
+              rationale:
+                candidate.rolecolor === member.rolecolor
+                  ? "Closest like-for-like RoleColor replacement."
+                  : candidate.department && member.department && candidate.department.toLowerCase() === member.department.toLowerCase()
+                  ? "Strong contextual successor from the same department."
+                  : "Useful complementary style who could absorb part of the gap.",
+            };
+          })
+          .sort((left, right) => right.readiness_score - left.readiness_score)
+          .slice(0, 5);
+
+        return {
+          person: {
+            name: member.name,
+            email: member.email,
+            department: member.department,
+            job_title: member.jobTitle,
+            rolecolor: member.rolecolor,
+            role_type: member.roleType,
+          },
+          health_score_before: beforeHealth.score,
+          health_score_after: afterHealth.score,
+          gap_created: member.rolecolor
+            ? afterHealth.missing_colors.includes(member.rolecolor)
+              ? `If ${member.name} leaves, the team loses its last ${gapInsight?.role_type || member.roleType || member.rolecolor}.`
+              : `If ${member.name} leaves, ${member.rolecolor} coverage becomes thinner but remains represented.`
+            : "This teammate has no completed RoleColor yet, so the gap is primarily capacity and context rather than a quantified RoleColor loss.",
+          what_the_team_loses: gapInsight?.missing_strengths || [],
+          risk_summary: gapInsight?.impact || "Assess this role manually for capacity and knowledge-transfer risk.",
+          internal_successors: internalSuccessors,
+        };
+      }
+      case "clone_team_blueprint": {
+        const department = toText(input.department);
+        const sourceRoster = department
+          ? roster.filter((member) => member.department?.toLowerCase() === department.toLowerCase())
+          : roster;
+        const requestedTargetSize = typeof input.target_team_size === "number"
+          ? Math.round(input.target_team_size)
+          : Number.parseInt(String(input.target_team_size || ""), 10);
+        const targetTeamSize = Number.isFinite(requestedTargetSize) && requestedTargetSize > 0
+          ? requestedTargetSize
+          : sourceRoster.length || 1;
+
+        return {
+          source_scope: department || business.company.name,
+          ...buildCloneTeamBlueprint(sourceRoster, targetTeamSize),
+        };
+      }
+      case "get_collaboration_score": {
+        const personAQuery = toText(input.person_a_query);
+        const personBQuery = toText(input.person_b_query);
+        const departmentA = toText(input.department_a);
+        const departmentB = toText(input.department_b);
+        const context = toText(input.context);
+
+        if (personAQuery && personBQuery) {
+          const personA = findMemberByQuery(roster.filter((member) => Boolean(member.rolecolor)), personAQuery);
+          const personB = findMemberByQuery(roster.filter((member) => Boolean(member.rolecolor)), personBQuery);
+
+          if (!personA || !personB) {
+            throw new HttpError(404, "Both teammates need a completed RoleColor for a collaboration score");
+          }
+
+          const compatibility = buildCompatibilityResponse(personA.rolecolor as string, personB.rolecolor as string, context);
+          return {
+            mode: "people",
+            collaboration_score: compatibility.compatibility_score,
+            pair: compatibility.pair,
+            people: [
+              { name: personA.name, email: personA.email, rolecolor: personA.rolecolor, role_type: personA.roleType },
+              { name: personB.name, email: personB.email, rolecolor: personB.rolecolor, role_type: personB.roleType },
+            ],
+            strengths: compatibility.natural_strengths,
+            tensions: compatibility.natural_tensions,
+            recommendations: compatibility.tips_for_color_a.concat(compatibility.tips_for_color_b).slice(0, 4),
+            context_advice: compatibility.context_advice,
+          };
+        }
+
+        if (departmentA && departmentB) {
+          const left = roster.filter((member) => member.department?.toLowerCase() === departmentA.toLowerCase());
+          const right = roster.filter((member) => member.department?.toLowerCase() === departmentB.toLowerCase());
+          const collaborationScore = averagePairCompatibility(left, right);
+
+          if (collaborationScore === null) {
+            throw new HttpError(404, "Both departments need assessed members for a collaboration score");
+          }
+
+          return {
+            mode: "departments",
+            collaboration_score: collaborationScore,
+            department_a: {
+              name: departmentA,
+              member_count: left.length,
+              breakdown: buildTeamBreakdown(left),
+            },
+            department_b: {
+              name: departmentB,
+              member_count: right.length,
+              breakdown: buildTeamBreakdown(right),
+            },
+            strengths: "Cross-functional collaboration is strongest when the departments understand each other's pace and decision style.",
+            tensions: "Friction usually comes from mismatched urgency, detail depth, or decision-making style rather than intent.",
+            recommendations: [
+              "Set explicit decision owners before joint work begins.",
+              "Adapt meeting pace and detail level to both departments' dominant colors.",
+              "Use shared written briefs to bridge strategic and executional styles.",
+            ],
+            context_advice: context
+              ? `Context-specific note: ${redactFreeText(context)}`
+              : "Use the dominant colors in each department to shape meeting structure, escalation paths, and handoffs.",
+          };
+        }
+
+        throw new HttpError(400, "Provide either person_a_query/person_b_query or department_a/department_b");
+      }
+      case "compare_departments": {
+        const requestedDepartments = Array.isArray(input.departments) ? input.departments.map((value) => String(value)) : null;
+        return buildDepartmentComparison(roster, requestedDepartments);
       }
       case "suggest_hire_rolecolor": {
         const department = toText(input.department);
