@@ -61,14 +61,6 @@ function Header1() {
           title: "Career Finder",
           href: "/career-finder",
         },
-        {
-          title: "Platform",
-          href: "/b2b",
-        },
-        {
-          title: "Company Portal",
-          href: "/company",
-        },
       ],
     },
     {
@@ -343,12 +335,12 @@ function Header1() {
           )}
         </div>
 
-        <div className="flex w-12 shrink items-end justify-end lg:hidden">
+        <div className="ml-auto flex w-12 shrink items-center justify-end lg:hidden">
           <Button variant="ghost" onClick={() => setOpen(!isOpen)}>
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
           {isOpen && (
-            <div className="container absolute right-0 top-20 flex w-full flex-col gap-8 border-t bg-background py-4 shadow-lg">
+            <div className="absolute right-0 top-20 flex w-[min(22rem,calc(100vw-1rem))] flex-col gap-6 rounded-2xl border border-border bg-background px-4 py-4 shadow-lg">
               {navigationItems.map((item) => (
                 <div key={item.title}>
                   <div className="flex flex-col gap-2">
@@ -375,32 +367,51 @@ function Header1() {
                         <MoveRight className="h-4 w-4 stroke-1" />
                       </Link>
                     ))}
+                    {!user && item.title === "About Us" && (
+                      <Button
+                        variant="outline"
+                        className="mt-2 w-full justify-center"
+                        asChild
+                      >
+                        <Link to="/auth" onClick={() => setOpen(false)}>
+                          Sign In
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
 
-              {user && (
-                <div className="border-t pt-2">
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center justify-between py-1"
-                    onClick={() => setOpen(false)}
-                  >
-                    <span className="text-lg">Dashboard</span>
-                    <MoveRight className="h-4 w-4 stroke-1 text-muted-foreground" />
-                  </Link>
-                  <button
-                    className="flex w-full items-center justify-between py-1 text-left"
-                    onClick={async () => {
-                      await signOut();
-                      setOpen(false);
-                    }}
-                  >
-                    <span className="text-lg">Sign Out</span>
-                    <LogOut className="h-4 w-4 stroke-1 text-muted-foreground" />
-                  </button>
-                </div>
-              )}
+              <div className="border-t pt-2">
+                {user ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center justify-between py-1"
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="text-lg">Dashboard</span>
+                      <MoveRight className="h-4 w-4 stroke-1 text-muted-foreground" />
+                    </Link>
+                    <button
+                      className="flex w-full items-center justify-between py-1 text-left"
+                      onClick={async () => {
+                        await signOut();
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="text-lg">Sign Out</span>
+                      <LogOut className="h-4 w-4 stroke-1 text-muted-foreground" />
+                    </button>
+                  </>
+                ) : (
+                  <Button className="mt-2 w-full" asChild>
+                    <Link to="/free-assessment" onClick={() => setOpen(false)}>
+                      Get Started
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>

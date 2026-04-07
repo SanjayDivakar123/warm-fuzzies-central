@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "@/pages/Index";
 import AnimatedAuth from "@/pages/AnimatedAuth";
 import Dashboard from "@/pages/Dashboard";
@@ -46,7 +46,6 @@ import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import RCFB2BAdminDashboard from "@/pages/admin/RCFB2BAdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
-import B2B from "@/pages/B2B";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
 import B2BPaymentSuccess from "@/pages/b2b/B2BPaymentSuccess";
@@ -303,7 +302,11 @@ export const routeConfig = [
   },
   {
     path: "/b2b",
-    element: <Layout><B2B /></Layout>,
+    element: <Navigate to="/pricing/teams" replace />,
+  },
+  {
+    path: "/company",
+    element: <Navigate to="/" replace />,
   },
   {
     path: "/b2b/signin",

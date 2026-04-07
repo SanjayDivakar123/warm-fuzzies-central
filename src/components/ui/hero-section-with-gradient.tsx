@@ -275,7 +275,7 @@ export default function HeroSectionWithGradient() {
               </Button>
 
               <Button asChild variant="outline" size="lg" className="min-w-[160px]">
-                <Link to="/b2b">
+                <Link to="/pricing/teams">
                   For Teams & Businesses
                 </Link>
               </Button>
