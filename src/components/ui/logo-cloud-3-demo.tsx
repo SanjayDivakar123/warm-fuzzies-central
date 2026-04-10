@@ -1,23 +1,31 @@
 import { LogoCloud } from '@/components/ui/logo-cloud-3';
+import abcNewsLogo from '@/assets/abc-news.png';
+import apLogo from '@/assets/ap.svg';
+import cbsNewsLogo from '@/assets/cbs-news.svg';
+import foxNewsChannelLogo from '@/assets/fox-news-channel.svg';
 import { HOMEPAGE_PLATFORM_LOGOS } from '@/lib/integrationLogos';
 import { cn } from '@/lib/utils';
 
 const AS_FEATURED_IN_LOGOS = [
   {
-    src: 'https://logo.clearbit.com/foxnews.com',
-    alt: 'Fox News logo',
+    src: foxNewsChannelLogo,
+    alt: 'Fox News Channel logo',
+    imageClassName: 'h-12',
   },
   {
-    src: 'https://logo.clearbit.com/cbsnews.com',
+    src: cbsNewsLogo,
     alt: 'CBS News logo',
+    imageClassName: 'h-9',
   },
   {
-    src: 'https://logo.clearbit.com/abcnews.go.com',
+    src: abcNewsLogo,
     alt: 'ABC News logo',
+    imageClassName: 'h-10',
   },
   {
-    src: 'https://logo.clearbit.com/apnews.com',
-    alt: 'Associated Press logo',
+    src: apLogo,
+    alt: 'AP logo',
+    imageClassName: 'h-9',
   },
 ] as const;
 
@@ -37,7 +45,10 @@ export default function LogoCloud3Demo() {
             >
               <img
                 alt={logo.alt}
-                className="pointer-events-none h-8 w-auto select-none object-contain opacity-95"
+                className={cn(
+                  'pointer-events-none w-auto max-w-full select-none object-contain opacity-95',
+                  logo.imageClassName,
+                )}
                 loading="lazy"
                 src={logo.src}
               />
