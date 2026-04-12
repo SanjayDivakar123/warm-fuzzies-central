@@ -307,7 +307,7 @@ export default function TeamsLearnMore() {
                 actually gets done. RoleColor makes that visible across the team.
               </p>
               <div className="mt-auto flex justify-center pt-6">
-                <p className="mb-5 inline-flex max-w-xl items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-6 py-3 text-center text-lg sm:text-xl lg:text-2xl font-extrabold text-foreground leading-tight shadow-sm">
+                <p className="mb-5 inline-flex max-w-xl items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-6 py-3 text-center font-heading text-xl sm:text-2xl lg:text-[2rem] font-semibold tracking-[-0.035em] text-foreground leading-[1.05] shadow-sm">
                   This is the gap RoleColor is built to fix.
                 </p>
               </div>

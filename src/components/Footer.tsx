@@ -60,7 +60,6 @@ export function Footer() {
               <ul className="space-y-3">
                 <li><Link to="/" className="text-background/80 hover:text-background transition-colors text-sm">Home</Link></li>
                 <li><Link to="/pricing" className="text-background/80 hover:text-background transition-colors text-sm">Pricing</Link></li>
-                <li><Link to="/sitemap" className="text-background/80 hover:text-background transition-colors text-sm">Sitemap</Link></li>
               </ul>
             </div>
             
