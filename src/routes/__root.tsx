@@ -6,8 +6,10 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
+import { AuthProvider } from "@/lib/auth-context";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -57,7 +59,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+        <Toaster richColors position="top-right" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
