@@ -65,6 +65,7 @@ import CompanyAdminLogin from "@/pages/company/CompanyAdminLogin";
 import CompanyAssessment from "@/pages/company/CompanyAssessment";
 import CompanyResults from "@/pages/company/CompanyResults";
 import CompanyHome from "@/pages/company/CompanyHome";
+import CompanyReuseResult from "@/pages/company/CompanyReuseResult";
 
 // Candidate portal pages
 import CandidatePortalLayout from "@/pages/candidate/CandidatePortalLayout";
@@ -374,6 +375,7 @@ export const routeConfig = [
       { path: "login", element: <CompanyLogin /> },
       { path: "admin", element: <CompanyAdminLogin /> },
       { path: "home", element: <CompanyHome /> },
+      { path: "reuse-result", element: <CompanyReuseResult /> },
       { path: "assessment", element: <CompanyAssessment /> },
       { path: "results", element: <CompanyResults /> },
       // Candidate routes nested under company

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -116,8 +116,11 @@ const ProResults = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [shareableCode, setShareableCode] = useState<string>("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   // Calculate leadership score (calibrated): emphasize primary, keep floor at 60
   const calculateLeadershipScore = (results: ProResults): number => {
@@ -162,7 +165,7 @@ const ProResults = () => {
     try {
       const { data, error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'pro',
           results: {
@@ -176,6 +179,8 @@ const ProResults = () => {
             colorDistribution: results.colorDistribution,
             leadershipScore: calculateLeadershipScore(results)
           }
+        }, {
+          onConflict: 'user_id,assessment_type'
         })
         .select('shareable_code')
         .single();
@@ -208,6 +213,57 @@ const ProResults = () => {
   };
 
   useEffect(() => {
+    if (sharedCode) {
+      const fetchSharedProResults = async () => {
+        const { data, error } = await supabase
+          .from("assessment_results")
+          .select("assessment_type, results, shareable_code")
+          .eq("shareable_code", sharedCode)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error("Error loading shared result:", error);
+          toast({
+            title: "Result not found",
+            description: "This shared report link is invalid or unavailable.",
+            variant: "destructive",
+          });
+          navigate("/");
+          return;
+        }
+
+        if (data.assessment_type !== "pro") {
+          navigate(`/result/${sharedCode}`, { replace: true });
+          return;
+        }
+
+        const sharedResults = data.results as ProResults;
+
+        if (!sharedResults?.colorDistribution && sharedResults?.scores) {
+          sharedResults.colorDistribution = Object.entries(sharedResults.scores).sort(
+            ([, a], [, b]) => (b as number) - (a as number)
+          ) as [string, number][];
+        }
+
+        if (!sharedResults?.secondaryColor && sharedResults?.colorDistribution) {
+          sharedResults.secondaryColor =
+            sharedResults.colorDistribution[1]?.[0] || sharedResults.colorDistribution[0]?.[0];
+        }
+
+        if (!sharedResults?.tertiaryColor && sharedResults?.colorDistribution) {
+          sharedResults.tertiaryColor =
+            sharedResults.colorDistribution[2]?.[0] || sharedResults.colorDistribution[0]?.[0];
+        }
+
+        setResults(sharedResults);
+        setShareableCode(data.shareable_code || sharedCode);
+        setResultName((data.results as any)?.name || "");
+      };
+
+      fetchSharedProResults();
+      return;
+    }
+
     const savedResults = localStorage.getItem("proAssessmentResults");
 
     // If the user actually completed the B2B Professional assessment (25Q/50Q),
@@ -275,7 +331,7 @@ const ProResults = () => {
     } else {
       navigate("/");
     }
-  }, [navigate, user]);
+  }, [navigate, user, sharedCode, toast]);
 
   const handleExportPDF = async () => {
     if (!results) return;
@@ -295,7 +351,7 @@ const ProResults = () => {
       
       toast({
         title: "PDF Downloaded!",
-        description: "Your comprehensive 25-30 page leadership report has been saved.",
+        description: "Your comprehensive leadership report has been saved.",
       });
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -396,7 +452,8 @@ const ProResults = () => {
                 Pro Deep Dive Analysis
               </Badge>
               <h1 className="text-5xl font-bold mb-6">
-                You're a <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
+                {isSharedView && resultName.trim().length > 0 ? `${resultName} is a ` : "You're a "}
+                <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
                   {primaryColor.name}
                 </span>
               </h1>
@@ -405,13 +462,13 @@ const ProResults = () => {
               </p>
               
               <div className="flex flex-wrap justify-center gap-4 mb-8">
-                {shareableCode && (
+                {!isSharedView && shareableCode && (
                   <Button onClick={handleCopyShareLink} size="lg" className="min-w-[200px]">
                     <Link2 className="w-4 h-4 mr-2" />
                     Copy Share Link
                   </Button>
                 )}
-                {user && (
+                {!isSharedView && user && (
                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="lg">
@@ -445,14 +502,14 @@ const ProResults = () => {
                     </DialogContent>
                   </Dialog>
                 )}
-                <Button onClick={handleShare} variant="outline" size="lg">
+                {!isSharedView && <Button onClick={handleShare} variant="outline" size="lg">
                   <Share2 className="w-4 h-4 mr-2" />
                   Share Results
-                </Button>
-                <Button onClick={handleExportPDF} variant="outline" size="lg">
+                </Button>}
+                {!isSharedView && <Button onClick={handleExportPDF} variant="outline" size="lg">
                   <Download className="w-4 h-4 mr-2" />
                   Download Professional Report
-                </Button>
+                </Button>}
               </div>
             </div>
 
@@ -946,14 +1003,14 @@ const ProResults = () => {
               </Card>
             </div>
 
-            <SendToFriendCard color={results.dominantColor} className="mt-8" />
+            {!isSharedView && <SendToFriendCard color={results.dominantColor} className="mt-8" />}
 
-            <RoleColorIdentityCard
+            {!isSharedView && <RoleColorIdentityCard
               name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
               primaryColor={results.dominantColor}
               secondaryColor={results.secondaryColor}
               className="mt-8"
-            />
+            />}
 
           </div>
         </div>

@@ -96,10 +96,12 @@ const FreeAssessment = () => {
           try {
             await supabase
               .from('assessment_results')
-              .insert({
+              .upsert({
                 user_id: user.id,
                 assessment_type: 'free',
                 results: results
+              }, {
+                onConflict: 'user_id,assessment_type'
               });
           } catch (error) {
             console.error('Error saving assessment results:', error);

@@ -65,7 +65,7 @@ export default function LogoCloud3Demo() {
         )}
       />
 
-      <section className="relative mx-auto max-w-6xl">
+      <section className="relative mx-auto w-full max-w-none">
         <p className="text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
           Platforms we connect with
         </p>

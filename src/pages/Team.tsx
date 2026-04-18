@@ -81,9 +81,9 @@ const Team = () => {
     title: "Co-Founder & CTO",
     location: "Toronto, Ontario, Canada",
     image: "/images/tristan-beley-new.png",
-    summary: "Builder at heart who leads technology and product direction at RoleColorFinder. Focused on creating tools that feel as intuitive as they are intelligent, shipping features that are simple, human, and genuinely helpful.",
+    summary: "Execution-driven builder leading technology and product direction at RoleColorFinder. Focused on turning ideas into shipped tools quickly, iterating in the real world, and keeping momentum high across product development.",
     link: "/team/tristan-beley",
-    roleColor: "green" as const
+    roleColor: "yellow" as const
   }, {
     name: "Tanisha Sikder",
     title: "AI Engineer",

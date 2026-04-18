@@ -92,7 +92,7 @@ const FreeResults = () => {
     try {
       const { error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'free',
           results: {
@@ -102,6 +102,8 @@ const FreeResults = () => {
             totalQuestions: results.totalQuestions,
             isPreview: results.isPreview
           }
+        }, {
+          onConflict: 'user_id,assessment_type'
         });
 
       if (error) throw error;
