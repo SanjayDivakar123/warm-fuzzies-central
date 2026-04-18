@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/navigation/Navbar";
-import { Download, Phone, Loader2, Save } from "lucide-react";
+import { Download, Phone, Loader2, Save, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,9 +61,12 @@ export const VoiceResults = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareableCode, setShareableCode] = useState("");
 
   const sessionId = searchParams.get("session");
   const phoneNumber = searchParams.get("phone");
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   const handleSaveResult = async () => {
     if (!results || !resultName.trim()) {
@@ -86,9 +89,9 @@ export const VoiceResults = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'voice',
           results: {
@@ -102,9 +105,17 @@ export const VoiceResults = () => {
             },
             phoneNumber: results.phone_number
           } as any
-        });
+        }, {
+          onConflict: 'user_id,assessment_type'
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) throw error;
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -126,6 +137,40 @@ export const VoiceResults = () => {
 
   useEffect(() => {
     const fetchResults = async () => {
+      if (sharedCode) {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .select('assessment_type, results, shareable_code')
+          .eq('shareable_code', sharedCode)
+          .maybeSingle();
+
+        if (error || !data || data.assessment_type !== 'voice') {
+          toast({
+            title: "Result not found",
+            description: "This shared report link is invalid or unavailable.",
+            variant: "destructive",
+          });
+          navigate('/');
+          setLoading(false);
+          return;
+        }
+
+        const shared = data.results as any;
+        setResults({
+          phone_number: shared.phoneNumber || '',
+          dominant_color: shared.dominantColor,
+          score_yellow: Number(shared.scores?.yellow || 0),
+          score_red: Number(shared.scores?.red || 0),
+          score_green: Number(shared.scores?.green || 0),
+          score_blue: Number(shared.scores?.blue || 0),
+          status: 'complete',
+        });
+        setResultName((shared?.name as string) || '');
+        setShareableCode(data.shareable_code || sharedCode);
+        setLoading(false);
+        return;
+      }
+
       if (!sessionId && !phoneNumber) {
         toast({
           title: "No Assessment Found",
@@ -163,6 +208,19 @@ export const VoiceResults = () => {
         }
 
         setResults(data);
+
+        if (user) {
+          const { data: existingShare } = await supabase
+            .from('assessment_results')
+            .select('shareable_code')
+            .eq('user_id', user.id)
+            .eq('assessment_type', 'voice')
+            .maybeSingle();
+
+          if (existingShare?.shareable_code) {
+            setShareableCode(existingShare.shareable_code);
+          }
+        }
       } catch (error: any) {
         console.error("Error fetching results:", error);
         toast({
@@ -176,7 +234,25 @@ export const VoiceResults = () => {
     };
 
     fetchResults();
-  }, [sessionId, phoneNumber, navigate, toast]);
+  }, [sessionId, phoneNumber, navigate, toast, sharedCode, user]);
+
+  const handleCopyShareLink = () => {
+    if (!shareableCode) {
+      toast({
+        title: "Save Required",
+        description: "Please save your assessment first to get a shareable link.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/result/${shareableCode}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: shareUrl,
+    });
+  };
 
   const handleDownloadPDF = () => {
     if (!results) return;
@@ -224,7 +300,7 @@ export const VoiceResults = () => {
               <Phone className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4 bg-gradient-hero bg-clip-text text-transparent">
-              Your Voice Assessment Results
+              {isSharedView && resultName.trim().length > 0 ? `${resultName} Voice Assessment Results` : 'Your Voice Assessment Results'}
             </h1>
             <p className="text-muted-foreground text-lg">
               Completed via phone • Professional 25-Question Assessment
@@ -296,7 +372,7 @@ export const VoiceResults = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {user && (
+            {!isSharedView && user && (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" variant="outline">
@@ -330,6 +406,10 @@ export const VoiceResults = () => {
                 </DialogContent>
               </Dialog>
             )}
+            {!isSharedView && <Button size="lg" variant="outline" onClick={handleCopyShareLink}>
+              <Link2 className="mr-2 h-5 w-5" />
+              Copy Share Link
+            </Button>}
             <Button size="lg" onClick={handleDownloadPDF}>
               <Download className="mr-2 h-5 w-5" />
               Download PDF Report
@@ -339,13 +419,13 @@ export const VoiceResults = () => {
             </Button>
           </div>
 
-          <SendToFriendCard color={results.dominant_color} className="mt-8" />
+          {!isSharedView && <SendToFriendCard color={results.dominant_color} className="mt-8" />}
 
-          <RoleColorIdentityCard
+          {!isSharedView && <RoleColorIdentityCard
             name={user?.user_metadata?.full_name || phoneNumber}
             primaryColor={results.dominant_color}
             className="mt-8"
-          />
+          />}
         </div>
       </div>
     </div>

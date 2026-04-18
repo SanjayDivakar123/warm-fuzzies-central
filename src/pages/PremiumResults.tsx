@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,8 +97,11 @@ const PremiumResults = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [shareableCode, setShareableCode] = useState<string>("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   // Calculate leadership score (calibrated): emphasize primary, keep floor at 60
   const calculateLeadershipScore = (results: PremiumResults): number => {
@@ -226,6 +229,44 @@ const PremiumResults = () => {
   };
 
   useEffect(() => {
+    if (sharedCode) {
+      const fetchSharedPremiumResults = async () => {
+        const { data, error } = await supabase
+          .from("assessment_results")
+          .select("assessment_type, results, shareable_code")
+          .eq("shareable_code", sharedCode)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error("Error loading shared result:", error);
+          toast({
+            title: "Result not found",
+            description: "This shared report link is invalid or unavailable.",
+            variant: "destructive",
+          });
+          navigate("/");
+          return;
+        }
+
+        if (data.assessment_type === "pro") {
+          navigate(`/pro-results?share=${sharedCode}`, { replace: true });
+          return;
+        }
+
+        if (data.assessment_type !== "premium") {
+          navigate(`/result/${sharedCode}`, { replace: true });
+          return;
+        }
+
+        setResults(data.results as PremiumResults);
+        setShareableCode(data.shareable_code || sharedCode);
+        setResultName(((data.results as any)?.name as string) || "");
+      };
+
+      fetchSharedPremiumResults();
+      return;
+    }
+
     const savedResults = localStorage.getItem('premiumAssessmentResults');
     if (savedResults) {
       setResults(JSON.parse(savedResults));
@@ -258,7 +299,7 @@ const PremiumResults = () => {
     } else {
       navigate('/');
     }
-  }, [navigate, user]);
+  }, [navigate, user, sharedCode, toast]);
 
   const handleShare = () => {
     const shareUrl = shareableCode 
@@ -326,7 +367,8 @@ const PremiumResults = () => {
               Premium Assessment Results
             </Badge>
             <h1 className="text-4xl font-bold mb-4">
-              You're a <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
+              {isSharedView && resultName.trim().length > 0 ? `${resultName} is a ` : "You're a "}
+              <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
                 {primaryColor.name}
               </span>
             </h1>
@@ -335,13 +377,13 @@ const PremiumResults = () => {
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {shareableCode && (
+              {!isSharedView && shareableCode && (
                 <Button onClick={handleCopyShareLink} size="lg" className="min-w-[200px]">
                   <Link2 className="w-4 h-4 mr-2" />
                   Copy Share Link
                 </Button>
               )}
-              {user && (
+              {!isSharedView && user && (
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="lg">
@@ -375,14 +417,14 @@ const PremiumResults = () => {
                   </DialogContent>
                 </Dialog>
               )}
-              <Button onClick={handleShare} variant="outline" size="lg">
+              {!isSharedView && <Button onClick={handleShare} variant="outline" size="lg">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share Results
-              </Button>
-              <Button onClick={handleExportPDF} variant="outline" size="lg">
+              </Button>}
+              {!isSharedView && <Button onClick={handleExportPDF} variant="outline" size="lg">
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF Report
-              </Button>
+              </Button>}
             </div>
           </div>
 
@@ -687,7 +729,7 @@ const PremiumResults = () => {
           </Card>
 
           {/* Upgrade to Pro */}
-          <div className="text-center mt-12 p-8 bg-muted/30 rounded-lg">
+          {!isSharedView && <div className="text-center mt-12 p-8 bg-muted/30 rounded-lg">
             <h3 className="text-2xl font-bold mb-4">Want Even Deeper Insights?</h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
               Upgrade to our Pro Deep Dive assessment for advanced color blending analysis, 3-page comprehensive report, and personalized career roadmap.
@@ -698,16 +740,16 @@ const PremiumResults = () => {
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-          </div>
+          </div>}
 
-          <RoleColorIdentityCard
+          {!isSharedView && <RoleColorIdentityCard
             name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
             primaryColor={results.dominantColor}
             secondaryColor={results.secondaryColor}
             className="mt-8"
-          />
+          />}
 
-          <SendToFriendCard color={results.dominantColor} className="mt-8" />
+          {!isSharedView && <SendToFriendCard color={results.dominantColor} className="mt-8" />}
         </div>
       </div>
     </div>

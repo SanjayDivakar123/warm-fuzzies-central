@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Home, Loader2, Download, Save } from "lucide-react";
+import { Home, Loader2, Download, Save, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateResults, type AssessmentResults } from "@/lib/assessmentScoring";
 import { useToast } from "@/hooks/use-toast";
@@ -559,6 +559,7 @@ const LeadershipResults = () => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [results, setResults] = useState<AssessmentResults | null>(null);
@@ -568,8 +569,12 @@ const LeadershipResults = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareableCode, setShareableCode] = useState("");
+  const [sharedReportType, setSharedReportType] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   const handleSaveResult = async () => {
     if (!results || !resultName.trim()) {
@@ -592,9 +597,9 @@ const LeadershipResults = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: type || 'leadership',
           results: {
@@ -606,9 +611,17 @@ const LeadershipResults = () => {
             spectrumPosition: results.spectrumPosition,
             analysis: analysis
           } as any
-        });
+        }, {
+          onConflict: 'user_id,assessment_type'
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) throw error;
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -631,6 +644,40 @@ const LeadershipResults = () => {
   useEffect(() => {
     const processResults = async () => {
       try {
+        if (sharedCode) {
+          const { data, error } = await supabase
+            .from('assessment_results')
+            .select('assessment_type, results, shareable_code')
+            .eq('shareable_code', sharedCode)
+            .maybeSingle();
+
+          if (error || !data) {
+            toast({ title: "Result not found", description: "This shared report link is invalid or unavailable.", variant: "destructive" });
+            navigate('/');
+            return;
+          }
+
+          if (!/^(25q|50q)-(student|teacher)$/.test(data.assessment_type || '')) {
+            navigate(`/result/${sharedCode}`, { replace: true });
+            return;
+          }
+
+          const sharedResults = data.results as any;
+          setResults({
+            primaryColor: sharedResults.primaryColor,
+            secondaryColor: sharedResults.secondaryColor,
+            colorScores: sharedResults.colorScores,
+            categoryScores: sharedResults.categoryScores,
+            spectrumPosition: sharedResults.spectrumPosition,
+          } as AssessmentResults);
+          setAnalysis(sharedResults.analysis || null);
+          setResultName((sharedResults.name as string) || '');
+          setShareableCode(data.shareable_code || sharedCode);
+          setSharedReportType(data.assessment_type);
+          setIsLoading(false);
+          return;
+        }
+
         // Check if this is from the leadership game
         const storedType = localStorage.getItem("assessmentType");
         const gameResults = localStorage.getItem("leadershipGameResults");
@@ -700,18 +747,54 @@ const LeadershipResults = () => {
       }
     };
     processResults();
-  }, [location.state, type, navigate, toast]);
+  }, [location.state, type, navigate, toast, sharedCode]);
+
+  useEffect(() => {
+    if (!user || isSharedView || !type) return;
+
+    const fetchShareableCode = async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('shareable_code')
+        .eq('user_id', user.id)
+        .eq('assessment_type', type)
+        .maybeSingle();
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
+      }
+    };
+
+    fetchShareableCode();
+  }, [user, type, isSharedView]);
 
   const getTitle = () => {
     const storedType = localStorage.getItem("assessmentType");
-    if (storedType === "game" || !type) return "Leadership Adventure";
+    const effectiveType = sharedReportType || type;
+    if (storedType === "game" || !effectiveType) return "Leadership Adventure";
     const titles = { "50q-teacher": "50-Question Teacher", "50q-student": "50-Question Student", "25q-teacher": "25-Question Teacher", "25q-student": "25-Question Student" };
-    return titles[type as keyof typeof titles] || "Assessment";
+    return titles[effectiveType as keyof typeof titles] || "Assessment";
   };
   
   const getReportType = () => {
+    if (sharedReportType) return sharedReportType;
     if (!type) return "50q-student"; // Game uses 50q-student report format
     return type;
+  };
+
+  const handleCopyShareLink = () => {
+    if (!shareableCode) {
+      toast({
+        title: "Save Required",
+        description: "Please save your assessment first to get a shareable link.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/result/${shareableCode}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({ title: "Link Copied!", description: shareUrl });
   };
 
   const handleDownloadPDF = async () => {
@@ -784,10 +867,10 @@ const LeadershipResults = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="gradient-text-primary">{getTitle()} Report</span></h1>
             <p className="text-lg text-muted-foreground">Your personalized leadership color profile</p>
           </div>
-          {(type === "50q-student" || !type) && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
-          {type === "25q-student" && <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
-          {type === "50q-teacher" && <TeacherReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
-          {type === "25q-teacher" && <TeacherReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {(getReportType() === "50q-student" || !getReportType()) && <StudentReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {getReportType() === "25q-student" && <StudentReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {getReportType() === "50q-teacher" && <TeacherReport50Q results={results} analysis={analysis} isLoading={isLoading} />}
+          {getReportType() === "25q-teacher" && <TeacherReport25Q results={results} analysis={analysis} isLoading={isLoading} />}
         </div>
         
         {/* PDF Download Section */}
@@ -805,7 +888,7 @@ const LeadershipResults = () => {
               Save your personalized leadership assessment report to your account or download as PDF.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              {user && (
+              {!isSharedView && user && (
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="lg" className="gap-2">
@@ -839,6 +922,10 @@ const LeadershipResults = () => {
                   </DialogContent>
                 </Dialog>
               )}
+              {!isSharedView && <Button onClick={handleCopyShareLink} size="lg" variant="outline" className="gap-2">
+                <Link2 className="h-5 w-5" />
+                Copy Share Link
+              </Button>}
               <Button 
                 onClick={handleDownloadPDF} 
                 disabled={isGeneratingPDF || isLoading}
@@ -865,14 +952,14 @@ const LeadershipResults = () => {
           </CardContent>
         </Card>
 
-        <SendToFriendCard color={results.primaryColor} className="mt-8" />
+        {!isSharedView && <SendToFriendCard color={results.primaryColor} className="mt-8" />}
 
-        <RoleColorIdentityCard
+        {!isSharedView && <RoleColorIdentityCard
           name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
           primaryColor={results.primaryColor}
           secondaryColor={results.secondaryColor}
           className="mt-8"
-        />
+        />}
       </div>
 
       {/* Hidden PDF Report Component for Generation */}
