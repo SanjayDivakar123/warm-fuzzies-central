@@ -98,6 +98,7 @@ const PremiumResults = () => {
   const [shareableCode, setShareableCode] = useState<string>("");
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [hasManualNameSave, setHasManualNameSave] = useState(false);
+  const [isViewingSavedAssessment, setIsViewingSavedAssessment] = useState(false);
   const [pendingNavigationPath, setPendingNavigationPath] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -151,6 +152,53 @@ const PremiumResults = () => {
       isPremium: results.isPremium,
       leadershipScore: calculateLeadershipScore(results)
     };
+  };
+
+  const consumePremiumPurchases = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const { data: rows, error } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', 'premium')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading premium purchase placeholders:', error);
+        return;
+      }
+
+      const openPurchases = (rows || []).filter((row: any) => {
+        const rowResults = row.results as any;
+        return rowResults?.status === 'payment_completed' && rowResults?.assessment_started !== true;
+      });
+
+      for (const purchase of openPurchases) {
+        const rowResults = purchase.results as any;
+        const { error: updateError } = await supabase
+          .from('assessment_results')
+          .update({
+            results: {
+              ...rowResults,
+              assessment_started: true,
+              started_at: rowResults?.started_at || new Date().toISOString(),
+            },
+          })
+          .eq('id', purchase.id)
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error consuming premium purchase placeholder:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error consuming premium purchases:', error);
+    }
   };
 
   const persistAssessment = async (nameToSave: string, markAsManualSave: boolean) => {
@@ -213,6 +261,8 @@ const PremiumResults = () => {
       if (markAsManualSave) {
         setHasManualNameSave(true);
       }
+
+      await consumePremiumPurchases();
 
       return true;
     } catch (error: any) {
@@ -345,10 +395,39 @@ const PremiumResults = () => {
 
     const savedResults = localStorage.getItem('premiumAssessmentResults');
     if (savedResults) {
-      setResults(JSON.parse(savedResults));
+      const parsed = JSON.parse(savedResults);
+      const rawViewContext = localStorage.getItem('assessmentViewContext');
+      let viewContext: {
+        assessmentId?: string;
+        assessmentType?: string;
+        shareableCode?: string | null;
+      } | null = null;
+
+      if (rawViewContext) {
+        try {
+          viewContext = JSON.parse(rawViewContext);
+        } catch {
+          viewContext = null;
+        }
+      }
+
+      setResults(parsed);
+
+      const hasViewContext = Boolean(viewContext?.assessmentType === 'premium' && viewContext?.assessmentId);
+      if (hasViewContext) {
+        setCurrentAssessmentId(viewContext?.assessmentId || null);
+        setHasManualNameSave(true);
+        setIsViewingSavedAssessment(true);
+        if (viewContext?.shareableCode) {
+          setShareableCode(viewContext.shareableCode);
+        }
+      } else {
+        setIsViewingSavedAssessment(false);
+      }
+      localStorage.removeItem('assessmentViewContext');
       
       // Fetch or generate shareable code if user is logged in
-      if (user) {
+      if (user && !hasViewContext) {
         const fetchOrCreateShareableCode = async () => {
           const { data, error } = await supabase
             .from('assessment_results')
@@ -380,7 +459,7 @@ const PremiumResults = () => {
   }, [navigate, user, sharedCode, toast]);
 
   useEffect(() => {
-    if (isSharedView || !user || !results || autoSaveAttemptedRef.current) {
+    if (isSharedView || isViewingSavedAssessment || !user || !results || autoSaveAttemptedRef.current) {
       return;
     }
 
@@ -392,10 +471,11 @@ const PremiumResults = () => {
     }
 
     void persistAssessment(preferredName, false);
-  }, [isSharedView, user, results]);
+  }, [isSharedView, isViewingSavedAssessment, user, results]);
 
   const requiresManualNameSave = Boolean(
     !isSharedView &&
+    !isViewingSavedAssessment &&
     user &&
     results &&
     currentAssessmentId &&
@@ -533,7 +613,7 @@ const PremiumResults = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="bg-gradient-subtle py-12 px-4">
+      <div className="bg-gradient-subtle pt-24 sm:pt-28 pb-12 px-4">
         <div id="premium-results-content" className="max-w-6xl mx-auto">{/* Added ID for PDF export */}
           {/* Header */}
           <div className="text-center mb-8 animate-fade-in">
@@ -558,7 +638,7 @@ const PremiumResults = () => {
                   Copy Share Link
                 </Button>
               )}
-              {!isSharedView && user && (
+              {!isSharedView && user && !hasManualNameSave && !isViewingSavedAssessment && (
                 <Dialog
                   open={isDialogOpen}
                   onOpenChange={(open) => {

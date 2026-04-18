@@ -37,65 +37,76 @@ export const ProtectedRoute = ({
     if (user && requiresPayment && assessmentType) {
       checkPaymentStatus();
     }
-  }, [user, requiresPayment, assessmentType]);
+  }, [user, requiresPayment, assessmentType, location.search]);
 
   const checkPaymentStatus = async () => {
     if (!user) return;
     
     setCheckingPayment(true);
     try {
-      // First check localStorage for immediate verification
-      const paymentKey = `payment_verified_${assessmentType}_${user.id}`;
-      const paymentVerification = localStorage.getItem(paymentKey);
-      
-      if (paymentVerification) {
-        const verification = JSON.parse(paymentVerification);
-        // Check if payment was verified within the last 24 hours
-        const verificationTime = new Date(verification.timestamp);
-        const now = new Date();
-        const timeDiff = now.getTime() - verificationTime.getTime();
-        const hoursDiff = timeDiff / (1000 * 3600);
-        
-        if (hoursDiff < 24) {
+      const purchaseId = new URLSearchParams(location.search).get('purchase');
+
+      // Resume access if the user has an in-progress paid assessment attempt.
+      const { data: inProgressRows, error: inProgressError } = await supabase
+        .from('assessment_progress')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', assessmentType)
+        .is('dominant_color', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!inProgressError && inProgressRows && inProgressRows.length > 0) {
+        const progressResults = inProgressRows[0].results as any;
+        const answeredCount = Object.keys(progressResults?.answers || {}).length;
+        if (answeredCount > 0) {
           setPaymentVerified(true);
           setCheckingPayment(false);
           return;
-        } else {
-          // Payment verification expired
-          localStorage.removeItem(paymentKey);
         }
       }
-      
-      // Fallback: Check Supabase for payment record
+
+      const paymentKey = `payment_verified_${assessmentType}_${user.id}`;
       const { data, error } = await supabase
         .from('assessment_results')
-        .select('*')
+        .select('id, results')
         .eq('user_id', user.id)
         .eq('assessment_type', assessmentType)
-        .limit(1);
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (error) {
         console.error('Error checking payment status:', error);
         setPaymentVerified(false);
-      } else if (data && data.length > 0) {
-        const record = data[0];
-        const results = record.results as any;
-        
-        // Check if payment was completed
-        if (results?.status === 'payment_completed') {
-          setPaymentVerified(true);
-          // Restore localStorage verification
+      } else {
+        const availablePurchase = (data || []).find((record: any) => {
+          const results = record.results as any;
+          const isUnconsumedPurchase = results?.status === 'payment_completed' && results?.assessment_started !== true;
+          if (!isUnconsumedPurchase) {
+            return false;
+          }
+
+          if (!purchaseId) {
+            return true;
+          }
+
+          return record.id === purchaseId;
+        });
+
+        const verified = Boolean(availablePurchase);
+        setPaymentVerified(verified);
+
+        if (verified) {
           const newVerification = {
             timestamp: new Date().toISOString(),
             type: assessmentType,
-            userId: user.id
+            userId: user.id,
+            purchaseId: availablePurchase?.id || null,
           };
           localStorage.setItem(paymentKey, JSON.stringify(newVerification));
         } else {
-          setPaymentVerified(false);
+          localStorage.removeItem(paymentKey);
         }
-      } else {
-        setPaymentVerified(false);
       }
     } catch (error) {
       console.error('Payment verification failed:', error);

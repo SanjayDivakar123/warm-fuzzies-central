@@ -117,6 +117,7 @@ const ProResults = () => {
   const [shareableCode, setShareableCode] = useState<string>("");
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [hasManualNameSave, setHasManualNameSave] = useState(false);
+  const [isViewingSavedAssessment, setIsViewingSavedAssessment] = useState(false);
   const [pendingNavigationPath, setPendingNavigationPath] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -361,6 +362,20 @@ const ProResults = () => {
 
     if (savedResults) {
       const parsed = JSON.parse(savedResults);
+      const rawViewContext = localStorage.getItem('assessmentViewContext');
+      let viewContext: {
+        assessmentId?: string;
+        assessmentType?: string;
+        shareableCode?: string | null;
+      } | null = null;
+
+      if (rawViewContext) {
+        try {
+          viewContext = JSON.parse(rawViewContext);
+        } catch {
+          viewContext = null;
+        }
+      }
 
       // Ensure colorDistribution exists (may be absent in older saved results)
       if (!parsed.colorDistribution && parsed.scores) {
@@ -379,8 +394,21 @@ const ProResults = () => {
 
       setResults(parsed);
 
+      const hasViewContext = Boolean(viewContext?.assessmentType === 'pro' && viewContext?.assessmentId);
+      if (hasViewContext) {
+        setCurrentAssessmentId(viewContext?.assessmentId || null);
+        setHasManualNameSave(true);
+        setIsViewingSavedAssessment(true);
+        if (viewContext?.shareableCode) {
+          setShareableCode(viewContext.shareableCode);
+        }
+      } else {
+        setIsViewingSavedAssessment(false);
+      }
+      localStorage.removeItem('assessmentViewContext');
+
       // Fetch or generate shareable code if user is logged in
-      if (user) {
+      if (user && !hasViewContext) {
         const fetchOrCreateShareableCode = async () => {
           const { data, error } = await supabase
             .from("assessment_results")
@@ -412,7 +440,7 @@ const ProResults = () => {
   }, [navigate, user, sharedCode, toast]);
 
   useEffect(() => {
-    if (isSharedView || !user || !results || autoSaveAttemptedRef.current) {
+    if (isSharedView || isViewingSavedAssessment || !user || !results || autoSaveAttemptedRef.current) {
       return;
     }
 
@@ -424,10 +452,11 @@ const ProResults = () => {
     }
 
     void persistAssessment(preferredName, false);
-  }, [isSharedView, user, results]);
+  }, [isSharedView, isViewingSavedAssessment, user, results]);
 
   const requiresManualNameSave = Boolean(
     !isSharedView &&
+    !isViewingSavedAssessment &&
     user &&
     results &&
     currentAssessmentId &&
@@ -643,7 +672,7 @@ const ProResults = () => {
                     Copy Share Link
                   </Button>
                 )}
-                {!isSharedView && user && (
+                {!isSharedView && user && !hasManualNameSave && !isViewingSavedAssessment && (
                   <Dialog
                     open={isDialogOpen}
                     onOpenChange={(open) => {

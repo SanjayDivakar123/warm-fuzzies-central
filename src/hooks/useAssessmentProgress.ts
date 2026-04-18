@@ -181,28 +181,40 @@ export function useAssessmentProgress({
     scores: { [key: string]: number }
   ) => {
     try {
-      if (user && savedProgress?.id) {
-        // Update the progress record with final scores
+      if (user) {
+        if (savedProgress?.id) {
+          // Mark the active attempt complete if we know its row id.
+          await supabase
+            .from('assessment_progress')
+            .update({
+              dominant_color: dominantColor,
+              scores,
+              results: {
+                ...savedProgress,
+                status: 'complete',
+              },
+            })
+            .eq('id', savedProgress.id)
+            .eq('user_id', user.id);
+        }
+
+        // Safety cleanup: remove any remaining incomplete rows for this assessment type.
         await supabase
           .from('assessment_progress')
-          .update({
-            dominant_color: dominantColor,
-            scores,
-            results: {
-              ...savedProgress,
-              status: 'complete',
-            },
-          })
-          .eq('id', savedProgress.id);
+          .delete()
+          .eq('user_id', user.id)
+          .eq('assessment_type', assessmentType)
+          .is('dominant_color', null);
       }
       
       // Clear localStorage
       localStorage.removeItem(localStorageKey);
       setSavedProgress(null);
+      setLastSaved(null);
     } catch (error) {
       console.error('Error marking complete:', error);
     }
-  }, [user, savedProgress, localStorageKey]);
+  }, [user, savedProgress, localStorageKey, assessmentType]);
 
   return {
     isLoading,
