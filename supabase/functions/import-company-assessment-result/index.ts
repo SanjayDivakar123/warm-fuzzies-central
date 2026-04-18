@@ -64,18 +64,25 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { employeeId, companyId, inviteCode, sourceAssessmentResultId } = body ?? {}
+    const { employeeId, companyId, inviteCode, sourceId, sourceTable } = body ?? {}
 
-    if (!employeeId || !companyId || !inviteCode || !sourceAssessmentResultId) {
+    if (!employeeId || !companyId || !inviteCode || !sourceId || !sourceTable) {
       return new Response(
-        JSON.stringify({ success: false, message: 'employeeId, companyId, inviteCode, and sourceAssessmentResultId are required' }),
+        JSON.stringify({ success: false, message: 'employeeId, companyId, inviteCode, sourceId, and sourceTable are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    if (!isValidUUID(employeeId) || !isValidUUID(companyId) || !isValidUUID(sourceAssessmentResultId)) {
+    if (!isValidUUID(employeeId) || !isValidUUID(companyId) || !isValidUUID(sourceId)) {
       return new Response(
         JSON.stringify({ success: false, message: 'Invalid id format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (!['assessment_results', 'assessment_progress'].includes(sourceTable)) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid sourceTable' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -133,7 +140,9 @@ Deno.serve(async (req) => {
       companyAssessmentType: employee.assessment_type,
     })
 
-    const selectedAssessment = reusableAssessments.find((assessment) => assessment.id === sourceAssessmentResultId)
+    const selectedAssessment = reusableAssessments.find(
+      (assessment) => assessment.id === sourceId && assessment.sourceTable === sourceTable,
+    )
     if (!selectedAssessment) {
       return new Response(
         JSON.stringify({ success: false, message: 'The selected saved assessment is not available for this email.' }),
@@ -141,21 +150,62 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { data: sourceRow, error: sourceError } = await supabase
-      .from('assessment_results')
-      .select('id, assessment_type, created_at, updated_at, results')
-      .eq('id', sourceAssessmentResultId)
-      .maybeSingle()
+    let sourceAssessmentType = selectedAssessment.assessmentType
+    let sourceResults: Record<string, unknown> = {}
+    let sourceCompletedAt = selectedAssessment.completedAt
 
-    if (sourceError || !sourceRow) {
-      console.error('Source result lookup error:', sourceError)
-      return new Response(
-        JSON.stringify({ success: false, message: 'Failed to load the saved assessment you selected.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+    if (sourceTable === 'assessment_results') {
+      const { data: sourceRow, error: sourceError } = await supabase
+        .from('assessment_results')
+        .select('id, assessment_type, created_at, updated_at, results')
+        .eq('id', sourceId)
+        .maybeSingle()
+
+      if (sourceError || !sourceRow) {
+        console.error('Source result lookup error:', sourceError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Failed to load the saved assessment you selected.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      sourceAssessmentType = sourceRow.assessment_type
+      sourceResults = isRecord(sourceRow.results) ? sourceRow.results : {}
+      sourceCompletedAt =
+        (typeof sourceResults.completedAt === 'string' && sourceResults.completedAt) ||
+        sourceRow.updated_at ||
+        sourceRow.created_at
+    } else {
+      const { data: sourceProgressRow, error: sourceProgressError } = await supabase
+        .from('assessment_progress')
+        .select('id, assessment_type, created_at, dominant_color, scores, results')
+        .eq('id', sourceId)
+        .maybeSingle()
+
+      if (sourceProgressError || !sourceProgressRow) {
+        console.error('Source progress lookup error:', sourceProgressError)
+        return new Response(
+          JSON.stringify({ success: false, message: 'Failed to load the completed assessment you selected.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      const progressResults = isRecord(sourceProgressRow.results) ? sourceProgressRow.results : {}
+      sourceAssessmentType = sourceProgressRow.assessment_type
+      sourceCompletedAt =
+        (typeof progressResults.lastSavedAt === 'string' && progressResults.lastSavedAt) ||
+        sourceProgressRow.created_at
+
+      sourceResults = {
+        dominantColor: sourceProgressRow.dominant_color,
+        scores: isRecord(sourceProgressRow.scores) ? sourceProgressRow.scores : {},
+        totalQuestions:
+          typeof progressResults.totalQuestions === 'number' ? progressResults.totalQuestions : null,
+        assessmentType: sourceProgressRow.assessment_type,
+        completedAt: sourceCompletedAt,
+      }
     }
 
-    const sourceResults = isRecord(sourceRow.results) ? sourceRow.results : {}
     const completionTimestamp = new Date().toISOString()
     const snapshotAssessmentType = buildCompanySnapshotAssessmentType(employee)
 
@@ -184,15 +234,13 @@ Deno.serve(async (req) => {
       completedAt: completionTimestamp,
       companyId,
       importedFrom: {
-        assessmentResultId: sourceRow.id,
-        assessmentType: sourceRow.assessment_type,
+        sourceId,
+        sourceTable,
+        assessmentType: sourceAssessmentType,
         sourceKind: selectedAssessment.sourceKind,
         sourceLabel: selectedAssessment.sourceLabel,
         importedAt: completionTimestamp,
-        originalCompletedAt:
-          (typeof sourceResults.completedAt === 'string' && sourceResults.completedAt) ||
-          sourceRow.updated_at ||
-          sourceRow.created_at,
+        originalCompletedAt: sourceCompletedAt,
       },
     }
 

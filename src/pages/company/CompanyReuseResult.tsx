@@ -85,7 +85,8 @@ export default function CompanyReuseResult() {
           employeeId: employee.id,
           companyId: company.id,
           inviteCode: employee.invite_code,
-          sourceAssessmentResultId: selectedAssessmentId,
+          sourceId: selectedAssessmentId,
+          sourceTable: selectedAssessment?.sourceTable,
         },
       });
 

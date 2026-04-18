@@ -1,5 +1,6 @@
 export interface ReusableAssessmentOption {
   id: string
+  sourceTable: 'assessment_results' | 'assessment_progress'
   assessmentType: string
   displayName: string
   completedAt: string
@@ -21,6 +22,17 @@ interface AssessmentResultRow {
   assessment_type: string
   created_at: string
   updated_at: string
+  user_id: string
+  results: Record<string, unknown> | null
+}
+
+interface AssessmentProgressRow {
+  id: string
+  assessment_type: string
+  created_at: string
+  user_id: string
+  dominant_color: string | null
+  scores: Record<string, unknown> | null
   results: Record<string, unknown> | null
 }
 
@@ -63,6 +75,17 @@ export function hasCompletedResultPayload(results: unknown): results is Record<s
   const colorScores = isRecord(results.colorScores) ? results.colorScores : null
 
   return Boolean(dominantColor || primaryColor || scores || colorScores)
+}
+
+function hasCompletedProgressPayload(row: AssessmentProgressRow): boolean {
+  if (!isReusableAssessmentType(row.assessment_type)) return false
+  if (!row.dominant_color) return false
+
+  const status = isRecord(row.results) && typeof row.results.status === 'string'
+    ? row.results.status.toLowerCase()
+    : null
+
+  return status === 'complete'
 }
 
 function buildCompanyAssessmentKey(
@@ -110,7 +133,7 @@ function getAssessmentDisplayName(assessmentType: string): string {
   return assessmentType
 }
 
-function inferSourceKind(
+function inferResultSourceKind(
   resultId: string,
   directCandidateResultIds: Set<string>,
   directCompanyResultIds: Set<string>,
@@ -120,26 +143,39 @@ function inferSourceKind(
   return 'personal'
 }
 
-function getSourceLabel(sourceKind: 'personal' | 'company' | 'code'): string {
+function getSourceLabel(sourceKind: 'personal' | 'company' | 'code', sourceTable: 'assessment_results' | 'assessment_progress'): string {
   if (sourceKind === 'code') return 'Saved from a code-based invite'
   if (sourceKind === 'company') return 'Saved from a previous company portal'
+  if (sourceTable === 'assessment_progress') return 'Completed in your personal account'
   return 'Saved in your personal account'
 }
 
-function getCompletedAt(row: AssessmentResultRow): string {
+function getResultCompletedAt(row: AssessmentResultRow): string {
   const results = isRecord(row.results) ? row.results : null
   const resultCompletedAt = typeof results?.completedAt === 'string' ? results.completedAt : null
   return resultCompletedAt || row.updated_at || row.created_at
 }
 
-function getDominantColor(row: AssessmentResultRow): string | null {
+function getResultDominantColor(row: AssessmentResultRow): string | null {
   const results = isRecord(row.results) ? row.results : null
   const dominantColor = typeof results?.dominantColor === 'string' ? results.dominantColor : null
   const primaryColor = typeof results?.primaryColor === 'string' ? results.primaryColor : null
   return dominantColor || primaryColor
 }
 
-function getTotalQuestions(row: AssessmentResultRow): number | null {
+function getResultTotalQuestions(row: AssessmentResultRow): number | null {
+  const results = isRecord(row.results) ? row.results : null
+  const totalQuestions = results?.totalQuestions
+  return typeof totalQuestions === 'number' ? totalQuestions : null
+}
+
+function getProgressCompletedAt(row: AssessmentProgressRow): string {
+  const results = isRecord(row.results) ? row.results : null
+  const lastSavedAt = typeof results?.lastSavedAt === 'string' ? results.lastSavedAt : null
+  return lastSavedAt || row.created_at
+}
+
+function getProgressTotalQuestions(row: AssessmentProgressRow): number | null {
   const results = isRecord(row.results) ? row.results : null
   const totalQuestions = results?.totalQuestions
   return typeof totalQuestions === 'number' ? totalQuestions : null
@@ -222,12 +258,12 @@ export async function findReusableAssessmentsForEmail(
 
   const userIdList = Array.from(userIdsToSearch)
   const directResultIdList = Array.from(directResultIds)
-  const rowsById = new Map<string, AssessmentResultRow>()
+  const resultRowsById = new Map<string, AssessmentResultRow>()
 
   if (userIdList.length > 0) {
     const { data: userRows, error: userRowsError } = await supabase
       .from('assessment_results')
-      .select('id, assessment_type, created_at, updated_at, results')
+      .select('id, assessment_type, created_at, updated_at, user_id, results')
       .in('user_id', userIdList)
       .order('updated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
@@ -235,50 +271,96 @@ export async function findReusableAssessmentsForEmail(
     if (userRowsError) throw userRowsError
 
     for (const row of userRows || []) {
-      rowsById.set(row.id, row as AssessmentResultRow)
+      resultRowsById.set(row.id, row as AssessmentResultRow)
     }
   }
 
   if (directResultIdList.length > 0) {
-    const missingIds = directResultIdList.filter((id) => !rowsById.has(id))
+    const missingIds = directResultIdList.filter((id) => !resultRowsById.has(id))
 
     if (missingIds.length > 0) {
       const { data: directRows, error: directRowsError } = await supabase
         .from('assessment_results')
-        .select('id, assessment_type, created_at, updated_at, results')
+        .select('id, assessment_type, created_at, updated_at, user_id, results')
         .in('id', missingIds)
 
       if (directRowsError) throw directRowsError
 
       for (const row of directRows || []) {
-        rowsById.set(row.id, row as AssessmentResultRow)
+        resultRowsById.set(row.id, row as AssessmentResultRow)
       }
     }
   }
 
-  const reusableAssessments = Array.from(rowsById.values())
+  const progressRows: AssessmentProgressRow[] = []
+  if (userIdList.length > 0) {
+    const resultTypePairs = new Set<string>()
+    for (const row of resultRowsById.values()) {
+      if (!hasCompletedResultPayload(row.results)) continue
+      resultTypePairs.add(`${row.user_id}:${normalizeAssessmentType(row.assessment_type)}`)
+    }
+
+    const { data: rawProgressRows, error: progressRowsError } = await supabase
+      .from('assessment_progress')
+      .select('id, assessment_type, created_at, user_id, dominant_color, scores, results')
+      .in('user_id', userIdList)
+      .not('dominant_color', 'is', null)
+      .order('created_at', { ascending: false })
+
+    if (progressRowsError) throw progressRowsError
+
+    for (const row of (rawProgressRows || []) as AssessmentProgressRow[]) {
+      if (!hasCompletedProgressPayload(row)) continue
+      const typeKey = `${row.user_id}:${normalizeAssessmentType(row.assessment_type)}`
+      if (resultTypePairs.has(typeKey)) continue
+      progressRows.push(row)
+    }
+  }
+
+  const reusableResultOptions = Array.from(resultRowsById.values())
     .filter((row) => isReusableAssessmentType(row.assessment_type))
     .filter((row) => hasCompletedResultPayload(row.results))
     .map((row) => {
       const displayName = getAssessmentDisplayName(row.assessment_type)
-      const sourceKind = inferSourceKind(row.id, directCandidateResultIds, directCompanyResultIds)
+      const sourceKind = inferResultSourceKind(row.id, directCandidateResultIds, directCompanyResultIds)
       const normalizedComparableType = normalizeReusableComparisonType(row.assessment_type)
       const matchesCompanyAssessment = !!companyAssessmentKey && normalizedComparableType === companyAssessmentKey
 
       return {
         id: row.id,
+        sourceTable: 'assessment_results',
         assessmentType: row.assessment_type,
         displayName,
-        completedAt: getCompletedAt(row),
-        dominantColor: getDominantColor(row),
-        totalQuestions: getTotalQuestions(row),
+        completedAt: getResultCompletedAt(row),
+        dominantColor: getResultDominantColor(row),
+        totalQuestions: getResultTotalQuestions(row),
         sourceKind,
-        sourceLabel: getSourceLabel(sourceKind),
+        sourceLabel: getSourceLabel(sourceKind, 'assessment_results'),
         matchesCompanyAssessment,
         mismatchWarning: matchesCompanyAssessment || !companyAssessmentKey ? null : getMismatchWarning(displayName),
       } satisfies ReusableAssessmentOption
     })
-    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
 
-  return reusableAssessments
+  const reusableProgressOptions = progressRows.map((row) => {
+    const displayName = getAssessmentDisplayName(row.assessment_type)
+    const normalizedComparableType = normalizeReusableComparisonType(row.assessment_type)
+    const matchesCompanyAssessment = !!companyAssessmentKey && normalizedComparableType === companyAssessmentKey
+
+    return {
+      id: row.id,
+      sourceTable: 'assessment_progress',
+      assessmentType: row.assessment_type,
+      displayName,
+      completedAt: getProgressCompletedAt(row),
+      dominantColor: row.dominant_color,
+      totalQuestions: getProgressTotalQuestions(row),
+      sourceKind: 'personal',
+      sourceLabel: getSourceLabel('personal', 'assessment_progress'),
+      matchesCompanyAssessment,
+      mismatchWarning: matchesCompanyAssessment || !companyAssessmentKey ? null : getMismatchWarning(displayName),
+    } satisfies ReusableAssessmentOption
+  })
+
+  return [...reusableResultOptions, ...reusableProgressOptions]
+    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
 }

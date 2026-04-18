@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
-import { Download, Building2, CheckCircle, Loader2, AlertTriangle, Target, Lightbulb, Users } from "lucide-react";
+import { Download, Building2, CheckCircle, Loader2, AlertTriangle, Target, Lightbulb, Users, ChevronLeft } from "lucide-react";
 import { exportCompanyResultsPDF } from "@/lib/companyPdfExport";
 import { useToast } from "@/hooks/use-toast";
 import { HelpButton } from "@/components/help";
@@ -94,6 +94,15 @@ const colorDescriptions = {
   },
 };
 
+type CompanyResultsCompany = {
+  name: string;
+  subdomain: string;
+  logo_url: string | null;
+  primary_color: string | null;
+};
+
+type ColorDescription = typeof colorDescriptions[keyof typeof colorDescriptions];
+
 // Download Actions Component
 function DownloadActions({ 
   company, 
@@ -104,11 +113,11 @@ function DownloadActions({
   primaryColor,
   onNavigateHome 
 }: { 
-  company: any;
+  company: CompanyResultsCompany;
   dominantColor: string;
   scores: { yellow: number; red: number; green: number; blue: number };
   totalQuestions: number;
-  colorInfo: any;
+  colorInfo: ColorDescription;
   primaryColor: string;
   onNavigateHome: () => void;
 }) {
@@ -290,6 +299,17 @@ export default function CompanyResults() {
 
       <div className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              className="bg-background/80 backdrop-blur-sm"
+              onClick={() => navigate(`/company/${company.subdomain}/home`)}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+
           {/* Success Message */}
           <div className="text-center mb-10" data-tour="results-color">
             <div 

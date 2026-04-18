@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/aceternity-sidebar";
 import { Navbar } from "@/components/navigation/Navbar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { motion } from "framer-motion";
 import { 
@@ -39,7 +49,8 @@ import {
   CheckCircle,
   DollarSign,
   Star,
-  Upload
+  Upload,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { exportToPDF } from "@/lib/pdfExport";
@@ -54,6 +65,7 @@ interface AssessmentResult {
   id: string;
   assessment_type: string;
   results: any;
+  shareable_code?: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -436,6 +448,13 @@ const Dashboard = () => {
   const [announcements, setAnnouncements] = useState<DashboardAnnouncement[]>([]);
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState<string[]>([]);
   const [securityCheckComplete, setSecurityCheckComplete] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    kind: 'saved' | 'progress';
+    label: string;
+  } | null>(null);
 
   // Check if user has Google linked
   const hasGoogleLinked = user?.app_metadata?.providers?.includes('google') || 
@@ -671,7 +690,7 @@ const Dashboard = () => {
         answeredCount: Object.keys((item.results as any)?.answers || {}).length,
         totalQuestions: (item.results as any)?.totalQuestions ?? 25,
         created_at: item.created_at || '',
-      })).filter(item => item.answeredCount > 0);
+      })).filter(item => item.answeredCount > 0 && item.answeredCount < item.totalQuestions);
       
       setInProgressAssessments(inProgress);
     } catch (error) {
@@ -687,6 +706,51 @@ const Dashboard = () => {
       default: return 'Assessment';
     }
   };
+
+  const getAssessmentDisplayName = (assessment: AssessmentResult) => {
+    const typeLabel = getAssessmentTypeLabel(assessment.assessment_type);
+    const customName = typeof assessment.results?.name === 'string' ? assessment.results.name.trim() : '';
+    return customName ? `${customName} - ${typeLabel}` : typeLabel;
+  };
+
+  const visibleAssessments = useMemo(() => {
+    return assessments.filter((assessment) => {
+      const isCompleted = assessment.results?.dominantColor || assessment.results?.scores;
+      const isPurchasedOnly =
+        assessment.results?.status === 'payment_completed' &&
+        assessment.results?.assessment_started !== true &&
+        !isCompleted;
+
+      const isConsumedPurchasePlaceholder =
+        assessment.results?.status === 'payment_completed' &&
+        assessment.results?.assessment_started === true &&
+        !isCompleted;
+
+      if (isConsumedPurchasePlaceholder) {
+        return false;
+      }
+
+      const hasCompletedAfterPurchase = isPurchasedOnly && assessments.some((other) => {
+        if (other.assessment_type !== assessment.assessment_type || other.id === assessment.id) {
+          return false;
+        }
+
+        const otherIsCompleted = other.results?.dominantColor || other.results?.scores;
+        if (!otherIsCompleted) {
+          return false;
+        }
+
+        return new Date(other.created_at).getTime() >= new Date(assessment.created_at).getTime();
+      });
+
+      return !hasCompletedAfterPurchase;
+    });
+  }, [assessments]);
+
+  const latestCompletedAssessment = useMemo(
+    () => visibleAssessments.find((assessment) => Boolean(assessment.results?.dominantColor || assessment.results?.scores)) || null,
+    [visibleAssessments],
+  );
 
   const getColorLabel = (color: string) => {
     switch (color) {
@@ -730,6 +794,60 @@ const Dashboard = () => {
         description: "Failed to generate the report",
         variant: "destructive",
       });
+    }
+  };
+
+  const openDeleteDialog = (target: { id: string; kind: 'saved' | 'progress'; label: string }) => {
+    setDeleteTarget(target);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDeleteAssessment = async () => {
+    if (!user || !deleteTarget) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      if (deleteTarget.kind === 'progress') {
+        const { error } = await supabase
+          .from('assessment_progress')
+          .delete()
+          .eq('id', deleteTarget.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('assessment_results')
+          .delete()
+          .eq('id', deleteTarget.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      }
+
+      if (selectedAssessment?.id === deleteTarget.id) {
+        setSelectedAssessment(null);
+      }
+
+      toast({
+        title: "Assessment Deleted",
+        description: `${deleteTarget.label} was deleted successfully.`,
+      });
+
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+      await Promise.all([fetchUserAssessments(), fetchInProgressAssessments()]);
+    } catch (error) {
+      console.error('Error deleting assessment:', error);
+      toast({
+        title: "Delete Failed",
+        description: "We couldn't delete this assessment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -1083,7 +1201,7 @@ const Dashboard = () => {
                         <CardContent className="pt-4 sm:pt-6 relative z-10">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-3xl sm:text-4xl font-bold">{assessments.length}</p>
+                              <p className="text-3xl sm:text-4xl font-bold">{visibleAssessments.length}</p>
                               <p className="text-xs sm:text-sm text-white/80 mt-1">Total Assessments</p>
                             </div>
                             <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
@@ -1114,7 +1232,7 @@ const Dashboard = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-3xl sm:text-4xl font-bold">
-                                {assessments.filter(a => a.results.dominantColor).length}
+                                {visibleAssessments.filter(a => a.results.dominantColor).length}
                               </p>
                               <p className="text-xs sm:text-sm text-white/80 mt-1">Completed</p>
                             </div>
@@ -1127,7 +1245,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Recent Assessment - Enhanced Card */}
-                    {assessments.length > 0 && assessments[0].results.dominantColor && (
+                    {latestCompletedAssessment && (
                       <Card className="relative overflow-hidden shadow-lg border-border/20 bg-gradient-to-r from-background to-muted/30">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/5 to-transparent rounded-full" />
                         <CardHeader className="pb-2">
@@ -1142,10 +1260,10 @@ const Dashboard = () => {
                           <div className="flex items-center justify-between">
                             <div className="space-y-2">
                               <p className="text-lg font-semibold">
-                                {getAssessmentTypeLabel(assessments[0].assessment_type)}
+                                {getAssessmentDisplayName(latestCompletedAssessment)}
                               </p>
-                              <Badge className={`${getColorBadgeStyle(assessments[0].results.dominantColor)} text-sm px-3 py-1`}>
-                                {getColorLabel(assessments[0].results.dominantColor)}
+                              <Badge className={`${getColorBadgeStyle(latestCompletedAssessment.results.dominantColor)} text-sm px-3 py-1`}>
+                                {getColorLabel(latestCompletedAssessment.results.dominantColor)}
                               </Badge>
                             </div>
                             <Button 
@@ -1255,6 +1373,18 @@ const Dashboard = () => {
                                   <Play className="w-4 h-4 mr-2" />
                                   Resume Assessment
                                 </Button>
+                                <Button
+                                  variant="outline"
+                                  className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                                  onClick={() => openDeleteDialog({
+                                    id: progress.id,
+                                    kind: 'progress',
+                                    label: `${getAssessmentTypeLabel(progress.assessment_type)} (in progress)`,
+                                  })}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </Button>
                               </CardContent>
                             </Card>
                           ))}
@@ -1262,11 +1392,11 @@ const Dashboard = () => {
                       </div>
                     )}
 
-                    {assessments.length > 0 ? (
+                    {visibleAssessments.length > 0 ? (
                       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                        {assessments.map((assessment) => {
+                        {visibleAssessments.map((assessment) => {
                           const isCompleted = assessment.results.dominantColor || assessment.results.scores;
-                          const isPurchasedOnly = assessment.results.status === 'payment_completed' && !isCompleted;
+                          const isPurchasedOnly = assessment.results.status === 'payment_completed' && assessment.results.assessment_started !== true && !isCompleted;
                           
                           // Get color for card accent based on dominant color
                           const getCardAccent = () => {
@@ -1286,7 +1416,7 @@ const Dashboard = () => {
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <CardTitle className="text-lg font-bold">
-                                      {getAssessmentTypeLabel(assessment.assessment_type)}
+                                      {getAssessmentDisplayName(assessment)}
                                     </CardTitle>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                       <Calendar className="w-4 h-4" />
@@ -1309,10 +1439,23 @@ const Dashboard = () => {
                                       asChild
                                       className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600"
                                     >
-                                      <Link to={`/${assessment.assessment_type}-assessment`}>
+                                      <Link to={`/${assessment.assessment_type}-assessment?purchase=${assessment.id}`}>
                                         <Play className="w-4 h-4 mr-2" />
                                         Start Assessment
                                       </Link>
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                                      onClick={() => openDeleteDialog({
+                                        id: assessment.id,
+                                        kind: 'saved',
+                                        label: `${getAssessmentTypeLabel(assessment.assessment_type)}`,
+                                      })}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
                                     </Button>
                                   </div>
                                 ) : (
@@ -1356,6 +1499,12 @@ const Dashboard = () => {
                                             } else {
                                               const storageKey = `${assessment.assessment_type}AssessmentResults`;
                                               localStorage.setItem(storageKey, JSON.stringify(assessment.results));
+                                              localStorage.setItem('assessmentViewContext', JSON.stringify({
+                                                assessmentId: assessment.id,
+                                                assessmentType: assessment.assessment_type,
+                                                shareableCode: assessment.shareable_code || null,
+                                                viewedAt: new Date().toISOString(),
+                                              }));
                                               navigate(`/${assessment.assessment_type}-results`);
                                             }
                                           }}
@@ -1365,6 +1514,19 @@ const Dashboard = () => {
                                           View
                                         </Button>
                                       )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openDeleteDialog({
+                                          id: assessment.id,
+                                          kind: 'saved',
+                                          label: `${getAssessmentTypeLabel(assessment.assessment_type)}`,
+                                        })}
+                                        className="text-red-600 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </Button>
                                     </div>
                                   </>
                                 )}
@@ -1812,6 +1974,27 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You'll lose all of your past data for this assessment, and there is no going back.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleConfirmDeleteAssessment}
+                    disabled={deleteLoading}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {deleteLoading ? 'Deleting...' : 'Yes, Delete Assessment'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </main>
         </div>
       </div>
