@@ -62,19 +62,19 @@ function Header() {
           </a>
         </nav>
         <div className="flex items-center gap-3">
-          <a
-            href="#cta"
+          <Link
+            to="/auth"
             className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
             Sign in
-          </a>
-          <a
-            href="#cta"
+          </Link>
+          <Link
+            to="/auth"
             className="inline-flex items-center gap-1 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
             Get started
             <ArrowRight className="h-3.5 w-3.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </header>
@@ -108,13 +108,13 @@ function Hero() {
             triages replies, and books meetings. You wake up to a calendar full of qualified calls.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="#cta"
+            <Link
+              to="/auth"
               className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
               Start free trial
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
             <a
               href="#how"
               className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
@@ -317,13 +317,13 @@ function CTA() {
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
               Your AI chief of staff is waiting. Onboarding takes 15 minutes.
             </p>
-            <a
-              href="#"
+            <Link
+              to="/auth"
               className="mt-8 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
               Start your free trial
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </div>
