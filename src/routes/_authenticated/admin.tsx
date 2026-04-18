@@ -42,7 +42,7 @@ function AdminPage() {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: import("react").FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setResult(null);
