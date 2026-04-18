@@ -5,6 +5,9 @@ import path from "node:path";
 
 export default defineConfig({
   server: { port: 8080, host: true },
+  esbuild: {
+    jsxInject: 'import React from "react"',
+  },
   plugins: [tanstackStart(), tailwindcss()],
   resolve: {
     alias: {
