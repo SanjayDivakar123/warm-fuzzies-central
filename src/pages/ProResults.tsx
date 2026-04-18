@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,12 +115,17 @@ const ProResults = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [shareableCode, setShareableCode] = useState<string>("");
+  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
+  const [hasManualNameSave, setHasManualNameSave] = useState(false);
+  const [pendingNavigationPath, setPendingNavigationPath] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const sharedCode = searchParams.get("share");
   const isSharedView = Boolean(sharedCode);
+  const autoSaveAttemptedRef = useRef(false);
+  const BACK_NAVIGATION_TOKEN = '__BACK_NAVIGATION__';
 
   // Calculate leadership score (calibrated): emphasize primary, keep floor at 60
   const calculateLeadershipScore = (results: ProResults): number => {
@@ -142,6 +147,108 @@ const ProResults = () => {
     return Math.min(100, Math.max(60, score));
   };
 
+  const buildDefaultAssessmentName = () => {
+    const timestamp = new Date().toLocaleString([], {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `Pro Assessment ${timestamp}`;
+  };
+
+  const buildResultsPayload = (name: string) => {
+    if (!results) return null;
+
+    return {
+      name,
+      dominantColor: results.dominantColor,
+      secondaryColor: results.secondaryColor,
+      tertiaryColor: results.tertiaryColor,
+      scores: results.scores,
+      totalQuestions: results.totalQuestions,
+      isPro: results.isPro,
+      colorDistribution: results.colorDistribution,
+      leadershipScore: calculateLeadershipScore(results)
+    };
+  };
+
+  const persistAssessment = async (nameToSave: string, markAsManualSave: boolean) => {
+    if (!results || !nameToSave.trim()) {
+      return false;
+    }
+
+    if (!user) {
+      return false;
+    }
+
+    const payload = buildResultsPayload(nameToSave.trim());
+    if (!payload) {
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      if (currentAssessmentId) {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .update({
+            results: payload,
+          })
+          .eq('id', currentAssessmentId)
+          .eq('user_id', user.id)
+          .select('id, shareable_code')
+          .single();
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (data?.shareable_code) {
+          setShareableCode(data.shareable_code);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .insert({
+            user_id: user.id,
+            assessment_type: 'pro',
+            results: payload
+          })
+          .select('id, shareable_code')
+          .single();
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        setCurrentAssessmentId(data.id);
+        if (data?.shareable_code) {
+          setShareableCode(data.shareable_code);
+        }
+      }
+
+      if (markAsManualSave) {
+        setHasManualNameSave(true);
+      }
+
+      return true;
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveResult = async () => {
     if (!results || !resultName.trim()) {
       toast({
@@ -161,54 +268,23 @@ const ProResults = () => {
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const { data, error } = await supabase
-        .from('assessment_results')
-        .upsert({
-          user_id: user.id,
-          assessment_type: 'pro',
-          results: {
-            name: resultName.trim(),
-            dominantColor: results.dominantColor,
-            secondaryColor: results.secondaryColor,
-            tertiaryColor: results.tertiaryColor,
-            scores: results.scores,
-            totalQuestions: results.totalQuestions,
-            isPro: results.isPro,
-            colorDistribution: results.colorDistribution,
-            leadershipScore: calculateLeadershipScore(results)
-          }
-        }, {
-          onConflict: 'user_id,assessment_type'
-        })
-        .select('shareable_code')
-        .single();
+    const saved = await persistAssessment(resultName.trim(), true);
+    if (!saved) return;
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+    toast({
+      title: "Assessment Saved!",
+      description: `"${resultName}" has been saved to your account.`
+    });
+    setIsDialogOpen(false);
+
+    if (pendingNavigationPath) {
+      const destination = pendingNavigationPath;
+      setPendingNavigationPath(null);
+      if (destination === BACK_NAVIGATION_TOKEN) {
+        navigate(-1);
+      } else {
+        navigate(destination);
       }
-
-      if (data?.shareable_code) {
-        setShareableCode(data.shareable_code);
-      }
-
-      toast({
-        title: "Assessment Saved!",
-        description: `"${resultName}" has been saved to your account.`
-      });
-      setIsDialogOpen(false);
-      setResultName("");
-    } catch (error: any) {
-      console.error('Error saving assessment:', error);
-      toast({
-        title: "Save Failed",
-        description: error?.message || "There was an error saving your assessment. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -311,6 +387,8 @@ const ProResults = () => {
             .select("shareable_code")
             .eq("user_id", user.id)
             .eq("assessment_type", "pro")
+            .order("created_at", { ascending: false })
+            .limit(1)
             .maybeSingle();
 
           if (error) {
@@ -332,6 +410,103 @@ const ProResults = () => {
       navigate("/");
     }
   }, [navigate, user, sharedCode, toast]);
+
+  useEffect(() => {
+    if (isSharedView || !user || !results || autoSaveAttemptedRef.current) {
+      return;
+    }
+
+    autoSaveAttemptedRef.current = true;
+
+    const preferredName = resultName.trim() || buildDefaultAssessmentName();
+    if (!resultName.trim()) {
+      setResultName(preferredName);
+    }
+
+    void persistAssessment(preferredName, false);
+  }, [isSharedView, user, results]);
+
+  const requiresManualNameSave = Boolean(
+    !isSharedView &&
+    user &&
+    results &&
+    currentAssessmentId &&
+    !hasManualNameSave
+  );
+
+  useEffect(() => {
+    if (!requiresManualNameSave) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [requiresManualNameSave]);
+
+  useEffect(() => {
+    if (!requiresManualNameSave) {
+      return;
+    }
+
+    const handlePopState = () => {
+      window.history.pushState({ requiresNamedSave: true }, '', window.location.href);
+      setPendingNavigationPath(BACK_NAVIGATION_TOKEN);
+      setIsDialogOpen(true);
+      toast({
+        title: "Name Required",
+        description: "Enter a name and save this assessment before leaving this page.",
+        variant: "destructive"
+      });
+    };
+
+    window.history.pushState({ requiresNamedSave: true }, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) {
+        return;
+      }
+
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+
+      const nextUrl = new URL(href, window.location.origin);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
+
+      if (nextPath === currentPath) {
+        return;
+      }
+
+      event.preventDefault();
+      setPendingNavigationPath(nextPath);
+      setIsDialogOpen(true);
+      toast({
+        title: "Name Required",
+        description: "Enter a name and save this assessment before leaving this page.",
+        variant: "destructive"
+      });
+    };
+
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('click', handleDocumentClick, true);
+    };
+  }, [requiresManualNameSave, toast, navigate]);
 
   const handleExportPDF = async () => {
     if (!results) return;
@@ -469,7 +644,15 @@ const ProResults = () => {
                   </Button>
                 )}
                 {!isSharedView && user && (
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <Dialog
+                    open={isDialogOpen}
+                    onOpenChange={(open) => {
+                      if (!open && pendingNavigationPath && requiresManualNameSave) {
+                        return;
+                      }
+                      setIsDialogOpen(open);
+                    }}
+                  >
                     <DialogTrigger asChild>
                       <Button variant="outline" size="lg">
                         <Save className="w-4 h-4 mr-2" />
@@ -491,11 +674,13 @@ const ProResults = () => {
                           />
                         </div>
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                            Cancel
-                          </Button>
+                          {!pendingNavigationPath && (
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                          )}
                           <Button onClick={handleSaveResult} disabled={isSaving || !resultName.trim()}>
-                            {isSaving ? "Saving..." : "Save"}
+                            {isSaving ? "Saving..." : pendingNavigationPath ? "Save and Continue" : "Save"}
                           </Button>
                         </div>
                       </div>

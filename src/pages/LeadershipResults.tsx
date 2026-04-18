@@ -599,7 +599,7 @@ const LeadershipResults = () => {
     try {
       const { data, error } = await supabase
         .from('assessment_results')
-        .upsert({
+        .insert({
           user_id: user.id,
           assessment_type: type || 'leadership',
           results: {
@@ -611,8 +611,6 @@ const LeadershipResults = () => {
             spectrumPosition: results.spectrumPosition,
             analysis: analysis
           } as any
-        }, {
-          onConflict: 'user_id,assessment_type'
         })
         .select('shareable_code')
         .single();

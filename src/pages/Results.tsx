@@ -480,7 +480,7 @@ const Results = () => {
     try {
       const { data, error } = await supabase
         .from('assessment_results')
-        .upsert({
+        .insert({
           user_id: user.id,
           assessment_type: 'quiz',
           results: {
@@ -490,8 +490,6 @@ const Results = () => {
             scores: results.scores,
             totalQuestions: results.totalQuestions
           } as any
-        }, {
-          onConflict: 'user_id,assessment_type'
         })
         .select('shareable_code')
         .single();
