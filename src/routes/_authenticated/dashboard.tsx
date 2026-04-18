@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Building2, Inbox, Mail, Users } from "lucide-react";
+import { ArrowRight, Building2, Inbox, Mail, Sparkles, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
@@ -76,18 +76,38 @@ function DashboardPage() {
         <StatCard icon={Building2} label="Inboxes" value="0" />
       </div>
 
-      <div className="mt-10 rounded-xl border border-border bg-card p-8">
-        <h2 className="text-lg font-semibold">Get started</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Import your first batch of leads. Jax will score them against your ICP.
-        </p>
-        <Link
-          to="/leads"
-          className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-        >
-          Go to Leads
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+      <div className="mt-10 grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-8">
+          <h2 className="text-lg font-semibold">Get started</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Import your first batch of leads. Jax will score them against your ICP.
+          </p>
+          <Link
+            to="/leads"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          >
+            Go to Leads
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-8">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <h2 className="text-lg font-semibold">Chat with Jax</h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ask about your pipeline, score leads in bulk, draft emails. Powered by Groq.
+          </p>
+          <Link
+            to="/jax"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          >
+            Open Jax
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );
