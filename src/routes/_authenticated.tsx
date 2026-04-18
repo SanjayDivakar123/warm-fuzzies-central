@@ -50,6 +50,13 @@ function AuthenticatedLayout() {
             >
               Leads
             </Link>
+            <Link
+              to="/jax"
+              className="text-sm text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "text-sm font-medium text-foreground" }}
+            >
+              Jax
+            </Link>
           </nav>
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user?.email}</span>
