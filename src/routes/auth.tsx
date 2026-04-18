@@ -52,7 +52,10 @@ function AuthPage() {
       }
       navigate({ to: "/dashboard" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      let message = err instanceof Error ? err.message : "Something went wrong";
+      if (/pwned|weak.?password|known to be weak/i.test(message)) {
+        message = "That password has appeared in a known data breach. Please choose a stronger one.";
+      }
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -118,12 +121,17 @@ function AuthPage() {
                   id="password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters, not a common password"
                 />
+                {mode === "signup" && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Use a unique password — common/breached passwords are blocked.
+                  </p>
+                )}
               </div>
 
               <button
