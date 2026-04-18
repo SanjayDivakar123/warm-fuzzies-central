@@ -49,45 +49,26 @@ const PaymentSuccess = () => {
       localStorage.setItem(paymentKey, JSON.stringify(paymentVerification));
 
       const nowIso = new Date().toISOString();
-
-      const { data: existingRecord, error: existingError } = await supabase
-        .from('assessment_results')
-        .select('id, results')
-        .eq('user_id', user.id)
-        .eq('assessment_type', assessmentType)
-        .maybeSingle();
-
-      if (existingError) {
-        console.error('Error checking existing payment record:', existingError);
-        return;
-      }
-
-      const existingResults = existingRecord?.results as Record<string, unknown> | null;
-      const hasCompletedAssessment = Boolean(
-        existingResults?.dominantColor ||
-        existingResults?.primaryColor ||
-        existingResults?.scores ||
-        existingResults?.colorScores
-      );
-
-      if (hasCompletedAssessment) {
-        console.log('Existing completed assessment found. Skipping payment placeholder write.');
-        return;
-      }
+      const purchaseLabel = `${assessmentType.toUpperCase()} Purchase ${new Date(nowIso).toLocaleString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`;
       
       // Also store in Supabase for persistence
       const { data, error } = await supabase
         .from('assessment_results')
-        .upsert({
+        .insert({
           user_id: user?.id,
           assessment_type: assessmentType,
           results: { 
+            name: purchaseLabel,
             status: 'payment_completed', 
             purchased_at: nowIso,
             assessment_started: false
           }
-        }, {
-          onConflict: 'user_id,assessment_type'
         });
 
       if (error) {

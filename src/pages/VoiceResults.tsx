@@ -91,7 +91,7 @@ export const VoiceResults = () => {
     try {
       const { data, error } = await supabase
         .from('assessment_results')
-        .upsert({
+        .insert({
           user_id: user.id,
           assessment_type: 'voice',
           results: {
@@ -105,8 +105,6 @@ export const VoiceResults = () => {
             },
             phoneNumber: results.phone_number
           } as any
-        }, {
-          onConflict: 'user_id,assessment_type'
         })
         .select('shareable_code')
         .single();
