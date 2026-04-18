@@ -62,19 +62,19 @@ function Header() {
           </a>
         </nav>
         <div className="flex items-center gap-3">
-          <a
-            href="#cta"
+          <Link
+            to="/auth"
             className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
             Sign in
-          </a>
-          <a
-            href="#cta"
+          </Link>
+          <Link
+            to="/auth"
             className="inline-flex items-center gap-1 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
             Get started
             <ArrowRight className="h-3.5 w-3.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </header>
