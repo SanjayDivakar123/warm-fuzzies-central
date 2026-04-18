@@ -35,6 +35,7 @@ interface AssessmentResults {
 
 export interface ReusableAssessmentOption {
   id: string;
+  sourceTable: 'assessment_results' | 'assessment_progress';
   assessmentType: string;
   displayName: string;
   completedAt: string;

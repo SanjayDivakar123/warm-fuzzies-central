@@ -54,6 +54,9 @@ verify_jwt = false
 [functions.get-company-employee-session]
 verify_jwt = false
 
+[functions.import-company-assessment-result]
+verify_jwt = false
+
 [functions.add-seats-payment]
 verify_jwt = false
 
