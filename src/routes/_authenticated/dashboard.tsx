@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, Inbox, Mail, Users } from "lucide-react";
+import { ArrowRight, Building2, Inbox, Mail, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
@@ -76,10 +76,18 @@ function DashboardPage() {
         <StatCard icon={Building2} label="Inboxes" value="0" />
       </div>
 
-      <div className="mt-10 rounded-xl border border-border bg-card p-8 text-center">
-        <p className="text-muted-foreground">
-          Your workspace is ready. Lead discovery, sequences, and inboxes are coming up next.
+      <div className="mt-10 rounded-xl border border-border bg-card p-8">
+        <h2 className="text-lg font-semibold">Get started</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Import your first batch of leads. Jax will score them against your ICP.
         </p>
+        <Link
+          to="/leads"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+        >
+          Go to Leads
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );
