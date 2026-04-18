@@ -14,7 +14,7 @@ import rcfLogo from '@/assets/rolecolor-ai-logo.svg';
 import { HelpButton } from '@/components/help';
 
 export default function CompanyLogin() {
-  const { company, loading, error, setEmployee } = useCompanyPortal();
+  const { company, loading, error, setEmployee, setReusableAssessments } = useCompanyPortal();
   const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -177,17 +177,22 @@ export default function CompanyLogin() {
 
       // Store employee in context (context handles localStorage session)
       setEmployee(data.employee);
+      setReusableAssessments(data.reusableAssessments ?? []);
       
       toast({
         title: "Welcome!",
-        description: data.employee.assessment_completed_at 
+        description: data.employee.assessment_completed_at
           ? "Welcome back! Viewing your results."
-          : "You're now logged in. Let's start your assessment.",
+          : data.reusableAssessments?.length
+            ? "We found saved assessments you can reuse or you can take this company assessment."
+            : "You're now logged in. Let's start your assessment.",
       });
 
       // Check if assessment already completed
       if (data.employee.assessment_completed_at) {
         navigate(`/company/${company.subdomain}/home`);
+      } else if (data.reusableAssessments?.length) {
+        navigate(`/company/${company.subdomain}/reuse-result`);
       } else {
         navigate(`/company/${company.subdomain}/assessment`);
       }

@@ -752,16 +752,16 @@ const ProAssessment = () => {
           lastSavedAt={lastSaved}
         />
 
-        <div className="bg-gradient-subtle py-6 sm:py-8 px-4">
-          <div className="max-w-3xl mx-auto">
+        <div className="bg-gradient-subtle min-h-[calc(100vh-5rem)] pt-24 sm:pt-28 pb-6 sm:pb-8 px-4">
+          <div className="max-w-3xl mx-auto min-h-[calc(100vh-12rem)] flex flex-col">
             {/* Header with Progress */}
             <div className="mb-6 sm:mb-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
-                    <Crown className="text-white w-4 h-4" />
+                  <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
+                    <Crown className="text-primary w-4 h-4" />
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                     Pro Deep Dive Assessment
                   </h1>
                 </div>
@@ -843,7 +843,7 @@ const ProAssessment = () => {
             </Card>
 
             {/* Navigation */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 animate-fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 animate-fade-in mt-auto pt-2">
               <Button
                 variant="outline"
                 onClick={handlePrevious}

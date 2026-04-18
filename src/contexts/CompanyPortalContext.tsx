@@ -33,6 +33,19 @@ interface AssessmentResults {
   completedAt?: string;
 }
 
+export interface ReusableAssessmentOption {
+  id: string;
+  assessmentType: string;
+  displayName: string;
+  completedAt: string;
+  dominantColor: string | null;
+  totalQuestions: number | null;
+  sourceKind: 'personal' | 'company' | 'code';
+  sourceLabel: string;
+  matchesCompanyAssessment: boolean;
+  mismatchWarning: string | null;
+}
+
 interface CompanyEmployee {
   id: string;
   email: string;
@@ -50,10 +63,12 @@ interface CompanyPortalContextType {
   company: Company | null;
   employee: CompanyEmployee | null;
   assessmentResults: AssessmentResults | null;
+  reusableAssessments: ReusableAssessmentOption[];
   loading: boolean;
   error: string | null;
   refreshEmployee: () => Promise<void>;
   setEmployee: (employee: CompanyEmployee | null) => void;
+  setReusableAssessments: (assessments: ReusableAssessmentOption[]) => void;
   fetchAssessmentResults: () => Promise<void>;
 }
 
@@ -76,6 +91,7 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
   const [company, setCompany] = useState<Company | null>(null);
   const [employee, setEmployee] = useState<CompanyEmployee | null>(null);
   const [assessmentResults, setAssessmentResults] = useState<AssessmentResults | null>(null);
+  const [reusableAssessments, setReusableAssessments] = useState<ReusableAssessmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionRestoring, setSessionRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,11 +206,13 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
         localStorage.removeItem(`employee_session_${company.subdomain}`);
         setEmployee(null);
         setAssessmentResults(null);
+        setReusableAssessments([]);
         return;
       }
 
       setEmployee(data.employee);
       setAssessmentResults(data.assessmentResults?.results ?? null);
+      setReusableAssessments((data.reusableAssessments ?? []) as ReusableAssessmentOption[]);
     } catch (err) {
       console.error('Error refreshing employee session:', err);
     } finally {
@@ -211,6 +229,7 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
   const fetchAssessmentResults = async () => {
     if (!company || !employee?.id || !employee?.invite_code) {
       setAssessmentResults(null);
+      setReusableAssessments([]);
       return;
     }
 
@@ -222,6 +241,7 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
       if (!fetchError && data?.success) {
         setEmployee(data.employee);
         setAssessmentResults(data.assessmentResults?.results ?? null);
+        setReusableAssessments((data.reusableAssessments ?? []) as ReusableAssessmentOption[]);
       }
     } catch (err) {
       console.error('Error fetching assessment results:', err);
@@ -232,6 +252,7 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
     setEmployee(emp);
     // Clear previous assessment results when employee changes
     setAssessmentResults(null);
+    setReusableAssessments([]);
 
     if (emp && company) {
       // Persist a minimal employee session so they don't have to re-login
@@ -249,10 +270,12 @@ export const CompanyPortalProvider = ({ children }: CompanyPortalProviderProps) 
       company, 
       employee, 
       assessmentResults,
+      reusableAssessments,
       loading, 
       error,
       refreshEmployee,
       setEmployee: handleSetEmployee,
+      setReusableAssessments,
       fetchAssessmentResults
     }}>
       {children}

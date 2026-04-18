@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Share2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Navbar } from "@/components/navigation/Navbar";
 
 interface AssessmentResult {
   id: string;
@@ -203,6 +202,10 @@ export default function SharedResult() {
       if (error) throw error;
 
       if (data) {
+        if (data.assessment_type === "pro") {
+          navigate(`/pro-results?share=${shareableCode}`, { replace: true });
+          return;
+        }
         setResult(data);
       } else {
         toast.error("Result not found");
@@ -214,25 +217,6 @@ export default function SharedResult() {
       navigate("/");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleShare = async () => {
-    const shareUrl = window.location.href;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "My Leadership Assessment Result",
-          text: `Check out my leadership style assessment: ${result?.results?.dominantColor || ""}`,
-          url: shareUrl,
-        });
-      } catch (error) {
-        // User cancelled share
-      }
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Link copied to clipboard!");
     }
   };
 
@@ -251,18 +235,22 @@ export default function SharedResult() {
   const resultData = result.results;
   const dominantColor = resultData.dominantColor || resultData.dominant_color;
   const colorInfo = colorData[dominantColor] || colorData.yellow;
+  const displayName = (resultData.name && String(resultData.name).trim()) || "This Leader";
+  const strengths = resultData.strengths?.length ? resultData.strengths : colorInfo.strengths;
+  const developmentAreas = resultData.developmentAreas?.length
+    ? resultData.developmentAreas
+    : colorInfo.developmentAreas;
+  const idealRoles = resultData.idealRoles?.length ? resultData.idealRoles : colorInfo.idealRoles;
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
       <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Shared Assessment Result</h1>
-          <Button onClick={handleShare} variant="outline" size="sm">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+        <div className="mb-8 text-center">
+          <p className="text-sm uppercase tracking-wider text-muted-foreground mb-2">Shared leadership report</p>
+          <h1 className="text-3xl sm:text-4xl font-bold">
+            {displayName} is a <span className={`${colorInfo.gradient} bg-clip-text text-transparent`}>{colorInfo.name}</span>
+          </h1>
+          <p className="text-muted-foreground mt-3">Read-only view of the saved assessment report.</p>
         </div>
 
         <Card className={`${colorInfo.gradient} ${colorInfo.textColor} mb-6`}>
@@ -366,11 +354,11 @@ export default function SharedResult() {
               <CardTitle>Primary Leadership Style: {colorInfo.name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {resultData.strengths && resultData.strengths.length > 0 && (
+              {strengths && strengths.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Core Strengths</h3>
                   <ul className="space-y-2">
-                    {resultData.strengths.map((strength: string, index: number) => (
+                    {strengths.map((strength: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-primary">✓</span>
                         <span>{strength}</span>
@@ -380,11 +368,11 @@ export default function SharedResult() {
                 </div>
               )}
 
-              {resultData.developmentAreas && resultData.developmentAreas.length > 0 && (
+              {developmentAreas && developmentAreas.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Development Opportunities</h3>
                   <ul className="space-y-2">
-                    {resultData.developmentAreas.map((area: string, index: number) => (
+                    {developmentAreas.map((area: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-muted-foreground">→</span>
                         <span>{area}</span>
@@ -417,17 +405,21 @@ export default function SharedResult() {
         )}
 
         {/* Ideal Career Roles */}
-        {resultData.idealRoles && resultData.idealRoles.length > 0 && (
+        {idealRoles && idealRoles.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Ideal Career Roles</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {resultData.idealRoles.map((role: string, index: number) => (
+                {idealRoles.map((role: string | { role: string; salary?: string; fit?: string }, index: number) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-primary">★</span>
-                    <span>{role}</span>
+                    <span>
+                      {typeof role === "string"
+                        ? role
+                        : `${role.role}${role.fit ? ` (${role.fit} fit)` : ""}${role.salary ? ` - ${role.salary}` : ""}`}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -436,25 +428,25 @@ export default function SharedResult() {
         )}
 
         {/* Communication Style */}
-        {resultData.communicationStyle && (
+        {(resultData.communicationStyle || colorInfo.communication) && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Communication Style</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">{resultData.communicationStyle}</p>
+              <p className="text-muted-foreground">{resultData.communicationStyle || colorInfo.communication}</p>
             </CardContent>
           </Card>
         )}
 
         {/* Work Environment Preferences */}
-        {resultData.workEnvironment && (
+        {(resultData.workEnvironment || colorInfo.workStyle) && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Ideal Work Environment</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">{resultData.workEnvironment}</p>
+              <p className="text-muted-foreground">{resultData.workEnvironment || colorInfo.workStyle}</p>
             </CardContent>
           </Card>
         )}
@@ -497,12 +489,7 @@ export default function SharedResult() {
         )}
 
         <div className="text-center mt-8">
-          <p className="text-muted-foreground mb-4">
-            Want to discover your own leadership style?
-          </p>
-          <Button onClick={() => navigate("/")} size="lg">
-            Take the Assessment
-          </Button>
+          <p className="text-xs text-muted-foreground">Shared report view. Actions are hidden for viewers.</p>
         </div>
       </div>
     </div>

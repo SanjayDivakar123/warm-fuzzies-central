@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     // Insert into assessment_results
     // Use the employee's id as the user_id to ensure uniqueness per employee
     // This avoids collisions when employees don't have a linked auth user_id
-    const userId = linkedUserId || employeeId
+    const userId = PRIVILEGED_ROLES.includes(employee.role) ? linkedUserId : employeeId
     const assessmentType = results.assessmentType || 'professional_25q'
     
     // First check if an assessment already exists for this user/type combo

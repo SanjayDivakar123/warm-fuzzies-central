@@ -34,6 +34,10 @@ const PaymentSuccess = () => {
   const storePaymentRecord = async () => {
     try {
       console.log('Storing payment record for user:', user?.id, 'type:', assessmentType);
+
+      if (!user || !assessmentType) {
+        return;
+      }
       
       // Store payment verification in localStorage for immediate access
       const paymentKey = `payment_verified_${assessmentType}_${user?.id}`;
@@ -43,18 +47,47 @@ const PaymentSuccess = () => {
         userId: user?.id
       };
       localStorage.setItem(paymentKey, JSON.stringify(paymentVerification));
+
+      const nowIso = new Date().toISOString();
+
+      const { data: existingRecord, error: existingError } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', assessmentType)
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('Error checking existing payment record:', existingError);
+        return;
+      }
+
+      const existingResults = existingRecord?.results as Record<string, unknown> | null;
+      const hasCompletedAssessment = Boolean(
+        existingResults?.dominantColor ||
+        existingResults?.primaryColor ||
+        existingResults?.scores ||
+        existingResults?.colorScores
+      );
+
+      if (hasCompletedAssessment) {
+        console.log('Existing completed assessment found. Skipping payment placeholder write.');
+        return;
+      }
       
       // Also store in Supabase for persistence
       const { data, error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user?.id,
           assessment_type: assessmentType,
           results: { 
             status: 'payment_completed', 
-            purchased_at: new Date().toISOString(),
+            purchased_at: nowIso,
             assessment_started: false
           }
+        }, {
+          onConflict: 'user_id,assessment_type'
         });
 
       if (error) {
