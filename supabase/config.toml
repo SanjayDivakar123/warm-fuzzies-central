@@ -1,1 +1,4 @@
 project_id = "wamuyoyfiuzzuwjgbdmr"
+
+[functions.score-lead]
+verify_jwt = true

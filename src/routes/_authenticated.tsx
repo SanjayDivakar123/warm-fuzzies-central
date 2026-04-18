@@ -35,6 +35,22 @@ function AuthenticatedLayout() {
             </div>
             <span className="text-lg font-semibold tracking-tight">OutreachOS</span>
           </Link>
+          <nav className="hidden items-center gap-6 md:flex">
+            <Link
+              to="/dashboard"
+              className="text-sm text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "text-sm font-medium text-foreground" }}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/leads"
+              className="text-sm text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "text-sm font-medium text-foreground" }}
+            >
+              Leads
+            </Link>
+          </nav>
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user?.email}</span>
             <button
