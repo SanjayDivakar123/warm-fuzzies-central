@@ -1,0 +1,197 @@
+name: Deploy To Vercel
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  checks: write
+  actions: read
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    outputs:
+      failed_summary: ${{ steps.collect_failures.outputs.failed_summary }}
+      tests_passed: ${{ steps.tests.outcome == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Seed test data
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_JWT: ${{ secrets.SUPABASE_SERVICE_ROLE_JWT }}
+          SUPABASE_SCHEMA: ${{ secrets.SUPABASE_SCHEMA }}
+        run: npm run test:seed
+
+      - name: Run full test suite
+        id: tests
+        continue-on-error: true
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_JWT: ${{ secrets.SUPABASE_SERVICE_ROLE_JWT }}
+          SUPABASE_SCHEMA: ${{ secrets.SUPABASE_SCHEMA }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          SYSTEM_GMAIL_CREDENTIALS: ${{ secrets.SYSTEM_GMAIL_CREDENTIALS }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          CALENDLY_URL: ${{ secrets.CALENDLY_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          npm test 2>&1 | tee test-output.log
+
+      - name: Collect failed tests
+        id: collect_failures
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "failed_summary<<EOF"
+            if grep '^FAIL ' test-output.log >/tmp/jax-fails.txt; then
+              cat /tmp/jax-fails.txt
+              echo
+              grep 'Test Suites:' test-output.log | tail -n 1 || true
+              grep 'Tests:' test-output.log | tail -n 1 || true
+            else
+              echo "All tests passed."
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jax-test-output
+          path: test-output.log
+
+      - name: Fail job when tests fail
+        if: steps.tests.outcome != 'success'
+        run: exit 1
+
+  comment_on_failure:
+    name: Comment On Failed Commit
+    needs: test
+    if: needs.test.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add commit comment with failed tests
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            const summary = `${{ toJSON(needs.test.outputs.failed_summary) }}`;
+            const commit = await github.graphql(`
+              query($owner: String!, $repo: String!, $sha: GitObjectID!) {
+                repository(owner: $owner, name: $repo) {
+                  object(oid: $sha) {
+                    ... on Commit {
+                      id
+                    }
+                  }
+                }
+              }
+            `, { owner, repo, sha });
+
+            const subjectId = commit.repository.object.id;
+            const body = [
+              'Deployment blocked because the production test suite failed.',
+              '',
+              'Failed tests:',
+              '```',
+              summary,
+              '```'
+            ].join('\n');
+
+            await github.graphql(`
+              mutation($subjectId: ID!, $body: String!) {
+                addComment(input: { subjectId: $subjectId, body: $body }) {
+                  commentEdge {
+                    node {
+                      id
+                    }
+                  }
+                }
+              }
+            `, { subjectId, body });
+
+  deploy:
+    name: Deploy Production
+    needs: test
+    if: needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      VERCEL_URL: ${{ secrets.VERCEL_URL }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_JWT: ${{ secrets.SUPABASE_SERVICE_ROLE_JWT }}
+      SUPABASE_SCHEMA: ${{ secrets.SUPABASE_SCHEMA }}
+      GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+      GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+      SYSTEM_GMAIL_CREDENTIALS: ${{ secrets.SYSTEM_GMAIL_CREDENTIALS }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      CALENDLY_URL: ${{ secrets.CALENDLY_URL }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Pre-deploy preflight
+        run: node scripts/preflight.js
+
+      - name: Pull Vercel environment
+        run: npx vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
+
+      - name: Build Vercel output
+        run: npx vercel build --prod --token="${VERCEL_TOKEN}"
+
+      - name: Deploy to Vercel
+        id: vercel_deploy
+        shell: bash
+        run: |
+          deployment_url="$(npx vercel deploy --prebuilt --prod --yes --token="${VERCEL_TOKEN}" | tail -n 1)"
+          echo "deployment_url=${deployment_url}" >> "$GITHUB_OUTPUT"
+          echo "Deployed to ${deployment_url}"
+
+      - name: Post-deploy smoke test
+        env:
+          DEPLOYMENT_URL: ${{ steps.vercel_deploy.outputs.deployment_url }}
+        run: node scripts/postdeploy-smoke.js "${DEPLOYMENT_URL}"

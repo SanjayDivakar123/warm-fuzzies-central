@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/jax.js": { "maxDuration": 30 },
+    "api/orchestrate.js": { "maxDuration": 60 },
+    "api/webhook/stripe.js": { "maxDuration": 10 },
+    "api/cron/*.js": { "maxDuration": 300 }
+  },
+  "crons": [
+    { "path": "/api/cron/orchestrate", "schedule": "0 * * * *" },
+    { "path": "/api/cron/brief", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/warmup", "schedule": "30 8 * * *" },
+    { "path": "/api/cron/followup", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/reactivation", "schedule": "0 10 * * 1" },
+    { "path": "/api/cron/ab_analysis", "schedule": "0 8 * * 1" }
+  ]
+}
