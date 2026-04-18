@@ -206,6 +206,30 @@ export default function SharedResult() {
           navigate(`/pro-results?share=${shareableCode}`, { replace: true });
           return;
         }
+        if (data.assessment_type === "premium") {
+          navigate(`/premium-results?share=${shareableCode}`, { replace: true });
+          return;
+        }
+        if (data.assessment_type === "free") {
+          navigate(`/free-results?share=${shareableCode}`, { replace: true });
+          return;
+        }
+        if (data.assessment_type === "quiz") {
+          navigate(`/results?share=${shareableCode}`, { replace: true });
+          return;
+        }
+        if (data.assessment_type === "voice") {
+          navigate(`/voice-results?share=${shareableCode}`, { replace: true });
+          return;
+        }
+        if (/^(25q|50q)-(student|teacher)$/.test(data.assessment_type || "")) {
+          navigate(`/leadership-results/${data.assessment_type}?share=${shareableCode}`, { replace: true });
+          return;
+        }
+        if (data.assessment_type === "leadership") {
+          navigate(`/leadership-results?share=${shareableCode}`, { replace: true });
+          return;
+        }
         setResult(data);
       } else {
         toast.error("Result not found");

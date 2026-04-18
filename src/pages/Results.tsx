@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RotateCcw, Share2, Home, Download, Save } from "lucide-react";
+import { RotateCcw, Share2, Home, Download, Save, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -396,18 +396,66 @@ const Results = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareableCode, setShareableCode] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   useEffect(() => {
+    if (sharedCode) {
+      const fetchSharedResults = async () => {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .select('assessment_type, results, shareable_code')
+          .eq('shareable_code', sharedCode)
+          .maybeSingle();
+
+        if (error || !data || data.assessment_type !== 'quiz') {
+          toast({
+            title: 'Result not found',
+            description: 'This shared report link is invalid or unavailable.',
+            variant: 'destructive',
+          });
+          navigate('/');
+          return;
+        }
+
+        setResults(data.results as QuizResults);
+        setShareableCode(data.shareable_code || sharedCode);
+        setResultName(((data.results as any)?.name as string) || '');
+      };
+
+      fetchSharedResults();
+      return;
+    }
+
     const savedResults = localStorage.getItem('quizResults');
     if (savedResults) {
       setResults(JSON.parse(savedResults));
+
+      if (user) {
+        const fetchShareableCode = async () => {
+          const { data } = await supabase
+            .from('assessment_results')
+            .select('shareable_code')
+            .eq('user_id', user.id)
+            .eq('assessment_type', 'quiz')
+            .maybeSingle();
+
+          if (data?.shareable_code) {
+            setShareableCode(data.shareable_code);
+          }
+        };
+
+        fetchShareableCode();
+      }
     } else {
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, sharedCode, toast, user]);
 
   const handleSaveResult = async () => {
     if (!results || !resultName.trim()) {
@@ -430,9 +478,9 @@ const Results = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
-        .insert({
+        .upsert({
           user_id: user.id,
           assessment_type: 'quiz',
           results: {
@@ -442,9 +490,17 @@ const Results = () => {
             scores: results.scores,
             totalQuestions: results.totalQuestions
           } as any
-        });
+        }, {
+          onConflict: 'user_id,assessment_type'
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) throw error;
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -465,21 +521,43 @@ const Results = () => {
   };
 
   const handleShare = () => {
+    const shareUrl = shareableCode
+      ? `${window.location.origin}/result/${shareableCode}`
+      : window.location.href;
+
     const shareData = {
       title: `My Leadership Color Profile - ${colorData[results!.dominantColor as keyof typeof colorData].name}`,
       text: `I'm a ${colorData[results!.dominantColor as keyof typeof colorData].name}! Take the quiz to discover your leadership style.`,
-      url: window.location.href,
+      url: shareUrl,
     };
 
     if (navigator.share) {
       navigator.share(shareData);
     } else {
-      navigator.clipboard.writeText(shareData.url);
+      navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: "Results link has been copied to your clipboard.",
+        description: shareableCode ? "Your shareable results link has been copied!" : "Results link has been copied to your clipboard.",
       });
     }
+  };
+
+  const handleCopyShareLink = () => {
+    if (!shareableCode) {
+      toast({
+        title: "Save Required",
+        description: "Please save your assessment first to get a shareable link.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/result/${shareableCode}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: shareUrl,
+    });
   };
 
   const handleExportPDF = async () => {
@@ -561,7 +639,7 @@ const Results = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Your Leadership Color Profile
+              {isSharedView && resultName.trim().length > 0 ? `${resultName} Leadership Color Profile` : 'Your Leadership Color Profile'}
             </h1>
             <p className="text-lg text-muted-foreground">
               Discover your unique leadership style and career potential
@@ -725,7 +803,7 @@ const Results = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
-            {user && (
+            {!isSharedView && user && (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -771,23 +849,32 @@ const Results = () => {
               Export PDF Report
             </Button>
             
-            <Button
+            {!isSharedView && <Button
+              onClick={handleCopyShareLink}
+              variant="outline"
+              className="flex-1 max-w-xs border-primary/20 hover:bg-primary/10 transition-all duration-300"
+            >
+              <Link2 className="w-4 h-4 mr-2" />
+              Copy Share Link
+            </Button>}
+
+            {!isSharedView && <Button
               onClick={handleShare}
               variant="outline"
               className="flex-1 max-w-xs border-primary/20 hover:bg-primary/10 transition-all duration-300"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share Results
-            </Button>
+            </Button>}
             
-            <Button
+            {!isSharedView && <Button
               onClick={() => navigate('/quiz')}
               variant="outline"
               className="flex-1 max-w-xs border-primary/20 hover:bg-primary/10 transition-all duration-300"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Retake Quiz
-            </Button>
+            </Button>}
             
             <Button
               onClick={() => navigate('/')}
@@ -800,13 +887,13 @@ const Results = () => {
           </div>
 
           <div className="mt-10">
-            <RoleColorIdentityCard
+            {!isSharedView && <RoleColorIdentityCard
               name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
               primaryColor={results.dominantColor}
               secondaryColor={results.secondaryColor}
               className="mb-6"
-            />
-            <SendToFriendCard color={results.dominantColor} />
+            />}
+            {!isSharedView && <SendToFriendCard color={results.dominantColor} />}
           </div>
         </div>
         </div>
