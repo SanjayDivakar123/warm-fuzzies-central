@@ -15,8 +15,8 @@ interface EmployeeResultsModalProps {
       green: number;
       blue: number;
     };
-    dominantColor: string;
-  } | null;
+dominantColor?: string;
+dominant_color?: string;  } | null;
   completedAt: string;
   assessmentType?: AssessmentType;
   assessmentCategory?: AssessmentCategory;
@@ -134,8 +134,7 @@ export default function EmployeeResultsModal({
 }: EmployeeResultsModalProps) {
   if (!results) return null;
 
-  const dominantColor = results.dominantColor.toLowerCase();
-  const dominantColorInfo = colorDescriptions[dominantColor];
+const dominantColor = (results.dominantColor || results.dominant_color || '').toLowerCase();  const dominantColorInfo = colorDescriptions[dominantColor];
   
   if (!dominantColorInfo) return null;
 
