@@ -18,12 +18,18 @@ interface AssessmentDetailsProps {
 const AssessmentDetails = ({ answers, results, type }: AssessmentDetailsProps) => {
   const [showAnswers, setShowAnswers] = useState(false);
 
+  const normalizedResults = results ? {
+    ...results,
+    dominantColor: results.dominantColor || results.dominant_color,
+    secondaryColor: results.secondaryColor || results.secondary_color,
+  } : results;
+
   const getColorLabel = (color: string) => {
     switch (color) {
-      case 'yellow': return 'Action-first executor';
-      case 'red': return 'Vision-driven motivator';
-      case 'green': return 'Logic-based architect';
-      case 'blue': return 'People-first supporter';
+      case 'yellow': return 'Executor';
+      case 'red': return 'Motivator';
+      case 'green': return 'Organizer';
+      case 'blue': return 'Innovator';
       default: return color;
     }
   };
@@ -40,8 +46,7 @@ const AssessmentDetails = ({ answers, results, type }: AssessmentDetailsProps) =
 
   return (
     <div className="space-y-4">
-      {/* Results Summary */}
-      {results && (
+      {normalizedResults && (
         <Card className="shadow-elegant border-border/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -52,34 +57,34 @@ const AssessmentDetails = ({ answers, results, type }: AssessmentDetailsProps) =
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {results.dominantColor && (
+            {normalizedResults.dominantColor && (
               <div className="space-y-2">
-                <h4 className="font-semibold">Primary Leadership Role:</h4>
-                <Badge className={getColorBadgeStyle(results.dominantColor)}>
-                  {getColorLabel(results.dominantColor)}
+                <h4 className="font-semibold">Primary Role:</h4>
+                <Badge className={getColorBadgeStyle(normalizedResults.dominantColor)}>
+                  {getColorLabel(normalizedResults.dominantColor)}
                 </Badge>
               </div>
             )}
             
-            {results.secondaryColor && (
+            {normalizedResults.secondaryColor && (
               <div className="space-y-2">
                 <h4 className="font-semibold">Secondary Role:</h4>
-                <Badge className={getColorBadgeStyle(results.secondaryColor)}>
-                  {getColorLabel(results.secondaryColor)}
+                <Badge className={getColorBadgeStyle(normalizedResults.secondaryColor)}>
+                  {getColorLabel(normalizedResults.secondaryColor)}
                 </Badge>
               </div>
             )}
 
-            {results.scores && (
+            {normalizedResults.scores && (
               <div className="space-y-2">
                 <h4 className="font-semibold">Score Breakdown:</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(results.scores).map(([color, score]) => (
+                  {Object.entries(normalizedResults.scores).map(([color, score]) => (
                     <div key={color} className="flex items-center justify-between p-2 rounded border">
                       <span className="capitalize">{getColorLabel(color)}:</span>
                       <Badge variant="outline">{
                         (() => {
-                          const total = results.totalQuestions || (Object.values(results.scores) as number[]).reduce((sum: number, val: number) => sum + Number(val), 0);
+                          const total = normalizedResults.totalQuestions || (Object.values(normalizedResults.scores) as number[]).reduce((sum: number, val: number) => sum + Number(val), 0);
                           const pct = total > 0 ? Math.round(((score as number) / total) * 100) : 0;
                           return `${pct}%`;
                         })()
@@ -93,7 +98,6 @@ const AssessmentDetails = ({ answers, results, type }: AssessmentDetailsProps) =
         </Card>
       )}
 
-      {/* Individual Responses */}
       {answers && answers.length > 0 && (
         <Card className="shadow-elegant border-border/20">
           <CardHeader>
