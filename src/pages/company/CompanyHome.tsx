@@ -106,10 +106,10 @@ export default function CompanyHome() {
   const primaryColor = company.primary_color || '#9b87f5';
   const secondaryColor = company.secondary_color || '#7E69AB';
 
-  // If results aren't loaded yet or incomplete:
-  // - if the employee has a completed assessment, show a loading state while we fetch
-  // - otherwise, prompt to take the assessment
-  const hasValidResults = assessmentResults && assessmentResults.dominantColor && (assessmentResults.dominantColor in colorData);
+  // Support both camelCase and snake_case from the API
+  const dominantColor = assessmentResults?.dominantColor || assessmentResults?.dominant_color;
+  const hasValidResults = assessmentResults && dominantColor && (dominantColor in colorData);
+
   if (!hasValidResults) {
     if (employee?.assessment_result_id) {
       return (
@@ -155,7 +155,6 @@ export default function CompanyHome() {
               style={{ background: `linear-gradient(135deg, ${primaryColor}25, ${secondaryColor}20)` }}
             >
               <User className="h-10 w-10" style={{ color: primaryColor }} />
-              {/* Small accent dot */}
               <div 
                 className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full"
                 style={{ backgroundColor: secondaryColor }}
@@ -179,20 +178,29 @@ export default function CompanyHome() {
     );
   }
 
-  const leaderData = colorData[assessmentResults.dominantColor as keyof typeof colorData];
+  const leaderData = colorData[dominantColor as keyof typeof colorData];
   const completedDate = assessmentResults.completedAt 
     ? new Date(assessmentResults.completedAt).toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       })
-    : employee?.assessment_completed_at 
-      ? new Date(employee.assessment_completed_at).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+    : assessmentResults.completed_at
+      ? new Date(assessmentResults.completed_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         })
-      : 'Recently';
+      : employee?.assessment_completed_at 
+        ? new Date(employee.assessment_completed_at).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })
+        : 'Recently';
+
+  const scores = assessmentResults.scores || {};
+  const totalQuestions = assessmentResults.totalQuestions || assessmentResults.total_questions || 50;
 
   return (
     <div 
@@ -249,15 +257,12 @@ export default function CompanyHome() {
             {/* Hero Section with Large Color Circle */}
             <section className="py-8">
               <div className="text-center">
-                {/* Floating Orb Container */}
                 <div className="relative mb-8">
-                  {/* Shadow element that animates separately */}
                   <div 
                     className="absolute left-1/2 -translate-x-1/2 bottom-0 w-40 sm:w-52 h-6 rounded-full blur-xl animate-float-shadow"
                     style={{ backgroundColor: leaderData.color }}
                   />
                   
-                  {/* Large Color Circle with Float Animation */}
                   <div 
                     className="w-48 h-48 sm:w-64 sm:h-64 rounded-full mx-auto flex flex-col items-center justify-center shadow-2xl relative overflow-hidden animate-float"
                     style={{ 
@@ -265,14 +270,12 @@ export default function CompanyHome() {
                       boxShadow: `0 25px 50px -12px ${leaderData.color}60`
                     }}
                   >
-                    {/* Subtle inner glow */}
                     <div 
                       className="absolute inset-4 rounded-full opacity-30"
                       style={{ 
                         background: `radial-gradient(circle, white 0%, transparent 70%)`
                       }}
                     />
-                    {/* Shimmer effect */}
                     <div 
                       className="absolute inset-0 rounded-full opacity-20"
                       style={{ 
@@ -293,7 +296,6 @@ export default function CompanyHome() {
                   Discover what makes you a unique leader
                 </p>
 
-                {/* Quick Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button 
                     size="lg"
@@ -348,7 +350,7 @@ export default function CompanyHome() {
                   <div>
                     <h3 className="font-semibold">Leadership Assessment</h3>
                     <p className="text-sm text-muted-foreground">
-                      {assessmentResults.totalQuestions} questions • Completed {completedDate}
+                      {totalQuestions} questions • Completed {completedDate}
                     </p>
                   </div>
                 </div>
@@ -364,9 +366,10 @@ export default function CompanyHome() {
 
               {/* Score breakdown */}
               <div className="mt-6 pt-6 border-t grid grid-cols-4 gap-4">
-                {Object.entries(assessmentResults.scores).map(([color, score]) => {
+                {Object.entries(scores).map(([color, score]) => {
                   const data = colorData[color as keyof typeof colorData];
-                  const percentage = Math.round((score / assessmentResults.totalQuestions) * 100);
+                  if (!data) return null;
+                  const percentage = Math.round(((score as number) / totalQuestions) * 100);
                   return (
                     <div key={color} className="text-center">
                       <div 
