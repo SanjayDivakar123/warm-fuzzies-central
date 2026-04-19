@@ -37,7 +37,8 @@ interface CompletedAssessment {
       green: number;
       blue: number;
     };
-    dominantColor: string;
+    dominantColor?: string;
+    dominant_color?: string;
   };
 }
 
@@ -83,6 +84,11 @@ const colorLabels: Record<string, { label: string; bg: string; text: string }> =
   blue: { label: 'Innovator', bg: 'bg-blue-100', text: 'text-blue-800' },
 };
 
+// Helper to get dominant color from results, supporting both camelCase and snake_case
+const getDominantColor = (results?: CompletedAssessment['results']): string | undefined => {
+  return results?.dominantColor || results?.dominant_color;
+};
+
 const buildAssessmentsPayload = (users: any[]): AssessmentsPayload => {
   const completedUsers = users.filter((u) => u.assessment_completed_at && u.assessment_result_id);
   const invitedPendingMembers: InvitedPendingMember[] = users
@@ -124,7 +130,7 @@ const buildAssessmentsPayload = (users: any[]): AssessmentsPayload => {
   const colorDistribution = { yellow: 0, red: 0, green: 0, blue: 0 };
 
   completedAssessments.forEach((assessment) => {
-    const color = assessment.results?.dominantColor?.toLowerCase();
+    const color = getDominantColor(assessment.results)?.toLowerCase();
     if (color && color in colorDistribution) {
       colorDistribution[color as keyof typeof colorDistribution]++;
     }
@@ -258,7 +264,6 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
         description: 'Your changes have been saved.',
       });
 
-      // Refresh company data in parent to sync with other tabs
       if (onSettingsSaved) {
         onSettingsSaved();
       }
@@ -555,15 +560,17 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                 </TableRow>
               </TableHeader>
               <TableBody>
-              {completedAssessments.map((assessment) => (
+              {completedAssessments.map((assessment) => {
+                const dominantColor = getDominantColor(assessment.results);
+                return (
                   <TableRow key={assessment.id} className="transition-colors hover:bg-muted/50">
                     <TableCell className="max-w-[140px] font-medium">
                       {assessment.full_name || <span className="text-muted-foreground">Not set</span>}
                     </TableCell>
                     <TableCell className="max-w-[220px] break-all text-muted-foreground">{assessment.email}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {assessment.results?.dominantColor 
-                        ? getColorBadge(assessment.results.dominantColor)
+                      {dominantColor
+                        ? getColorBadge(dominantColor)
                         : <span className="text-muted-foreground">—</span>
                       }
                     </TableCell>
@@ -607,7 +614,8 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                );
+              })}
               </TableBody>
             </Table>
           )}
@@ -633,14 +641,14 @@ export default function AssessmentsTab({ company, onSettingsSaved, onNavigateToS
         onBillingUpdated={onSettingsSaved}
         pendingMembers={invitedPendingMembers}
         teamMembers={completedAssessments
-          .filter(a => a.results?.scores && a.results?.dominantColor)
+          .filter(a => a.results?.scores && getDominantColor(a.results))
           .map(a => ({
             id: a.id,
             email: a.email,
             full_name: a.full_name || null,
             job_role: a.job_role,
             skills: a.skills,
-            dominantColor: a.results!.dominantColor,
+            dominantColor: getDominantColor(a.results)!,
             scores: a.results!.scores,
           }))}
       />
