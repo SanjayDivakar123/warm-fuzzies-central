@@ -106,10 +106,11 @@ export default function CompanyHome() {
   const primaryColor = company.primary_color || '#9b87f5';
   const secondaryColor = company.secondary_color || '#7E69AB';
 
-  // If results aren't loaded yet:
+  // If results aren't loaded yet or incomplete:
   // - if the employee has a completed assessment, show a loading state while we fetch
   // - otherwise, prompt to take the assessment
-  if (!assessmentResults) {
+  const hasValidResults = assessmentResults && assessmentResults.dominantColor && (assessmentResults.dominantColor in colorData);
+  if (!hasValidResults) {
     if (employee?.assessment_result_id) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
