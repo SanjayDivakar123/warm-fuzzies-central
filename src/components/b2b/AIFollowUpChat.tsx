@@ -4,7 +4,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Send, Loader2, MessageSquare, User, Sparkles } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import {
+  evaluateFollowUpQuestion,
+  type FollowUpMessage,
+} from '@/lib/followUpQuestionGuard';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,13 +39,57 @@ export default function AIFollowUpChat({
     }
   }, [messages]);
 
+  const markdownComponents: Components = {
+    h1: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    h2: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    h3: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    h4: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    h5: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    h6: ({ children }) => <p className="mb-2 text-sm font-semibold leading-6">{children}</p>,
+    p: ({ children }) => <p className="mb-2 text-sm leading-6 last:mb-0">{children}</p>,
+    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+    ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5 text-sm leading-6">{children}</ul>,
+    ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5 text-sm leading-6">{children}</ol>,
+    li: ({ children }) => <li className="pl-1">{children}</li>,
+    blockquote: ({ children }) => (
+      <blockquote className="my-2 border-l-2 border-border/80 pl-3 text-sm italic text-muted-foreground">
+        {children}
+      </blockquote>
+    ),
+    hr: () => <div className="my-3 border-t border-border/70" />,
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
+    const messageHistory: FollowUpMessage[] = messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+    const questionEvaluation = evaluateFollowUpQuestion({
+      contextType,
+      question: userMessage,
+      contextData: { contextData, initialContext },
+      messages: messageHistory,
+    });
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+
+    if (!questionEvaluation.allowed) {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content:
+            questionEvaluation.responseMessage ||
+            "We aren't able to answer that question here. Please contact support@rolecolorfinder.com.",
+        },
+      ]);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -114,12 +162,12 @@ export default function AIFollowUpChat({
                     className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                       msg.role === 'user'
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                        : 'bg-muted text-foreground'
                     }`}
                   >
                     {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <div className="max-w-none break-words">
+                        <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                       </div>
                     ) : (
                       msg.content
