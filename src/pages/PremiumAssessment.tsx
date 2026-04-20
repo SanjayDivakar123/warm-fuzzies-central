@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -315,6 +315,9 @@ const premiumQuestions = [
 
 const PremiumAssessment = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const purchaseId = searchParams.get('purchase');
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -392,9 +395,92 @@ const PremiumAssessment = () => {
     await saveProgress(currentQuestion, answers);
   }, [saveProgress, currentQuestion, answers]);
 
+  const consumePurchaseAttempt = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const { data: rows, error } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', 'premium')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading purchase placeholders:', error);
+        return;
+      }
+
+      const targetPurchases = (rows || []).filter((row: any) => {
+        const results = row.results as any;
+        const isAvailablePurchase = results?.status === 'payment_completed' && results?.assessment_started !== true;
+        if (!isAvailablePurchase) {
+          return false;
+        }
+        if (!purchaseId) {
+          return true;
+        }
+        return row.id === purchaseId;
+      });
+
+      if (targetPurchases.length === 0) {
+        return;
+      }
+
+      for (const purchase of targetPurchases) {
+        const targetResults = purchase.results as any;
+        const { error: updateError } = await supabase
+          .from('assessment_results')
+          .update({
+            results: {
+              ...targetResults,
+              assessment_started: true,
+              started_at: targetResults?.started_at || new Date().toISOString(),
+            },
+          })
+          .eq('id', purchase.id)
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error consuming purchase placeholder:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error consuming purchase placeholder:', error);
+    }
+  }, [user, purchaseId]);
+
   const handleAnswer = (color: string) => {
     setSelectedAnswer(color);
   };
+
+  const optionsForCurrentQuestion = shuffledOptions[currentQuestion] || [];
+
+  // Keyboard shortcuts: 1-4 choose an option, Enter advances when selected.
+  useEffect(() => {
+    if (!initialized || !optionsForCurrentQuestion.length) {
+      return;
+    }
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const index = Number(e.key) - 1;
+        if (optionsForCurrentQuestion[index]) {
+          handleAnswer(optionsForCurrentQuestion[index].color);
+        }
+      }
+
+      if (e.key === 'Enter' && selectedAnswer) {
+        void handleNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [initialized, optionsForCurrentQuestion, selectedAnswer]);
 
   const handleNext = async () => {
     if (selectedAnswer) {
@@ -434,6 +520,7 @@ const PremiumAssessment = () => {
 
         // Mark assessment as complete
         await markComplete(dominantColor, colorCounts);
+        await consumePurchaseAttempt();
 
         // Store premium results
         localStorage.setItem('premiumAssessmentResults', JSON.stringify({
@@ -460,11 +547,6 @@ const PremiumAssessment = () => {
   const progress = ((currentQuestion + 1) / shuffledQuestions.length) * 100;
   const currentQuestionData = shuffledQuestions[currentQuestion];
   
-  // Shuffle options for current question
-  const shuffledCurrentOptions = useMemo(() => {
-    return currentQuestionData?.options ? shuffleArray(currentQuestionData.options) : [];
-  }, [currentQuestion, currentQuestionData?.options]);
-
   // Show loading while checking for saved progress
   if (progressLoading) {
     return (
@@ -494,7 +576,7 @@ const PremiumAssessment = () => {
           lastSavedAt={lastSaved}
         />
 
-        <div className="bg-gradient-subtle py-6 sm:py-8 px-4">
+        <div className="bg-gradient-subtle pt-24 sm:pt-28 pb-6 sm:pb-8 px-4">
           <div className="max-w-3xl mx-auto">
             {/* Header with Progress */}
             <div className="mb-6 sm:mb-8 animate-fade-in">
@@ -552,7 +634,7 @@ const PremiumAssessment = () => {
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                 <RadioGroup value={selectedAnswer} onValueChange={handleAnswer} className="space-y-3">
-                  {shuffledCurrentOptions.map((option, index) => (
+                  {optionsForCurrentQuestion.map((option, index) => (
                     <div 
                       key={index} 
                       className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover-scale ${

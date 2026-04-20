@@ -70,7 +70,7 @@ const colorData = {
 };
 
 export default function CompanyHome() {
-  const { company, employee, assessmentResults, loading, setEmployee, fetchAssessmentResults } = useCompanyPortal();
+  const { company, employee, assessmentResults, reusableAssessments, loading, setEmployee, fetchAssessmentResults } = useCompanyPortal();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'profile' | 'tasks'>('profile');
 
@@ -162,16 +162,29 @@ export default function CompanyHome() {
             </div>
             <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
             <p className="text-muted-foreground mb-8">
-              You haven't completed your leadership assessment yet. Take the assessment to discover your leadership style.
+              {reusableAssessments.length > 0
+                ? "You can use one of your saved paid assessments for this company invite, or you can take the company assessment now."
+                : "You haven't completed your leadership assessment yet. Take the assessment to discover your leadership style."}
             </p>
-            <Button 
-              size="lg"
-              onClick={() => navigate(`/company/${company.subdomain}/assessment`)}
-              style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-              className="shadow-lg"
-            >
-              Start Assessment
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {reusableAssessments.length > 0 && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate(`/company/${company.subdomain}/reuse-result`)}
+                >
+                  Use Saved Result
+                </Button>
+              )}
+              <Button 
+                size="lg"
+                onClick={() => navigate(`/company/${company.subdomain}/assessment`)}
+                style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                className="shadow-lg"
+              >
+                Start Assessment
+              </Button>
+            </div>
           </div>
         </div>
       </div>

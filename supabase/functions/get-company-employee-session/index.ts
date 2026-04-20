@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { findReusableAssessmentsForEmail } from '../_shared/reusableAssessments.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +95,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    const reusableAssessments = employee.assessment_result_id
+      ? []
+      : await findReusableAssessmentsForEmail(supabase, employee.email, {
+          companyAssessmentCategory: employee.assessment_category,
+          companyAssessmentType: employee.assessment_type,
+        })
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -110,6 +118,7 @@ Deno.serve(async (req) => {
           assessment_type: employee.assessment_type,
         },
         assessmentResults,
+        reusableAssessments,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

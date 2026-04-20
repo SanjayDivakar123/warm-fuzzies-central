@@ -3,6 +3,7 @@ type PlatformLogo = {
   alt: string;
   width?: number;
   height?: number;
+  dedupeKey?: string;
 };
 
 export const HOMEPAGE_PLATFORM_LOGOS: PlatformLogo[] = [
@@ -45,11 +46,11 @@ export const HOMEPAGE_PLATFORM_LOGOS: PlatformLogo[] = [
   { src: 'https://merge-api-public.s3.amazonaws.com/media/sesame1.png', alt: 'Sesame logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Simployer.png', alt: 'Simployer logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Square_Payroll_Logo.png', alt: 'Square Payroll logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/TriNet.png', alt: 'TriNet logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/TriNet_5we3H1H.png', alt: 'TriNet HR Platform logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_9Wr7tJ0.png', alt: 'UKG Pro logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_Cw4e1MU.png', alt: 'UKG Pro Workforce Management logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_eBVH51N.png', alt: 'UKG Ready logo', width: 160, height: 48 },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/TriNet.png', alt: 'TriNet logo', width: 160, height: 48, dedupeKey: 'trinet' },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/TriNet_5we3H1H.png', alt: 'TriNet HR Platform logo', width: 160, height: 48, dedupeKey: 'trinet' },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_9Wr7tJ0.png', alt: 'UKG Pro logo', width: 160, height: 48, dedupeKey: 'ukg' },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_Cw4e1MU.png', alt: 'UKG Pro Workforce Management logo', width: 160, height: 48, dedupeKey: 'ukg' },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_eBVH51N.png', alt: 'UKG Ready logo', width: 160, height: 48, dedupeKey: 'ukg' },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Workday_Logo.png', alt: 'Workday logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/zoho-people.png', alt: 'Zoho People logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Applicant_Stack_Logo.png', alt: 'ApplicantStack logo', width: 160, height: 48 },
@@ -60,8 +61,8 @@ export const HOMEPAGE_PLATFORM_LOGOS: PlatformLogo[] = [
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Cornerstone_Logo.png', alt: 'Cornerstone TalentLink logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/EngageATS_color.png', alt: 'EngageATS logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Fountain_Logo.png', alt: 'Fountain logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/Greenhouse_Logo_oZ1SOIi.png', alt: 'Greenhouse logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/Greenhouse_Logo_oZ1SOIi_C7sdH5O.png', alt: 'Greenhouse Job Board API logo', width: 160, height: 48 },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/Greenhouse_Logo_oZ1SOIi.png', alt: 'Greenhouse logo', width: 160, height: 48, dedupeKey: 'greenhouse' },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/Greenhouse_Logo_oZ1SOIi_C7sdH5O.png', alt: 'Greenhouse Job Board API logo', width: 160, height: 48, dedupeKey: 'greenhouse' },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Homerun_Logo.png', alt: 'Homerun logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Jazz_HR_Logo.png', alt: 'JazzHR logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Jobsoid.png', alt: 'Jobsoid logo', width: 160, height: 48 },
@@ -77,6 +78,6 @@ export const HOMEPAGE_PLATFORM_LOGOS: PlatformLogo[] = [
   { src: 'https://merge-api-public.s3.amazonaws.com/media/TalentReef_color1.png', alt: 'TalentReef logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Teamtailor_Logo.png', alt: 'Teamtailor logo', width: 160, height: 48 },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/tellent_recruitee.png', alt: 'Tellent Recruitee logo', width: 160, height: 48 },
-  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_MmgqS87.png', alt: 'UKG Pro Recruiting logo', width: 160, height: 48 },
+  { src: 'https://merge-api-public.s3.amazonaws.com/media/UKG_MmgqS87.png', alt: 'UKG Pro Recruiting logo', width: 160, height: 48, dedupeKey: 'ukg' },
   { src: 'https://merge-api-public.s3.amazonaws.com/media/Workable_Logo_HWZFYNd.png', alt: 'Workable logo', width: 160, height: 48 },
 ];

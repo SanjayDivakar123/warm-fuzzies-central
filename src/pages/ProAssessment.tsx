@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +13,8 @@ import { useAssessmentProgress } from "@/hooks/useAssessmentProgress";
 import { ResumeProgressModal } from "@/components/assessment/ResumeProgressModal";
 import { AutoSaveIndicator } from "@/components/assessment/AutoSaveIndicator";
 import { PauseButton } from "@/components/assessment/PauseButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // 50 questions for Pro assessment - organized by Tuckman's team development stages
 const proQuestions = [
@@ -579,6 +581,9 @@ const proQuestions = [
 
 const ProAssessment = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const purchaseId = searchParams.get('purchase');
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -641,6 +646,64 @@ const ProAssessment = () => {
     await saveProgress(currentQuestion, answers);
   }, [saveProgress, currentQuestion, answers]);
 
+  const consumePurchaseAttempt = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const { data: rows, error } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', 'pro')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading purchase placeholders:', error);
+        return;
+      }
+
+      const targetPurchases = (rows || []).filter((row: any) => {
+        const results = row.results as any;
+        const isAvailablePurchase = results?.status === 'payment_completed' && results?.assessment_started !== true;
+        if (!isAvailablePurchase) {
+          return false;
+        }
+        if (!purchaseId) {
+          return true;
+        }
+        return row.id === purchaseId;
+      });
+
+      if (targetPurchases.length === 0) {
+        return;
+      }
+
+      for (const purchase of targetPurchases) {
+        const targetResults = purchase.results as any;
+        const { error: updateError } = await supabase
+          .from('assessment_results')
+          .update({
+            results: {
+              ...targetResults,
+              assessment_started: true,
+              started_at: targetResults?.started_at || new Date().toISOString(),
+            },
+          })
+          .eq('id', purchase.id)
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error consuming purchase placeholder:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error consuming purchase placeholder:', error);
+    }
+  }, [user, purchaseId]);
+
   const handleAnswer = (color: string) => {
     setSelectedAnswer(color);
   };
@@ -695,6 +758,7 @@ const ProAssessment = () => {
 
         // Mark assessment as complete
         await markComplete(dominantColor, colorCounts);
+        await consumePurchaseAttempt();
 
         // Store pro results
         localStorage.setItem('proAssessmentResults', JSON.stringify({
@@ -752,16 +816,16 @@ const ProAssessment = () => {
           lastSavedAt={lastSaved}
         />
 
-        <div className="bg-gradient-subtle py-6 sm:py-8 px-4">
-          <div className="max-w-3xl mx-auto">
+        <div className="bg-gradient-subtle min-h-[calc(100vh-5rem)] pt-24 sm:pt-28 pb-6 sm:pb-8 px-4">
+          <div className="max-w-3xl mx-auto min-h-[calc(100vh-12rem)] flex flex-col">
             {/* Header with Progress */}
             <div className="mb-6 sm:mb-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
-                    <Crown className="text-white w-4 h-4" />
+                  <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
+                    <Crown className="text-primary w-4 h-4" />
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                     Pro Deep Dive Assessment
                   </h1>
                 </div>
@@ -843,7 +907,7 @@ const ProAssessment = () => {
             </Card>
 
             {/* Navigation */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 animate-fade-in">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 sm:mt-8 animate-fade-in mt-auto pt-2">
               <Button
                 variant="outline"
                 onClick={handlePrevious}

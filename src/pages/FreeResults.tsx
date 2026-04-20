@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,12 +71,16 @@ const FreeResults = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  const [shareableCode, setShareableCode] = useState("");
   const resultCardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const premiumPrice = useMemo(() => getLocalizedPrice("premium"), []);
   const proPrice = useMemo(() => getLocalizedPrice("pro"), []);
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
 
   const handleSaveResult = async () => {
     if (!user || !results || !resultName.trim()) {
@@ -90,7 +94,7 @@ const FreeResults = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
         .insert({
           user_id: user.id,
@@ -102,9 +106,15 @@ const FreeResults = () => {
             totalQuestions: results.totalQuestions,
             isPreview: results.isPreview
           }
-        });
+        })
+        .select('shareable_code')
+        .single();
 
       if (error) throw error;
+
+      if (data?.shareable_code) {
+        setShareableCode(data.shareable_code);
+      }
 
       toast({
         title: "Assessment Saved!",
@@ -176,6 +186,16 @@ const FreeResults = () => {
   };
 
   const handleCopyShare = () => {
+    if (shareableCode) {
+      const shareUrl = `${window.location.origin}/result/${shareableCode}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link Copied!",
+        description: shareUrl,
+      });
+      return;
+    }
+
     const shareText = generateShareText();
     navigator.clipboard.writeText(shareText);
     toast({
@@ -217,13 +237,57 @@ const FreeResults = () => {
   };
 
   useEffect(() => {
+    if (sharedCode) {
+      const fetchSharedResults = async () => {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .select('assessment_type, results, shareable_code')
+          .eq('shareable_code', sharedCode)
+          .maybeSingle();
+
+        if (error || !data || data.assessment_type !== 'free') {
+          toast({
+            title: 'Result not found',
+            description: 'This shared report link is invalid or unavailable.',
+            variant: 'destructive',
+          });
+          navigate('/');
+          return;
+        }
+
+        setResults(data.results as FreeResults);
+        setShareableCode(data.shareable_code || sharedCode);
+        setResultName(((data.results as any)?.name as string) || '');
+      };
+
+      fetchSharedResults();
+      return;
+    }
+
     const savedResults = localStorage.getItem('freeAssessmentResults');
     if (savedResults) {
       setResults(JSON.parse(savedResults));
+
+      if (user) {
+        const fetchShareableCode = async () => {
+          const { data } = await supabase
+            .from('assessment_results')
+            .select('shareable_code')
+            .eq('user_id', user.id)
+            .eq('assessment_type', 'free')
+            .maybeSingle();
+
+          if (data?.shareable_code) {
+            setShareableCode(data.shareable_code);
+          }
+        };
+
+        fetchShareableCode();
+      }
     } else {
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, sharedCode, toast, user]);
 
   if (!results) {
     return (
@@ -278,8 +342,15 @@ const FreeResults = () => {
             </p>
             
             
-            {user && (
-              <div className="flex justify-center mt-6">
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {!isSharedView && (
+                <Button variant="outline" size="lg" onClick={handleCopyShare}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  {shareableCode ? 'Copy Share Link' : 'Copy Share Text'}
+                </Button>
+              )}
+            {user && !isSharedView && (
+              <div className="flex justify-center">
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="lg">
@@ -314,6 +385,7 @@ const FreeResults = () => {
                 </Dialog>
               </div>
             )}
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -450,13 +522,13 @@ const FreeResults = () => {
                 </Button>
               </div>
 
-              <RoleColorIdentityCard
+              {!isSharedView && <RoleColorIdentityCard
                 name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
                 primaryColor={results.dominantColor}
                 className="mt-8"
-              />
+              />}
 
-              <SendToFriendCard color={results.dominantColor} className="mt-8" />
+              {!isSharedView && <SendToFriendCard color={results.dominantColor} className="mt-8" />}
             </div>
           </div>
         </div>

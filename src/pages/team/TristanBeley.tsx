@@ -9,7 +9,7 @@ import { useEffect } from "react";
 const TristanBeley = () => {
   useEffect(() => {
     const title = "Tristan Beley - Co-Founder & CTO | Role Color Finder";
-    const description = "Tristan Beley is the Co-Founder & CTO at RoleColorFinder, leading technology and product direction with a focus on intuitive, intelligent leadership tools.";
+    const description = "Tristan Beley is the Co-Founder & CTO at RoleColorFinder, leading technology and product direction with a Fast Executor mindset focused on momentum, shipping, and real-world product outcomes.";
 
     document.title = title;
 
@@ -85,8 +85,8 @@ const TristanBeley = () => {
                   />
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-400 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
-                    <span className="text-white font-bold text-base drop-shadow-lg">Strategic Architect</span>
+                    <div className="w-10 h-10 rounded-full bg-yellow-400 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
+                    <span className="text-white font-bold text-base drop-shadow-lg">Fast Executor</span>
                   </div>
                 </div>
                 <div className="p-6 space-y-4">
@@ -117,7 +117,7 @@ const TristanBeley = () => {
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="secondary">Product</Badge>
                       <Badge variant="secondary">Engineering</Badge>
-                      <Badge variant="secondary">UX</Badge>
+                      <Badge variant="secondary">Execution</Badge>
                     </div>
                   </div>
                 </div>
@@ -130,14 +130,14 @@ const TristanBeley = () => {
             <section>
               <Badge variant="default" className="mb-4">Co-Founder & CTO</Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Building Human-Centered Technology
+                Shipping Human-Centered Technology Fast
               </h2>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Tristan Beley is the Co-Founder & CTO at RoleColorFinder and a builder at heart. He loves starting from zero, sketching ideas on paper, and turning them into real products that people actually use. Tristan joined RoleColorFinder as an intern and worked his way onto the executive team because he saw three things clearly: a real product-market gap in how we teach leadership, a founder with a vision worth betting on, and an opportunity to create something that genuinely benefits others, not just look good on a slide deck.
+                  Tristan Beley is the Co-Founder & CTO at RoleColorFinder and a builder who moves ideas into reality quickly. He thrives in fast-moving environments where speed matters, decisions need to turn into product, and momentum creates clarity. Tristan joined RoleColorFinder as an intern and worked his way onto the executive team by consistently turning vision into shipped work that people could actually use.
                 </p>
                 <p>
-                  At RoleColorFinder, Tristan leads the technology and product direction, focusing on tools that feel as intuitive as they are intelligent. He's obsessed with innovation in a very practical sense: shipping features, testing them with real users, and iterating until the experience feels simple, human, and genuinely helpful.
+                  At RoleColorFinder, Tristan leads technology and product with an execution-first mindset. He focuses on reducing friction, shortening the distance between concept and launch, and building tools that feel intuitive because they have been tested, refined, and improved in the real world. His leadership style is fast, practical, and centered on progress.
                 </p>
               </div>
             </section>
@@ -146,7 +146,7 @@ const TristanBeley = () => {
               <h3 className="text-2xl font-bold mb-4">Education & Background</h3>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Tristan is currently completing his BSc in Software Engineering at the University of Western Ontario, with a minor in Business Leadership. He believes leadership tools should start human and become technical only in service of that humanity, and that real growth happens when people have self-awareness paired with clear and honest feedback, with a system designed to meet them exactly where they are.
+                  Tristan is currently completing his BSc in Software Engineering at the University of Western Ontario, with a minor in Business Leadership. His background blends product thinking, engineering discipline, and startup urgency. He believes great technology should not stay stuck in planning decks for too long. It should get into people's hands quickly, learn from real usage, and improve through action.
                 </p>
               </div>
             </section>
@@ -156,31 +156,31 @@ const TristanBeley = () => {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span>Leading technology and product direction at RoleColorFinder</span>
+                  <span>Driving technology and product execution from idea to launch</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span>Building systems that scale while feeling personal for every user</span>
+                  <span>Turning strategy into shipped features with speed and accountability</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span>Shipping features and iterating based on real user feedback</span>
+                  <span>Iterating rapidly based on live user feedback and product signals</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span>Creating intuitive, intelligent tools for leadership development</span>
+                  <span>Building leadership tools that stay practical, intuitive, and useful</span>
                 </li>
               </ul>
             </section>
 
-            <section className="p-6 bg-green-500/10 border border-green-500/20 rounded-xl">
+            <section className="p-6 bg-yellow-400/10 border border-yellow-400/30 rounded-xl">
               <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-500" />
-                Why Green?
+                <div className="w-8 h-8 rounded-full bg-yellow-400" />
+                Why Yellow?
               </h3>
               <div className="prose prose-lg max-w-none text-muted-foreground">
                 <p>
-                  As a <strong>Strategic Architect</strong>, Tristan embodies the Green RoleColor through his methodical, systems-thinking approach to building technology. Green leaders excel at organization, planning, and creating structured frameworks that scale—exactly what's needed when architecting a platform used by thousands. His focus on building systems that "feel personal while scaling globally" reflects the Green strength of balancing precision with purpose. At RoleColorFinder, Tristan's Green energy ensures that every feature is thoughtfully designed, properly documented, and built to last.
+                  As a <strong>Fast Executor</strong>, Tristan embodies the Yellow RoleColor through his bias for action, rapid iteration, and focus on tangible outcomes. Yellow leaders excel at turning momentum into progress, helping teams move from discussion to delivery without losing energy. At RoleColorFinder, Tristan's Yellow energy shows up in how quickly ideas become prototypes, prototypes become features, and features become better through continuous improvement. He leads by building, shipping, and keeping the work in motion.
                 </p>
               </div>
             </section>

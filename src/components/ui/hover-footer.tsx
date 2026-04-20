@@ -162,7 +162,6 @@ const footerLinks = [
     links: [
       { label: "Home", href: "/" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Sitemap", href: "/sitemap" },
     ],
   },
   {

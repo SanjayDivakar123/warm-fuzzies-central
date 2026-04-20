@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,9 +96,18 @@ const PremiumResults = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [shareableCode, setShareableCode] = useState<string>("");
+  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
+  const [hasManualNameSave, setHasManualNameSave] = useState(false);
+  const [isViewingSavedAssessment, setIsViewingSavedAssessment] = useState(false);
+  const [pendingNavigationPath, setPendingNavigationPath] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const sharedCode = searchParams.get("share");
+  const isSharedView = Boolean(sharedCode);
+  const autoSaveAttemptedRef = useRef(false);
+  const BACK_NAVIGATION_TOKEN = '__BACK_NAVIGATION__';
 
   // Calculate leadership score (calibrated): emphasize primary, keep floor at 60
   const calculateLeadershipScore = (results: PremiumResults): number => {
@@ -120,6 +129,155 @@ const PremiumResults = () => {
     return Math.min(100, Math.max(60, score));
   };
 
+  const buildDefaultAssessmentName = () => {
+    const timestamp = new Date().toLocaleString([], {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `Premium Assessment ${timestamp}`;
+  };
+
+  const buildResultsPayload = (name: string) => {
+    if (!results) return null;
+
+    return {
+      name,
+      dominantColor: results.dominantColor,
+      secondaryColor: results.secondaryColor,
+      scores: results.scores,
+      totalQuestions: results.totalQuestions,
+      isPremium: results.isPremium,
+      leadershipScore: calculateLeadershipScore(results)
+    };
+  };
+
+  const consumePremiumPurchases = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const { data: rows, error } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', 'premium')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading premium purchase placeholders:', error);
+        return;
+      }
+
+      const openPurchases = (rows || []).filter((row: any) => {
+        const rowResults = row.results as any;
+        return rowResults?.status === 'payment_completed' && rowResults?.assessment_started !== true;
+      });
+
+      for (const purchase of openPurchases) {
+        const rowResults = purchase.results as any;
+        const { error: updateError } = await supabase
+          .from('assessment_results')
+          .update({
+            results: {
+              ...rowResults,
+              assessment_started: true,
+              started_at: rowResults?.started_at || new Date().toISOString(),
+            },
+          })
+          .eq('id', purchase.id)
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error consuming premium purchase placeholder:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error consuming premium purchases:', error);
+    }
+  };
+
+  const persistAssessment = async (nameToSave: string, markAsManualSave: boolean) => {
+    if (!results || !nameToSave.trim()) {
+      return false;
+    }
+
+    if (!user) {
+      return false;
+    }
+
+    const payload = buildResultsPayload(nameToSave.trim());
+    if (!payload) {
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      if (currentAssessmentId) {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .update({
+            results: payload,
+          })
+          .eq('id', currentAssessmentId)
+          .eq('user_id', user.id)
+          .select('id, shareable_code')
+          .single();
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (data?.shareable_code) {
+          setShareableCode(data.shareable_code);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('assessment_results')
+          .insert({
+            user_id: user.id,
+            assessment_type: 'premium',
+            results: payload
+          })
+          .select('id, shareable_code')
+          .single();
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        setCurrentAssessmentId(data.id);
+        if (data?.shareable_code) {
+          setShareableCode(data.shareable_code);
+        }
+      }
+
+      if (markAsManualSave) {
+        setHasManualNameSave(true);
+      }
+
+      await consumePremiumPurchases();
+
+      return true;
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: error?.message || "There was an error saving your assessment. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveResult = async () => {
     if (!results || !resultName.trim()) {
       toast({
@@ -139,50 +297,23 @@ const PremiumResults = () => {
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const { data, error } = await supabase
-        .from('assessment_results')
-        .insert({
-          user_id: user.id,
-          assessment_type: 'premium',
-          results: {
-            name: resultName.trim(),
-            dominantColor: results.dominantColor,
-            secondaryColor: results.secondaryColor,
-            scores: results.scores,
-            totalQuestions: results.totalQuestions,
-            isPremium: results.isPremium,
-            leadershipScore: calculateLeadershipScore(results)
-          }
-        })
-        .select('shareable_code')
-        .single();
+    const saved = await persistAssessment(resultName.trim(), true);
+    if (!saved) return;
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+    toast({
+      title: "Assessment Saved!",
+      description: `"${resultName}" has been saved to your account.`
+    });
+    setIsDialogOpen(false);
+
+    if (pendingNavigationPath) {
+      const destination = pendingNavigationPath;
+      setPendingNavigationPath(null);
+      if (destination === BACK_NAVIGATION_TOKEN) {
+        navigate(-1);
+      } else {
+        navigate(destination);
       }
-
-      if (data?.shareable_code) {
-        setShareableCode(data.shareable_code);
-      }
-
-      toast({
-        title: "Assessment Saved!",
-        description: `"${resultName}" has been saved to your account.`
-      });
-      setIsDialogOpen(false);
-      setResultName("");
-    } catch (error: any) {
-      console.error('Error saving assessment:', error);
-      toast({
-        title: "Save Failed",
-        description: error?.message || "There was an error saving your assessment. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -224,18 +355,87 @@ const PremiumResults = () => {
   };
 
   useEffect(() => {
+    if (sharedCode) {
+      const fetchSharedPremiumResults = async () => {
+        const { data, error } = await supabase
+          .from("assessment_results")
+          .select("assessment_type, results, shareable_code")
+          .eq("shareable_code", sharedCode)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error("Error loading shared result:", error);
+          toast({
+            title: "Result not found",
+            description: "This shared report link is invalid or unavailable.",
+            variant: "destructive",
+          });
+          navigate("/");
+          return;
+        }
+
+        if (data.assessment_type === "pro") {
+          navigate(`/pro-results?share=${sharedCode}`, { replace: true });
+          return;
+        }
+
+        if (data.assessment_type !== "premium") {
+          navigate(`/result/${sharedCode}`, { replace: true });
+          return;
+        }
+
+        setResults(data.results as PremiumResults);
+        setShareableCode(data.shareable_code || sharedCode);
+        setResultName(((data.results as any)?.name as string) || "");
+      };
+
+      fetchSharedPremiumResults();
+      return;
+    }
+
     const savedResults = localStorage.getItem('premiumAssessmentResults');
     if (savedResults) {
-      setResults(JSON.parse(savedResults));
+      const parsed = JSON.parse(savedResults);
+      const rawViewContext = localStorage.getItem('assessmentViewContext');
+      let viewContext: {
+        assessmentId?: string;
+        assessmentType?: string;
+        shareableCode?: string | null;
+      } | null = null;
+
+      if (rawViewContext) {
+        try {
+          viewContext = JSON.parse(rawViewContext);
+        } catch {
+          viewContext = null;
+        }
+      }
+
+      setResults(parsed);
+
+      const hasViewContext = Boolean(viewContext?.assessmentType === 'premium' && viewContext?.assessmentId);
+      if (hasViewContext) {
+        setCurrentAssessmentId(viewContext?.assessmentId || null);
+        setHasManualNameSave(true);
+        setIsViewingSavedAssessment(true);
+        if (viewContext?.shareableCode) {
+          setShareableCode(viewContext.shareableCode);
+        }
+      } else {
+        setIsViewingSavedAssessment(false);
+      }
+      localStorage.removeItem('assessmentViewContext');
       
       // Fetch or generate shareable code if user is logged in
-      if (user) {
+      if (user && !hasViewContext) {
         const fetchOrCreateShareableCode = async () => {
           const { data, error } = await supabase
             .from('assessment_results')
             .select('shareable_code')
             .eq('user_id', user.id)
             .eq('assessment_type', 'premium')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
           if (error) {
@@ -256,7 +456,105 @@ const PremiumResults = () => {
     } else {
       navigate('/');
     }
-  }, [navigate, user]);
+  }, [navigate, user, sharedCode, toast]);
+
+  useEffect(() => {
+    if (isSharedView || isViewingSavedAssessment || !user || !results || autoSaveAttemptedRef.current) {
+      return;
+    }
+
+    autoSaveAttemptedRef.current = true;
+
+    const preferredName = resultName.trim() || buildDefaultAssessmentName();
+    if (!resultName.trim()) {
+      setResultName(preferredName);
+    }
+
+    void persistAssessment(preferredName, false);
+  }, [isSharedView, isViewingSavedAssessment, user, results]);
+
+  const requiresManualNameSave = Boolean(
+    !isSharedView &&
+    !isViewingSavedAssessment &&
+    user &&
+    results &&
+    currentAssessmentId &&
+    !hasManualNameSave
+  );
+
+  useEffect(() => {
+    if (!requiresManualNameSave) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [requiresManualNameSave]);
+
+  useEffect(() => {
+    if (!requiresManualNameSave) {
+      return;
+    }
+
+    const handlePopState = () => {
+      window.history.pushState({ requiresNamedSave: true }, '', window.location.href);
+      setPendingNavigationPath(BACK_NAVIGATION_TOKEN);
+      setIsDialogOpen(true);
+      toast({
+        title: "Name Required",
+        description: "Enter a name and save this assessment before leaving this page.",
+        variant: "destructive"
+      });
+    };
+
+    window.history.pushState({ requiresNamedSave: true }, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) {
+        return;
+      }
+
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+
+      const nextUrl = new URL(href, window.location.origin);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
+
+      if (nextPath === currentPath) {
+        return;
+      }
+
+      event.preventDefault();
+      setPendingNavigationPath(nextPath);
+      setIsDialogOpen(true);
+      toast({
+        title: "Name Required",
+        description: "Enter a name and save this assessment before leaving this page.",
+        variant: "destructive"
+      });
+    };
+
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('click', handleDocumentClick, true);
+    };
+  }, [requiresManualNameSave, toast, navigate]);
 
   const handleShare = () => {
     const shareUrl = shareableCode 
@@ -315,7 +613,7 @@ const PremiumResults = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="bg-gradient-subtle py-12 px-4">
+      <div className="bg-gradient-subtle pt-24 sm:pt-28 pb-12 px-4">
         <div id="premium-results-content" className="max-w-6xl mx-auto">{/* Added ID for PDF export */}
           {/* Header */}
           <div className="text-center mb-8 animate-fade-in">
@@ -324,7 +622,8 @@ const PremiumResults = () => {
               Premium Assessment Results
             </Badge>
             <h1 className="text-4xl font-bold mb-4">
-              You're a <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
+              {isSharedView && resultName.trim().length > 0 ? `${resultName} is a ` : "You're a "}
+              <span className={`${primaryColor.gradient} bg-clip-text text-transparent`}>
                 {primaryColor.name}
               </span>
             </h1>
@@ -333,14 +632,22 @@ const PremiumResults = () => {
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {shareableCode && (
+              {!isSharedView && shareableCode && (
                 <Button onClick={handleCopyShareLink} size="lg" className="min-w-[200px]">
                   <Link2 className="w-4 h-4 mr-2" />
                   Copy Share Link
                 </Button>
               )}
-              {user && (
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              {!isSharedView && user && !hasManualNameSave && !isViewingSavedAssessment && (
+                <Dialog
+                  open={isDialogOpen}
+                  onOpenChange={(open) => {
+                    if (!open && pendingNavigationPath && requiresManualNameSave) {
+                      return;
+                    }
+                    setIsDialogOpen(open);
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button variant="outline" size="lg">
                       <Save className="w-4 h-4 mr-2" />
@@ -362,25 +669,27 @@ const PremiumResults = () => {
                         />
                       </div>
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                          Cancel
-                        </Button>
+                        {!pendingNavigationPath && (
+                          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                        )}
                         <Button onClick={handleSaveResult} disabled={isSaving || !resultName.trim()}>
-                          {isSaving ? "Saving..." : "Save"}
+                          {isSaving ? "Saving..." : pendingNavigationPath ? "Save and Continue" : "Save"}
                         </Button>
                       </div>
                     </div>
                   </DialogContent>
                 </Dialog>
               )}
-              <Button onClick={handleShare} variant="outline" size="lg">
+              {!isSharedView && <Button onClick={handleShare} variant="outline" size="lg">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share Results
-              </Button>
-              <Button onClick={handleExportPDF} variant="outline" size="lg">
+              </Button>}
+              {!isSharedView && <Button onClick={handleExportPDF} variant="outline" size="lg">
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF Report
-              </Button>
+              </Button>}
             </div>
           </div>
 
@@ -685,7 +994,7 @@ const PremiumResults = () => {
           </Card>
 
           {/* Upgrade to Pro */}
-          <div className="text-center mt-12 p-8 bg-muted/30 rounded-lg">
+          {!isSharedView && <div className="text-center mt-12 p-8 bg-muted/30 rounded-lg">
             <h3 className="text-2xl font-bold mb-4">Want Even Deeper Insights?</h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
               Upgrade to our Pro Deep Dive assessment for advanced color blending analysis, 3-page comprehensive report, and personalized career roadmap.
@@ -696,16 +1005,16 @@ const PremiumResults = () => {
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-          </div>
+          </div>}
 
-          <RoleColorIdentityCard
+          {!isSharedView && <RoleColorIdentityCard
             name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
             primaryColor={results.dominantColor}
             secondaryColor={results.secondaryColor}
             className="mt-8"
-          />
+          />}
 
-          <SendToFriendCard color={results.dominantColor} className="mt-8" />
+          {!isSharedView && <SendToFriendCard color={results.dominantColor} className="mt-8" />}
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [purchaseRecordId, setPurchaseRecordId] = useState<string | null>(null);
   
   const assessmentType = searchParams.get('type') as 'premium' | 'pro';
 
@@ -34,6 +35,10 @@ const PaymentSuccess = () => {
   const storePaymentRecord = async () => {
     try {
       console.log('Storing payment record for user:', user?.id, 'type:', assessmentType);
+
+      if (!user || !assessmentType) {
+        return;
+      }
       
       // Store payment verification in localStorage for immediate access
       const paymentKey = `payment_verified_${assessmentType}_${user?.id}`;
@@ -43,6 +48,38 @@ const PaymentSuccess = () => {
         userId: user?.id
       };
       localStorage.setItem(paymentKey, JSON.stringify(paymentVerification));
+
+      const nowIso = new Date().toISOString();
+      const purchaseLabel = `${assessmentType.toUpperCase()} Purchase ${new Date(nowIso).toLocaleString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`;
+
+      const { data: existingRows, error: existingError } = await supabase
+        .from('assessment_results')
+        .select('id, results')
+        .eq('user_id', user.id)
+        .eq('assessment_type', assessmentType)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (existingError) {
+        console.error('Error checking existing purchase records:', existingError);
+      }
+
+      const existingUnstartedPurchase = (existingRows || []).find((row: any) => {
+        const results = row.results as any;
+        return results?.status === 'payment_completed' && results?.assessment_started !== true;
+      });
+
+      if (existingUnstartedPurchase) {
+        setPurchaseRecordId(existingUnstartedPurchase.id);
+        console.log('Existing unstarted purchase found. Reusing purchase row:', existingUnstartedPurchase.id);
+        return;
+      }
       
       // Also store in Supabase for persistence
       const { data, error } = await supabase
@@ -51,16 +88,20 @@ const PaymentSuccess = () => {
           user_id: user?.id,
           assessment_type: assessmentType,
           results: { 
+            name: purchaseLabel,
             status: 'payment_completed', 
-            purchased_at: new Date().toISOString(),
+            purchased_at: nowIso,
             assessment_started: false
           }
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error('Database error:', error);
       } else {
         console.log('Payment record stored successfully:', data);
+        setPurchaseRecordId(data.id);
       }
     } catch (error) {
       console.error('Error storing payment record:', error);
@@ -68,7 +109,8 @@ const PaymentSuccess = () => {
   };
 
   const handleStartAssessment = () => {
-    navigate(`/${assessmentType}-assessment`);
+    const query = purchaseRecordId ? `?purchase=${purchaseRecordId}` : '';
+    navigate(`/${assessmentType}-assessment${query}`);
   };
 
   if (!user || !assessmentType) {
