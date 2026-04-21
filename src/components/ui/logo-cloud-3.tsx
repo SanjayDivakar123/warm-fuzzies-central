@@ -17,6 +17,9 @@ type LogoCloudProps = ComponentProps<'div'> & {
   logos: Logo[];
 };
 
+const getLogoKey = (logo: Logo) =>
+  (logo.dedupeKey ?? logo.alt.replace(/\s+logo$/i, '').toLowerCase()).trim();
+
 export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
   const [hiddenLogos, setHiddenLogos] = useState<Record<string, true>>({});
   const [isReady, setIsReady] = useState(false);
@@ -30,7 +33,7 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
     const seen = new Set<string>();
 
     return logos.filter((logo) => {
-      const key = logo.dedupeKey ?? logo.src;
+      const key = getLogoKey(logo);
 
       if (seen.has(key)) {
         return false;
@@ -41,7 +44,10 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
     });
   }, [logos]);
 
-  const visibleLogos = uniqueLogos.filter((logo) => !hiddenLogos[logo.alt]);
+  const visibleLogos = useMemo(
+    () => uniqueLogos.filter((logo) => !hiddenLogos[getLogoKey(logo)]),
+    [hiddenLogos, uniqueLogos],
+  );
 
   useEffect(() => {
     if (!visibleLogos.length) {
@@ -61,13 +67,15 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
             image.onerror = () => {
               if (!cancelled) {
                 setHiddenLogos((current) => {
-                  if (current[logo.alt]) {
+                  const key = getLogoKey(logo);
+
+                  if (current[key]) {
                     return current;
                   }
 
                   return {
                     ...current,
-                    [logo.alt]: true,
+                    [key]: true,
                   };
                 });
               }
@@ -106,11 +114,11 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
         className={cn('transition-opacity duration-300', isReady ? 'opacity-100' : 'opacity-0')}
         gap={24}
         reverse
-        duration={140}
+        pixelsPerSecond={84}
       >
         {visibleLogos.map((logo) => (
           <div
-            key={`logo-${logo.alt}`}
+            key={`logo-${getLogoKey(logo)}`}
             className="flex h-14 min-w-[156px] items-center justify-center rounded-2xl border border-border/60 bg-card/85 px-5 shadow-sm backdrop-blur-sm md:min-w-[184px]"
           >
             <img
@@ -121,13 +129,15 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
               loading="eager"
               onError={() => {
                 setHiddenLogos((current) => {
-                  if (current[logo.alt]) {
+                  const key = getLogoKey(logo);
+
+                  if (current[key]) {
                     return current;
                   }
 
                   return {
                     ...current,
-                    [logo.alt]: true,
+                    [key]: true,
                   };
                 });
               }}
