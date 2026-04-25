@@ -1524,10 +1524,46 @@ export type Database = {
           },
         ]
       }
+      company_departments: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_departments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_roles: {
         Row: {
           company_id: string
           created_at: string | null
+          department_id: string | null
           description: string | null
           id: string
           name: string
@@ -1537,6 +1573,7 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string | null
+          department_id?: string | null
           description?: string | null
           id?: string
           name: string
@@ -1546,6 +1583,7 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string | null
+          department_id?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -1558,6 +1596,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "company_departments"
             referencedColumns: ["id"]
           },
         ]

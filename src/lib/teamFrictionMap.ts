@@ -8,6 +8,8 @@ export interface CompanyMember {
   email: string;
   role: string;
   jobRole: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
   roleColor: RoleColor | null;
 }
 

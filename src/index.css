@@ -177,6 +177,40 @@ All colors MUST be HSL.
     scrollbar-gutter: stable;
     /* Always show vertical scrollbar to avoid width shifts when modals open */
     overflow-y: scroll;
+    color-scheme: light;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.45) hsl(var(--background));
+  }
+
+  html.dark {
+    color-scheme: dark;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.7) hsl(var(--background));
+  }
+
+  html::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.45);
+    border: 3px solid hsl(var(--background));
+    border-radius: 999px;
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.65);
+  }
+
+  html.dark::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  html.dark::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.7);
+    border-color: hsl(var(--background));
   }
 
   body {

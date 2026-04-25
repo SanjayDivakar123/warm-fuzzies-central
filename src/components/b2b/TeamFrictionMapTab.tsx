@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import {
   buildPairDetail,
@@ -42,6 +43,8 @@ interface TeamFrictionMapTabProps {
 }
 
 type ViewMode = 'map' | 'pairs';
+const ALL_DEPARTMENTS_VALUE = '__all_departments__';
+const UNASSIGNED_DEPARTMENTS_VALUE = '__unassigned_departments__';
 
 const VIEW_OPTIONS: Array<{
   key: ViewMode;
@@ -289,6 +292,7 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
   const [memberSearch, setMemberSearch] = useState('');
   const [selectedMemberAId, setSelectedMemberAId] = useState<string | null>(null);
   const [selectedMemberBId, setSelectedMemberBId] = useState<string | null>(null);
+  const [departmentFilter, setDepartmentFilter] = useState<string>(ALL_DEPARTMENTS_VALUE);
 
   const loadMembers = async (background = false) => {
     if (background) {
@@ -299,36 +303,64 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
     }
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('company_users')
-        .select(`
-          id,
-          user_id,
-          email,
-          full_name,
-          role,
-          status,
-          job_role,
-          assessment_result_id,
-          assessment_results(results, assessment_type)
-        `)
-        .eq('company_id', company.id)
-        .in('status', ['active', 'invited'])
-        .order('created_at', { ascending: true });
+      const [membersResponse, rolesResponse, departmentsResponse] = await Promise.all([
+        supabase
+          .from('company_users')
+          .select(`
+            id,
+            user_id,
+            email,
+            full_name,
+            role,
+            status,
+            job_role,
+            assessment_result_id,
+            assessment_results(results, assessment_type)
+          `)
+          .eq('company_id', company.id)
+          .in('status', ['active', 'invited'])
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('company_roles')
+          .select('name, department_id')
+          .eq('company_id', company.id),
+        supabase
+          .from('company_departments')
+          .select('id, name')
+          .eq('company_id', company.id),
+      ]);
+
+      const { data, error: fetchError } = membersResponse;
+      const { data: roleRows, error: rolesError } = rolesResponse;
+      const { data: departmentRows, error: departmentsError } = departmentsResponse;
 
       if (fetchError) throw fetchError;
+      if (rolesError && rolesError.code !== 'PGRST205' && rolesError.code !== '42P01') throw rolesError;
+      if (departmentsError && departmentsError.code !== 'PGRST205' && departmentsError.code !== '42P01') throw departmentsError;
 
-      const mappedMembers: CompanyMember[] = (data ?? []).map((member: any) => ({
-        id: member.id,
-        userId: member.user_id ?? null,
-        name: member.full_name || member.email?.split('@')[0] || 'Unknown user',
-        email: member.email || '',
-        role: member.role || 'employee',
-        jobRole: member.job_role || null,
-        roleColor: member.assessment_results?.results
-          ? resolveRoleColor(member.assessment_results.results)
-          : null,
-      }));
+      const departmentById = new Map<string, string>((departmentRows || []).map((department) => [department.id, department.name]));
+      const roleDepartmentByName = new Map<string, string | null>(
+        (roleRows || []).map((role) => [role.name.trim().toLowerCase(), role.department_id || null]),
+      );
+
+      const mappedMembers: CompanyMember[] = (data ?? []).map((member: any) => {
+        const normalizedRoleName = member.job_role?.trim().toLowerCase();
+        const departmentId = normalizedRoleName ? roleDepartmentByName.get(normalizedRoleName) ?? null : null;
+
+        return {
+          id: member.id,
+          userId: member.user_id ?? null,
+          name: member.full_name || member.email?.split('@')[0] || 'Unknown user',
+          email: member.email || '',
+          role: member.role || 'employee',
+          jobRole: member.job_role || null,
+          departmentId,
+          departmentName: departmentId ? departmentById.get(departmentId) ?? null : null,
+          roleColor: member.assessment_results?.results
+            ? resolveRoleColor(member.assessment_results.results)
+            : null,
+        };
+      });
 
       setMembers(mappedMembers);
       setPairs(buildRelevantPairs(mappedMembers));
@@ -349,11 +381,32 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
     void loadMembers(false);
   }, [company.id]);
 
-  const assessedMembers = members.filter((member) => Boolean(member.roleColor));
-  const unassessedMembers = members.filter((member) => !member.roleColor);
-  const highRiskPairs = pairs.filter((pair) => pair.risk === 'high');
-  const mediumRiskPairs = pairs.filter((pair) => pair.risk === 'medium');
-  const visiblePairs = showAllPairs ? pairs : pairs.slice(0, 50);
+  const departmentOptions = Array.from(
+    new Map(
+      members
+        .filter((member) => member.departmentId && member.departmentName)
+        .map((member) => [member.departmentId as string, member.departmentName as string]),
+    ).entries(),
+  )
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const departmentFilteredMembers = members.filter((member) => {
+    if (departmentFilter === ALL_DEPARTMENTS_VALUE) return true;
+    if (departmentFilter === UNASSIGNED_DEPARTMENTS_VALUE) return !member.departmentId;
+    return member.departmentId === departmentFilter;
+  });
+
+  const memberIdSet = new Set(departmentFilteredMembers.map((member) => member.id));
+  const departmentFilteredPairs = pairs.filter(
+    (pair) => memberIdSet.has(pair.a.id) && memberIdSet.has(pair.b.id),
+  );
+
+  const assessedMembers = departmentFilteredMembers.filter((member) => Boolean(member.roleColor));
+  const unassessedMembers = departmentFilteredMembers.filter((member) => !member.roleColor);
+  const highRiskPairs = departmentFilteredPairs.filter((pair) => pair.risk === 'high');
+  const mediumRiskPairs = departmentFilteredPairs.filter((pair) => pair.risk === 'medium');
+  const visiblePairs = showAllPairs ? departmentFilteredPairs : departmentFilteredPairs.slice(0, 50);
 
   const composition = {
     Red: 0,
@@ -368,7 +421,7 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
   });
 
   const maxComposition = Math.max(...Object.values(composition), 1);
-  const patternCounts = pairs.reduce<Record<string, { count: number; risk: PairRisk }>>((accumulator, pair) => {
+  const patternCounts = departmentFilteredPairs.reduce<Record<string, { count: number; risk: PairRisk }>>((accumulator, pair) => {
     if (!pair.clash) return accumulator;
     const existing = accumulator[pair.clash.name];
     if (existing) {
@@ -385,7 +438,7 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
   const sortedPatterns = Object.entries(patternCounts).sort((left, right) => right[1].count - left[1].count);
   const maxPatternCount = Math.max(...sortedPatterns.map(([, value]) => value.count), 1);
 
-  const filteredMembers = members.filter((member) => {
+  const filteredMembers = departmentFilteredMembers.filter((member) => {
     if (!memberSearch.trim()) return true;
     const query = memberSearch.toLowerCase();
     return (
@@ -395,8 +448,8 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
     );
   });
 
-  const selectedMemberA = members.find((member) => member.id === selectedMemberAId) || null;
-  const selectedMemberB = members.find((member) => member.id === selectedMemberBId) || null;
+  const selectedMemberA = departmentFilteredMembers.find((member) => member.id === selectedMemberAId) || null;
+  const selectedMemberB = departmentFilteredMembers.find((member) => member.id === selectedMemberBId) || null;
   const selectedAnalysisPair = selectedMemberA && selectedMemberB && selectedMemberA.id !== selectedMemberB.id
     ? buildPairFromMembers(selectedMemberA, selectedMemberB)
     : null;
@@ -404,6 +457,15 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
   const handleRefresh = async () => {
     await loadMembers(true);
   };
+
+  useEffect(() => {
+    if (selectedMemberAId && !memberIdSet.has(selectedMemberAId)) {
+      setSelectedMemberAId(null);
+    }
+    if (selectedMemberBId && !memberIdSet.has(selectedMemberBId)) {
+      setSelectedMemberBId(null);
+    }
+  }, [departmentFilter, memberIdSet, selectedMemberAId, selectedMemberBId]);
 
   const handleSelectMember = (member: CompanyMember) => {
     if (selectedMemberAId === member.id) {
@@ -483,15 +545,38 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
         </CardHeader>
 
         <CardContent className="space-y-4 p-5">
+          <div className="grid gap-3 md:grid-cols-[280px,1fr] md:items-end">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Department filter</p>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_DEPARTMENTS_VALUE}>All departments</SelectItem>
+                  <SelectItem value={UNASSIGNED_DEPARTMENTS_VALUE}>Unassigned</SelectItem>
+                  {departmentOptions.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Applies to both Team Friction Map pairs and Pair Analyzer teammates.
+            </p>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Assessed teammates"
               value={assessedMembers.length}
-              caption={`${members.length} total people in this company view`}
+              caption={`${departmentFilteredMembers.length} total people in current scope`}
             />
             <MetricCard
               label="Relevant pairs"
-              value={pairs.length}
+              value={departmentFilteredPairs.length}
               caption="Filtered to likely collaboration pairs when job roles are present"
             />
             <MetricCard
@@ -548,7 +633,7 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
 
       {view === 'map' ? (
         <div className="space-y-6">
-          {pairs.length === 0 ? (
+          {departmentFilteredPairs.length === 0 ? (
             <Card className="border-border/60 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base">No relevant pairs found yet</CardTitle>
@@ -567,8 +652,8 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {(['high', 'medium', 'low'] as PairRisk[]).map((risk) => {
-                      const count = pairs.filter((pair) => pair.risk === risk).length;
-                      const width = pairs.length > 0 ? (count / pairs.length) * 100 : 0;
+                      const count = departmentFilteredPairs.filter((pair) => pair.risk === risk).length;
+                      const width = departmentFilteredPairs.length > 0 ? (count / departmentFilteredPairs.length) * 100 : 0;
 
                       return (
                         <div key={risk} className="space-y-2">
@@ -671,9 +756,9 @@ export default function TeamFrictionMapTab({ company }: TeamFrictionMapTabProps)
                       </CardDescription>
                     </div>
 
-                    {pairs.length > 50 ? (
+                    {departmentFilteredPairs.length > 50 ? (
                       <Button variant="outline" onClick={() => setShowAllPairs((current) => !current)}>
-                        {showAllPairs ? 'Show top 50' : `Show all ${pairs.length}`}
+                        {showAllPairs ? 'Show top 50' : `Show all ${departmentFilteredPairs.length}`}
                       </Button>
                     ) : null}
                   </div>
