@@ -20,7 +20,7 @@ function isValidUUID(str: string): boolean {
   return typeof str === "string" && uuidRegex.test(str);
 }
 
-async function findAuthUserIdByEmail(supabase: any, email: string): Promise<string | null> {
+async function findAuthUserIdByEmail(supabase: ReturnType<typeof createClient>, email: string): Promise<string | null> {
   const normalizedEmail = email.toLowerCase();
   let page = 1;
 
@@ -33,7 +33,7 @@ async function findAuthUserIdByEmail(supabase: any, email: string): Promise<stri
     if (error) throw error;
 
     const users = data?.users || [];
-    const match = users.find((user: any) => (user.email || "").toLowerCase() === normalizedEmail);
+    const match = users.find((user: { email?: string | null; id?: string }) => (user.email || "").toLowerCase() === normalizedEmail);
     if (match?.id) return match.id;
 
     if (users.length < 1000) break;
@@ -403,23 +403,29 @@ serve(async (req) => {
 
     // Create service role client for data operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const allowedRoles = ["admin", "hr", "partner", "employee"];
+    const normalizedEmail = email.toLowerCase().trim();
+    const userRole = allowedRoles.includes(requestedRole) ? requestedRole : "employee";
+    const isPrivilegedInvite = PRIVILEGED_ROLES.includes(userRole as PrivilegedRole);
 
-    // Verify user is a company admin
+    // Verify caller can invite this role.
+    // Admins can invite any supported role. HR can invite regular employees only.
     const { data: adminCheck, error: adminError } = await supabase
       .from("company_users")
       .select("role")
       .eq("company_id", company_id)
       .eq("user_id", user.id)
-      .eq("role", "admin")
+      .in("role", isPrivilegedInvite ? ["admin"] : ["admin", "hr"])
       .eq("status", "active")
       .maybeSingle();
 
     if (adminError || !adminCheck) {
-      console.log("User is not a company admin for this company. User ID:", user.id, "Company ID:", company_id);
+      console.log("User cannot invite this role for this company. User ID:", user.id, "Company ID:", company_id, "Role:", userRole);
       return new Response(
         JSON.stringify({
-          error:
-            "Forbidden: You must be a company admin for this company. Please ensure you are logged into the correct account.",
+          error: isPrivilegedInvite
+            ? "Forbidden: Only company admins can invite admin-level users."
+            : "Forbidden: You must be a company admin or HR manager for this company.",
         }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -430,7 +436,7 @@ serve(async (req) => {
       .from("company_users")
       .select("id, status")
       .eq("company_id", company_id)
-      .eq("email", email.toLowerCase().trim())
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
     // Get company details including email template settings
@@ -539,10 +545,6 @@ serve(async (req) => {
     const wasCharged = Boolean(chargeResult.charged || chargeResult.usedCredits);
     const chargeAmount = wasCharged ? proRatedAmountCents / 100 : 0;
     const chargedAt = wasCharged ? new Date().toISOString() : null;
-    const allowedRoles = ["admin", "hr", "partner", "employee"];
-    const normalizedEmail = email.toLowerCase().trim();
-    const userRole = allowedRoles.includes(requestedRole) ? requestedRole : "employee";
-    const isPrivilegedInvite = PRIVILEGED_ROLES.includes(userRole as PrivilegedRole);
     let resolvedUserId: string | null = null;
 
     if (isPrivilegedInvite) {

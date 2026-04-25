@@ -13,19 +13,44 @@ serve(async (req) => {
   }
 
   try {
-    const { companyId, userEmail, userId } = await req.json();
+    const { companyId } = await req.json();
 
-    if (!companyId || !userEmail || !userId) {
+    if (!companyId) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Missing required fields' }),
+        JSON.stringify({ success: false, message: 'Company ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const authHeader = req.headers.get('Authorization');
+
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+
+    if (authError || !user?.id || !user.email) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    const userEmail = user.email.toLowerCase().trim();
     console.log(`Verifying Google SSO for user ${userEmail} in company ${companyId}`);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // 1. Fetch company details
@@ -78,9 +103,16 @@ serve(async (req) => {
 
     if (existingEmployee) {
       console.log('Existing employee found:', existingEmployee.id);
-      
-      // Update user_id if not already linked
-      if (!existingEmployee.user_id) {
+
+      if (existingEmployee.status === 'revoked') {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Your access has been revoked. Please contact your administrator.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Link the authenticated account and activate pending invite records.
+      if (!existingEmployee.user_id || existingEmployee.status !== 'active') {
         const { error: updateError } = await supabase
           .from('company_users')
           .update({ 
@@ -93,11 +125,20 @@ serve(async (req) => {
 
         if (updateError) {
           console.error('Error updating employee:', updateError);
+          return new Response(
+            JSON.stringify({ success: false, message: 'Unable to activate employee access' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
       }
 
       // Return the employee with potentially updated user_id
-      const updatedEmployee = { ...existingEmployee, user_id: userId };
+      const updatedEmployee = {
+        ...existingEmployee,
+        user_id: userId,
+        status: 'active',
+        joined_at: existingEmployee.joined_at || new Date().toISOString(),
+      };
       return new Response(
         JSON.stringify({ 
           success: true, 

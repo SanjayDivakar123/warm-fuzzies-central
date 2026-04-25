@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const MAX_INVITES = 3;
+const PRIVILEGED_ROLES = ['admin', 'hr', 'partner'];
 
 // Input validation helpers
 function isValidUUID(str: string): boolean {
@@ -192,6 +193,76 @@ async function sendInviteEmail(
   }
 }
 
+async function sendPrivilegedInviteEmail(
+  email: string,
+  companyName: string,
+  subdomain: string,
+  role: string,
+  setupLink?: string | null,
+) {
+  const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
+  const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN') || 'rolecolorfinder.com';
+
+  if (!mailgunApiKey || !mailgunDomain) {
+    console.error('MAILGUN_API_KEY or MAILGUN_DOMAIN not configured');
+    return false;
+  }
+
+  const roleLabel = role === 'hr' ? 'HR' : role === 'partner' ? 'Partner' : 'Admin';
+  const portalUrl = `https://rolecolorfinder.com/company/${subdomain}/admin`;
+  const setupSection = setupLink
+    ? `<p style="margin:0 0 20px;color:#4b5563;">Use this secure link to set or reset your password before signing in:</p>
+       <p style="text-align:center;margin:0 0 28px;"><a href="${setupLink}" style="display:inline-block;background:#7E69AB;color:white;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;">Set Password</a></p>`
+    : '';
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
+      <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+        <div style="background:linear-gradient(135deg,#9b87f5 0%,#7E69AB 100%);padding:36px 28px;text-align:center;">
+          <h1 style="margin:0;color:#fff;font-size:26px;">${companyName}</h1>
+        </div>
+        <div style="padding:32px 28px;">
+          <h2 style="margin:0 0 14px;color:#111827;">${roleLabel} portal invite reminder</h2>
+          <p style="margin:0 0 22px;color:#4b5563;line-height:1.6;">You have ${roleLabel} access to the ${companyName} management portal.</p>
+          ${setupSection}
+          <p style="text-align:center;margin:0 0 18px;"><a href="${portalUrl}" style="display:inline-block;background:#7E69AB;color:white;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;">Open Management Portal</a></p>
+          <p style="margin:0;color:#6b7280;font-size:13px;text-align:center;">Sign-in URL:<br /><a href="${portalUrl}" style="color:#7E69AB;word-break:break-all;">${portalUrl}</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const formData = new FormData();
+    formData.append('from', 'RoleColorFinder <no-reply@rolecolorfinder.com>');
+    formData.append('to', email);
+    formData.append('subject', `${roleLabel} portal invite reminder for ${companyName}`);
+    formData.append('html', htmlContent);
+
+    const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + btoa(`api:${mailgunApiKey}`),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Mailgun privileged invite reminder error:', response.status, errorText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending privileged invite reminder:', error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -258,20 +329,23 @@ serve(async (req) => {
       );
     }
 
-    // Verify caller is an admin for this company
+    const isPrivilegedTarget = PRIVILEGED_ROLES.includes(targetUser.role);
+
+    // Verify caller can resend this invite.
+    // Admins can resend all invites; HR can resend employee invites only.
     const { data: adminCheck } = await supabase
       .from('company_users')
       .select('role')
       .eq('company_id', targetUser.company_id)
       .eq('user_id', user.id)
-      .eq('role', 'admin')
+      .in('role', isPrivilegedTarget ? ['admin'] : ['admin', 'hr'])
       .eq('status', 'active')
       .maybeSingle();
 
     if (!adminCheck) {
-      console.log('User is not a company admin');
+      console.log('User cannot resend this invite');
       return new Response(
-        JSON.stringify({ error: 'Forbidden: You must be a company admin' }),
+        JSON.stringify({ error: isPrivilegedTarget ? 'Forbidden: Only company admins can resend admin-level invites' : 'Forbidden: You must be a company admin or HR manager' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -325,13 +399,36 @@ serve(async (req) => {
       primaryColor: company?.primary_color,
       secondaryColor: company?.secondary_color,
     };
-    const emailSent = await sendInviteEmail(
-      targetUser.email,
-      inviteCode,
-      company?.name || 'Your Company',
-      company?.subdomain || '',
-      templateSettings
-    );
+    let setupLink: string | null = null;
+    if (isPrivilegedTarget) {
+      const redirectTo = `https://rolecolorfinder.com/company/${company?.subdomain || ''}/admin`;
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: targetUser.email,
+        options: { redirectTo },
+      });
+      if (linkError) {
+        console.error('Unable to generate privileged setup link:', linkError.message);
+      } else {
+        setupLink = linkData?.properties?.action_link || null;
+      }
+    }
+
+    const emailSent = isPrivilegedTarget
+      ? await sendPrivilegedInviteEmail(
+          targetUser.email,
+          company?.name || 'Your Company',
+          company?.subdomain || '',
+          targetUser.role,
+          setupLink,
+        )
+      : await sendInviteEmail(
+          targetUser.email,
+          inviteCode,
+          company?.name || 'Your Company',
+          company?.subdomain || '',
+          templateSettings
+        );
 
     console.log('Invite resent, email sent:', emailSent, 'new count:', currentCount + 1);
 

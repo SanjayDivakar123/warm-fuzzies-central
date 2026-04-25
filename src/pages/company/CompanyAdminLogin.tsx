@@ -13,6 +13,13 @@ import { Loader2, Building2, Mail, Lock, ArrowLeft, Shield } from 'lucide-react'
 
 const MANAGEMENT_ROLES = ['admin', 'hr', 'partner'] as const;
 
+interface ManagementUser {
+  id: string;
+  role: string;
+  status: string;
+  joined_at?: string | null;
+}
+
 function getRoleLabel(role: string | null | undefined) {
   if (role === 'hr') return 'HR';
   if (role === 'partner') return 'Partner';
@@ -31,6 +38,23 @@ export default function CompanyAdminLogin() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(false);
 
+  const activateManagementInviteIfNeeded = async (managementUser: ManagementUser) => {
+    if (managementUser.status !== 'invited') return managementUser;
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('company_users')
+      .update({
+        status: 'active',
+        joined_at: managementUser.joined_at || new Date().toISOString(),
+      })
+      .eq('id', managementUser.id)
+      .select('*')
+      .single();
+
+    if (updateError) throw updateError;
+    return updatedUser || { ...managementUser, status: 'active' };
+  };
+
   // Check if user is already logged in and is admin for this company (including Google OAuth callback)
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -44,12 +68,13 @@ export default function CompanyAdminLogin() {
           .eq('company_id', company.id)
           .eq('user_id', user.id)
           .in('role', [...MANAGEMENT_ROLES])
-          .eq('status', 'active')
+          .in('status', ['active', 'invited'])
           .maybeSingle();
 
         if (managementUser && !managementError) {
+          const activeManagementUser = await activateManagementInviteIfNeeded(managementUser);
           toast({
-            title: `Welcome, ${getRoleLabel(managementUser.role)}!`,
+            title: `Welcome, ${getRoleLabel(activeManagementUser.role)}!`,
             description: "Redirecting to your dashboard...",
           });
           navigate('/b2b/company-portal');
@@ -144,7 +169,7 @@ export default function CompanyAdminLogin() {
         .eq('company_id', company.id)
         .eq('user_id', loggedInUser.id)
         .in('role', [...MANAGEMENT_ROLES])
-        .eq('status', 'active')
+        .in('status', ['active', 'invited'])
         .maybeSingle();
 
       if (managementError || !managementUser) {
@@ -158,8 +183,10 @@ export default function CompanyAdminLogin() {
         return;
       }
 
+      const activeManagementUser = await activateManagementInviteIfNeeded(managementUser);
+
       toast({
-        title: `Welcome, ${getRoleLabel(managementUser.role)}!`,
+        title: `Welcome, ${getRoleLabel(activeManagementUser.role)}!`,
         description: "Redirecting to your dashboard...",
       });
 
