@@ -59,6 +59,20 @@ interface CompanyUser {
   assessment_result_id?: string;
 }
 
+interface CompanyUserRecord {
+  id: string;
+  company_id: string;
+  user_id: string | null;
+  email: string;
+  role: CompanyUserRole;
+  status: 'invited' | 'active' | 'revoked';
+  invite_code: string | null;
+  invited_at: string | null;
+  joined_at: string | null;
+  assessment_completed_at: string | null;
+  assessment_result_id: string | null;
+}
+
 // Role-based permissions
 interface RolePermissions {
   canViewOverview: boolean;
@@ -178,7 +192,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [requestedCompanyId, setRequestedCompanyId] = useState<string | null>(null);
 
-  const mapCompanyUser = (record: any): CompanyUser => ({
+  const mapCompanyUser = (record: CompanyUserRecord): CompanyUser => ({
     id: record.id,
     company_id: record.company_id,
     user_id: record.user_id ?? undefined,
@@ -212,13 +226,18 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
         .select('*')
         .ilike('email', user.email);
 
-      const userIdRecordIds = new Set(byUserId?.map(r => r.id) || []);
-      const emailOnlyRecords = (byEmail || []).filter(r => !userIdRecordIds.has(r.id));
-      const companyUserRecords = [...(byUserId || []), ...emailOnlyRecords];
+      const userIdRecords = (byUserId || []) as CompanyUserRecord[];
+      const emailRecords = (byEmail || []) as CompanyUserRecord[];
+      const userIdRecordIds = new Set(userIdRecords.map(r => r.id));
+      const emailOnlyRecords = emailRecords.filter(r => !userIdRecordIds.has(r.id));
+      const companyUserRecords = [...userIdRecords, ...emailOnlyRecords];
 
       // Link unlinked email-matched records
       for (const record of companyUserRecords) {
-        if (!record.user_id && record.email.toLowerCase() === user.email?.toLowerCase()) {
+        const emailMatchesAuthUser = record.email.toLowerCase() === user.email?.toLowerCase();
+        const isPrivilegedInvite = ['admin', 'hr', 'partner'].includes(record.role) && record.status === 'invited';
+
+        if (!record.user_id && emailMatchesAuthUser) {
           await supabase
             .from('company_users')
             .update({
@@ -228,6 +247,15 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
             })
             .eq('id', record.id);
           record.user_id = user.id;
+          record.status = 'active';
+        } else if (record.user_id === user.id && isPrivilegedInvite) {
+          await supabase
+            .from('company_users')
+            .update({
+              status: 'active',
+              joined_at: record.joined_at || new Date().toISOString(),
+            })
+            .eq('id', record.id);
           record.status = 'active';
         }
       }
@@ -240,7 +268,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
       );
 
       // Deduplicate by company_id (one record per company, prefer admin roles)
-      const byCompanyId = new Map<string, any>();
+      const byCompanyId = new Map<string, CompanyUserRecord>();
       for (const record of validRecords) {
         const existing = byCompanyId.get(record.company_id);
         if (!existing) {

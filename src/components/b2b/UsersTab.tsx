@@ -35,6 +35,8 @@ import {
   RefreshCw,
   Sparkles,
   Eye,
+  Crown,
+  Send,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -166,6 +168,17 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     user_id?: string | null;
   } | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState(false);
+  const [ownershipTransferTarget, setOwnershipTransferTarget] = useState<{
+    id: string;
+    email: string;
+    full_name?: string;
+  } | null>(null);
+  const [ownershipTransferRequestId, setOwnershipTransferRequestId] = useState<string | null>(null);
+  const [ownershipTransferSentTo, setOwnershipTransferSentTo] = useState<string | null>(null);
+  const [ownershipTransferCode, setOwnershipTransferCode] = useState("");
+  const [ownershipTransferPortalName, setOwnershipTransferPortalName] = useState("");
+  const [sendingOwnershipTransfer, setSendingOwnershipTransfer] = useState(false);
+  const [confirmingOwnershipTransfer, setConfirmingOwnershipTransfer] = useState(false);
   const [suggestingSkillsFor, setSuggestingSkillsFor] = useState<string | null>(null);
   const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({});
   const [mobileSelectedUser, setMobileSelectedUser] = useState<any | null>(null);
@@ -230,13 +243,23 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     };
   }, []);
 
-  // Identify the super admin (first admin created for the company)
-  const superAdminId = users
+  const normalizedOwnerEmail = (company?.admin_email || '').toLowerCase();
+
+  // Identify the portal owner. Prefer the original company admin email, with
+  // first-created admin as a fallback for older records without admin_email.
+  const ownerAdminId = users.find(
+    (u) => u.role === 'admin' && normalizedOwnerEmail && (u.email || '').toLowerCase() === normalizedOwnerEmail
+  )?.id;
+  const superAdminId = ownerAdminId || users
     .filter(u => u.role === 'admin')
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0]?.id;
 
-  // Check if current user is the super admin
-  const isSuperAdmin = currentUserId ? users.some(u => u.id === superAdminId && u.user_id === currentUserId) : false;
+  // Check if current user is the portal owner
+  const isSuperAdmin = users.some((u) => {
+    if (u.id !== superAdminId) return false;
+    const rowEmail = (u.email || '').toLowerCase();
+    return Boolean((currentUserId && u.user_id === currentUserId) || (currentUserEmail && rowEmail === currentUserEmail));
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -786,10 +809,97 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     if (user?.id === superAdminId) return false;
     if (isRcfSuperAdminAccount(user)) return false;
 
-    // Admins keep all permissions except managing/removing admin or super-admin accounts.
+    // Admins keep all permissions except managing/removing admin accounts; the portal owner can manage other admins.
     if (user?.role === 'admin' && !isSuperAdmin) return false;
 
     return true;
+  };
+
+  const canTransferOwnershipTo = (user: any) =>
+    isSuperAdmin &&
+    user?.role === 'admin' &&
+    user?.status !== 'revoked' &&
+    user?.id !== superAdminId &&
+    !isCurrentUserRecord(user) &&
+    !isRcfSuperAdminAccount(user);
+
+  const resetOwnershipTransfer = () => {
+    setOwnershipTransferTarget(null);
+    setOwnershipTransferRequestId(null);
+    setOwnershipTransferSentTo(null);
+    setOwnershipTransferCode("");
+    setOwnershipTransferPortalName("");
+  };
+
+  const handleSendOwnershipTransferEmail = async () => {
+    if (!ownershipTransferTarget) return;
+
+    setSendingOwnershipTransfer(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("transfer-company-ownership", {
+        body: {
+          action: "initiate",
+          companyId: company.id,
+          targetCompanyUserId: ownershipTransferTarget.id,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || "Unable to send confirmation email.");
+
+      setOwnershipTransferRequestId(data.requestId);
+      setOwnershipTransferSentTo(data.sentTo || company.admin_email);
+      toast({
+        title: "Confirmation email sent",
+        description: `Enter the code sent to ${data.sentTo || company.admin_email} to continue.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Could not send confirmation",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingOwnershipTransfer(false);
+    }
+  };
+
+  const handleConfirmOwnershipTransfer = async () => {
+    if (!ownershipTransferTarget || !ownershipTransferRequestId) return;
+
+    setConfirmingOwnershipTransfer(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("transfer-company-ownership", {
+        body: {
+          action: "confirm",
+          companyId: company.id,
+          targetCompanyUserId: ownershipTransferTarget.id,
+          requestId: ownershipTransferRequestId,
+          code: ownershipTransferCode.trim(),
+          typedCompanyName: ownershipTransferPortalName.trim(),
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || "Unable to transfer ownership.");
+
+      toast({
+        title: "Ownership transferred",
+        description: `${ownershipTransferTarget.full_name || ownershipTransferTarget.email} is now the portal owner.`,
+      });
+
+      resetOwnershipTransfer();
+      fetchUsers();
+      if (onCompanyUpdate) onCompanyUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Could not transfer ownership",
+        description: error?.message || "Please check the code and portal name, then try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setConfirmingOwnershipTransfer(false);
+    }
   };
 
   const handleDeleteAdmin = async () => {
@@ -807,7 +917,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
     if (adminDeleteTarget.role === 'admin' && !isSuperAdmin) {
       toast({
         title: "Action blocked",
-        description: "Only the company owner can remove admin accounts.",
+        description: "Only the portal owner can remove admin accounts.",
         variant: "destructive",
       });
       return;
@@ -1758,6 +1868,25 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                               <TooltipContent>Manage {user.role === 'admin' ? 'Admin' : user.role === 'hr' ? 'HR' : 'Partner'}</TooltipContent>
                             </Tooltip>
                           )}
+                          {canTransferOwnershipTo(user) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                                  onClick={() => setOwnershipTransferTarget({
+                                    id: user.id,
+                                    email: user.email,
+                                    full_name: user.full_name,
+                                  })}
+                                >
+                                  <Crown className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Transfer ownership</TooltipContent>
+                            </Tooltip>
+                          )}
                           {/* Request Retake - only for employees with completed assessments */}
                           {user.role === "employee" && user.status === "active" && user.assessment_completed_at && (
                             <Tooltip>
@@ -2182,6 +2311,10 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           onResendInvite={handleResendInvite}
           onPromoteUser={setPromoteUser}
           onManageAdmin={setManageAdmin}
+          onTransferOwnership={(user) => {
+            setMobileSelectedUser(null);
+            setOwnershipTransferTarget(user);
+          }}
           onRevokeAccess={handleRevokeAccess}
           onRestoreAccess={handleRestoreAccess}
           onRestoreAndPromote={handleRestoreAndPromote}
@@ -2218,6 +2351,7 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
           cancelledReminders={cancelledReminders}
           canPromoteUsers={permissions.canPromoteUsers}
           canManageAllRoles={permissions.canManageAllRoles}
+          canTransferOwnership={mobileSelectedUser ? canTransferOwnershipTo(mobileSelectedUser) : false}
         />
 
         {/* Bulk Import Modal */}
@@ -2455,6 +2589,116 @@ export default function UsersTab({ company, onCompanyUpdate, readOnly = false, s
                   "Delete Admin"
                 )}
               </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Transfer Ownership Confirmation Dialog */}
+        <AlertDialog
+          open={!!ownershipTransferTarget}
+          onOpenChange={(open) => {
+            if (!open && !sendingOwnershipTransfer && !confirmingOwnershipTransfer) {
+              resetOwnershipTransfer();
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Transfer Portal Ownership</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are transferring ownership of <span className="font-medium">{company.name}</span> to{" "}
+                <span className="font-medium">
+                  {ownershipTransferTarget?.full_name || ownershipTransferTarget?.email}
+                </span>
+                . This changes who can remove admins and perform owner-only actions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="space-y-4">
+              {!ownershipTransferRequestId ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  Click below to send a confirmation code to the current owner email,{" "}
+                  <span className="font-medium">{company.admin_email}</span>.
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+                    Confirmation code sent to <span className="font-medium">{ownershipTransferSentTo}</span>. Enter the
+                    code and type the portal name exactly to finish the transfer.
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor="ownership-transfer-code">
+                      Email confirmation code
+                    </label>
+                    <Input
+                      id="ownership-transfer-code"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={ownershipTransferCode}
+                      onChange={(event) => setOwnershipTransferCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="000000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor="ownership-transfer-portal-name">
+                      Type portal name to confirm
+                    </label>
+                    <Input
+                      id="ownership-transfer-portal-name"
+                      value={ownershipTransferPortalName}
+                      onChange={(event) => setOwnershipTransferPortalName(event.target.value)}
+                      placeholder={company.name}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Type <span className="font-medium">{company.name}</span> exactly.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={sendingOwnershipTransfer || confirmingOwnershipTransfer}>
+                Cancel
+              </AlertDialogCancel>
+              {!ownershipTransferRequestId ? (
+                <AlertDialogAction
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void handleSendOwnershipTransferEmail();
+                  }}
+                  disabled={sendingOwnershipTransfer}
+                >
+                  {sendingOwnershipTransfer ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Send Confirmation Email
+                </AlertDialogAction>
+              ) : (
+                <AlertDialogAction
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void handleConfirmOwnershipTransfer();
+                  }}
+                  disabled={
+                    confirmingOwnershipTransfer ||
+                    ownershipTransferCode.length !== 6 ||
+                    ownershipTransferPortalName.trim() !== company.name
+                  }
+                  className="bg-amber-600 text-white hover:bg-amber-700"
+                >
+                  {confirmingOwnershipTransfer ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Crown className="h-4 w-4 mr-2" />
+                  )}
+                  Transfer Ownership
+                </AlertDialogAction>
+              )}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

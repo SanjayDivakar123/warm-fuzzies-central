@@ -342,14 +342,14 @@ Discover your own RoleColor™ at rolecolorfinder.com`;
       {/* Main Hero Section */}
       <HeroScrollDemo />
 
-      <section className="pb-8 md:pb-12" aria-label="Platforms we connect with">
+      <section className="relative pb-8 md:pb-12 bg-gradient-to-b from-background via-background to-card" aria-label="Platforms we connect with">
         <div className="container-wide">
           <LogoCloud3Demo />
         </div>
       </section>
 
       {/* Philosophy Section - Enhanced */}
-      <section className="section-padding bg-gradient-soft relative overflow-hidden" aria-label="Our Philosophy">
+      <section className="section-padding bg-gradient-to-b from-card via-background to-background relative overflow-hidden" aria-label="Our Philosophy">
         <h2 className="sr-only">Our Philosophy on Contextual Leadership</h2>
         
         <div className="container-wide relative">

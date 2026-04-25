@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Dialog, 
   DialogContent, 
@@ -34,6 +35,11 @@ import {
   Sparkles, 
   Briefcase,
   Users,
+  Building2,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
+  ChevronUp,
   X,
   Download,
   UserPlus,
@@ -94,14 +100,26 @@ const DEFAULT_ROLES: { name: string; description: string; skills: string[] }[] =
   },
 ];
 
+const DEFAULT_DEPARTMENTS = ['Sales', 'HR', 'Engineering', 'Marketing', 'Operations'] as const;
+const UNASSIGNED_VALUE = '__unassigned__';
+const ALL_DEPARTMENTS_VALUE = '__all_departments__';
+
 interface Role {
   id: string;
   company_id: string;
+  department_id: string | null;
   name: string;
   description: string | null;
   skills: string[];
   created_at: string;
   updated_at: string;
+}
+
+interface Department {
+  id: string;
+  company_id: string;
+  name: string;
+  sort_order: number;
 }
 
 interface RolesTabProps {
@@ -110,6 +128,7 @@ interface RolesTabProps {
 
 export default function RolesTab({ company }: RolesTabProps) {
   const [roles, setRoles] = useState<Role[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -126,36 +145,66 @@ export default function RolesTab({ company }: RolesTabProps) {
   // Form state
   const [roleName, setRoleName] = useState('');
   const [roleDescription, setRoleDescription] = useState('');
+  const [roleDepartmentId, setRoleDepartmentId] = useState('');
   const [roleSkills, setRoleSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
   const [autoGenerating, setAutoGenerating] = useState(false);
+  const [departmentFilter, setDepartmentFilter] = useState<string>(ALL_DEPARTMENTS_VALUE);
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [departmentSaving, setDepartmentSaving] = useState(false);
+  const [showDepartmentList, setShowDepartmentList] = useState(true);
   
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchRoles();
+    fetchRolesAndDepartments();
   }, [company.id]);
 
-  const fetchRoles = async () => {
+  const getDepartmentName = (departmentId: string | null) => {
+    if (!departmentId) return 'Unassigned';
+    return departments.find((department) => department.id === departmentId)?.name ?? 'Unassigned';
+  };
+
+  const inferDepartmentIdFromRoleName = (
+    roleName: string,
+    availableDepartments: Department[] = departments
+  ): string | null => {
+    const normalizedRole = roleName.toLowerCase();
+
+    const hasKeyword = (keywords: string[]) => keywords.some((keyword) => normalizedRole.includes(keyword));
+
+    if (hasKeyword(['engineer', 'developer', 'software', 'devops', 'qa', 'technical'])) {
+      return availableDepartments.find((department) => department.name.toLowerCase() === 'engineering')?.id ?? null;
+    }
+    if (hasKeyword(['sales', 'account executive', 'business development'])) {
+      return availableDepartments.find((department) => department.name.toLowerCase() === 'sales')?.id ?? null;
+    }
+    if (hasKeyword(['hr', 'human resources', 'recruit', 'talent', 'people'])) {
+      return availableDepartments.find((department) => department.name.toLowerCase() === 'hr')?.id ?? null;
+    }
+    if (hasKeyword(['marketing', 'brand', 'seo', 'content'])) {
+      return availableDepartments.find((department) => department.name.toLowerCase() === 'marketing')?.id ?? null;
+    }
+    if (hasKeyword(['operations', 'operation', 'project manager', 'finance'])) {
+      return availableDepartments.find((department) => department.name.toLowerCase() === 'operations')?.id ?? null;
+    }
+    return null;
+  };
+
+  const fetchRolesAndDepartments = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('company_roles')
-        .select('*')
-        .eq('company_id', company.id)
-        .order('name');
-
-      if (error) throw error;
-      
-      const fetchedRoles = data || [];
+      const fetchedRoles = await fetchRolesOnly();
+      const fetchedDepartments = await fetchDepartmentsOnly();
       setRoles(fetchedRoles);
+      setDepartments(fetchedDepartments);
 
       // Auto-seed from existing user job_roles if no roles exist yet
       if (fetchedRoles.length === 0) {
-        await importRolesFromUsers(false);
+        await importRolesFromUsers(false, fetchedDepartments);
       }
     } catch (err: any) {
-      console.error('Error fetching roles:', err);
+      console.error('Error loading role data:', err);
       toast({
         title: 'Error loading roles',
         description: err.message,
@@ -166,8 +215,81 @@ export default function RolesTab({ company }: RolesTabProps) {
     }
   };
 
+  const fetchRolesOnly = async (): Promise<Role[]> => {
+    const { data, error } = await supabase
+      .from('company_roles')
+      .select('*')
+      .eq('company_id', company.id)
+      .order('name');
+
+    if (error) throw error;
+    return (data || []) as Role[];
+  };
+
+  const fetchDepartmentsOnly = async (): Promise<Department[]> => {
+    const { data, error } = await supabase
+      .from('company_departments')
+      .select('*')
+      .eq('company_id', company.id)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    // Backward-compatible fallback: if migration isn't applied yet,
+    // keep roles tab functional instead of failing the whole page load.
+    if (error) {
+      if (
+        error.message?.toLowerCase().includes('company_departments') ||
+        error.message?.toLowerCase().includes('does not exist') ||
+        error.code === 'PGRST205' ||
+        error.code === '42P01'
+      ) {
+        console.warn('company_departments not available yet; skipping department features until migration is applied.');
+        return [];
+      }
+      throw error;
+    }
+
+    const existingDepartments = (data || []) as Department[];
+    const existingNames = new Set(existingDepartments.map((department) => department.name.trim().toLowerCase()));
+    const missingDefaults = DEFAULT_DEPARTMENTS.filter((name) => !existingNames.has(name.toLowerCase()));
+
+    if (missingDefaults.length === 0) {
+      return existingDepartments;
+    }
+
+    const highestSortOrder = existingDepartments.reduce((highest, department) => Math.max(highest, department.sort_order), -10);
+    const departmentsToInsert = missingDefaults.map((name, index) => ({
+      company_id: company.id,
+      name,
+      sort_order: highestSortOrder + (index + 1) * 10,
+    }));
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('company_departments')
+      .insert(departmentsToInsert)
+      .select('*');
+
+    if (insertError) {
+      if (
+        insertError.message?.toLowerCase().includes('company_departments') ||
+        insertError.message?.toLowerCase().includes('does not exist') ||
+        insertError.code === 'PGRST205' ||
+        insertError.code === '42P01'
+      ) {
+        console.warn('company_departments not available yet; defaults not seeded.');
+        return existingDepartments;
+      }
+      throw insertError;
+    }
+
+    return [...existingDepartments, ...((inserted || []) as Department[])].sort((a, b) => {
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
   // Seed roles from existing user job_role values
-  const importRolesFromUsers = async (manual = false) => {
+  const importRolesFromUsers = async (manual = false, availableDepartments: Department[] = departments) => {
     if (manual) setImportingFromUsers(true);
     try {
       const { data: users, error: usersError } = await supabase
@@ -220,6 +342,7 @@ export default function RolesTab({ company }: RolesTabProps) {
         const generated = generateRoleSkills(roleName);
         return {
           company_id: company.id,
+          department_id: inferDepartmentIdFromRoleName(roleName, availableDepartments),
           name: roleName,
           description: generated.description,
           skills: generated.skills,
@@ -303,6 +426,7 @@ export default function RolesTab({ company }: RolesTabProps) {
   const resetForm = () => {
     setRoleName('');
     setRoleDescription('');
+    setRoleDepartmentId('');
     setRoleSkills([]);
     setNewSkill('');
     setEditingRole(null);
@@ -310,12 +434,16 @@ export default function RolesTab({ company }: RolesTabProps) {
 
   const openCreateModal = () => {
     resetForm();
+    if (departments.length > 0) {
+      setRoleDepartmentId(departments[0].id);
+    }
     setShowCreateModal(true);
   };
 
   const openEditModal = (role: Role) => {
     setRoleName(role.name);
     setRoleDescription(role.description || '');
+    setRoleDepartmentId(role.department_id || UNASSIGNED_VALUE);
     setRoleSkills(role.skills || []);
     setEditingRole(role);
     setShowCreateModal(true);
@@ -370,6 +498,14 @@ export default function RolesTab({ company }: RolesTabProps) {
       });
       return;
     }
+    if (!editingRole && !roleDepartmentId) {
+      toast({
+        title: 'Department required',
+        description: 'Please select a department before creating this role.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Auto-generate skills if none provided
     let finalSkills = roleSkills;
@@ -387,6 +523,7 @@ export default function RolesTab({ company }: RolesTabProps) {
           .update({
             name: roleName.trim(),
             description: roleDescription.trim() || null,
+            department_id: roleDepartmentId === UNASSIGNED_VALUE || !roleDepartmentId ? null : roleDepartmentId,
             skills: finalSkills,
             updated_at: new Date().toISOString(),
           })
@@ -409,6 +546,7 @@ export default function RolesTab({ company }: RolesTabProps) {
             company_id: company.id,
             name: roleName.trim(),
             description: roleDescription.trim() || null,
+            department_id: roleDepartmentId === UNASSIGNED_VALUE || !roleDepartmentId ? null : roleDepartmentId,
             skills: finalSkills,
           });
 
@@ -425,7 +563,7 @@ export default function RolesTab({ company }: RolesTabProps) {
 
       setShowCreateModal(false);
       resetForm();
-      fetchRoles();
+      fetchRolesAndDepartments();
     } catch (err: any) {
       console.error('Error saving role:', err);
       toast({
@@ -435,6 +573,178 @@ export default function RolesTab({ company }: RolesTabProps) {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddDepartment = async () => {
+    const trimmedName = newDepartmentName.trim();
+    if (!trimmedName) return;
+
+    const existing = departments.some(
+      (department) => department.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (existing) {
+      toast({
+        title: 'Department already exists',
+        description: `"${trimmedName}" is already available.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDepartmentSaving(true);
+    try {
+      const highestSortOrder = departments.reduce(
+        (highest, department) => Math.max(highest, department.sort_order),
+        -10
+      );
+
+      const { data, error } = await supabase
+        .from('company_departments')
+        .insert({
+          company_id: company.id,
+          name: trimmedName,
+          sort_order: highestSortOrder + 10,
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      setDepartments((previous) =>
+        [...previous, data as Department].sort((a, b) => {
+          if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+          return a.name.localeCompare(b.name);
+        })
+      );
+      setNewDepartmentName('');
+      toast({ title: 'Department added', description: `"${trimmedName}" is now available for roles.` });
+    } catch (err: any) {
+      console.error('Error adding department:', err);
+      toast({
+        title: 'Error adding department',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDepartmentSaving(false);
+    }
+  };
+
+  const handleDeleteDepartment = async (department: Department) => {
+    const departmentRolesCount = roles.filter((role) => role.department_id === department.id).length;
+    if (departmentRolesCount > 0) {
+      toast({
+        title: 'Department in use',
+        description: `Move ${departmentRolesCount} role${departmentRolesCount === 1 ? '' : 's'} out of "${department.name}" before deleting it.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('company_departments').delete().eq('id', department.id);
+      if (error) throw error;
+
+      setDepartments((previous) => previous.filter((item) => item.id !== department.id));
+      if (departmentFilter === department.id) setDepartmentFilter(ALL_DEPARTMENTS_VALUE);
+      if (roleDepartmentId === department.id) setRoleDepartmentId('');
+      toast({ title: 'Department deleted', description: `"${department.name}" has been removed.` });
+    } catch (err: any) {
+      console.error('Error deleting department:', err);
+      toast({
+        title: 'Error deleting department',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMoveDepartment = async (departmentId: string, direction: 'up' | 'down') => {
+    const sortedDepartments = [...departments].sort((a, b) => {
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+      return a.name.localeCompare(b.name);
+    });
+
+    const index = sortedDepartments.findIndex((department) => department.id === departmentId);
+    if (index < 0) return;
+
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= sortedDepartments.length) return;
+
+    const first = sortedDepartments[index];
+    const second = sortedDepartments[swapIndex];
+
+    try {
+      const { error: firstError } = await supabase
+        .from('company_departments')
+        .update({ sort_order: second.sort_order })
+        .eq('id', first.id);
+      if (firstError) throw firstError;
+
+      const { error: secondError } = await supabase
+        .from('company_departments')
+        .update({ sort_order: first.sort_order })
+        .eq('id', second.id);
+      if (secondError) throw secondError;
+
+      setDepartments((previous) =>
+        previous
+          .map((department) => {
+            if (department.id === first.id) return { ...department, sort_order: second.sort_order };
+            if (department.id === second.id) return { ...department, sort_order: first.sort_order };
+            return department;
+          })
+          .sort((a, b) => {
+            if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+            return a.name.localeCompare(b.name);
+          })
+      );
+    } catch (err: any) {
+      console.error('Error reordering departments:', err);
+      toast({
+        title: 'Error moving department',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filteredRoles = roles.filter((role) => {
+    if (departmentFilter === ALL_DEPARTMENTS_VALUE) return true;
+    if (departmentFilter === UNASSIGNED_VALUE) return !role.department_id;
+    return role.department_id === departmentFilter;
+  });
+
+  const handleRoleDepartmentChange = async (role: Role, value: string) => {
+    const nextDepartmentId = value === UNASSIGNED_VALUE ? null : value;
+    try {
+      const { error } = await supabase
+        .from('company_roles')
+        .update({
+          department_id: nextDepartmentId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', role.id);
+
+      if (error) throw error;
+
+      setRoles((previous) =>
+        previous.map((item) =>
+          item.id === role.id ? { ...item, department_id: nextDepartmentId } : item
+        )
+      );
+      toast({
+        title: 'Department updated',
+        description: `"${role.name}" moved to ${nextDepartmentId ? getDepartmentName(nextDepartmentId) : 'Unassigned'}.`,
+      });
+    } catch (err: any) {
+      console.error('Error updating role department:', err);
+      toast({
+        title: 'Error updating department',
+        description: err.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -455,7 +765,7 @@ export default function RolesTab({ company }: RolesTabProps) {
       });
       
       setDeletingRole(null);
-      fetchRoles();
+      fetchRolesAndDepartments();
     } catch (err: any) {
       console.error('Error deleting role:', err);
       toast({
@@ -489,6 +799,7 @@ export default function RolesTab({ company }: RolesTabProps) {
         .insert(
           rolesToAdd.map(role => ({
             company_id: company.id,
+            department_id: inferDepartmentIdFromRoleName(role.name),
             name: role.name,
             description: role.description,
             skills: role.skills,
@@ -502,7 +813,7 @@ export default function RolesTab({ company }: RolesTabProps) {
         description: `${rolesToAdd.length} default role${rolesToAdd.length === 1 ? '' : 's'} have been added to your organization.`,
       });
 
-      fetchRoles();
+      await fetchRolesAndDepartments();
     } catch (err: any) {
       console.error('Error seeding default roles:', err);
       toast({
@@ -559,7 +870,7 @@ export default function RolesTab({ company }: RolesTabProps) {
       });
 
       setShowBulkSkillsModal(false);
-      fetchRoles();
+      fetchRolesAndDepartments();
     } catch (err: any) {
       console.error('Error bulk generating skills:', err);
       toast({
@@ -634,7 +945,91 @@ export default function RolesTab({ company }: RolesTabProps) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Filter by Department</Label>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_DEPARTMENTS_VALUE}>All Departments</SelectItem>
+                  <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Manage Departments</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add department"
+                  value={newDepartmentName}
+                  onChange={(e) => setNewDepartmentName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddDepartment())}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddDepartment}
+                  disabled={departmentSaving || !newDepartmentName.trim()}
+                >
+                  {departmentSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Add
+                </Button>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDepartmentList((current) => !current)}
+                className="w-fit"
+              >
+                {showDepartmentList ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                {showDepartmentList ? 'Hide Departments' : 'Show Departments'}
+              </Button>
+              {showDepartmentList && (
+                <div className="flex flex-wrap gap-2">
+                  {departments.map((department, index) => (
+                    <Badge key={department.id} variant="outline" className="flex items-center gap-1 py-1">
+                      <Building2 className="h-3 w-3" />
+                      {department.name}
+                      <button
+                        type="button"
+                        onClick={() => handleMoveDepartment(department.id, 'up')}
+                        disabled={index === 0}
+                        className="rounded p-0.5 hover:bg-muted disabled:opacity-40"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveDepartment(department.id, 'down')}
+                        disabled={index === departments.length - 1}
+                        className="rounded p-0.5 hover:bg-muted disabled:opacity-40"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDepartment(department)}
+                        className="rounded p-0.5 hover:bg-muted"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {roles.length === 0 ? (
             <div className="text-center py-12">
               <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -673,11 +1068,16 @@ export default function RolesTab({ company }: RolesTabProps) {
                 </Button>
               </div>
             </div>
+          ) : filteredRoles.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              No roles match this department filter yet.
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Role Name</TableHead>
+                  <TableHead>Department</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Skills</TableHead>
                   <TableHead>Employees</TableHead>
@@ -685,9 +1085,27 @@ export default function RolesTab({ company }: RolesTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {roles.map((role) => (
+                {filteredRoles.map((role) => (
                   <TableRow key={role.id}>
                     <TableCell className="font-medium">{role.name}</TableCell>
+                    <TableCell>
+                      <Select
+                        value={role.department_id || UNASSIGNED_VALUE}
+                        onValueChange={(value) => handleRoleDepartmentChange(role, value)}
+                      >
+                        <SelectTrigger className="w-[170px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+                          {departments.map((department) => (
+                            <SelectItem key={department.id} value={department.id}>
+                              {department.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell className="max-w-xs truncate text-muted-foreground">
                       {role.description || '—'}
                     </TableCell>
@@ -772,6 +1190,25 @@ export default function RolesTab({ company }: RolesTabProps) {
                 onChange={(e) => setRoleDescription(e.target.value)}
                 rows={2}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Department {!editingRole && '*'}</Label>
+              <Select value={roleDepartmentId} onValueChange={setRoleDepartmentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {editingRole && (
+                    <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+                  )}
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

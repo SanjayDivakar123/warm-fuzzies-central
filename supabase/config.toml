@@ -54,6 +54,12 @@ verify_jwt = false
 [functions.get-company-employee-session]
 verify_jwt = false
 
+[functions.leave-company-portal]
+verify_jwt = false
+
+[functions.transfer-company-ownership]
+verify_jwt = true
+
 [functions.import-company-assessment-result]
 verify_jwt = false
 

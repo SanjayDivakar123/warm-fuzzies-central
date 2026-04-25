@@ -58,8 +58,6 @@ export default function CompanyLogin() {
         const { data, error: fnError } = await supabase.functions.invoke('verify-google-sso-employee', {
           body: { 
             companyId: company.id,
-            userEmail: user.email,
-            userId: user.id
           }
         });
 

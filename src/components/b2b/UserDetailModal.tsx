@@ -14,6 +14,7 @@ import {
   Shield, 
   ShieldPlus,
   Settings,
+  Crown,
   RotateCcw,
   RefreshCw,
   Loader2,
@@ -49,6 +50,7 @@ interface UserDetailModalProps {
   onResendInvite: (id: string) => void;
   onPromoteUser: (user: { id: string; email: string; full_name?: string }) => void;
   onManageAdmin: (user: { id: string; email: string; full_name?: string; status: string; role: string }) => void;
+  onTransferOwnership?: (user: { id: string; email: string; full_name?: string }) => void;
   onRevokeAccess: (id: string) => void;
   onRestoreAccess: (id: string) => void;
   onRestoreAndPromote: (user: { id: string; email: string; full_name?: string }) => void;
@@ -62,6 +64,7 @@ interface UserDetailModalProps {
   cancelledReminders: Record<string, number>;
   canPromoteUsers?: boolean;
   canManageAllRoles?: boolean;
+  canTransferOwnership?: boolean;
 }
 
 export default function UserDetailModal({
@@ -83,6 +86,7 @@ export default function UserDetailModal({
   onResendInvite,
   onPromoteUser,
   onManageAdmin,
+  onTransferOwnership,
   onRevokeAccess,
   onRestoreAccess,
   onRestoreAndPromote,
@@ -96,6 +100,7 @@ export default function UserDetailModal({
   cancelledReminders,
   canPromoteUsers = true,
   canManageAllRoles = true,
+  canTransferOwnership = false,
 }: UserDetailModalProps) {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [jobRole, setJobRole] = useState(user?.job_role || '');
@@ -419,6 +424,22 @@ export default function UserDetailModal({
                 >
                   <Settings className="h-4 w-4" />
                   Manage
+                </Button>
+              )}
+
+              {canTransferOwnership && user.role === 'admin' && user.status !== 'revoked' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onTransferOwnership?.({
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.full_name,
+                  })}
+                  className="gap-2 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                >
+                  <Crown className="h-4 w-4" />
+                  Transfer Ownership
                 </Button>
               )}
 

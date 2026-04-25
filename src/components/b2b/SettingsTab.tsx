@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ import {
   Key,
   Calendar,
   MessageSquare,
+  LogOut,
 } from "lucide-react";
 import DeleteCompanyModal from "./DeleteCompanyModal";
 import PaymentMethodCard from "./PaymentMethodCard";
@@ -61,10 +62,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface SettingsCompany {
+  id: string;
+  name: string;
+  subdomain: string;
+  logo_url?: string | null;
+  logo_url_dark?: string | null;
+  primary_color: string;
+  secondary_color: string;
+  custom_domain?: string | null;
+  custom_domain_enabled?: boolean | null;
+  google_sso_enabled?: boolean | null;
+  google_workspace_domain?: string | null;
+  credit_balance?: number | null;
+  hiring_subscription_enabled?: boolean | null;
+  hiring_subscription_status?: string | null;
+  hiring_subscription_id?: string | null;
+  hiring_subscription_current_period_end?: string | null;
+  hiring_subscription_cancel_at_period_end?: boolean | null;
+  hiring_commitment_block_cancel_until?: string | null;
+  hiring_ever_subscribed?: boolean | null;
+}
+
 interface SettingsTabProps {
-  company: any;
+  company: SettingsCompany;
   companyUser?: { id: string; role: string } | null;
-  onSettingsSaved?: () => void;
+  onSettingsSaved?: () => void | Promise<void>;
   scrollToSection?: string | null;
   onScrollComplete?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
@@ -128,11 +151,14 @@ export default function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"light" | "dark" | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [leavePortalOpen, setLeavePortalOpen] = useState(false);
+  const [leavingPortal, setLeavingPortal] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputDarkRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const availableSettingsTabs = getAvailableSettingsTabs();
   const resolveSettingsTab = (value: string | null): SettingsSubtab =>
     availableSettingsTabs.includes(value as SettingsSubtab) ? (value as SettingsSubtab) : "branding";
@@ -343,11 +369,12 @@ export default function SettingsTab({
         title: "Logo uploaded",
         description: `Your ${mode} mode logo is ready. Click Save Settings to apply changes.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to upload logo";
       console.error("Upload error:", error);
       toast({
         title: "Upload failed",
-        description: error.message || "Failed to upload logo",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -412,10 +439,11 @@ export default function SettingsTab({
         onSettingsSaved();
       }
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unable to save settings.";
       toast({
         title: "Error saving settings",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -454,6 +482,41 @@ export default function SettingsTab({
       nextParams.set("settingsTab", nextTab);
     }
     setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleLeavePortal = async () => {
+    if (!companyUser?.id) return;
+
+    setLeavingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leave-company-portal", {
+        body: {
+          companyUserId: companyUser.id,
+          companyId: company.id,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || "Unable to leave this portal right now.");
+
+      toast({
+        title: "You left the portal",
+        description: `You no longer have access to ${company.name}.`,
+      });
+
+      setLeavePortalOpen(false);
+      await onSettingsSaved?.();
+      navigate("/b2b/company-portal", { replace: true });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Please try again.";
+      toast({
+        title: "Could not leave portal",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setLeavingPortal(false);
+    }
   };
 
   if (billingOnly) {
@@ -946,24 +1009,37 @@ export default function SettingsTab({
       {/* Payment Method */}
       <PaymentMethodCard company={company} />
 
-      {/* Danger Zone - Delete Company */}
+      {/* Danger Zone */}
       <Card className="border-destructive/30 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg font-medium text-destructive">
             <Trash2 className="h-5 w-5" />
             Danger Zone
           </CardTitle>
-          <CardDescription>Permanently delete this company and all associated data</CardDescription>
+          <CardDescription>Leave this portal or permanently delete the company</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Once you delete your company, there is no going back. All users, assessments, tasks, and settings will be
-            permanently removed.
-          </p>
-          <Button variant="destructive" className="w-full gap-2" onClick={() => setDeleteModalOpen(true)}>
-            <Trash2 className="h-4 w-4" />
-            Delete Company
-          </Button>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Leaving removes your access to {company.name}. Your current month's billing, if applicable, is not
+              refunded, but future charges for your seat stop.
+            </p>
+            <Button variant="outline" className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setLeavePortalOpen(true)}>
+              <LogOut className="h-4 w-4" />
+              Leave Portal
+            </Button>
+          </div>
+
+          <div className="rounded-lg border border-destructive/30 p-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Once you delete your company, there is no going back. All users, assessments, tasks, and settings will be
+              permanently removed.
+            </p>
+            <Button variant="destructive" className="w-full gap-2" onClick={() => setDeleteModalOpen(true)}>
+              <Trash2 className="h-4 w-4" />
+              Delete Company
+            </Button>
+          </div>
         </CardContent>
       </Card>
         </TabsContent>
@@ -1045,6 +1121,29 @@ export default function SettingsTab({
 
       {/* Delete Company Modal */}
       <DeleteCompanyModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} company={company} />
+
+      <AlertDialog open={leavePortalOpen} onOpenChange={setLeavePortalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {company.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to this company portal, including its settings, users, assessments, and assigned work.
+              If you are the only active admin, you will need to add another admin before you can leave.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leavingPortal}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeavePortal}
+              disabled={leavingPortal}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leavingPortal && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Leave Portal
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

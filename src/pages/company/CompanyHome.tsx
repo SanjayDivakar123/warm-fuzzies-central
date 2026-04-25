@@ -4,8 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCompanyPortal } from "@/contexts/CompanyPortalContext";
 import { EmployeeTasksKanban } from "@/components/company/EmployeeTasksKanban";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
   LogOut, 
@@ -15,7 +27,9 @@ import {
   User,
   Sparkles,
   Calendar,
-  ClipboardList
+  ClipboardList,
+  Settings,
+  AlertTriangle
 } from "lucide-react";
 
 const colorData = {
@@ -72,7 +86,10 @@ const colorData = {
 export default function CompanyHome() {
   const { company, employee, assessmentResults, reusableAssessments, loading, setEmployee, fetchAssessmentResults } = useCompanyPortal();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'profile' | 'tasks'>('profile');
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<'profile' | 'tasks' | 'settings'>('profile');
+  const [leavePortalOpen, setLeavePortalOpen] = useState(false);
+  const [leavingPortal, setLeavingPortal] = useState(false);
 
   // Fetch results when employee changes
   useEffect(() => {
@@ -92,6 +109,42 @@ export default function CompanyHome() {
     if (company) {
       setEmployee(null);
       navigate(`/company/${company.subdomain}`);
+    }
+  };
+
+  const handleLeavePortal = async () => {
+    if (!company || !employee?.id || !employee?.invite_code) return;
+
+    setLeavingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leave-company-portal", {
+        body: {
+          companyUserId: employee.id,
+          companyId: company.id,
+          inviteCode: employee.invite_code,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || "Unable to leave this portal right now.");
+
+      toast({
+        title: "You left the portal",
+        description: `You no longer have access to ${company.name}.`,
+      });
+
+      setLeavePortalOpen(false);
+      setEmployee(null);
+      navigate(`/company/${company.subdomain}`, { replace: true });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Please try again.";
+      toast({
+        title: "Could not leave portal",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setLeavingPortal(false);
     }
   };
 
@@ -254,8 +307,8 @@ export default function CompanyHome() {
 
       {/* Tab Navigation */}
       <div className="max-w-4xl mx-auto px-4 pt-8">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'tasks')}>
-          <TabsList className="grid w-full grid-cols-2 max-w-xs mx-auto mb-8">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'tasks' | 'settings')}>
+          <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -263,6 +316,10 @@ export default function CompanyHome() {
             <TabsTrigger value="tasks" className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               My Tasks
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -338,6 +395,29 @@ export default function CompanyHome() {
               primaryColor={primaryColor} 
               secondaryColor={secondaryColor} 
             />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card className="shadow-lg border-destructive/30">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-destructive/10 p-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold mb-2">Leave Portal</h2>
+                    <p className="text-sm text-muted-foreground mb-5">
+                      Leaving removes your access to {company.name}. Your saved company session will be cleared, and
+                      you will need a new invite from an administrator to rejoin.
+                    </p>
+                    <Button variant="destructive" className="gap-2" onClick={() => setLeavePortalOpen(true)}>
+                      <LogOut className="h-4 w-4" />
+                      Leave Portal
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -448,6 +528,29 @@ export default function CompanyHome() {
           Powered by <span style={{ color: secondaryColor }}>RoleColorFinder</span>
         </p>
       </footer>
+
+      <AlertDialog open={leavePortalOpen} onOpenChange={setLeavePortalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {company.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to this company portal, your task board, and your company-specific profile. You will
+              need a new invite from an administrator to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leavingPortal}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeavePortal}
+              disabled={leavingPortal}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leavingPortal && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Leave Portal
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
