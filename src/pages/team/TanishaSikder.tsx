@@ -9,7 +9,8 @@ import { useEffect } from "react";
 const TanishaSikder = () => {
   useEffect(() => {
     const title = "Tanisha Sikder - AI Engineer | Role Color Finder";
-    const description = "Tanisha Sikder is an AI Engineer at RoleColorFinder, passionate about building AI systems to help people understand their leadership style using color-based psychology.";
+    const description =
+      "Tanisha Sikder is an AI Engineer at RoleColorFinder, passionate about building AI systems to help people understand their leadership style using color-based psychology.";
 
     document.title = title;
 
@@ -33,14 +34,14 @@ const TanishaSikder = () => {
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "Person",
-      "name": "Tanisha Sikder",
-      "jobTitle": "AI Engineer",
-      "worksFor": {
+      name: "Tanisha Sikder",
+      jobTitle: "AI Engineer",
+      worksFor: {
         "@type": "Organization",
-        "name": "RoleColorFinder"
+        name: "RoleColorFinder",
       },
-      "url": canonicalHref,
-      "image": `${window.location.origin}/images/tanisha-sikder.jpg`
+      url: canonicalHref,
+      image: `${window.location.origin}/images/tanisha-sikder.jpg`,
     };
 
     let scriptEl = document.getElementById("jsonld-tanisha-sikder") as HTMLScriptElement | null;
@@ -55,9 +56,8 @@ const TanishaSikder = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="container-wide section-padding">
-        {/* Back Button */}
         <Button variant="ghost" size="sm" className="mb-8 group" asChild>
           <Link to="/team">
             <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -66,20 +66,19 @@ const TanishaSikder = () => {
         </Button>
 
         <div className="grid lg:grid-cols-3 gap-12">
-          {/* Profile Sidebar */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden border-border/50 sticky top-8">
               <CardContent className="p-0">
                 <div className="aspect-square overflow-hidden relative">
-                  <img 
-                    src="/images/tanisha-sikder.jpg" 
+                  <img
+                    src="/images/tanisha-sikder.jpg"
                     alt="Tanisha Sikder"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-yellow-400 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
-                    <span className="text-white font-bold text-base drop-shadow-lg">Fast Executor</span>
+                    <div className="w-10 h-10 rounded-full bg-green-500 ring-4 ring-white/90 shadow-xl flex-shrink-0" />
+                    <span className="text-white font-bold text-base drop-shadow-lg">Supportive Collaborator</span>
                   </div>
                 </div>
                 <div className="p-6 space-y-4">
@@ -87,7 +86,7 @@ const TanishaSikder = () => {
                     <h1 className="text-2xl font-bold">Tanisha Sikder</h1>
                     <p className="text-lg text-primary font-semibold">AI Engineer</p>
                   </div>
-                  
+
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -118,7 +117,6 @@ const TanishaSikder = () => {
             </Card>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <section>
               <Badge variant="default" className="mb-4">AI Engineer</Badge>
@@ -139,7 +137,7 @@ const TanishaSikder = () => {
               <h3 className="text-2xl font-bold mb-4">Education & Background</h3>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Tanisha Sikder is currently pursuing her bachelor's degree in Software Engineering. She has obtained several certifications in AI/ML Engineering, demonstrating her commitment to staying at the forefront of artificial intelligence technologies.
+                  Tanisha Sikder is currently pursuing her bachelor&apos;s degree in Software Engineering. She has obtained several certifications in AI/ML Engineering, demonstrating her commitment to staying at the forefront of artificial intelligence technologies.
                 </p>
                 <p>
                   Tanisha has developed many personal projects involving artificial intelligence, machine learning, and deep learning. Using her software engineering background, she has also constructed several full-stack development projects, giving her a comprehensive understanding of end-to-end product development.
@@ -169,14 +167,20 @@ const TanishaSikder = () => {
               </ul>
             </section>
 
-            <section className="p-6 bg-yellow-400/10 border border-yellow-400/30 rounded-xl">
+            <section className="p-6 bg-green-500/10 border border-green-500/20 rounded-xl">
               <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-yellow-400" />
-                Why Yellow?
+                <div className="w-8 h-8 rounded-full bg-green-500" />
+                Why Green?
               </h3>
               <div className="prose prose-lg max-w-none text-muted-foreground">
                 <p>
-                  As a <strong>Fast Executor</strong>, Tanisha embodies the Yellow RoleColor through her results-driven approach and rapid iteration on AI systems. Yellow leaders excel at turning ideas into action quickly, focusing on efficient delivery and tangible outcomes. Her journey from intern to engineer demonstrates the Yellow strength of momentum—consistently shipping improvements, testing with real data, and iterating until the models perform optimally. At RoleColorFinder, Tanisha's Yellow energy ensures that AI innovations move swiftly from concept to production, helping users discover their leadership potential faster.
+                  As a <strong>Supportive Collaborator</strong>, Tanisha embodies the Green RoleColor through
+                  her thoughtful approach to building AI systems that genuinely help people. Green leaders
+                  excel at creating stability, supporting others, and improving systems with care and
+                  consistency. Tanisha&apos;s growth from intern to engineer reflects that strength by pairing
+                  technical curiosity with a grounded, reliable approach to iteration. At RoleColorFinder, her
+                  Green energy helps AI innovation stay practical, people-centered, and built for real-world
+                  use.
                 </p>
               </div>
             </section>
