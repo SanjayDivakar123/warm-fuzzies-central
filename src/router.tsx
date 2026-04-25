@@ -28,7 +28,7 @@ import SanjayDivakar from "@/pages/team/SanjayDivakar";
 import TristanBeley from "@/pages/team/TristanBeley";
 import TanishaSikder from "@/pages/team/TanishaSikder";
 import AmitSuthar from "@/pages/team/AmitSuthar";
-import KodyKrueger from "@/pages/team/KodyKrueger";
+import JessicahFowler from "@/pages/team/JessicahFowler";
 
 
 import Sitemap from "@/components/Sitemap";
@@ -259,8 +259,12 @@ export const routeConfig = [
     element: <Layout><AmitSuthar /></Layout>,
   },
   {
+    path: "/team/jessicah-fowler",
+    element: <Layout><JessicahFowler /></Layout>,
+  },
+  {
     path: "/team/kody-krueger",
-    element: <Layout><KodyKrueger /></Layout>,
+    element: <Navigate to="/team/jessicah-fowler" replace />,
   },
   {
     path: "/sitemap",

@@ -58,7 +58,7 @@ export default function HyattProposal() {
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-white/90 p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Submitted by</p>
-                  <p className="text-base font-semibold text-slate-900">Kody Krueger, Head of Sales</p>
+                  <p className="text-base font-semibold text-slate-900">Jessicah Fowler, Head of Revenue</p>
                 </div>
               </div>
             </section>
@@ -66,7 +66,7 @@ export default function HyattProposal() {
             <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 md:p-8 shadow-lg shadow-slate-200/60 backdrop-blur">
               <h2 className="mb-4 border-l-4 border-emerald-500 pl-4 text-3xl font-bold tracking-tight text-slate-900">PROPOSAL</h2>
               <p className="text-slate-700"><span className="font-semibold text-slate-900">Proposed to:</span> Hyatt Hotels Corporation</p>
-              <p className="text-slate-700"><span className="font-semibold text-slate-900">Submitted by:</span> Kody Krueger, Head of Sales</p>
+              <p className="text-slate-700"><span className="font-semibold text-slate-900">Submitted by:</span> Jessicah Fowler, Head of Revenue</p>
             </section>
 
             <section className="grid gap-6 md:grid-cols-2 items-stretch">
@@ -267,7 +267,7 @@ export default function HyattProposal() {
               </p>
               <div className="mt-8 border-t border-slate-700 pt-6">
                 <p className="text-emerald-300 font-semibold">Ready to move forward?</p>
-                <p className="text-slate-400 text-sm mt-1">Reach out to Kody Krueger, Head of Sales, to confirm next steps and begin onboarding planning.</p>
+                <p className="text-slate-400 text-sm mt-1">Reach out to Jessicah Fowler, Head of Revenue, to confirm next steps and begin onboarding planning.</p>
               </div>
             </section>
 
@@ -278,8 +278,8 @@ export default function HyattProposal() {
                 className="mb-4 h-9 w-auto object-contain"
               />
               <p className="text-xs uppercase tracking-wide text-slate-500">Proposed by</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900">Kody Krueger</p>
-              <p className="text-slate-600">Head of Sales, RoleColorFinder</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">Jessicah Fowler</p>
+              <p className="text-slate-600">Head of Revenue, RoleColorFinder</p>
             </div>
           </CardContent>
         </Card>
