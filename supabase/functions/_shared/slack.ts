@@ -729,14 +729,40 @@ const ROLE_TIPS: Record<string, string[]> = {
   ],
 };
 
+const ROLE_COLOR_KEYS = ["red", "yellow", "green", "blue"] as const;
+
+const resolveRoleColorFromScores = (scores: unknown) => {
+  if (!scores || typeof scores !== "object" || Array.isArray(scores)) {
+    return null;
+  }
+
+  let topColor: string | null = null;
+  let topScore = -Infinity;
+  for (const color of ROLE_COLOR_KEYS) {
+    const score = Number((scores as Record<string, unknown>)[color]);
+    if (Number.isFinite(score) && score > topScore) {
+      topColor = color;
+      topScore = score;
+    }
+  }
+
+  return topColor;
+};
+
 export const resolveRoleColorFromResults = (results: Record<string, unknown> | null | undefined) => {
   const candidate =
     toText(results?.dominantColor) ||
+    toText(results?.dominant_color) ||
     toText(results?.primaryColor) ||
+    toText(results?.primary_color) ||
     toText(results?.role_color) ||
     toText(results?.color);
 
-  return candidate ? candidate.toLowerCase() : null;
+  if (candidate) {
+    return candidate.toLowerCase();
+  }
+
+  return resolveRoleColorFromScores(results?.scores) || resolveRoleColorFromScores(results?.colorScores);
 };
 
 export const roleColorToProfile = (color: string | null) => {

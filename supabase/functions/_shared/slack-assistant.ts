@@ -7,6 +7,7 @@ import {
   postSlackMessage,
   resolveCompanyUserByEmail,
   resolveCompanyUserBySlackUserId,
+  resolveRoleColorFromResults,
   resolveSlackLookupTargetFromText,
   roleColorToProfile,
   type CompanyContext,
@@ -220,14 +221,7 @@ export const generateSlackAssistantReply = async (params: {
       lookup.email ||
       normalizedText;
     const profile = companyUser?.results
-      ? roleColorToProfile(
-          String(
-            companyUser.results.dominantColor ||
-              companyUser.results.primaryColor ||
-              companyUser.results.role_color ||
-              "",
-          ).toLowerCase(),
-        )
+      ? roleColorToProfile(resolveRoleColorFromResults(companyUser.results))
       : null;
 
     if (!companyUser?.results || !profile) {

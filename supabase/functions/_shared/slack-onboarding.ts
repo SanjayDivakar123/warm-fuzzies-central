@@ -7,6 +7,7 @@ import {
   getSlackUserInfo,
   openDirectMessageChannel,
   postSlackMessage,
+  resolveRoleColorFromResults,
   roleColorToProfile,
   slackApiFetch,
   type CompanyContext,
@@ -175,13 +176,7 @@ const loadAssessmentResults = async (supabase: SupabaseClient, assessmentResultI
   }
 
   const results = (data?.results as Record<string, unknown> | null) ?? null;
-  const color =
-    toText(results?.dominantColor) ||
-    toText(results?.primaryColor) ||
-    toText(results?.role_color) ||
-    toText(results?.color);
-
-  return color ? color.toLowerCase() : null;
+  return resolveRoleColorFromResults(results);
 };
 
 const hydrateCompanyUserIdentity = async (
