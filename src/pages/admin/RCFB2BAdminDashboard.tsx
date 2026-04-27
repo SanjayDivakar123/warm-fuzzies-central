@@ -1548,7 +1548,7 @@ export default function RCFB2BAdminDashboard() {
     } catch (error) {
       toast({
         title: action === "resend" ? "Resend failed" : "Revoke failed",
-        description: getErrorMessage(error),
+        description: action === "resend" ? await getEdgeErrorMessage(error) : getErrorMessage(error),
         variant: "destructive",
       });
     } finally {

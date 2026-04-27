@@ -56,7 +56,8 @@ serve(async (req) => {
 
     if (!company_id) throw new Error("company_id is required");
 
-    // Verify user is admin for this company
+    // Verify caller can add a billable seat. invite-company-user performs
+    // stricter role checks before calling this for admin-level invites.
     const { data: companyUser, error: cuError } = await supabase
       .from("company_users")
       .select("role, status")
@@ -64,8 +65,13 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (cuError || !companyUser || companyUser.role !== "admin" || companyUser.status !== "active") {
-      throw new Error("User is not an admin for this company");
+    if (
+      cuError ||
+      !companyUser ||
+      !["admin", "hr"].includes(companyUser.role) ||
+      companyUser.status !== "active"
+    ) {
+      throw new Error("User is not authorized to invite users for this company");
     }
 
     // Get company details

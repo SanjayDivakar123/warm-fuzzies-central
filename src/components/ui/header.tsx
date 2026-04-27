@@ -215,7 +215,7 @@ function Header1() {
         </div>
 
         <div className="hidden w-full items-center justify-end gap-4 lg:flex">
-          <NavigationMenu className="mr-2 flex items-start justify-start">
+          <NavigationMenu className="mr-2 flex items-start justify-start [&>div]:left-auto [&>div]:right-0">
             <NavigationMenuList className="flex flex-row justify-start gap-2">
               {rightNavigationItems.map((item) => (
                 <NavigationMenuItem key={item.title}>
@@ -230,7 +230,7 @@ function Header1() {
                       <NavigationMenuTrigger className="text-sm font-medium">
                         {item.title}
                       </NavigationMenuTrigger>
-                      <NavigationMenuContent className="!w-[450px] p-4">
+                      <NavigationMenuContent className="!w-[min(450px,calc(100vw-2rem))] p-4">
                         <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2">
                           <div className="flex h-full flex-col justify-between">
                             <div className="flex flex-col">

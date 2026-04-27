@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isSuperAdminEmail, normalizeEmail } from "../_shared/superAdmin.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -313,6 +314,8 @@ serve(async (req) => {
 
     // Create service role client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const callerEmail = normalizeEmail(user.email);
+    const isSuperAdminCaller = await isSuperAdminEmail(supabase, callerEmail);
 
     // Get user details
     const { data: targetUser, error: userError } = await supabase
@@ -332,22 +335,25 @@ serve(async (req) => {
     const isPrivilegedTarget = PRIVILEGED_ROLES.includes(targetUser.role);
 
     // Verify caller can resend this invite.
-    // Admins can resend all invites; HR can resend employee invites only.
-    const { data: adminCheck } = await supabase
-      .from('company_users')
-      .select('role')
-      .eq('company_id', targetUser.company_id)
-      .eq('user_id', user.id)
-      .in('role', isPrivilegedTarget ? ['admin'] : ['admin', 'hr'])
-      .eq('status', 'active')
-      .maybeSingle();
+    // Platform super admins can resend from the RCF dashboard; company admins
+    // can resend all invites; HR can resend employee invites only.
+    if (!isSuperAdminCaller) {
+      const { data: adminCheck } = await supabase
+        .from('company_users')
+        .select('role')
+        .eq('company_id', targetUser.company_id)
+        .eq('user_id', user.id)
+        .in('role', isPrivilegedTarget ? ['admin'] : ['admin', 'hr'])
+        .eq('status', 'active')
+        .maybeSingle();
 
-    if (!adminCheck) {
-      console.log('User cannot resend this invite');
-      return new Response(
-        JSON.stringify({ error: isPrivilegedTarget ? 'Forbidden: Only company admins can resend admin-level invites' : 'Forbidden: You must be a company admin or HR manager' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (!adminCheck) {
+        console.log('User cannot resend this invite');
+        return new Response(
+          JSON.stringify({ error: isPrivilegedTarget ? 'Forbidden: Only company admins or platform super admins can resend admin-level invites' : 'Forbidden: You must be a company admin, HR manager, or platform super admin' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     if (targetUser.status !== 'invited') {
@@ -431,6 +437,18 @@ serve(async (req) => {
         );
 
     console.log('Invite resent, email sent:', emailSent, 'new count:', currentCount + 1);
+
+    if (!emailSent) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invite was updated, but the reminder email could not be sent. Check Mailgun configuration and logs.',
+          emailSent: false,
+          invite_count: currentCount + 1,
+          remaining: MAX_INVITES - (currentCount + 1),
+        }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ 
