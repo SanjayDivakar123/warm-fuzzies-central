@@ -22,6 +22,38 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
+const ROLE_COLOR_KEYS = ['red', 'yellow', 'green', 'blue'] as const
+
+function resolveDominantColorFromScores(scores: unknown): string | null {
+  if (!isRecord(scores)) return null
+
+  let topColor: string | null = null
+  let topScore = -Infinity
+  for (const color of ROLE_COLOR_KEYS) {
+    const score = Number(scores[color])
+    if (Number.isFinite(score) && score > topScore) {
+      topColor = color
+      topScore = score
+    }
+  }
+
+  return topColor
+}
+
+function resolveDominantColor(results: Record<string, unknown>): string | null {
+  const candidate =
+    (typeof results.dominantColor === 'string' && results.dominantColor) ||
+    (typeof results.dominant_color === 'string' && results.dominant_color) ||
+    (typeof results.primaryColor === 'string' && results.primaryColor) ||
+    (typeof results.primary_color === 'string' && results.primary_color) ||
+    (typeof results.role_color === 'string' && results.role_color) ||
+    (typeof results.color === 'string' && results.color)
+
+  if (candidate) return candidate.toLowerCase()
+
+  return resolveDominantColorFromScores(results.scores) || resolveDominantColorFromScores(results.colorScores)
+}
+
 function buildCompanySnapshotAssessmentType(employee: any): string {
   if (employee.assessment_category && employee.assessment_type) {
     return `${employee.assessment_category}_${employee.assessment_type}`
@@ -208,6 +240,7 @@ Deno.serve(async (req) => {
 
     const completionTimestamp = new Date().toISOString()
     const snapshotAssessmentType = buildCompanySnapshotAssessmentType(employee)
+    const importedDominantColor = resolveDominantColor(sourceResults)
 
     let linkedUserId: string | null = employee.user_id || null
     if (PRIVILEGED_ROLES.includes(employee.role)) {
@@ -230,6 +263,7 @@ Deno.serve(async (req) => {
     const snapshotUserId = PRIVILEGED_ROLES.includes(employee.role) ? linkedUserId : employee.id
     const importedResults = {
       ...sourceResults,
+      ...(importedDominantColor ? { dominantColor: importedDominantColor } : {}),
       assessmentType: snapshotAssessmentType,
       completedAt: completionTimestamp,
       companyId,
@@ -310,8 +344,7 @@ Deno.serve(async (req) => {
             employee_name: employee.full_name,
             email: employee.email,
             dominant_color:
-              (typeof importedResults.dominantColor === 'string' && importedResults.dominantColor) ||
-              (typeof importedResults.primaryColor === 'string' && importedResults.primaryColor) ||
+              importedDominantColor ||
               'blue',
             secondary_color:
               typeof importedResults.secondaryColor === 'string' ? importedResults.secondaryColor : null,
