@@ -8,9 +8,9 @@ import { useEffect } from "react";
 
 const JessicahFowler = () => {
   useEffect(() => {
-    const title = "Jessicah Fowler - Head of Revenue | Role Color Finder";
+    const title = "Jessicah Fowler - Head of Revsales | Role Color Finder";
     const description =
-      "Jessicah Fowler is the Head of Revenue at RoleColorFinder, leading go-to-market systems with a focus on clarity, alignment, and scalable growth.";
+      "Jessicah Fowler is the Head of Revsales at RoleColorFinder, leading go-to-market systems with a focus on clarity, alignment, and scalable growth.";
 
     document.title = title;
 
@@ -35,7 +35,7 @@ const JessicahFowler = () => {
       "@context": "https://schema.org",
       "@type": "Person",
       name: "Jessicah Fowler",
-      jobTitle: "Head of Revenue",
+      jobTitle: "Head of Revsales",
       worksFor: {
         "@type": "Organization",
         name: "RoleColor",
@@ -85,7 +85,7 @@ const JessicahFowler = () => {
                 <div className="p-6 space-y-4">
                   <div>
                     <h1 className="text-2xl font-bold">Jessicah Fowler</h1>
-                    <p className="text-lg text-primary font-semibold">Head of Revenue</p>
+                    <p className="text-lg text-primary font-semibold">Head of Revsales</p>
                   </div>
 
                   <div className="space-y-3 text-sm">
@@ -121,13 +121,13 @@ const JessicahFowler = () => {
 
           <div className="lg:col-span-2 space-y-8">
             <section>
-              <Badge variant="default" className="mb-4">Head of Revenue</Badge>
+              <Badge variant="default" className="mb-4">Head of Revsales</Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Designing Systems That Scale Human-Centered Growth
               </h2>
               <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
                 <p>
-                  Jessicah Fowler is the Head of Revenue at RoleColorFinder, where she leads the
+                  Jessicah Fowler is the Head of Revsales at RoleColorFinder, where she leads the
                   design and execution of the company&apos;s go-to-market systems with a focus on clarity,
                   alignment, and measurable impact. She is known for building the operational backbone that
                   allows fast-moving teams to scale without losing cohesion, connecting people, process, and

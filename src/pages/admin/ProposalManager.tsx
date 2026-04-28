@@ -103,7 +103,7 @@ This proposal is the starting point. Our team is ready to move quickly, work clo
 const blankForm = (): ProposalForm => ({
   proposal_title: "",
   company_name: "",
-  submitted_by: "Jessicah Fowler, Head of Revenue",
+  submitted_by: "Jessicah Fowler, Head of Revsales",
   slug: "",
   proposal_id: "",
   background_image_url:
