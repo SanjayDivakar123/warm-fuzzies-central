@@ -98,6 +98,18 @@ const colorData = {
   },
 };
 
+function getCelebrityNameError(name: string) {
+  const trimmed = name.trim();
+  const letters = trimmed.replace(/[^\p{L}]/gu, "").toLowerCase();
+
+  if (!trimmed) return "Celebrity name is required";
+  if (trimmed.length < 3 || trimmed.length > 80) return "Use a real name between 3 and 80 characters";
+  if (/^\d+$/.test(trimmed)) return "Names cannot be only numbers";
+  if (!/^[\p{L}\p{N} .,'-:]+$/u.test(trimmed)) return "Use a name, not symbols or a URL";
+  if (letters.length < 2 || /^(\p{L})\1+$/u.test(letters)) return "Enter a recognizable celebrity or character";
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -108,6 +120,15 @@ serve(async (req) => {
     
     if (!celebrityName || typeof celebrityName !== 'string') {
       throw new Error('Celebrity name is required');
+    }
+
+    const sanitizedCelebrityName = celebrityName.trim().replace(/\s+/g, " ");
+    const inputError = getCelebrityNameError(sanitizedCelebrityName);
+    if (inputError) {
+      return new Response(JSON.stringify({ error: inputError }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
@@ -147,13 +168,15 @@ Think deeply about:
 
 Return ONLY a JSON array of exactly 50 letters. Each answer should thoughtfully reflect how this person would genuinely respond to that specific question.`;
 
-    const userPrompt = `You ARE now "${celebrityName}". Fully embody this person's mindset, values, and behavioral patterns.
+    const userPrompt = `First verify "${sanitizedCelebrityName}" is a real, recognizable celebrity, public figure, or fictional character. If it is gibberish, generic, or unknown, return exactly {"error":"unknown_character"}.
 
-Read each question carefully and answer as ${celebrityName} would genuinely answer, based on their known personality, famous behaviors, and documented characteristics.
+You ARE now "${sanitizedCelebrityName}". Fully embody this person's mindset, values, and behavioral patterns.
+
+Read each question carefully and answer as ${sanitizedCelebrityName} would genuinely answer, based on their known personality, famous behaviors, and documented characteristics.
 
 ${questionsText}
 
-Think through each question individually. Consider: "What would ${celebrityName} actually do/think in this situation based on what I know about them?"
+Think through each question individually. Consider: "What would ${sanitizedCelebrityName} actually do/think in this situation based on what I know about them?"
 
 REMEMBER: Your answers MUST include at least 3 different letters (representing 3+ colors). No real person answers identically to all scenarios!
 
@@ -188,7 +211,14 @@ Return ONLY a JSON array of exactly 50 letters (A, B, C, or D). Example format: 
     // Parse the answers
     let answers: string[];
     try {
-      answers = JSON.parse(answersText);
+      const parsed = JSON.parse(answersText);
+      if (parsed?.error === "unknown_character") {
+        return new Response(JSON.stringify({ error: "Enter a recognizable celebrity or fictional character" }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      answers = parsed;
     } catch {
       // Try to extract letters if JSON parsing fails
       const letterMatches = answersText.match(/[ABCD]/g);
@@ -226,7 +256,7 @@ Return ONLY a JSON array of exactly 50 letters (A, B, C, or D). Example format: 
     const secondaryColor = sortedColors[1][0] as keyof typeof colorData;
 
     const result = {
-      celebrityName,
+      celebrityName: sanitizedCelebrityName,
       dominantColor,
       secondaryColor,
       scores: colorCounts,
