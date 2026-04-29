@@ -61,6 +61,18 @@ const colorStyles: Record<string, { gradient: string; bg: string; text: string; 
   blue: { gradient: "bg-gradient-to-br from-blue-400 to-indigo-500", bg: "bg-blue-50 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400", border: "border-blue-500/30" },
 };
 
+const getCelebrityNameError = (name: string) => {
+  const trimmed = name.trim();
+  const letters = trimmed.replace(/[^\p{L}]/gu, "").toLowerCase();
+
+  if (!trimmed) return "Enter a celebrity or fictional character name.";
+  if (trimmed.length < 3 || trimmed.length > 80) return "Use a real name between 3 and 80 characters.";
+  if (/^\d+$/.test(trimmed)) return "Names cannot be only numbers.";
+  if (!/^[\p{L}\p{N} .,'-:]+$/u.test(trimmed)) return "Use a name, not symbols or a URL.";
+  if (letters.length < 2 || /^(\p{L})\1+$/u.test(letters)) return "Enter a recognizable celebrity or character.";
+  return null;
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -80,12 +92,17 @@ const Index = () => {
   } = useAuth();
 
   const handleCelebrityAnalysis = async () => {
-    if (!celebrityName.trim()) return;
+    const name = celebrityName.trim().replace(/\s+/g, " ");
+    const inputError = getCelebrityNameError(name);
+    if (inputError) {
+      toast({ title: "Invalid name", description: inputError, variant: "destructive" });
+      return;
+    }
     
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('celebrity-assessment', {
-        body: { celebrityName: celebrityName.trim() }
+        body: { celebrityName: name }
       });
 
       if (error) throw error;
@@ -96,7 +113,7 @@ const Index = () => {
       console.error('Celebrity analysis error:', error);
       toast({
         title: "Analysis Failed",
-        description: "Could not analyze this celebrity. Please try again.",
+        description: "Enter a recognizable celebrity or fictional character.",
         variant: "destructive"
       });
     } finally {

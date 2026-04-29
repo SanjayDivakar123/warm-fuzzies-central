@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,11 +12,14 @@ import { generateLOIPdf } from "@/lib/proposalPdfExport";
 import { Download, FileText, PenLine, CheckCircle2, ChevronDown } from "lucide-react";
 import type { Proposal } from "@/pages/admin/ProposalManager";
 import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
+import { formatDeploymentFeeLabel, parseProposalFeeToCents } from "@/lib/proposalPricing";
 
 export default function ProposalLOI() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const isPreview = searchParams.get("preview") === "1";
 
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -71,25 +74,28 @@ export default function ProposalLOI() {
   }
 
   const { pricing, company_name: company } = proposal;
+  const setupFee = parseProposalFeeToCents(pricing.platformDeployment);
   const canSign = agreed && signedName.trim().length >= 2;
 
   async function handleSign() {
     if (!canSign || submitting) return;
     setSubmitting(true);
     try {
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from("proposal_acceptances")
-        .insert({
-          proposal_slug: slug!,
-          loi_signed_name: signedName.trim(),
-          loi_signed_at: now,
-          status: "loe_pending",
-        })
-        .select("id").single();
+      if (isPreview) {
+        setAcceptanceId("preview");
+        setSigned(true);
+        return;
+      }
 
-      if (error || !data) throw error ?? new Error("Failed to record signature");
-      setAcceptanceId(data.id);
+      const { data, error } = await supabase.functions.invoke("sign-proposal-loi", {
+        body: {
+          proposalSlug: slug,
+          signedName: signedName.trim(),
+        },
+      });
+
+      if (error || !data?.acceptanceId) throw new Error(error?.message ?? data?.error ?? "Failed to record signature");
+      setAcceptanceId(data.acceptanceId);
       setSigned(true);
     } catch (err: unknown) {
       toast({ title: "Error", description: err instanceof Error ? err.message : "Please try again", variant: "destructive" });
@@ -112,7 +118,7 @@ export default function ProposalLOI() {
   }
 
   function handleContinue() {
-    navigate(`/client/${slug}/loe?acceptance_id=${acceptanceId}`);
+    navigate(`/client/${slug}/loe?acceptance_id=${acceptanceId}${isPreview ? "&preview=1" : ""}`);
   }
 
   /* ─── Signed state ─── */
@@ -125,9 +131,11 @@ export default function ProposalLOI() {
               <CheckCircle2 className="h-9 w-9 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Letter of Intent Signed</h2>
+              <h2 className="text-2xl font-bold text-slate-900">{isPreview ? "Letter of Intent Preview Signed" : "Letter of Intent Signed"}</h2>
               <p className="text-slate-500 text-sm mt-2">
-                Your signature has been recorded. Download your copy of the LOI, then proceed to sign the Letter of Engagement.
+                {isPreview
+                  ? "Preview mode is showing the next step without recording this signature."
+                  : "Your signature has been recorded. Download your copy of the LOI, then proceed to sign the Letter of Engagement."}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left space-y-2 text-sm">
@@ -299,8 +307,11 @@ export default function ProposalLOI() {
               </ArticleItem>
               <PricingTable pricing={pricing} />
               <ArticleItem n="3.2">
-                The Platform Deployment Fee of <strong>{pricing.platformDeployment}</strong> is a one-time, non-refundable
-                investment payable in full upon execution of the Letter of Engagement.
+                {setupFee === 0 ? (
+                  "The Platform Deployment Fee is waived for this engagement."
+                ) : (
+                  <>The Platform Deployment Fee of <strong>{pricing.platformDeployment}</strong> is a one-time, non-refundable investment payable in full upon execution of the Letter of Engagement.</>
+                )}
               </ArticleItem>
               <ArticleItem n="3.3">
                 Monthly recurring fees will be invoiced on the first business day of each calendar month,
@@ -512,14 +523,14 @@ function TimelineList({ items }: { items: { period: string; desc: string }[] }) 
 
 function PricingTable({ pricing }: { pricing: ProposalPricing }) {
   const rows = [
-    { category: "One-Time", label: "Platform Deployment Fee", value: pricing.platformDeployment },
+    { category: "One-Time", label: "Platform Deployment Fee", value: formatDeploymentFeeLabel(pricing.platformDeployment) },
     { category: "One-Time", label: "Employee Onboarding (per employee)", value: pricing.employeeOnboarding },
     { category: "Monthly", label: "Core Platform Access", value: pricing.corePlatformMonthly },
     { category: "Monthly", label: "Hiring Intelligence Platform", value: pricing.hiringIntelligenceMonthly },
     { category: "Monthly", label: `Included: ${pricing.includedJobRoles} roles · ${pricing.applicantsPerRole} applicants/role`, value: "Included" },
-    { category: "Scaling", label: pricing.scalingNote, value: pricing.scalingPrice },
-    { category: "Outcome", label: "Per successful hire", value: pricing.outcomePrice },
-  ];
+    pricing.scalingPrice || pricing.scalingNote ? { category: "Scaling", label: pricing.scalingNote, value: pricing.scalingPrice } : null,
+    pricing.outcomePrice ? { category: "Outcome", label: pricing.outcomeNote || "Per successful hire", value: pricing.outcomePrice } : null,
+  ].filter((row): row is { category: string; label: string; value: string } => Boolean(row));
 
   const colorMap: Record<string, string> = {
     "One-Time": "bg-emerald-100 text-emerald-700",

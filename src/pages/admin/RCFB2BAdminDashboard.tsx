@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -148,6 +149,22 @@ interface ContactQueryRow {
   replied_at?: string | null;
 }
 
+interface FreeAssessmentSubmissionRow {
+  id: string;
+  email: string;
+  dominant_color: string;
+  scores: {
+    yellow?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
+  } | null;
+  result_payload: Record<string, unknown>;
+  email_sent_at: string | null;
+  email_error: string | null;
+  created_at: string;
+}
+
 interface SuperAdminRow {
   id: string;
   user_id: string | null;
@@ -240,6 +257,11 @@ const formatUsd = (amount: number) =>
 const formatShortDate = (value: string | null) =>
   value ? new Date(value).toLocaleDateString() : "N/A";
 
+const formatScores = (scores: FreeAssessmentSubmissionRow["scores"]) =>
+  scores
+    ? `Y ${scores.yellow ?? 0} / R ${scores.red ?? 0} / G ${scores.green ?? 0} / B ${scores.blue ?? 0}`
+    : "N/A";
+
 interface SearchableOption {
   value: string;
   label: string;
@@ -330,6 +352,11 @@ export default function RCFB2BAdminDashboard() {
   const [contactSearch, setContactSearch] = useState("");
   const [contactStatusFilter, setContactStatusFilter] = useState<"all" | "new" | "reviewed" | "resolved">("all");
   const [updatingContactId, setUpdatingContactId] = useState<string | null>(null);
+  const [freeAssessmentSubmissions, setFreeAssessmentSubmissions] = useState<FreeAssessmentSubmissionRow[]>([]);
+  const [freeAssessmentSubmissionsLoading, setFreeAssessmentSubmissionsLoading] = useState(false);
+  const [freeAssessmentSearch, setFreeAssessmentSearch] = useState("");
+  const [freeAssessmentColorFilter, setFreeAssessmentColorFilter] = useState<"all" | "yellow" | "red" | "green" | "blue">("all");
+  const [selectedFreeAssessmentSubmission, setSelectedFreeAssessmentSubmission] = useState<FreeAssessmentSubmissionRow | null>(null);
   const [sendingResetTo, setSendingResetTo] = useState<string | null>(null);
   const [billingCompanyId, setBillingCompanyId] = useState<string>("");
   const [billingAmountUsd, setBillingAmountUsd] = useState<string>("");
@@ -549,6 +576,18 @@ export default function RCFB2BAdminDashboard() {
     };
   }, [contactQueries]);
 
+  const freeAssessmentStats = useMemo(() => {
+    const emailedCount = freeAssessmentSubmissions.filter((submission) => submission.email_sent_at).length;
+    const failedEmailCount = freeAssessmentSubmissions.filter((submission) => submission.email_error).length;
+
+    return {
+      total: freeAssessmentSubmissions.length,
+      emailedCount,
+      failedEmailCount,
+      uniqueEmails: new Set(freeAssessmentSubmissions.map((submission) => submission.email.toLowerCase())).size,
+    };
+  }, [freeAssessmentSubmissions]);
+
   const pendingInvites = useMemo(
     () => companyUsers.filter((member) => !!member.invited_at && !member.joined_at),
     [companyUsers],
@@ -599,6 +638,7 @@ export default function RCFB2BAdminDashboard() {
       { value: "company-users", label: "Company Users", description: "Inspect a workspace roster", icon: Users },
       { value: "platform-users", label: "Platform Users", description: "Reset access and filter users", icon: UserCog },
       { value: "contact-queries", label: "Contact Queries", description: "Triage inbound requests", icon: MessageSquareText },
+      { value: "free-assessments", label: "Free Assessments", description: "Captured preview results", icon: Sparkles },
       { value: "proposals", label: "Proposals", description: "Client proposal management", icon: FileText, href: "/admin/proposals" },
     ],
     [],
@@ -913,6 +953,42 @@ export default function RCFB2BAdminDashboard() {
       setContactQueriesLoading(false);
     }
   }, [contactAssigneeFilter, contactSearch, contactStatusFilter, toast]);
+
+  const fetchFreeAssessmentSubmissions = useCallback(async () => {
+    setFreeAssessmentSubmissionsLoading(true);
+    try {
+      let query = supabase
+        .from("free_assessment_submissions")
+        .select("id, email, dominant_color, scores, result_payload, email_sent_at, email_error, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (freeAssessmentColorFilter !== "all") {
+        query = query.eq("dominant_color", freeAssessmentColorFilter);
+      }
+
+      if (freeAssessmentSearch.trim()) {
+        const escapedSearch = freeAssessmentSearch.trim().replace(/,/g, " ");
+        query = query.ilike("email", `%${escapedSearch}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setFreeAssessmentSubmissions((data || []).map((submission) => ({
+        ...submission,
+        scores: submission.scores as FreeAssessmentSubmissionRow["scores"],
+        result_payload: (submission.result_payload || {}) as Record<string, unknown>,
+      })));
+    } catch (error: unknown) {
+      toast({
+        title: "Error loading free assessments",
+        description: getErrorMessage(error) || "Unable to load free assessment submissions right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setFreeAssessmentSubmissionsLoading(false);
+    }
+  }, [freeAssessmentColorFilter, freeAssessmentSearch, toast]);
 
   const updateContactQueryStatus = async (id: string, status: "new" | "reviewed" | "resolved") => {
     setUpdatingContactId(id);
@@ -1344,6 +1420,18 @@ export default function RCFB2BAdminDashboard() {
       })), `contact-queries-export.${format}`);
       return;
     }
+    if (tab === "free-assessments") {
+      exportFn(freeAssessmentSubmissions.map((submission) => ({
+        submitted_at: submission.created_at,
+        email: submission.email,
+        dominant_color: submission.dominant_color,
+        scores: formatScores(submission.scores),
+        email_sent_at: submission.email_sent_at || "",
+        email_error: submission.email_error || "",
+        result_payload: submission.result_payload,
+      })), `free-assessments-export.${format}`);
+      return;
+    }
     if (tab === "admin-action-logs") {
       exportFn(adminActionLogs.map((row) => ({
         created_at: row.created_at,
@@ -1732,6 +1820,14 @@ export default function RCFB2BAdminDashboard() {
   }, [accessChecked, activeTab, contactSearch, contactStatusFilter, fetchContactQueries, isAllowed, contactAssigneeFilter]);
 
   useEffect(() => {
+    if (!accessChecked || !isAllowed || activeTab !== "free-assessments") return;
+    const timeoutId = setTimeout(() => {
+      fetchFreeAssessmentSubmissions();
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [accessChecked, activeTab, fetchFreeAssessmentSubmissions, freeAssessmentColorFilter, freeAssessmentSearch, isAllowed]);
+
+  useEffect(() => {
     if (!selectedCompany) return;
     setEditCompanyName(selectedCompany.name);
     setEditCompanySubdomain(selectedCompany.subdomain);
@@ -1798,10 +1894,18 @@ export default function RCFB2BAdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                 <Button
                   variant="outline"
-                  className="border-slate-200 bg-white/80"
+                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
+                  onClick={() => setActiveTab("free-assessments")}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Free Assessments
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
                   onClick={() => navigate("/admin/proposals")}
                 >
                   <ArrowUpRight className="mr-2 h-4 w-4" />
@@ -1809,7 +1913,7 @@ export default function RCFB2BAdminDashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-slate-200 bg-white/80"
+                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
                   onClick={() => navigate("/dashboard")}
                 >
                   Back 2 Dashboard
@@ -1876,7 +1980,7 @@ export default function RCFB2BAdminDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col gap-4">
-            <TabsList className="grid h-auto grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 xl:grid-cols-5">
+            <TabsList className="grid h-auto grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               const isLink = "href" in tab;
@@ -1888,15 +1992,15 @@ export default function RCFB2BAdminDashboard() {
                     type="button"
                     variant="ghost"
                     onClick={() => navigate(tab.href)}
-                    className="h-auto rounded-2xl border border-transparent px-4 py-4 text-left justify-start hover:bg-slate-100"
+                    className="h-auto min-w-0 rounded-2xl border border-transparent px-4 py-4 text-left justify-start hover:bg-slate-100"
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <div className="rounded-xl bg-slate-100 p-2 text-slate-700">
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div className="space-y-1">
-                        <div className="font-medium">{tab.label}</div>
-                        <div className="text-xs text-slate-500">{tab.description}</div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="truncate font-medium">{tab.label}</div>
+                        <div className="truncate text-xs text-slate-500">{tab.description}</div>
                       </div>
                     </div>
                   </Button>
@@ -1907,15 +2011,15 @@ export default function RCFB2BAdminDashboard() {
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="h-auto rounded-2xl border border-transparent px-4 py-4 text-left data-[state=active]:border-slate-300 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-950"
+                  className="h-auto min-w-0 rounded-2xl border border-transparent px-4 py-4 text-left data-[state=active]:border-slate-300 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-950"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <div className="rounded-xl bg-slate-100 p-2 text-slate-700">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div className="space-y-1">
-                      <div className="font-medium">{tab.label}</div>
-                      <div className="text-xs text-slate-500">{tab.description}</div>
+                    <div className="min-w-0 space-y-1">
+                      <div className="truncate font-medium">{tab.label}</div>
+                      <div className="truncate text-xs text-slate-500">{tab.description}</div>
                     </div>
                   </div>
                 </TabsTrigger>
@@ -3392,6 +3496,146 @@ export default function RCFB2BAdminDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="free-assessments">
+            <div className="grid gap-6">
+              <div className="grid gap-4 md:grid-cols-4">
+                <Card className="border-slate-200/80 bg-white/90 shadow-sm">
+                  <CardContent className="p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Visible submissions</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{freeAssessmentStats.total}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-emerald-100 bg-emerald-50/80 shadow-sm">
+                  <CardContent className="p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-700">Emails sent</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{freeAssessmentStats.emailedCount}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-rose-100 bg-rose-50/80 shadow-sm">
+                  <CardContent className="p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-rose-700">Email errors</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{freeAssessmentStats.failedEmailCount}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-slate-200/80 bg-white/90 shadow-sm">
+                  <CardContent className="p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Unique emails</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{freeAssessmentStats.uniqueEmails}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-slate-200/80 bg-white/90 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Free Assessment Filters</CardTitle>
+                  <CardDescription>Search captured preview results by email or color.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto_auto_auto]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        className="pl-9"
+                        placeholder="Search email"
+                        value={freeAssessmentSearch}
+                        onChange={(event) => setFreeAssessmentSearch(event.target.value)}
+                      />
+                    </div>
+                    <Select
+                      value={freeAssessmentColorFilter}
+                      onValueChange={(value) => setFreeAssessmentColorFilter(value as typeof freeAssessmentColorFilter)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All colors</SelectItem>
+                        <SelectItem value="yellow">Yellow</SelectItem>
+                        <SelectItem value="red">Red</SelectItem>
+                        <SelectItem value="green">Green</SelectItem>
+                        <SelectItem value="blue">Blue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={fetchFreeAssessmentSubmissions} disabled={freeAssessmentSubmissionsLoading}>
+                      {freeAssessmentSubmissionsLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                      )}
+                      Refresh
+                    </Button>
+                    <Button variant="outline" onClick={() => handleExport("csv", "free-assessments")}>CSV</Button>
+                    <Button variant="outline" onClick={() => handleExport("json", "free-assessments")}>JSON</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200/80 bg-white/90 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Free Assessment Submissions</CardTitle>
+                  <CardDescription>Email-gated results from the public free assessment.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {freeAssessmentSubmissionsLoading ? (
+                    <div className="py-8 text-center text-muted-foreground">Loading free assessment submissions...</div>
+                  ) : (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Submitted</TableHead>
+                              <TableHead>Email</TableHead>
+                              <TableHead>Result</TableHead>
+                              <TableHead>Scores</TableHead>
+                              <TableHead>Email status</TableHead>
+                              <TableHead>Error</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {freeAssessmentSubmissions.map((submission) => (
+                              <TableRow key={submission.id}>
+                                <TableCell>{new Date(submission.created_at).toLocaleString()}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="link"
+                                    className="h-auto p-0 text-left font-medium text-slate-900 underline-offset-4 hover:underline"
+                                    onClick={() => setSelectedFreeAssessmentSubmission(submission)}
+                                  >
+                                    {submission.email}
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="capitalize">{submission.dominant_color}</Badge>
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">{formatScores(submission.scores)}</TableCell>
+                                <TableCell>
+                                  <Badge variant={submission.email_error ? "destructive" : submission.email_sent_at ? "default" : "secondary"}>
+                                    {submission.email_error ? "Failed" : submission.email_sent_at ? "Sent" : "Pending"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="max-w-xs whitespace-normal break-words text-sm text-muted-foreground">
+                                  {submission.email_error || "-"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            {freeAssessmentSubmissions.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                                  No free assessment submissions matched this filter.
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="contact-queries">
             <div className="grid gap-6">
               <div className="grid gap-4 md:grid-cols-4">
@@ -3623,6 +3867,77 @@ export default function RCFB2BAdminDashboard() {
           open={!!statementModalCompany}
           onClose={() => setStatementModalCompany(null)}
         />
+
+        <Dialog
+          open={!!selectedFreeAssessmentSubmission}
+          onOpenChange={(open) => {
+            if (!open) setSelectedFreeAssessmentSubmission(null);
+          }}
+        >
+          <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Free Assessment Entry</DialogTitle>
+              <DialogDescription>
+                Full captured details for this email-gated free assessment result.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedFreeAssessmentSubmission ? (
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Email</p>
+                    <p className="mt-2 break-all text-sm font-semibold text-slate-950">{selectedFreeAssessmentSubmission.email}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Submitted</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {new Date(selectedFreeAssessmentSubmission.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Result</p>
+                    <Badge variant="outline" className="mt-2 capitalize">{selectedFreeAssessmentSubmission.dominant_color}</Badge>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Scores</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">{formatScores(selectedFreeAssessmentSubmission.scores)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Email Sent</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {selectedFreeAssessmentSubmission.email_sent_at
+                        ? new Date(selectedFreeAssessmentSubmission.email_sent_at).toLocaleString()
+                        : "Not sent"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Email Status</p>
+                    <Badge
+                      className="mt-2"
+                      variant={selectedFreeAssessmentSubmission.email_error ? "destructive" : selectedFreeAssessmentSubmission.email_sent_at ? "default" : "secondary"}
+                    >
+                      {selectedFreeAssessmentSubmission.email_error ? "Failed" : selectedFreeAssessmentSubmission.email_sent_at ? "Sent" : "Pending"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {selectedFreeAssessmentSubmission.email_error ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-rose-700">Email Error</p>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-rose-900">{selectedFreeAssessmentSubmission.email_error}</p>
+                  </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4">
+                  <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-300">Raw Result Payload</p>
+                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-100">
+                    {JSON.stringify(selectedFreeAssessmentSubmission.result_payload, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog
           open={pendingBillingAction !== null}

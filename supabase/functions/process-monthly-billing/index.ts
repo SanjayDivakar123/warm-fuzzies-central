@@ -2,9 +2,9 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import {
-  CORE_PLATFORM_MONTHLY_DOLLARS,
-  HIRING_INTELLIGENCE_MONTHLY_DOLLARS,
   getActiveRoleScalingCharge,
+  getCorePlatformMonthlyDollars,
+  getHiringIntelligenceMonthlyDollars,
   getOutcomeBasedCharge,
   getNextRenewalAt,
   getPreviousRenewalAt,
@@ -110,7 +110,7 @@ serve(async (req) => {
     // Get all companies with billing state. Exact-date gating happens per company below.
     const { data: companies, error: companiesError } = await supabase
       .from("companies")
-      .select("id, name, admin_email, created_at, seats_purchased, credit_balance, stripe_customer_id, portal_billing_anchor_at, portal_billing_next_renewal_at, portal_access_locked, portal_access_outstanding_balance, hiring_subscription_enabled, hiring_subscription_status, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at");
+      .select("id, name, admin_email, created_at, seats_purchased, credit_balance, stripe_customer_id, portal_billing_anchor_at, portal_billing_next_renewal_at, portal_access_locked, portal_access_outstanding_balance, hiring_subscription_enabled, hiring_subscription_status, b2b_trial_enabled, b2b_trial_starts_at, b2b_trial_ends_at, b2b_trial_user_limit, b2b_trial_converted_at, portal_core_monthly_dollars, portal_hiring_monthly_dollars, portal_included_active_job_roles, portal_active_role_scale_block_size, portal_active_role_scale_block_monthly_dollars, portal_outcome_price_per_hire_dollars");
 
     if (companiesError) throw new Error(`Failed to fetch companies: ${companiesError.message}`);
 
@@ -360,10 +360,10 @@ serve(async (req) => {
         const hasHiringIntelligence = company.hiring_subscription_enabled &&
           ["active", "trialing", "admin_override"].includes(company.hiring_subscription_status || "");
 
-        const coreCharge = CORE_PLATFORM_MONTHLY_DOLLARS;
-        const hiringBaseCharge = hasHiringIntelligence ? HIRING_INTELLIGENCE_MONTHLY_DOLLARS : 0;
-        const activeRoleScalingCharge = hasHiringIntelligence ? getActiveRoleScalingCharge(activeRoleCount) : 0;
-        const outcomeBasedCharge = hasHiringIntelligence ? getOutcomeBasedCharge(successfulHires) : 0;
+        const coreCharge = getCorePlatformMonthlyDollars(company);
+        const hiringBaseCharge = hasHiringIntelligence ? getHiringIntelligenceMonthlyDollars(company) : 0;
+        const activeRoleScalingCharge = hasHiringIntelligence ? getActiveRoleScalingCharge(activeRoleCount, company) : 0;
+        const outcomeBasedCharge = hasHiringIntelligence ? getOutcomeBasedCharge(successfulHires, company) : 0;
 
         totalCharge = toMoney(coreCharge + hiringBaseCharge + activeRoleScalingCharge + outcomeBasedCharge + trialUsageCharge);
         const creditBalance = toMoney(Number(company.credit_balance || 0));

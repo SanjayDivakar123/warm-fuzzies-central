@@ -12,6 +12,7 @@ import { generateLOEPdf } from "@/lib/proposalPdfExport";
 import { Download, ShieldCheck, PenLine, CheckCircle2, ChevronDown } from "lucide-react";
 import type { Proposal } from "@/pages/admin/ProposalManager";
 import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
+import { parseProposalFeeToCents, formatDeploymentFeeLabel } from "@/lib/proposalPricing";
 
 export default function ProposalLOE() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,6 +21,7 @@ export default function ProposalLOE() {
   const { toast } = useToast();
 
   const acceptanceId = searchParams.get("acceptance_id");
+  const isPreview = searchParams.get("preview") === "1";
 
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -74,23 +76,28 @@ export default function ProposalLOE() {
   }
 
   const { pricing, company_name: company } = proposal;
+  const setupFee = parseProposalFeeToCents(pricing.platformDeployment);
+  const setupFeeLabel = formatDeploymentFeeLabel(pricing.platformDeployment);
   const canSign = agreed && signedName.trim().length >= 2;
 
   async function handleSign() {
     if (!canSign || submitting || !acceptanceId) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("proposal_acceptances")
-        .update({
-          loe_signed_name: signedName.trim(),
-          loe_signed_at: new Date().toISOString(),
-          agreement_accepted: true,
-          status: "payment_pending",
-        })
-        .eq("id", acceptanceId);
+      if (isPreview) {
+        setSigned(true);
+        return;
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("sign-proposal-loe", {
+        body: {
+          proposalSlug: slug,
+          acceptanceId,
+          signedName: signedName.trim(),
+        },
+      });
+
+      if (error || data?.success === false) throw new Error(error?.message ?? data?.error ?? "Failed to record signature");
       setSigned(true);
     } catch (err: unknown) {
       toast({ title: "Error", description: err instanceof Error ? err.message : "Please try again", variant: "destructive" });
@@ -113,7 +120,7 @@ export default function ProposalLOE() {
   }
 
   function handleContinue() {
-    navigate(`/client/${slug}/payment?acceptance_id=${acceptanceId}`);
+    navigate(`/client/${slug}/payment?acceptance_id=${acceptanceId}${isPreview ? "&preview=1" : ""}`);
   }
 
   /* ─── Signed state ─── */
@@ -126,9 +133,11 @@ export default function ProposalLOE() {
               <CheckCircle2 className="h-9 w-9 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Letter of Engagement Signed</h2>
+              <h2 className="text-2xl font-bold text-slate-900">{isPreview ? "Letter of Engagement Preview Signed" : "Letter of Engagement Signed"}</h2>
               <p className="text-slate-500 text-sm mt-2">
-                Both documents are now signed. Download your copy of the LOE, then proceed to complete the platform deployment payment.
+                {isPreview
+                  ? "Preview mode is showing the payment step without recording this signature."
+                  : "Both documents are now signed. Download your copy of the LOE, then proceed to complete the platform deployment payment."}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left space-y-2 text-sm">
@@ -153,10 +162,12 @@ export default function ProposalLOE() {
                   : <><Download className="h-4 w-4" /> Download LOE as PDF</>}
               </Button>
               <Button className="w-full gap-2 h-11 bg-emerald-600 hover:bg-emerald-500 text-white" onClick={handleContinue}>
-                Proceed to Payment — $5,000 →
+                {setupFee === 0 ? "Proceed to Save Card →" : `Proceed to Payment — ${setupFeeLabel} →`}
               </Button>
             </div>
-            <p className="text-xs text-slate-400">Final step: pay the platform deployment fee to begin onboarding.</p>
+            <p className="text-xs text-slate-400">
+              {setupFee === 0 ? "Final step: save a card for future monthly billing to begin onboarding." : "Final step: pay the platform deployment fee to begin onboarding."}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -335,9 +346,12 @@ export default function ProposalLOE() {
               </ArticleItem>
               <PricingTable pricing={pricing} />
               <ArticleItem n="4.2">
-                <strong>Platform Deployment Fee.</strong> The one-time fee of <strong>{pricing.platformDeployment}</strong> is
-                payable in full prior to commencement of any services. This fee is non-refundable once deployment
-                has commenced and covers full platform setup, configuration, and implementation support.
+                <strong>Platform Deployment Fee.</strong>{" "}
+                {setupFee === 0 ? (
+                  "The Platform Deployment Fee is waived for this engagement."
+                ) : (
+                  <>The one-time fee of <strong>{pricing.platformDeployment}</strong> is payable in full prior to commencement of any services. This fee is non-refundable once deployment has commenced and covers full platform setup, configuration, and implementation support.</>
+                )}
               </ArticleItem>
               <ArticleItem n="4.3">
                 <strong>Employee Onboarding Fee.</strong> The per-employee fee of <strong>{pricing.employeeOnboarding}</strong> will
@@ -349,16 +363,20 @@ export default function ProposalLOE() {
                 each calendar month, commencing thirty (30) days following the Deployment Date. Invoices are
                 payable within fifteen (15) calendar days. Late payments accrue interest at 1.5% per month.
               </ArticleItem>
-              <ArticleItem n="4.5">
-                <strong>Scaling Fees.</strong> Additional active job roles beyond the included{" "}
-                <strong>{pricing.includedJobRoles}</strong> will incur a scaling fee of{" "}
-                <strong>{pricing.scalingPrice} {pricing.scalingNote}</strong>, invoiced monthly.
-              </ArticleItem>
-              <ArticleItem n="4.6">
-                <strong>Outcome-Based Fees.</strong> A fee of <strong>{pricing.outcomePrice}</strong> will be invoiced for
-                each verified successful hire made through the Hiring Intelligence module.{" "}
-                {pricing.outcomeNote}
-              </ArticleItem>
+              {pricing.scalingPrice || pricing.scalingNote ? (
+                <ArticleItem n="4.5">
+                  <strong>Scaling Fees.</strong> Additional active job roles beyond the included{" "}
+                  <strong>{pricing.includedJobRoles}</strong> will incur a scaling fee of{" "}
+                  <strong>{pricing.scalingPrice} {pricing.scalingNote}</strong>, invoiced monthly.
+                </ArticleItem>
+              ) : null}
+              {pricing.outcomePrice || pricing.outcomeNote ? (
+                <ArticleItem n="4.6">
+                  <strong>Outcome-Based Fees.</strong>{" "}
+                  {pricing.outcomePrice ? <>A fee of <strong>{pricing.outcomePrice}</strong> will be invoiced for each verified successful hire made through the Hiring Intelligence module. </> : null}
+                  {pricing.outcomeNote}
+                </ArticleItem>
+              ) : null}
               <ArticleItem n="4.7">
                 All fees are denominated in United States Dollars (USD) and are exclusive of applicable taxes,
                 levies, or duties, which are the sole responsibility of the Client.
@@ -493,7 +511,7 @@ export default function ProposalLOE() {
               </ArticleItem>
               <ArticleItem n="12.2">
                 <strong>Termination for Convenience.</strong> Either party may terminate monthly Services with thirty (30) days'
-                written notice. The one-time Platform Deployment Fee is non-refundable.
+                written notice.{setupFee === 0 ? " No Platform Deployment Fee is due for this engagement." : " The one-time Platform Deployment Fee is non-refundable."}
               </ArticleItem>
               <ArticleItem n="12.3">
                 <strong>Termination for Cause.</strong> Either party may terminate immediately if the other party materially
@@ -587,7 +605,7 @@ export default function ProposalLOE() {
                 </Button>
 
                 <p className="text-center text-xs text-slate-400">
-                  After signing, you will download the signed LOE as a PDF, then proceed to the $5,000 platform deployment payment.
+                  After signing, you will download the signed LOE as a PDF, then proceed to {setupFee === 0 ? "save a card for future monthly billing." : `the ${setupFeeLabel} platform deployment payment.`}
                 </p>
               </div>
             </div>
@@ -675,14 +693,14 @@ function MilestoneList({ items }: { items: { id: string; label: string; desc: st
 
 function PricingTable({ pricing }: { pricing: ProposalPricing }) {
   const rows = [
-    { category: "One-Time", label: "Platform Deployment Fee", value: pricing.platformDeployment },
+    { category: "One-Time", label: "Platform Deployment Fee", value: formatDeploymentFeeLabel(pricing.platformDeployment) },
     { category: "One-Time", label: "Employee Onboarding (per employee)", value: pricing.employeeOnboarding },
     { category: "Monthly", label: "Core Platform Access", value: pricing.corePlatformMonthly },
     { category: "Monthly", label: "Hiring Intelligence Platform", value: pricing.hiringIntelligenceMonthly },
     { category: "Monthly", label: `Includes ${pricing.includedJobRoles} roles · ${pricing.applicantsPerRole} applicants/role`, value: "Included" },
-    { category: "Scaling", label: pricing.scalingNote, value: pricing.scalingPrice },
-    { category: "Outcome", label: "Per successful hire", value: pricing.outcomePrice },
-  ];
+    pricing.scalingPrice || pricing.scalingNote ? { category: "Scaling", label: pricing.scalingNote, value: pricing.scalingPrice } : null,
+    pricing.outcomePrice ? { category: "Outcome", label: pricing.outcomeNote || "Per successful hire", value: pricing.outcomePrice } : null,
+  ].filter((row): row is { category: string; label: string; value: string } => Boolean(row));
 
   const colorMap: Record<string, string> = {
     "One-Time": "bg-emerald-100 text-emerald-700",

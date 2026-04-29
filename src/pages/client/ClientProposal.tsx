@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2 } from "lucide-react";
 import type { Proposal } from "@/pages/admin/ProposalManager";
 import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
+import { parseProposalFeeToCents, formatDeploymentFeeLabel } from "@/lib/proposalPricing";
 
 function interpolate(text: string, companyName: string): string {
   return text.replace(/\{\{companyName\}\}/g, companyName);
@@ -15,6 +16,8 @@ function interpolate(text: string, companyName: string): string {
 export default function ClientProposal() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get("preview") === "1";
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [alreadyPaid, setAlreadyPaid] = useState(false);
@@ -37,11 +40,16 @@ export default function ClientProposal() {
       const p: Proposal = proposalRes.data;
       setProposal(p);
       document.title = `${p.proposal_title} | RoleColorFinder`;
+      if (!isPreview) {
+        void supabase.functions.invoke("mark-proposal-viewed", {
+          body: { proposalSlug: slug },
+        });
+      }
       if (!paidRes.error && (paidRes.data ?? []).length > 0) {
         setAlreadyPaid(true);
       }
     });
-  }, [slug]);
+  }, [slug, isPreview]);
 
   if (notFound) {
     return (
@@ -64,6 +72,11 @@ export default function ClientProposal() {
   }
 
   const { pricing, company_name: companyName } = proposal;
+  const setupFee = parseProposalFeeToCents(pricing.platformDeployment);
+  const setupFeeLabel = formatDeploymentFeeLabel(pricing.platformDeployment);
+  const isDeploymentWaived = setupFee === 0;
+  const hasScaling = Boolean(pricing.scalingPrice || pricing.scalingNote);
+  const hasOutcomePricing = Boolean(pricing.outcomePrice || pricing.outcomeNote);
   const closingParagraphs = interpolate(proposal.closing_text, companyName)
     .split(/\n\n+/)
     .filter(Boolean);
@@ -94,7 +107,7 @@ export default function ClientProposal() {
                 className="mb-4 h-10 w-auto object-contain md:h-12"
               />
               <Badge className="mb-4 w-fit border-emerald-300/40 bg-emerald-500/25 px-3 py-1 text-emerald-50">
-                Client Proposal
+                {isPreview ? "Preview Proposal" : "Client Proposal"}
               </Badge>
               <h1 className="mt-3 text-4xl md:text-6xl font-bold text-white leading-tight">
                 {proposal.proposal_title}
@@ -265,7 +278,7 @@ export default function ClientProposal() {
                   <CardContent className="p-5">
                     <h3 className="text-lg font-semibold mb-2 text-slate-900">One-Time Investment</h3>
                     <ul className="list-disc pl-5 space-y-1 text-slate-700">
-                      <li>Platform Deployment: <span className="font-semibold text-slate-900">{pricing.platformDeployment}</span></li>
+                      <li>Platform Deployment: <span className="font-semibold text-slate-900">{setupFeeLabel}</span></li>
                       <li>Employee Onboarding: <span className="font-semibold text-slate-900">{pricing.employeeOnboarding}</span></li>
                     </ul>
                   </CardContent>
@@ -283,21 +296,25 @@ export default function ClientProposal() {
                 </Card>
               </div>
 
-              <Card className="rounded-2xl border-amber-200 bg-amber-50/40 mb-4">
-                <CardContent className="p-5">
-                  <h3 className="text-lg font-semibold mb-2 text-slate-900">Scaling</h3>
-                  <p className="text-slate-700"><span className="font-semibold text-slate-900">{pricing.scalingPrice} {pricing.scalingNote}</span></p>
-                  <p className="text-slate-700 mt-2">This allows the system to scale predictably with hiring demand across locations.</p>
-                </CardContent>
-              </Card>
+              {hasScaling ? (
+                <Card className="rounded-2xl border-amber-200 bg-amber-50/40 mb-4">
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-semibold mb-2 text-slate-900">Scaling</h3>
+                    <p className="text-slate-700"><span className="font-semibold text-slate-900">{pricing.scalingPrice} {pricing.scalingNote}</span></p>
+                    <p className="text-slate-700 mt-2">This allows the system to scale predictably with hiring demand across locations.</p>
+                  </CardContent>
+                </Card>
+              ) : null}
 
-              <Card className="rounded-2xl border-violet-200 bg-violet-50/40">
-                <CardContent className="p-5">
-                  <h3 className="text-lg font-semibold mb-2 text-slate-900">Outcome-Based Pricing</h3>
-                  <p className="text-slate-700"><span className="font-semibold text-slate-900">{pricing.outcomePrice}</span></p>
-                  <p className="text-slate-700 mt-2">{pricing.outcomeNote}</p>
-                </CardContent>
-              </Card>
+              {hasOutcomePricing ? (
+                <Card className="rounded-2xl border-violet-200 bg-violet-50/40">
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-semibold mb-2 text-slate-900">Outcome-Based Pricing</h3>
+                    {pricing.outcomePrice ? <p className="text-slate-700"><span className="font-semibold text-slate-900">{pricing.outcomePrice}</span></p> : null}
+                    {pricing.outcomeNote ? <p className="text-slate-700 mt-2">{pricing.outcomeNote}</p> : null}
+                  </CardContent>
+                </Card>
+              ) : null}
             </section>
 
             {/* ---- Benefits ---- */}
@@ -369,12 +386,15 @@ export default function ClientProposal() {
                 </h2>
                 <p className="text-slate-300 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
                   Accept this proposal to review and sign your Letter of Intent and Letter of Engagement,
-                  then complete the $5,000 platform deployment payment to begin onboarding.
+                  {isDeploymentWaived
+                    ? " then save a card for future monthly billing to begin onboarding."
+                    : ` then complete the ${setupFeeLabel} platform deployment payment to begin onboarding.`}
+                  {isPreview ? " Preview mode will not record signatures or charge Stripe." : ""}
                 </p>
                 <Button
                   size="lg"
                   className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-10 h-13 text-base gap-2 shadow-lg shadow-emerald-900/40"
-                  onClick={() => navigate(`/client/${slug}/loi`)}
+                  onClick={() => navigate(`/client/${slug}/loi${isPreview ? "?preview=1" : ""}`)}
                 >
                   <CheckCircle2 className="h-5 w-5" />
                   Accept Proposal &amp; Sign Agreement

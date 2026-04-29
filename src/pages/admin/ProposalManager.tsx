@@ -21,6 +21,9 @@ interface ProposalAcceptance {
   designation: string | null;
   status: string;
   created_at: string;
+  stripe_customer_id?: string | null;
+  linked_company_id?: string | null;
+  company_created_at?: string | null;
 }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +31,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generateLOIPdf, generateLOEPdf } from "@/lib/proposalPdfExport";
-import { Plus, ExternalLink, Trash2, Edit, Copy, FileText, ArrowLeft, Download, CheckCircle2, Clock, Search, X, ChevronDown } from "lucide-react";
+import { parseProposalFeeToCents, formatCentsAsUsd, ensureDollarSignForAmount, formatDeploymentFeeLabel } from "@/lib/proposalPricing";
+import { Plus, ExternalLink, Trash2, Edit, Copy, FileText, ArrowLeft, Download, CheckCircle2, Clock, Search, X, ChevronDown, Upload } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -73,6 +77,13 @@ export interface Proposal {
 }
 
 type ProposalForm = Omit<Proposal, "id" | "created_at">;
+type BackgroundSource = "url" | "upload";
+
+interface CreateCompanyForm {
+  companyName: string;
+  subdomain: string;
+  assessmentType: "25q" | "50q";
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                 Defaults                                   */
@@ -103,7 +114,7 @@ This proposal is the starting point. Our team is ready to move quickly, work clo
 const blankForm = (): ProposalForm => ({
   proposal_title: "",
   company_name: "",
-  submitted_by: "Jessicah Fowler, Head of Revenue",
+  submitted_by: "Jessicah Fowler, Head of Revsales",
   slug: "",
   proposal_id: "",
   background_image_url:
@@ -141,6 +152,17 @@ function formatDate(iso: string) {
 }
 
 const proposalStages: Proposal["status"][] = ["draft", "sent", "viewed", "accepted", "rejected"];
+const unlimitedSymbol = "∞";
+const proposalBackgroundBucket = "proposal-backgrounds";
+const maxBackgroundImageBytes = 5 * 1024 * 1024;
+const currencyPricingFields: (keyof ProposalPricing)[] = [
+  "platformDeployment",
+  "employeeOnboarding",
+  "corePlatformMonthly",
+  "hiringIntelligenceMonthly",
+  "scalingPrice",
+  "outcomePrice",
+];
 
 const stageBadgeClass: Record<Proposal["status"], string> = {
   draft: "bg-slate-100 text-slate-700",
@@ -149,6 +171,36 @@ const stageBadgeClass: Record<Proposal["status"], string> = {
   accepted: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700",
 };
+
+function normalizeCurrencyPricing(pricing: ProposalPricing): ProposalPricing {
+  return currencyPricingFields.reduce(
+    (normalized, field) => ({
+      ...normalized,
+      [field]: ensureDollarSignForAmount(normalized[field]),
+    }),
+    { ...pricing },
+  );
+}
+
+function inferBackgroundSource(url: string): BackgroundSource {
+  return url.includes(`/storage/v1/object/public/${proposalBackgroundBucket}/`) ? "upload" : "url";
+}
+
+function generateCompanySubdomain(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 50)
+    .replace(/^-|-$/g, "");
+}
+
+function parseDisplayDollars(value: string) {
+  const cents = parseProposalFeeToCents(value);
+  return cents === null ? value || "Removed" : formatCentsAsUsd(cents);
+}
 
 /* -------------------------------------------------------------------------- */
 /*                              Main Component                                */
@@ -162,14 +214,25 @@ export default function ProposalManager() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [acceptances, setAcceptances] = useState<ProposalAcceptance[]>([]);
   const [expandedAcceptances, setExpandedAcceptances] = useState<Set<string>>(new Set());
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProposalForm>(blankForm());
+  const [backgroundSource, setBackgroundSource] = useState<BackgroundSource>("url");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteAcceptanceConfirm, setDeleteAcceptanceConfirm] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [reviewAcceptance, setReviewAcceptance] = useState<{ proposal: Proposal; acceptance: ProposalAcceptance } | null>(null);
+  const [createCompanyTarget, setCreateCompanyTarget] = useState<{ proposal: Proposal; acceptance: ProposalAcceptance } | null>(null);
+  const [createCompanyForm, setCreateCompanyForm] = useState<CreateCompanyForm>({
+    companyName: "",
+    subdomain: "",
+    assessmentType: "25q",
+  });
+  const [creatingCompany, setCreatingCompany] = useState(false);
 
   /* ------------------------------------------------------------------ */
   /*                           Auth + data load                          */
@@ -237,6 +300,7 @@ export default function ProposalManager() {
   function openNew() {
     setEditingId(null);
     setFormData(blankForm());
+    setBackgroundSource("url");
     setSheetOpen(true);
   }
 
@@ -253,6 +317,7 @@ export default function ProposalManager() {
       pricing: { ...p.pricing },
       closing_text: p.closing_text,
     });
+    setBackgroundSource(inferBackgroundSource(p.background_image_url));
     setSheetOpen(true);
   }
 
@@ -270,8 +335,94 @@ export default function ProposalManager() {
     setFormData((f) => ({ ...f, [field]: value }));
   }
 
+  function handleBackgroundSourceChange(source: BackgroundSource) {
+    setBackgroundSource(source);
+    setFormData((f) => ({ ...f, background_image_url: "" }));
+  }
+
+  async function handleBackgroundUpload(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please upload an image file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > maxBackgroundImageBytes) {
+      toast({ title: "File too large", description: "Please upload an image smaller than 5MB.", variant: "destructive" });
+      return;
+    }
+
+    setUploadingBackground(true);
+    try {
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const safeSlug = formData.slug || autoSlug(formData.company_name || "proposal");
+      const filePath = `${safeSlug}/background-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(proposalBackgroundBucket)
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(proposalBackgroundBucket).getPublicUrl(filePath);
+      setFormData((f) => ({ ...f, background_image_url: data.publicUrl }));
+      toast({ title: "Background uploaded" });
+    } catch (error: unknown) {
+      toast({
+        title: "Upload failed",
+        description: getErrorMessage(error, "Unable to upload background image."),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingBackground(false);
+    }
+  }
+
   function handlePricingChange(field: keyof ProposalPricing, value: string) {
-    setFormData((f) => ({ ...f, pricing: { ...f.pricing, [field]: value } }));
+    setFormData((f) => {
+      const pricing = { ...f.pricing, [field]: value };
+      if ((field === "includedJobRoles" || field === "applicantsPerRole") && value === unlimitedSymbol) {
+        pricing.scalingPrice = "";
+        pricing.scalingNote = "";
+      }
+      return { ...f, pricing };
+    });
+  }
+
+  function setPricingUnlimited(field: "includedJobRoles" | "applicantsPerRole") {
+    handlePricingChange(field, unlimitedSymbol);
+  }
+
+  function restoreScalingPricing() {
+    setFormData((f) => ({
+      ...f,
+      pricing: {
+        ...f.pricing,
+        scalingPrice: f.pricing.scalingPrice || defaultPricing.scalingPrice,
+        scalingNote: f.pricing.scalingNote || defaultPricing.scalingNote,
+      },
+    }));
+  }
+
+  function removeScalingPricing() {
+    setFormData((f) => ({ ...f, pricing: { ...f.pricing, scalingPrice: "", scalingNote: "" } }));
+  }
+
+  function restoreOutcomePricing() {
+    setFormData((f) => ({
+      ...f,
+      pricing: {
+        ...f.pricing,
+        outcomePrice: f.pricing.outcomePrice || defaultPricing.outcomePrice,
+        outcomeNote: f.pricing.outcomeNote || defaultPricing.outcomeNote,
+      },
+    }));
+  }
+
+  function removeOutcomePricing() {
+    setFormData((f) => ({ ...f, pricing: { ...f.pricing, outcomePrice: "", outcomeNote: "" } }));
   }
 
   async function handleSave() {
@@ -280,8 +431,48 @@ export default function ProposalManager() {
       return;
     }
 
+    const normalizedSlug = formData.slug.trim().toLowerCase();
+    const normalizedProposalId = formData.proposal_id.trim().toLowerCase();
+    const duplicateProposal = proposals.find((proposal) => {
+      if (proposal.id === editingId) return false;
+      return (
+        proposal.slug.trim().toLowerCase() === normalizedSlug ||
+        proposal.proposal_id.trim().toLowerCase() === normalizedProposalId
+      );
+    });
+
+    if (duplicateProposal) {
+      const duplicateField = duplicateProposal.slug.trim().toLowerCase() === normalizedSlug ? "route slug" : "proposal ID";
+      toast({
+        title: "Duplicate proposal identifier",
+        description: `Another proposal already uses this ${duplicateField}. Please change it before saving.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.background_image_url.trim()) {
+      toast({
+        title: "Missing background image",
+        description: backgroundSource === "upload" ? "Upload a background image or switch to image URL." : "Enter an image URL or switch to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (parseProposalFeeToCents(formData.pricing.platformDeployment) === null) {
+      toast({
+        title: "Invalid platform deployment fee",
+        description: "Enter a valid USD amount, such as $5,000 or 5000.00.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
+      const normalizedPricing = normalizeCurrencyPricing(formData.pricing);
+
       const payload = {
         proposal_id: formData.proposal_id,
         slug: formData.slug,
@@ -289,7 +480,7 @@ export default function ProposalManager() {
         company_name: formData.company_name,
         submitted_by: formData.submitted_by,
         background_image_url: formData.background_image_url,
-        pricing: formData.pricing as unknown as Record<string, unknown>,
+        pricing: normalizedPricing as unknown as Record<string, unknown>,
         closing_text: formData.closing_text,
         status: formData.status,
       };
@@ -297,18 +488,19 @@ export default function ProposalManager() {
       if (editingId) {
         const previousProposal = proposals.find((proposal) => proposal.id === editingId);
         if (!previousProposal) {
-          throw new Error("Previous proposal version not found.");
+          throw new Error("Proposal not found.");
         }
         const { error } = await supabase
           .from("client_proposals")
-          .insert({
+          .update({
             ...payload,
-            version: (previousProposal.version || 1) + 1,
+            version: previousProposal.version || 1,
             parent_proposal_id: previousProposal.parent_proposal_id || previousProposal.id,
             linked_company_id: previousProposal.linked_company_id || null,
             viewed_at: previousProposal.viewed_at || null,
             accepted_at: previousProposal.accepted_at || null,
-          });
+          })
+          .eq("id", editingId);
         if (error) throw error;
       } else {
         const linkedCompany = proposals.find((proposal) => proposal.company_name === formData.company_name);
@@ -325,6 +517,7 @@ export default function ProposalManager() {
 
       await loadProposals();
       setSheetOpen(false);
+      setEditingId(null);
       toast({ title: editingId ? "Proposal updated" : "Proposal created", description: `Live at /client/${formData.slug}` });
     } catch (err: unknown) {
       toast({ title: "Save failed", description: getErrorMessage(err), variant: "destructive" });
@@ -342,6 +535,26 @@ export default function ProposalManager() {
       setDeleteConfirm(null);
       toast({ title: "Proposal deleted" });
     }
+  }
+
+  async function handleDeleteAcceptance(id: string) {
+    const { data, error } = await supabase.functions.invoke("delete-proposal-acceptance", {
+      body: { acceptanceId: id },
+    });
+
+    if (error || data?.success === false) {
+      toast({
+        title: "Delete failed",
+        description: error?.message ?? data?.error ?? "Unable to delete acceptance.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await loadProposals();
+    setDeleteAcceptanceConfirm(null);
+    setReviewAcceptance((current) => current?.acceptance.id === id ? null : current);
+    toast({ title: "Acceptance deleted" });
   }
 
   async function handleStatusChange(proposal: Proposal, status: Proposal["status"]) {
@@ -371,6 +584,51 @@ export default function ProposalManager() {
     localStorage.setItem("rcf_super_admin_company_context", companyId);
     localStorage.setItem("rcf_super_admin_active_tab", "companies");
     navigate("/admin/rcf-b2b");
+  }
+
+  function openCreateCompany(proposal: Proposal, acceptance: ProposalAcceptance) {
+    const subdomain = generateCompanySubdomain(proposal.company_name);
+    setCreateCompanyTarget({ proposal, acceptance });
+    setCreateCompanyForm({
+      companyName: proposal.company_name,
+      subdomain,
+      assessmentType: "25q",
+    });
+  }
+
+  async function handleCreateCompanyFromProposal() {
+    if (!createCompanyTarget || creatingCompany) return;
+    setCreatingCompany(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-company-from-proposal", {
+        body: {
+          acceptanceId: createCompanyTarget.acceptance.id,
+          companyName: createCompanyForm.companyName,
+          subdomain: createCompanyForm.subdomain,
+          assessmentType: createCompanyForm.assessmentType,
+        },
+      });
+
+      if (error || data?.success === false) {
+        throw new Error(error?.message ?? data?.error ?? "Unable to create company");
+      }
+
+      await loadProposals();
+      setCreateCompanyTarget(null);
+      setReviewAcceptance(null);
+      toast({
+        title: "Company created",
+        description: `${data.company?.name ?? createCompanyForm.companyName} is ready. Admin invite has been created.`,
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Company creation failed",
+        description: getErrorMessage(error, "Unable to create company."),
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingCompany(false);
+    }
   }
 
   function copyLink(slug: string) {
@@ -615,6 +873,7 @@ export default function ProposalManager() {
               const completedAcceptances = propAcceptances.filter((a) => a.status === "completed");
               const isExpanded = expandedAcceptances.has(p.id);
               const historyRows = proposalHistoryByFamily[p.parent_proposal_id || p.id] || [p];
+              const setupFeeLabel = formatDeploymentFeeLabel(p.pricing.platformDeployment);
 
               return (
                 <div key={p.id} className="border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
@@ -666,8 +925,8 @@ export default function ProposalManager() {
                       <div className="rounded-lg border border-gray-200 bg-white p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">Version history</p>
-                            <p className="text-xs text-gray-600">Edits create a new version instead of overwriting the previous one.</p>
+                            <p className="text-sm font-semibold text-gray-900">Proposal history</p>
+                            <p className="text-xs text-gray-600">Current edits update the existing proposal row.</p>
                           </div>
                           <Badge variant="outline">{historyRows.length} versions</Badge>
                         </div>
@@ -709,7 +968,9 @@ export default function ProposalManager() {
                             </div>
                             <div className="text-right">
                               {acc.payment_status === "paid" && (
-                                <p className="text-sm font-semibold text-green-700">$5,000 paid</p>
+                                <p className="text-sm font-semibold text-green-700">
+                                  {setupFeeLabel} paid
+                                </p>
                               )}
                               {acc.paid_at && <p className="text-xs text-gray-600">{formatDate(acc.paid_at)}</p>}
                             </div>
@@ -733,24 +994,80 @@ export default function ProposalManager() {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 h-8 text-xs"
-                              onClick={() => downloadLOI(p, acc)}
-                              disabled={!acc.loi_signed_name}
-                            >
-                              <Download className="h-3 w-3 mr-1" /> LOI PDF
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 h-8 text-xs"
-                              onClick={() => downloadLOE(p, acc)}
-                              disabled={!acc.loe_signed_name}
-                            >
-                              <Download className="h-3 w-3 mr-1" /> LOE PDF
-                            </Button>
+                            {deleteAcceptanceConfirm === acc.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-8 text-xs bg-red-600 hover:bg-red-700 text-white"
+                                  onClick={() => void handleDeleteAcceptance(acc.id)}
+                                >
+                                  Confirm Delete
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs"
+                                  onClick={() => setDeleteAcceptanceConfirm(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 h-8 text-xs"
+                                  onClick={() => downloadLOI(p, acc)}
+                                  disabled={!acc.loi_signed_name}
+                                >
+                                  <Download className="h-3 w-3 mr-1" /> LOI PDF
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 h-8 text-xs"
+                                  onClick={() => downloadLOE(p, acc)}
+                                  disabled={!acc.loe_signed_name}
+                                >
+                                  <Download className="h-3 w-3 mr-1" /> LOE PDF
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white"
+                                  onClick={() => setReviewAcceptance({ proposal: p, acceptance: acc })}
+                                >
+                                  Review
+                                </Button>
+                                {acc.linked_company_id ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 h-8 text-xs"
+                                    onClick={() => openLinkedCompany(acc.linked_company_id)}
+                                  >
+                                    Open Company
+                                  </Button>
+                                ) : acc.payment_status === "paid" && acc.status === "completed" ? (
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={() => openCreateCompany(p, acc)}
+                                  >
+                                    Create Company
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                                  onClick={() => setDeleteAcceptanceConfirm(acc.id)}
+                                  title="Delete acceptance"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -805,8 +1122,8 @@ export default function ProposalManager() {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
-                          onClick={() => window.open(`/client/${p.slug}`, "_blank")}
-                          title="Preview proposal"
+                          onClick={() => window.open(`/client/${p.slug}?preview=1`, "_blank")}
+                          title="Preview proposal flow"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -829,16 +1146,236 @@ export default function ProposalManager() {
         )}
       </div>
 
+      <Dialog open={!!reviewAcceptance} onOpenChange={(open) => !open && setReviewAcceptance(null)}>
+        <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle>Acceptance Review</DialogTitle>
+            <DialogDescription>
+              Review signer, payment, contact, and timeline details for this proposal acceptance.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reviewAcceptance ? (
+            <div className="space-y-5">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Proposal</p>
+                <p className="mt-1 font-semibold text-gray-900">{reviewAcceptance.proposal.proposal_title}</p>
+                <p className="text-sm text-gray-600">{reviewAcceptance.proposal.company_name} · {reviewAcceptance.proposal.proposal_id}</p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Acceptance Status</p>
+                  <Badge className={`mt-2 ${acceptanceStatusBadge(reviewAcceptance.acceptance.status)}`}>
+                    {reviewAcceptance.acceptance.status.replace(/_/g, " ")}
+                  </Badge>
+                  <p className="mt-3 text-sm text-gray-600">Created {formatDate(reviewAcceptance.acceptance.created_at)}</p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Payment</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">
+                    {reviewAcceptance.acceptance.payment_status === "paid" ? "Paid" : "Not paid"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {reviewAcceptance.acceptance.paid_at ? formatDate(reviewAcceptance.acceptance.paid_at) : "No payment date recorded"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">LOI Signature</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{reviewAcceptance.acceptance.loi_signed_name || "Not signed"}</p>
+                  <p className="text-sm text-gray-600">
+                    {reviewAcceptance.acceptance.loi_signed_at ? formatDate(reviewAcceptance.acceptance.loi_signed_at) : "No LOI signature date"}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">LOE Signature</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{reviewAcceptance.acceptance.loe_signed_name || "Not signed"}</p>
+                  <p className="text-sm text-gray-600">
+                    {reviewAcceptance.acceptance.loe_signed_at ? formatDate(reviewAcceptance.acceptance.loe_signed_at) : "No LOE signature date"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Onboarding Contact</p>
+                <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  <p><span className="text-gray-500">Name:</span> {reviewAcceptance.acceptance.first_name || reviewAcceptance.acceptance.last_name ? `${reviewAcceptance.acceptance.first_name ?? ""} ${reviewAcceptance.acceptance.last_name ?? ""}`.trim() : "Not provided"}</p>
+                  <p><span className="text-gray-500">Title:</span> {reviewAcceptance.acceptance.designation || "Not provided"}</p>
+                  <p><span className="text-gray-500">Email:</span> {reviewAcceptance.acceptance.email || "Not provided"}</p>
+                  <p><span className="text-gray-500">Phone:</span> {reviewAcceptance.acceptance.phone || "Not provided"}</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900">B2B company</p>
+                    <p className="text-xs text-emerald-700">
+                      {reviewAcceptance.acceptance.linked_company_id
+                        ? "This acceptance is already linked to a company."
+                        : reviewAcceptance.acceptance.payment_status === "paid" && reviewAcceptance.acceptance.status === "completed"
+                          ? "Create a new company from this paid proposal acceptance."
+                          : "Company creation appears after payment and contact details are completed."}
+                    </p>
+                  </div>
+                  {reviewAcceptance.acceptance.linked_company_id ? (
+                    <Button size="sm" variant="outline" onClick={() => openLinkedCompany(reviewAcceptance.acceptance.linked_company_id)}>
+                      Open Company
+                    </Button>
+                  ) : reviewAcceptance.acceptance.payment_status === "paid" && reviewAcceptance.acceptance.status === "completed" ? (
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => openCreateCompany(reviewAcceptance.proposal, reviewAcceptance.acceptance)}
+                    >
+                      Create Company
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-red-900">Delete acceptance</p>
+                    <p className="text-xs text-red-700">This removes the acceptance record, signatures, payment marker, and contact details from admin review.</p>
+                  </div>
+                  {deleteAcceptanceConfirm === reviewAcceptance.acceptance.id ? (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => void handleDeleteAcceptance(reviewAcceptance.acceptance.id)}
+                      >
+                        Confirm Delete
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setDeleteAcceptanceConfirm(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-200 text-red-700 hover:bg-red-100"
+                      onClick={() => setDeleteAcceptanceConfirm(reviewAcceptance.acceptance.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!createCompanyTarget} onOpenChange={(open) => !open && setCreateCompanyTarget(null)}>
+        <DialogContent className="max-w-3xl bg-white">
+          <DialogHeader>
+            <DialogTitle>Create Company From Proposal</DialogTitle>
+            <DialogDescription>
+              Confirm the company setup, saved card, and proposal billing values before creating the B2B portal.
+            </DialogDescription>
+          </DialogHeader>
+
+          {createCompanyTarget ? (
+            <div className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Company Name</Label>
+                  <Input
+                    value={createCompanyForm.companyName}
+                    onChange={(event) => setCreateCompanyForm((form) => ({ ...form, companyName: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Subdomain</Label>
+                  <Input
+                    value={createCompanyForm.subdomain}
+                    onChange={(event) => setCreateCompanyForm((form) => ({ ...form, subdomain: event.target.value.toLowerCase() }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Admin Email</Label>
+                  <Input value={createCompanyTarget.acceptance.email ?? ""} disabled />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Assessment Type</Label>
+                  <Select
+                    value={createCompanyForm.assessmentType}
+                    onValueChange={(value) => setCreateCompanyForm((form) => ({ ...form, assessmentType: value as "25q" | "50q" }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25q">25 Question</SelectItem>
+                      <SelectItem value="50q">50 Question</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Billing setup</p>
+                    <p className="text-xs text-gray-600">The deployment fee covers month one. First renewal is scheduled one month after company creation.</p>
+                  </div>
+                  <Badge variant="outline">
+                    Card {createCompanyTarget.acceptance.stripe_customer_id ? "saved" : "missing"}
+                  </Badge>
+                </div>
+                <div className="grid gap-3 text-sm md:grid-cols-2">
+                  <p><span className="text-gray-500">Core monthly:</span> <strong>{parseDisplayDollars(createCompanyTarget.proposal.pricing.corePlatformMonthly)}</strong></p>
+                  <p><span className="text-gray-500">Hiring monthly:</span> <strong>{parseDisplayDollars(createCompanyTarget.proposal.pricing.hiringIntelligenceMonthly)}</strong></p>
+                  <p><span className="text-gray-500">Included roles:</span> <strong>{createCompanyTarget.proposal.pricing.includedJobRoles}</strong></p>
+                  <p><span className="text-gray-500">Applicants / role:</span> <strong>{createCompanyTarget.proposal.pricing.applicantsPerRole}</strong></p>
+                  <p><span className="text-gray-500">Scaling:</span> <strong>{createCompanyTarget.proposal.pricing.scalingPrice ? `${createCompanyTarget.proposal.pricing.scalingPrice} ${createCompanyTarget.proposal.pricing.scalingNote}` : "Removed"}</strong></p>
+                  <p><span className="text-gray-500">Outcome fee:</span> <strong>{createCompanyTarget.proposal.pricing.outcomePrice || "Removed"}</strong></p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setCreateCompanyTarget(null)} disabled={creatingCompany}>
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => void handleCreateCompanyFromProposal()}
+                  disabled={creatingCompany || !createCompanyForm.companyName.trim() || !createCompanyForm.subdomain.trim() || !createCompanyTarget.acceptance.stripe_customer_id}
+                >
+                  {creatingCompany ? "Creating..." : "Create Company"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       {/* ---------------------------------------------------------------- */}
-      {/*                        Create / Edit Sheet                       */}
+      {/*                        Create / Edit Modal                       */}
       {/* ---------------------------------------------------------------- */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto bg-white">
-          <SheetHeader className="mb-6">
-            <SheetTitle className="text-2xl font-bold text-gray-900">
+      <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+        <DialogContent className="max-h-[90vh] w-[94vw] max-w-5xl overflow-y-auto bg-white p-8">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
               {editingId ? "Edit Proposal" : "New Proposal"}
-            </SheetTitle>
-          </SheetHeader>
+            </DialogTitle>
+            <DialogDescription>
+              Build the proposal content, pricing, and public client link details.
+            </DialogDescription>
+          </DialogHeader>
 
           <div className="space-y-8 pb-8">
             {/* ---- Proposal Identity ---- */}
@@ -920,15 +1457,50 @@ export default function ProposalManager() {
             {/* ---- Background Image ---- */}
             <section>
               <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide text-gray-700">Header Background Image</h3>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Image URL</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={formData.background_image_url}
-                    onChange={(e) => handleChange("background_image_url", e.target.value)}
-                  />
+              <div className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => handleBackgroundSourceChange("url")}
+                    className={`rounded-xl border p-4 text-left transition-colors ${backgroundSource === "url" ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:bg-gray-50"}`}
+                  >
+                    <p className="text-sm font-semibold text-gray-900">Use Image URL</p>
+                    <p className="mt-1 text-xs text-gray-600">Paste a public image link for the proposal header.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBackgroundSourceChange("upload")}
+                    className={`rounded-xl border p-4 text-left transition-colors ${backgroundSource === "upload" ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:bg-gray-50"}`}
+                  >
+                    <p className="text-sm font-semibold text-gray-900">Upload Image</p>
+                    <p className="mt-1 text-xs text-gray-600">Upload a JPG, PNG, WebP, or GIF up to 5MB.</p>
+                  </button>
                 </div>
+
+                {backgroundSource === "url" ? (
+                  <div className="space-y-1.5">
+                    <Label>Image URL</Label>
+                    <Input
+                      placeholder="https://..."
+                      value={formData.background_image_url}
+                      onChange={(e) => handleChange("background_image_url", e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
+                    <Label className="text-sm font-semibold">Upload Background Image</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingBackground}
+                      onChange={(event) => void handleBackgroundUpload(event.target.files?.[0])}
+                    />
+                    <p className="text-xs text-gray-500">
+                      {uploadingBackground ? "Uploading..." : formData.background_image_url ? "Uploaded image selected." : "Upload an image to use this source."}
+                    </p>
+                  </div>
+                )}
+
                 {formData.background_image_url && (
                   <div className="rounded-xl overflow-hidden h-32 bg-muted">
                     <img
@@ -976,42 +1548,86 @@ export default function ProposalManager() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs">Included Job Roles</Label>
-                        <Input value={formData.pricing.includedJobRoles} onChange={(e) => handlePricingChange("includedJobRoles", e.target.value)} />
+                        <div className="flex gap-2">
+                          <Input value={formData.pricing.includedJobRoles} onChange={(e) => handlePricingChange("includedJobRoles", e.target.value)} />
+                          <Button type="button" variant="outline" className="px-3" onClick={() => setPricingUnlimited("includedJobRoles")}>
+                            ∞
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs">Applicants Per Role</Label>
-                        <Input value={formData.pricing.applicantsPerRole} onChange={(e) => handlePricingChange("applicantsPerRole", e.target.value)} />
+                        <div className="flex gap-2">
+                          <Input value={formData.pricing.applicantsPerRole} onChange={(e) => handlePricingChange("applicantsPerRole", e.target.value)} />
+                          <Button type="button" variant="outline" className="px-3" onClick={() => setPricingUnlimited("applicantsPerRole")}>
+                            ∞
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Scaling</p>
-                  <div className="space-y-3 pl-3 border-l-2 border-gray-300">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Scaling Price</Label>
-                      <Input value={formData.pricing.scalingPrice} onChange={(e) => handlePricingChange("scalingPrice", e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Scaling Note</Label>
-                      <Input value={formData.pricing.scalingNote} onChange={(e) => handlePricingChange("scalingNote", e.target.value)} />
-                    </div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold text-gray-700">Scaling</p>
+                    {formData.pricing.scalingPrice || formData.pricing.scalingNote ? (
+                      <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-red-600" onClick={removeScalingPricing}>
+                        Remove scaling
+                      </Button>
+                    ) : (
+                      <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={restoreScalingPricing}>
+                        Add scaling
+                      </Button>
+                    )}
                   </div>
+                  {formData.pricing.scalingPrice || formData.pricing.scalingNote ? (
+                    <div className="space-y-3 pl-3 border-l-2 border-gray-300">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Scaling Price</Label>
+                        <Input value={formData.pricing.scalingPrice} onChange={(e) => handlePricingChange("scalingPrice", e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Scaling Note</Label>
+                        <Input value={formData.pricing.scalingNote} onChange={(e) => handlePricingChange("scalingNote", e.target.value)} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-xs text-gray-500">
+                      Scaling pricing is removed. Selecting ∞ for job roles or applicants removes scaling automatically.
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Outcome-Based Pricing</p>
-                  <div className="space-y-3 pl-3 border-l-2 border-gray-300">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Outcome Price</Label>
-                      <Input value={formData.pricing.outcomePrice} onChange={(e) => handlePricingChange("outcomePrice", e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Outcome Note</Label>
-                      <Input value={formData.pricing.outcomeNote} onChange={(e) => handlePricingChange("outcomeNote", e.target.value)} />
-                    </div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold text-gray-700">Outcome-Based Pricing</p>
+                    {formData.pricing.outcomePrice || formData.pricing.outcomeNote ? (
+                      <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-red-600" onClick={removeOutcomePricing}>
+                        Remove outcome
+                      </Button>
+                    ) : (
+                      <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={restoreOutcomePricing}>
+                        Add outcome
+                      </Button>
+                    )}
                   </div>
+                  {formData.pricing.outcomePrice || formData.pricing.outcomeNote ? (
+                    <div className="space-y-3 pl-3 border-l-2 border-gray-300">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Outcome Price</Label>
+                        <Input value={formData.pricing.outcomePrice} onChange={(e) => handlePricingChange("outcomePrice", e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Outcome Note</Label>
+                        <Input value={formData.pricing.outcomeNote} onChange={(e) => handlePricingChange("outcomeNote", e.target.value)} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-xs text-gray-500">
+                      Outcome-based pricing is removed from this proposal.
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
@@ -1036,13 +1652,13 @@ export default function ProposalManager() {
             <Button
               className="w-full mt-6 h-10 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || uploadingBackground}
             >
               {saving ? "Saving…" : editingId ? "Save Changes" : "Create Proposal"}
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
