@@ -250,6 +250,11 @@ export type Database = {
           status: string
           created_at: string
           updated_at: string
+          version: number | null
+          parent_proposal_id: string | null
+          linked_company_id: string | null
+          viewed_at: string | null
+          accepted_at: string | null
         }
         Insert: {
           id?: string
@@ -264,6 +269,11 @@ export type Database = {
           status?: string
           created_at?: string
           updated_at?: string
+          version?: number | null
+          parent_proposal_id?: string | null
+          linked_company_id?: string | null
+          viewed_at?: string | null
+          accepted_at?: string | null
         }
         Update: {
           id?: string
@@ -278,6 +288,89 @@ export type Database = {
           status?: string
           created_at?: string
           updated_at?: string
+          version?: number | null
+          parent_proposal_id?: string | null
+          linked_company_id?: string | null
+          viewed_at?: string | null
+          accepted_at?: string | null
+        }
+        Relationships: []
+      }
+      proposal_acceptances: {
+        Row: {
+          id: string
+          proposal_slug: string
+          signed_name: string | null
+          signed_at: string | null
+          loi_signed_name: string | null
+          loi_signed_at: string | null
+          loe_signed_name: string | null
+          loe_signed_at: string | null
+          agreement_accepted: boolean | null
+          stripe_session_id: string | null
+          payment_status: string | null
+          paid_at: string | null
+          first_name: string | null
+          last_name: string | null
+          email: string | null
+          phone: string | null
+          designation: string | null
+          stripe_customer_id: string | null
+          linked_company_id: string | null
+          company_created_at: string | null
+          status: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          proposal_slug: string
+          signed_name?: string | null
+          signed_at?: string | null
+          loi_signed_name?: string | null
+          loi_signed_at?: string | null
+          loe_signed_name?: string | null
+          loe_signed_at?: string | null
+          agreement_accepted?: boolean | null
+          stripe_session_id?: string | null
+          payment_status?: string | null
+          paid_at?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          phone?: string | null
+          designation?: string | null
+          stripe_customer_id?: string | null
+          linked_company_id?: string | null
+          company_created_at?: string | null
+          status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          proposal_slug?: string
+          signed_name?: string | null
+          signed_at?: string | null
+          loi_signed_name?: string | null
+          loi_signed_at?: string | null
+          loe_signed_name?: string | null
+          loe_signed_at?: string | null
+          agreement_accepted?: boolean | null
+          stripe_session_id?: string | null
+          payment_status?: string | null
+          paid_at?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          phone?: string | null
+          designation?: string | null
+          stripe_customer_id?: string | null
+          linked_company_id?: string | null
+          company_created_at?: string | null
+          status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1357,8 +1450,15 @@ export type Database = {
           portal_access_locked: boolean
           portal_access_locked_at: string | null
           portal_access_outstanding_balance: number
+          portal_active_role_scale_block_monthly_dollars: number | null
+          portal_active_role_scale_block_size: number | null
+          portal_applicants_per_role: number | null
           portal_billing_anchor_at: string | null
           portal_billing_next_renewal_at: string | null
+          portal_core_monthly_dollars: number | null
+          portal_hiring_monthly_dollars: number | null
+          portal_included_active_job_roles: number | null
+          portal_outcome_price_per_hire_dollars: number | null
           primary_color: string | null
           seats_purchased: number
           secondary_color: string | null
@@ -1406,8 +1506,15 @@ export type Database = {
           portal_access_locked?: boolean
           portal_access_locked_at?: string | null
           portal_access_outstanding_balance?: number
+          portal_active_role_scale_block_monthly_dollars?: number | null
+          portal_active_role_scale_block_size?: number | null
+          portal_applicants_per_role?: number | null
           portal_billing_anchor_at?: string | null
           portal_billing_next_renewal_at?: string | null
+          portal_core_monthly_dollars?: number | null
+          portal_hiring_monthly_dollars?: number | null
+          portal_included_active_job_roles?: number | null
+          portal_outcome_price_per_hire_dollars?: number | null
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null
@@ -1455,8 +1562,15 @@ export type Database = {
           portal_access_locked?: boolean
           portal_access_locked_at?: string | null
           portal_access_outstanding_balance?: number
+          portal_active_role_scale_block_monthly_dollars?: number | null
+          portal_active_role_scale_block_size?: number | null
+          portal_applicants_per_role?: number | null
           portal_billing_anchor_at?: string | null
           portal_billing_next_renewal_at?: string | null
+          portal_core_monthly_dollars?: number | null
+          portal_hiring_monthly_dollars?: number | null
+          portal_included_active_job_roles?: number | null
+          portal_outcome_price_per_hire_dollars?: number | null
           primary_color?: string | null
           seats_purchased?: number
           secondary_color?: string | null

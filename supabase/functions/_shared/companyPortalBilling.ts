@@ -24,25 +24,61 @@ export const toMoney = (amount: number) => Number(amount.toFixed(2));
 export const getPortalSeatBaseline = (_storedSeats: number | null | undefined) =>
   MIN_PORTAL_SEATS;
 
+export interface CompanyBillingConfig {
+  portal_core_monthly_dollars?: number | null;
+  portal_hiring_monthly_dollars?: number | null;
+  portal_included_active_job_roles?: number | null;
+  portal_active_role_scale_block_size?: number | null;
+  portal_active_role_scale_block_monthly_dollars?: number | null;
+  portal_outcome_price_per_hire_dollars?: number | null;
+}
+
+const numberOrDefault = (value: number | null | undefined, fallback: number) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : fallback;
+};
+
+export const getCorePlatformMonthlyDollars = (company?: CompanyBillingConfig | null) =>
+  numberOrDefault(company?.portal_core_monthly_dollars, CORE_PLATFORM_MONTHLY_DOLLARS);
+
+export const getHiringIntelligenceMonthlyDollars = (company?: CompanyBillingConfig | null) =>
+  numberOrDefault(company?.portal_hiring_monthly_dollars, HIRING_INTELLIGENCE_MONTHLY_DOLLARS);
+
 export const getBillablePortalUsers = (
   activeUsers: number | null | undefined,
   storedSeats: number | null | undefined,
 ) => Math.max(Math.max(0, Number(activeUsers || 0)), getPortalSeatBaseline(storedSeats));
 
-export const getAdditionalActiveRoleBlocks = (activeRoleCount: number | null | undefined) => {
+export const getAdditionalActiveRoleBlocks = (
+  activeRoleCount: number | null | undefined,
+  company?: CompanyBillingConfig | null,
+) => {
   const activeRoles = Math.max(0, Number(activeRoleCount || 0));
-  const additionalRoles = Math.max(0, activeRoles - INCLUDED_ACTIVE_JOB_ROLES);
-  return Math.ceil(additionalRoles / ACTIVE_ROLE_SCALE_BLOCK_SIZE);
+  const includedRoles = company?.portal_included_active_job_roles;
+  if (includedRoles === null) return 0;
+
+  const effectiveIncludedRoles = numberOrDefault(includedRoles, INCLUDED_ACTIVE_JOB_ROLES);
+  const blockSize = Math.max(1, numberOrDefault(company?.portal_active_role_scale_block_size, ACTIVE_ROLE_SCALE_BLOCK_SIZE));
+  const additionalRoles = Math.max(0, activeRoles - effectiveIncludedRoles);
+  return Math.ceil(additionalRoles / blockSize);
 };
 
-export const getActiveRoleScalingCharge = (activeRoleCount: number | null | undefined) => {
-  const blocks = getAdditionalActiveRoleBlocks(activeRoleCount);
-  return toMoney(blocks * ACTIVE_ROLE_SCALE_BLOCK_MONTHLY_DOLLARS);
+export const getActiveRoleScalingCharge = (
+  activeRoleCount: number | null | undefined,
+  company?: CompanyBillingConfig | null,
+) => {
+  const blocks = getAdditionalActiveRoleBlocks(activeRoleCount, company);
+  const blockPrice = numberOrDefault(company?.portal_active_role_scale_block_monthly_dollars, ACTIVE_ROLE_SCALE_BLOCK_MONTHLY_DOLLARS);
+  return toMoney(blocks * blockPrice);
 };
 
-export const getOutcomeBasedCharge = (successfulHireCount: number | null | undefined) => {
+export const getOutcomeBasedCharge = (
+  successfulHireCount: number | null | undefined,
+  company?: CompanyBillingConfig | null,
+) => {
   const hires = Math.max(0, Number(successfulHireCount || 0));
-  return toMoney(hires * OUTCOME_PRICE_PER_SUCCESSFUL_HIRE_DOLLARS);
+  const outcomePrice = numberOrDefault(company?.portal_outcome_price_per_hire_dollars, OUTCOME_PRICE_PER_SUCCESSFUL_HIRE_DOLLARS);
+  return toMoney(hires * outcomePrice);
 };
 
 export const buildAnchoredDate = (anchorAtInput: Date, monthOffset: number) => {

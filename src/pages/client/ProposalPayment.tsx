@@ -8,6 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Lock, ShieldCheck } from "lucide-react";
 import type { Proposal } from "@/pages/admin/ProposalManager";
 import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
+import { parseProposalFeeToCents, formatDeploymentFeeLabel } from "@/lib/proposalPricing";
+
+async function getFunctionErrorMessage(error: unknown, fallback: string) {
+  const context = (error as { context?: Response } | null)?.context;
+  if (context) {
+    try {
+      const body = await context.clone().json();
+      if (typeof body?.error === "string") return body.error;
+    } catch {
+      // Fall back to the SDK error below if the body is not JSON.
+    }
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function ProposalPayment() {
   const { slug } = useParams<{ slug: string }>();
@@ -16,6 +31,7 @@ export default function ProposalPayment() {
   const { toast } = useToast();
 
   const acceptanceId = searchParams.get("acceptance_id");
+  const isPreview = searchParams.get("preview") === "1";
 
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -52,11 +68,21 @@ export default function ProposalPayment() {
     );
   }
 
+  const setupFeeCents = parseProposalFeeToCents(proposal.pricing.platformDeployment);
+  const setupFeeLabel = formatDeploymentFeeLabel(proposal.pricing.platformDeployment);
+  const canPay = setupFeeCents !== null;
+  const isDeploymentWaived = setupFeeCents === 0;
+
   async function handlePay() {
-    if (loading) return;
+    if (loading || !canPay) return;
     setLoading(true);
     try {
       const origin = window.location.origin;
+      if (isPreview) {
+        navigate(`/client/${slug}/success?session_id=preview&acceptance_id=preview&preview=1`);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("create-proposal-payment", {
         body: {
           proposalSlug: slug,
@@ -68,7 +94,9 @@ export default function ProposalPayment() {
         },
       });
 
-      if (error || !data?.url) throw new Error(error?.message ?? "Failed to create payment session");
+      if (error || !data?.url) {
+        throw new Error(await getFunctionErrorMessage(error, "Failed to create payment session"));
+      }
 
       window.location.href = data.url;
     } catch (err: unknown) {
@@ -90,11 +118,15 @@ export default function ProposalPayment() {
             className="h-10 mx-auto object-contain"
           />
           <Badge className="border-emerald-300/40 bg-emerald-500/20 text-emerald-700">
-            Secure Payment
+            {isPreview ? "Preview Payment" : "Secure Payment"}
           </Badge>
           <h1 className="text-3xl font-bold text-slate-900">Complete Your Deployment</h1>
           <p className="text-slate-500 text-sm">
-            Your agreement has been signed. One final step — pay the platform deployment fee to begin onboarding.
+            {isPreview
+              ? "Preview mode shows this payment step without opening Stripe or charging a card."
+              : isDeploymentWaived
+                ? "Your agreement has been signed. One final step — save a card for future monthly billing to begin onboarding."
+                : "Your agreement has been signed. One final step — pay the platform deployment fee to begin onboarding."}
           </p>
         </div>
 
@@ -128,10 +160,10 @@ export default function ProposalPayment() {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-3 border-b border-slate-100">
                 <div>
-                  <p className="font-medium text-slate-900">Platform Deployment Fee</p>
+                <p className="font-medium text-slate-900">{isDeploymentWaived ? "Platform Deployment Fee Waived" : "Platform Deployment Fee"}</p>
                   <p className="text-xs text-slate-500 mt-0.5">One-time fee · {proposal.company_name}</p>
                 </div>
-                <p className="text-lg font-bold text-slate-900">$5,000.00</p>
+                <p className="text-lg font-bold text-slate-900">{setupFeeLabel}</p>
               </div>
 
               <div className="flex items-center justify-between py-2">
@@ -153,7 +185,7 @@ export default function ProposalPayment() {
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-200">
                 <p className="font-bold text-slate-900 text-lg">Total Due Today</p>
-                <p className="text-2xl font-bold text-slate-900">$5,000.00</p>
+                <p className="text-2xl font-bold text-slate-900">{setupFeeLabel}</p>
               </div>
             </div>
 
@@ -161,12 +193,18 @@ export default function ProposalPayment() {
               <Button
                 className="w-full h-12 text-base gap-2 bg-slate-900 hover:bg-slate-800"
                 onClick={handlePay}
-                disabled={loading}
+                disabled={loading || !canPay}
               >
                 {loading ? (
                   <><span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full inline-block" /> Redirecting to Stripe…</>
+                ) : !canPay ? (
+                  "Payment amount unavailable"
+                ) : isPreview ? (
+                  <><CreditCard className="h-5 w-5" /> Preview Payment Success</>
+                ) : isDeploymentWaived ? (
+                  <><CreditCard className="h-5 w-5" /> Save Card for Future Billing</>
                 ) : (
-                  <><CreditCard className="h-5 w-5" /> Pay $5,000.00 Securely</>
+                  <><CreditCard className="h-5 w-5" /> Pay {setupFeeLabel} Securely</>
                 )}
               </Button>
 

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Clock, Mail } from "lucide-react";
 import type { Proposal } from "@/pages/admin/ProposalManager";
 import { fetchLatestProposalBySlug } from "@/lib/clientProposals";
+import { parseProposalFeeToCents, formatDeploymentFeeLabel } from "@/lib/proposalPricing";
 
 interface ContactForm {
   first_name: string;
@@ -26,11 +27,14 @@ export default function ProposalSuccess() {
 
   const sessionId = searchParams.get("session_id");
   const acceptanceId = searchParams.get("acceptance_id");
+  const isPreview = searchParams.get("preview") === "1";
 
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [paymentRecorded, setPaymentRecorded] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const [form, setForm] = useState<ContactForm>({
     first_name: "",
@@ -51,21 +55,38 @@ export default function ProposalSuccess() {
         }
       });
 
-    // Update acceptance record with payment info
+    if (isPreview) {
+      setVerifyingPayment(false);
+      return;
+    }
+
+    // Verify payment server-side before recording it.
     if (acceptanceId && sessionId && !paymentRecorded) {
       setPaymentRecorded(true);
-      supabase
-        .from("proposal_acceptances")
-        .update({
-          stripe_session_id: sessionId,
-          payment_status: "paid",
-          paid_at: new Date().toISOString(),
-          status: "contact_pending",
+      supabase.functions
+        .invoke("verify-proposal-payment", {
+          body: {
+            sessionId,
+            acceptanceId,
+            proposalSlug: slug,
+          },
         })
-        .eq("id", acceptanceId)
-        .then(() => {});
+        .then(({ data, error }) => {
+          if (error || data?.success === false) {
+            throw new Error(error?.message ?? data?.error ?? "Payment verification failed");
+          }
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "Payment verification failed";
+          setVerificationError(message);
+          toast({ title: "Payment verification failed", description: message, variant: "destructive" });
+        })
+        .finally(() => setVerifyingPayment(false));
+    } else if (!sessionId || !acceptanceId) {
+      setVerificationError("Missing payment session details.");
+      setVerifyingPayment(false);
     }
-  }, [slug, acceptanceId, sessionId, paymentRecorded]);
+  }, [slug, acceptanceId, sessionId, paymentRecorded, toast, isPreview]);
 
   function handleChange(field: keyof ContactForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -83,20 +104,25 @@ export default function ProposalSuccess() {
     if (!isValid || saving) return;
     setSaving(true);
     try {
-      if (acceptanceId) {
-        const { error } = await supabase
-          .from("proposal_acceptances")
-          .update({
-            first_name: form.first_name.trim(),
-            last_name: form.last_name.trim(),
-            email: form.email.trim(),
-            phone: form.phone.trim(),
-            designation: form.designation.trim(),
-            status: "completed",
-          })
-          .eq("id", acceptanceId);
+      if (isPreview) {
+        setSubmitted(true);
+        return;
+      }
 
-        if (error) throw error;
+      if (acceptanceId) {
+        const { data, error } = await supabase.functions.invoke("complete-proposal-acceptance", {
+          body: {
+            proposalSlug: slug,
+            acceptanceId,
+            firstName: form.first_name,
+            lastName: form.last_name,
+            email: form.email,
+            phone: form.phone,
+            designation: form.designation,
+          },
+        });
+
+        if (error || data?.success === false) throw new Error(error?.message ?? data?.error ?? "Error saving details");
       }
       setSubmitted(true);
     } catch (err: unknown) {
@@ -111,6 +137,36 @@ export default function ProposalSuccess() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-400" />
+      </div>
+    );
+  }
+
+  const setupFeeCents = parseProposalFeeToCents(proposal.pricing.platformDeployment);
+  const setupFeeLabel = formatDeploymentFeeLabel(proposal.pricing.platformDeployment);
+
+  if (verifyingPayment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-400 mx-auto" />
+          <p className="text-sm text-slate-500">Verifying your payment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <Card className="max-w-md w-full rounded-3xl border-red-200 shadow-lg">
+          <CardContent className="p-8 text-center space-y-3">
+            <h1 className="text-xl font-bold text-slate-900">Payment Verification Needed</h1>
+            <p className="text-sm text-slate-600">{verificationError}</p>
+            <p className="text-xs text-slate-400">
+              If you completed payment, please contact hello@rolecolorfinder.com so we can confirm your checkout session.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -132,14 +188,17 @@ export default function ProposalSuccess() {
             </div>
           </div>
           <Badge className="border-emerald-300/40 bg-emerald-500/20 text-emerald-700">
-            Payment Confirmed
+            {isPreview ? "Preview Complete" : "Payment Confirmed"}
           </Badge>
           <h1 className="text-3xl font-bold text-slate-900">
-            Welcome to RoleColorFinder!
+            {isPreview ? "Preview Onboarding Step" : "Welcome to RoleColorFinder!"}
           </h1>
           <p className="text-slate-600 text-sm max-w-md mx-auto">
-            Your $5,000 platform deployment payment has been received. {proposal.company_name}'s
-            account setup is now in progress.
+            {isPreview
+              ? `This is the post-payment onboarding screen for ${proposal.company_name}. No payment, acceptance, or contact record was saved.`
+              : setupFeeCents === 0
+                ? `Your platform deployment fee has been waived and your card has been saved for future monthly billing. ${proposal.company_name}'s account setup is now in progress.`
+                : `Your ${setupFeeLabel} platform deployment payment has been received. ${proposal.company_name}'s account setup is now in progress.`}
           </p>
         </div>
 

@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import type { ProposalPricing } from "@/pages/admin/ProposalManager";
+import { formatDeploymentFeeLabel, parseProposalFeeToCents } from "@/lib/proposalPricing";
 
 /* ─────────────────────────────────────────────────────────────
    Shared helpers
@@ -278,7 +279,7 @@ function drawPricingSection(pdf: jsPDF, pricing: ProposalPricing, cur: Cursor) {
   pdf.text("ONE-TIME FEES", MARGIN + 2, cur.y);
   cur.y += 5;
 
-  cur.pricingRow("Platform Deployment Fee", pricing.platformDeployment, false);
+  cur.pricingRow("Platform Deployment Fee", formatDeploymentFeeLabel(pricing.platformDeployment), false);
   cur.pricingRow("Employee Onboarding (per employee)", pricing.employeeOnboarding, true);
 
   // Divider
@@ -301,8 +302,12 @@ function drawPricingSection(pdf: jsPDF, pricing: ProposalPricing, cur: Cursor) {
     "Included",
     false
   );
-  cur.pricingRow(`Scaling — ${pricing.scalingNote}`, pricing.scalingPrice, true);
-  cur.pricingRow("Outcome-Based — per successful hire", pricing.outcomePrice, false);
+  if (pricing.scalingPrice || pricing.scalingNote) {
+    cur.pricingRow(`Scaling — ${pricing.scalingNote}`, pricing.scalingPrice, true);
+  }
+  if (pricing.outcomePrice) {
+    cur.pricingRow(pricing.outcomeNote || "Outcome-Based — per successful hire", pricing.outcomePrice, false);
+  }
 
   cur.y = boxY + boxH + 4;
 }
@@ -492,11 +497,15 @@ export function generateLOIPdf(
   cur.skip(2);
   drawPricingSection(pdf, pricing, cur);
 
-  cur.body(
-    `3.2  The Platform Deployment Fee of ${pricing.platformDeployment} is a one-time, non-refundable ` +
-    `investment that covers full platform setup, configuration, and the first deployment milestone. ` +
-    `This fee is payable in full upon execution of the Letter of Engagement.`
-  );
+  if (parseProposalFeeToCents(pricing.platformDeployment) === 0) {
+    cur.body("3.2  The Platform Deployment Fee is waived for this engagement.");
+  } else {
+    cur.body(
+      `3.2  The Platform Deployment Fee of ${pricing.platformDeployment} is a one-time, non-refundable ` +
+      `investment that covers full platform setup, configuration, and the first deployment milestone. ` +
+      `This fee is payable in full upon execution of the Letter of Engagement.`
+    );
+  }
   cur.body(
     `3.3  Monthly recurring fees will be invoiced on the first business day of each calendar month, ` +
     `commencing thirty (30) days after the completion of platform deployment. All invoices are payable ` +
@@ -759,11 +768,15 @@ export function generateLOEPdf(
   cur.skip(2);
   drawPricingSection(pdf, pricing, cur);
 
-  cur.body(
-    `4.2  Platform Deployment Fee.  The one-time Platform Deployment Fee of ${pricing.platformDeployment} ` +
-    `is payable in full prior to the commencement of any services. This fee is non-refundable once ` +
-    `deployment has commenced and covers full platform setup, configuration, and implementation support.`
-  );
+  if (parseProposalFeeToCents(pricing.platformDeployment) === 0) {
+    cur.body("4.2  Platform Deployment Fee.  The Platform Deployment Fee is waived for this engagement.");
+  } else {
+    cur.body(
+      `4.2  Platform Deployment Fee.  The one-time Platform Deployment Fee of ${pricing.platformDeployment} ` +
+      `is payable in full prior to the commencement of any services. This fee is non-refundable once ` +
+      `deployment has commenced and covers full platform setup, configuration, and implementation support.`
+    );
+  }
   cur.body(
     `4.3  Employee Onboarding Fee.  The per-employee onboarding fee of ${pricing.employeeOnboarding} ` +
     `will be invoiced as employees are onboarded. RCF will provide a detailed onboarding schedule ` +
@@ -775,16 +788,19 @@ export function generateLOEPdf(
     `payable within fifteen (15) calendar days. Late payments will accrue interest at a rate of ` +
     `1.5% per month on the outstanding balance.`
   );
-  cur.body(
-    `4.5  Scaling Fees.  In the event the Client requires active job roles beyond the included ` +
-    `${pricing.includedJobRoles}, an additional scaling fee of ${pricing.scalingPrice} ` +
-    `${pricing.scalingNote} will apply, invoiced monthly alongside regular subscription fees.`
-  );
-  cur.body(
-    `4.6  Outcome-Based Fees.  An outcome-based fee of ${pricing.outcomePrice} will be invoiced ` +
-    `for each verified successful hire made through the Hiring Intelligence module. ` +
-    `${pricing.outcomeNote}  RCF will provide a monthly report of tracked hires for the Client's review.`
-  );
+  if (pricing.scalingPrice || pricing.scalingNote) {
+    cur.body(
+      `4.5  Scaling Fees.  In the event the Client requires active job roles beyond the included ` +
+      `${pricing.includedJobRoles}, an additional scaling fee of ${pricing.scalingPrice} ` +
+      `${pricing.scalingNote} will apply, invoiced monthly alongside regular subscription fees.`
+    );
+  }
+  if (pricing.outcomePrice || pricing.outcomeNote) {
+    cur.body(
+      `4.6  Outcome-Based Fees.  ${pricing.outcomePrice ? `An outcome-based fee of ${pricing.outcomePrice} will be invoiced for each verified successful hire made through the Hiring Intelligence module. ` : ""}` +
+      `${pricing.outcomeNote}  RCF will provide a monthly report of tracked hires for the Client's review.`
+    );
+  }
   cur.body(
     `4.7  All fees are denominated in United States Dollars (USD) and are exclusive of any ` +
     `applicable taxes, levies, or duties, which shall be the sole responsibility of the Client.`
