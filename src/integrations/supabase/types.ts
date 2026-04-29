@@ -1901,6 +1901,39 @@ export type Database = {
         }
         Relationships: []
       }
+      free_assessment_submissions: {
+        Row: {
+          created_at: string
+          dominant_color: string
+          email: string
+          email_error: string | null
+          email_sent_at: string | null
+          id: string
+          result_payload: Json
+          scores: Json
+        }
+        Insert: {
+          created_at?: string
+          dominant_color: string
+          email: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          id?: string
+          result_payload?: Json
+          scores?: Json
+        }
+        Update: {
+          created_at?: string
+          dominant_color?: string
+          email?: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          id?: string
+          result_payload?: Json
+          scores?: Json
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           available_variables: string[] | null

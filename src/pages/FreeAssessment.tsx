@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Sparkles, Clock, Gift, Star } from "lucide-react";
 import { Navbar } from "@/components/navigation/Navbar";
 import { shuffleArray } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const freeQuestions = [
   {
@@ -49,7 +47,6 @@ const freeQuestions = [
 ];
 
 const FreeAssessment = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -91,21 +88,6 @@ const FreeAssessment = () => {
         // Store preview results in localStorage
         localStorage.setItem('freeAssessmentResults', JSON.stringify(results));
 
-        // Save to database if user is logged in
-        if (user) {
-          try {
-            await supabase
-              .from('assessment_results')
-              .insert({
-                user_id: user.id,
-                assessment_type: 'free',
-                results: results
-              });
-          } catch (error) {
-            console.error('Error saving assessment results:', error);
-          }
-        }
-
         navigate('/free-results');
       }
     }
@@ -125,7 +107,7 @@ const FreeAssessment = () => {
   // Shuffle options for current question
   const shuffledOptions = useMemo(() => {
     return shuffleArray(currentQuestionData.options);
-  }, [currentQuestion]);
+  }, [currentQuestionData.options]);
 
   const stageInfo = {
     "Forming": { icon: "🤝", desc: "Building connection and establishing team foundation", color: "red" },
@@ -183,7 +165,7 @@ const FreeAssessment = () => {
                 <div className="text-center min-w-[80px]">
                   <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-green mx-auto mb-2" />
                   <p className="text-xs sm:text-sm font-semibold text-foreground">Completely Free</p>
-                  <p className="text-xs text-muted-foreground">No signup required</p>
+                  <p className="text-xs text-muted-foreground">Email to view</p>
                 </div>
               </div>
             </div>

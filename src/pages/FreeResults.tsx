@@ -12,6 +12,7 @@ import { Lock, Star, ChevronRight, Eye, Gift, Save, Share2, Download, Copy, Mail
 import { Navbar } from "@/components/navigation/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import SendToFriendCard from "@/components/reports/SendToFriendCard";
 import RoleColorIdentityCard from "@/components/reports/RoleColorIdentityCard";
@@ -23,6 +24,33 @@ interface FreeResults {
   totalQuestions: number;
   isPreview: boolean;
 }
+
+const getResultAccessKey = (result: FreeResults) =>
+  [
+    "freeAssessmentEmailSubmitted",
+    result.dominantColor,
+    result.scores.yellow,
+    result.scores.red,
+    result.scores.green,
+    result.scores.blue,
+    result.totalQuestions,
+  ].join(":");
+
+const getSubmissionErrorMessage = async (error: unknown) => {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const payload = await error.context.json();
+      if (payload?.error && typeof payload.error === "string") {
+        return payload.error;
+      }
+    } catch {
+      // Fall through to the generic message below.
+    }
+  }
+
+  if (error instanceof Error) return error.message;
+  return "Please try again or contact support.";
+};
 
 const colorPreviewData = {
   yellow: {
@@ -68,9 +96,9 @@ const FreeResults = () => {
   const [resultName, setResultName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  const [hasEmailAccess, setHasEmailAccess] = useState(false);
   const [shareableCode, setShareableCode] = useState("");
   const resultCardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -135,7 +163,10 @@ const FreeResults = () => {
   };
 
   const handleEmailSubmit = async () => {
-    if (!email.trim()) {
+    if (!results) return;
+
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
       toast({
         title: "Email Required",
         description: "Please enter your email address",
@@ -146,32 +177,37 @@ const FreeResults = () => {
 
     setIsSubmittingEmail(true);
     try {
-      // Save email to database for follow-up
-      const { error } = await supabase
-        .from('email_signups')
-        .insert({
-          email: email.trim(),
-          source: 'free_quiz_deep_dive',
-          metadata: {
-            color: results?.dominantColor,
-            timestamp: new Date().toISOString()
-          }
-        });
+      const { data, error } = await supabase.functions.invoke("submit-free-assessment", {
+        body: {
+          email: normalizedEmail,
+          result: {
+            dominantColor: results.dominantColor,
+            scores: results.scores,
+            totalQuestions: results.totalQuestions,
+            isPreview: results.isPreview,
+          },
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      localStorage.setItem(getResultAccessKey(results), "true");
+      if (data?.submission_id) {
+        localStorage.setItem("freeAssessmentSubmissionId", String(data.submission_id));
+      }
+      setHasEmailAccess(true);
 
       toast({
-        title: "Success! 🎉",
-        description: "Your 3-page deep dive report will be sent to your email within 24 hours!"
+        title: "Result unlocked",
+        description: "We sent your assessment result and account setup link to your email."
       });
-      
-      setIsEmailDialogOpen(false);
-      setEmail("");
     } catch (error) {
       console.error('Error saving email:', error);
+      const message = await getSubmissionErrorMessage(error);
       toast({
         title: "Submission Failed",
-        description: "Please try again or contact support.",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -255,9 +291,11 @@ const FreeResults = () => {
           return;
         }
 
-        setResults(data.results as FreeResults);
+        const sharedResults = data.results as unknown as FreeResults & { name?: string };
+        setResults(sharedResults);
+        setHasEmailAccess(true);
         setShareableCode(data.shareable_code || sharedCode);
-        setResultName(((data.results as any)?.name as string) || '');
+        setResultName(sharedResults.name || '');
       };
 
       fetchSharedResults();
@@ -266,7 +304,9 @@ const FreeResults = () => {
 
     const savedResults = localStorage.getItem('freeAssessmentResults');
     if (savedResults) {
-      setResults(JSON.parse(savedResults));
+      const parsedResults = JSON.parse(savedResults) as FreeResults;
+      setResults(parsedResults);
+      setHasEmailAccess(localStorage.getItem(getResultAccessKey(parsedResults)) === "true");
 
       if (user) {
         const fetchShareableCode = async () => {
@@ -289,6 +329,12 @@ const FreeResults = () => {
     }
   }, [navigate, sharedCode, toast, user]);
 
+  useEffect(() => {
+    if (user?.email && !email) {
+      setEmail(user.email);
+    }
+  }, [email, user?.email]);
+
   if (!results) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
@@ -302,11 +348,64 @@ const FreeResults = () => {
 
   const colorData = colorPreviewData[results.dominantColor as keyof typeof colorPreviewData];
 
+  if (!hasEmailAccess && !isSharedView) {
+    return (
+      <div className="min-h-screen bg-background pt-20">
+        <Navbar />
+        <div className="bg-gradient-subtle py-12 px-4">
+          <div className="max-w-2xl mx-auto">
+            <Card className="border-primary/20 shadow-glow">
+              <CardHeader className="text-center">
+                <Badge className="mx-auto mb-2 bg-primary/10 text-primary border-primary/20">
+                  <Mail className="w-3 h-3 mr-1" />
+                  Your Results Are Ready
+                </Badge>
+                <CardTitle className="text-3xl">Enter your email to view your free assessment result</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <p className="text-center text-muted-foreground">
+                  We will show your result here and send a copy with an account setup link to your inbox.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="free-assessment-email">Email address</Label>
+                  <Input
+                    id="free-assessment-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleEmailSubmit();
+                    }}
+                  />
+                </div>
+                <Button className="w-full" size="lg" onClick={handleEmailSubmit} disabled={isSubmittingEmail || !email.trim()}>
+                  {isSubmittingEmail ? (
+                    "Unlocking..."
+                  ) : (
+                    <>
+                      Send My Result
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  No password is required to view this preview. Your email will not be used for spam or promotions of any kind.
+                  You can create an account from the email if you want to save more results.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pt-20">
       <Navbar />
       <div className="bg-gradient-subtle py-12 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Promo Banner */}
           <div className="mb-8 animate-fade-in">
             <Card className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-200 dark:border-green-800">
@@ -388,9 +487,8 @@ const FreeResults = () => {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Preview Results */}
-            <Card className="animate-scale-in">
+          <div className="space-y-8">
+            <Card className="animate-scale-in border-primary/15 shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
                   <div className={`w-8 h-8 ${colorData.gradient} rounded-full flex items-center justify-center`}>
@@ -399,13 +497,13 @@ const FreeResults = () => {
                   Preview Insights
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
+              <CardContent className="grid gap-6 lg:grid-cols-[1.3fr_1fr_1.1fr] lg:items-start">
+                <div className="space-y-3">
                   <h4 className="font-semibold mb-2">Your Leadership Style Preview</h4>
                   <p className="text-muted-foreground">{colorData.description}</p>
                 </div>
 
-                <div>
+                <div className="space-y-3">
                   <h4 className="font-semibold mb-3">Sample Strengths</h4>
                   <div className="space-y-2">
                     {colorData.previewStrengths.map((strength, index) => (
@@ -437,8 +535,7 @@ const FreeResults = () => {
               </CardContent>
             </Card>
 
-            {/* Upgrade Options */}
-            <div className="space-y-6">
+            <div className="grid gap-8 lg:grid-cols-2">
               <Card className="border-primary/20 shadow-glow animate-scale-in">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -471,7 +568,7 @@ const FreeResults = () => {
                     </li>
                   </ul>
                   <Link to="/pricing">
-                    <Button className="w-full" size="lg">
+                    <Button className="w-full mt-4" size="lg">
                       Get Premium Assessment
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -508,27 +605,30 @@ const FreeResults = () => {
                     </li>
                   </ul>
                   <Link to="/pricing">
-                    <Button variant="outline" className="w-full" size="lg">
+                    <Button variant="outline" className="w-full mt-4" size="lg">
                       Get Pro Analysis
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
+            </div>
 
-              <div className="text-center">
-                <Button variant="ghost" onClick={() => navigate('/')}>
-                  ← Back to Home
-                </Button>
+            {!isSharedView && (
+              <div className="grid gap-8 lg:grid-cols-2">
+                <RoleColorIdentityCard
+                  name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+                  primaryColor={results.dominantColor}
+                  className="h-full"
+                />
+                <SendToFriendCard color={results.dominantColor} className="h-full" />
               </div>
+            )}
 
-              {!isSharedView && <RoleColorIdentityCard
-                name={user?.user_metadata?.full_name || user?.email?.split("@")[0]}
-                primaryColor={results.dominantColor}
-                className="mt-8"
-              />}
-
-              {!isSharedView && <SendToFriendCard color={results.dominantColor} className="mt-8" />}
+            <div className="text-center">
+              <Button variant="ghost" onClick={() => navigate('/')}>
+                ← Back to Home
+              </Button>
             </div>
           </div>
         </div>
