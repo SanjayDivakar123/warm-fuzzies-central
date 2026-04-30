@@ -9,7 +9,10 @@
       "Bash(supabase db:*)",
       "Bash(supabase migration:*)",
       "Bash(supabase functions:*)",
-      "Bash(open -a Docker)"
+      "Bash(open -a Docker)",
+      "Bash(curl -s \"https://static.wixstatic.com/media/4df69a_79630980084241ef8e25b3c516cc6537~mv2.png\")",
+      "Bash(curl -s \"https://static.wixstatic.com/media/4df69a_9c5e8d64222146c7a03d0eab88b721e9~mv2.png\")",
+      "Bash(convert png:- -quality 90 -resize 1280x720 jpg:-)"
     ]
   }
 }

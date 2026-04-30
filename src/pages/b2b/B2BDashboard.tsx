@@ -24,7 +24,7 @@ import UsersTab from '@/components/b2b/UsersTab';
 import AssessmentsTab from '@/components/b2b/AssessmentsTab';
 import SettingsTab from '@/components/b2b/SettingsTab';
 import { WorkAssigningMatrixTab } from '@/components/b2b/WorkAssigningMatrixTab';
-import RemindersHistoryTab from '@/components/b2b/RemindersHistoryTab';
+import MeetingIntelligence from '@/pages/b2b/MeetingIntelligence';
 import CandidatesTab from '@/components/b2b/CandidatesTab';
 import HiringSection from '@/components/b2b/hiring/HiringSection';
 import AdvancedAnalyticsDashboard from '@/components/b2b/analytics/AdvancedAnalyticsDashboard';
@@ -47,7 +47,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'reminders', 'matrix', 'roles', 'analytics', 'friction-map', 'settings']);
+const GUIDE_TABS = new Set(['overview', 'users', 'hiring', 'assessments', 'meetings', 'matrix', 'roles', 'analytics', 'friction-map', 'settings']);
 
 const getEdgeErrorMessage = async (error: unknown): Promise<string> => {
   if (error instanceof FunctionsHttpError) {
@@ -117,7 +117,7 @@ function B2BDashboardContent() {
       { ...B2B_SHORTCUTS.NAVIGATE_USERS, action: () => setActiveTab('users') },
       { ...B2B_SHORTCUTS.NAVIGATE_CANDIDATES, action: () => setActiveTab('hiring') },
       { ...B2B_SHORTCUTS.NAVIGATE_ASSESSMENTS, action: () => setActiveTab('assessments') },
-      { ...B2B_SHORTCUTS.NAVIGATE_REMINDERS, action: () => setActiveTab('reminders') },
+      { ...B2B_SHORTCUTS.NAVIGATE_REMINDERS, action: () => setActiveTab('meetings') },
       { ...B2B_SHORTCUTS.NAVIGATE_MATRIX, action: () => setActiveTab('matrix') },
       { ...B2B_SHORTCUTS.NAVIGATE_SETTINGS, action: () => setActiveTab('settings') },
       { ...B2B_SHORTCUTS.HELP, action: () => setShowShortcuts(prev => !prev) },
@@ -1154,11 +1154,11 @@ function B2BDashboardContent() {
                 </TabsTrigger>
               )}
               {permissions.canManageReminders && (
-                <TabsTrigger 
-                  value="reminders" 
+                <TabsTrigger
+                  value="meetings"
                   className="b2b-tab px-4 py-2 text-sm rounded-md transition-none flex-shrink-0"
                 >
-                  Reminders
+                  Meetings
                 </TabsTrigger>
               )}
               {permissions.canViewOverview && (
@@ -1232,8 +1232,8 @@ function B2BDashboardContent() {
             <RolesTab company={company} />
           </TabsContent>
 
-          <TabsContent value="reminders" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
-            <RemindersHistoryTab company={company} />
+          <TabsContent value="meetings" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
+            <MeetingIntelligence />
           </TabsContent>
 
           <TabsContent value="settings" forceMount className="mt-0 break-words data-[state=inactive]:hidden">
