@@ -94,7 +94,7 @@ const Team = () => {
     roleColor: "green" as const
   }, {
     name: "Jessicah Fowler",
-    title: "Head of Revsales",
+    title: "Head of RevSales",
     location: "Dallas, TX",
     image: "/images/jessicah-fowler-clean.jpg",
     summary: "AI-native revenue leader designing go-to-market systems that scale with clarity, alignment, and measurable impact across sales, product, and partnerships.",
