@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Users, UserSearch, ClipboardList, Settings, Bell, BarChart3, Grid3x3, MoreHorizontal, Target, X } from 'lucide-react';
+import { Home, Users, UserSearch, ClipboardList, Settings, Video, BarChart3, Grid3x3, MoreHorizontal, Target, X } from 'lucide-react';
 
 interface Permissions {
   canViewOverview: boolean;
@@ -26,7 +26,7 @@ export default function MobileBottomNav({ activeTab, onChange, permissions }: Mo
     permissions.canManageUsers && { key: 'users', label: 'Users', icon: Users },
     permissions.canManageCandidates && { key: 'hiring', label: 'Hiring', icon: UserSearch },
     permissions.canViewAssessments && { key: 'assessments', label: 'Assessments', icon: ClipboardList },
-    permissions.canManageReminders && { key: 'reminders', label: 'Reminders', icon: Bell },
+    permissions.canManageReminders && { key: 'meetings', label: 'Meetings', icon: Video },
     permissions.canUseWorkMatrix && { key: 'matrix', label: 'Work Matrix', icon: Grid3x3 },
     permissions.canViewOverview && { key: 'analytics', label: 'Analytics', icon: BarChart3 },
     permissions.canViewOverview && { key: 'friction-map', label: 'Friction', icon: Target },
