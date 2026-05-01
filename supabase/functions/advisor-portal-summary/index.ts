@@ -6,6 +6,7 @@ import {
   getStripe,
   jsonResponse,
 } from "../_shared/advisorLanding.ts";
+import { requireSuperAdmin } from "../_shared/admin.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,8 +18,32 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const previewAdvisorId = String(body?.previewAdvisorId || "").trim();
     const supabase = createServiceClient();
-    const { advisor } = await getAdvisorForAuthUser(req, supabase);
+
+    let advisor;
+    let previewMode = false;
+    let previewActorEmail: string | null = null;
+
+    if (previewAdvisorId) {
+      const adminContext = await requireSuperAdmin(req);
+      const { data: previewAdvisor, error: previewError } = await adminContext.supabase
+        .from("advisors")
+        .select("*")
+        .eq("id", previewAdvisorId)
+        .maybeSingle();
+      if (previewError) throw previewError;
+      if (!previewAdvisor) {
+        return jsonResponse(404, { error: "Preview advisor not found" });
+      }
+      advisor = previewAdvisor;
+      previewMode = true;
+      previewActorEmail = adminContext.user.email;
+    } else {
+      const result = await getAdvisorForAuthUser(req, supabase);
+      advisor = result.advisor;
+    }
 
     let currentAdvisor = advisor;
     if (advisor.stripe_connect_account_id) {
@@ -75,7 +100,10 @@ serve(async (req) => {
 
     return jsonResponse(200, {
       advisor: currentAdvisor,
+      previewMode,
+      previewActorEmail,
       pages: pages ?? [],
+      landingPage: (pages ?? [])[0] ?? null,
       submissions: submissions ?? [],
       commissions: commissions ?? [],
       stats: {

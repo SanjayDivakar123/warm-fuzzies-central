@@ -9,8 +9,8 @@ export const advisorCorsHeaders = {
 
 export type AssessmentType = "premium" | "pro";
 
-export const ADVISOR_DISCOUNT_PERCENT = 30;
-export const ADVISOR_COMMISSION_RATE = 0.15;
+export const ADVISOR_DISCOUNT_PERCENT = 15;
+export const ADVISOR_COMMISSION_RATE = 0.30;
 
 export const ASSESSMENT_PRODUCTS: Record<AssessmentType, {
   name: string;
@@ -76,15 +76,21 @@ export const getStripe = () => {
   });
 };
 
-export const calculateAdvisorPrice = (assessmentType: AssessmentType, discountPercent = ADVISOR_DISCOUNT_PERCENT) => {
+export const calculateAdvisorPrice = (
+  assessmentType: AssessmentType,
+  discountPercent = ADVISOR_DISCOUNT_PERCENT,
+  commissionPercent = Math.round(ADVISOR_COMMISSION_RATE * 100),
+) => {
   const product = ASSESSMENT_PRODUCTS[assessmentType];
   if (!product) {
     throw new Error("Invalid assessment type");
   }
 
   const safeDiscount = Math.min(100, Math.max(0, Math.round(discountPercent)));
+  const safeCommissionPercent = Math.min(100, Math.max(0, Math.round(commissionPercent)));
+  const commissionRate = safeCommissionPercent / 100;
   const discountedAmountMinor = Math.round(product.amountMinor * ((100 - safeDiscount) / 100));
-  const commissionAmountMinor = Math.round(discountedAmountMinor * ADVISOR_COMMISSION_RATE);
+  const commissionAmountMinor = Math.round(discountedAmountMinor * commissionRate);
 
   return {
     product,
@@ -92,6 +98,8 @@ export const calculateAdvisorPrice = (assessmentType: AssessmentType, discountPe
     originalAmountMinor: product.amountMinor,
     discountedAmountMinor,
     discountPercent: safeDiscount,
+    commissionPercent: safeCommissionPercent,
+    commissionRate,
     commissionAmountMinor,
   };
 };

@@ -10,6 +10,7 @@ import {
   normalizeSlug,
   type AssessmentType,
 } from "../_shared/advisorLanding.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,9 +26,14 @@ serve(async (req) => {
     const slug = normalizeSlug(String(body.slug || ""));
     const guestName = String(body.guestName || "").trim();
     const guestEmail = normalizeEmail(body.guestEmail);
+    const guestPassword = String(body.guestPassword || "");
+    const accessCode = String(body.accessCode || "").trim();
 
-    if (!slug || !guestName || !guestEmail) {
-      return jsonResponse(400, { error: "Landing page, guest name, and guest email are required" });
+    if (!slug || !guestName || !guestEmail || !guestPassword) {
+      return jsonResponse(400, { error: "Landing page, full name, email, password, and advisor code are required" });
+    }
+    if (guestPassword.length < 8) {
+      return jsonResponse(400, { error: "Password must be at least 8 characters." });
     }
 
     const supabase = createServiceClient();
@@ -39,15 +45,74 @@ serve(async (req) => {
       .single();
 
     if (pageError) throw pageError;
+    const advisorAccessCode = String(page.advisor?.active_access_code || "").trim();
+    const advisorCodeStatus = String(page.advisor?.access_code_status || "inactive");
+    if (!advisorAccessCode || advisorCodeStatus !== "active" || accessCode !== advisorAccessCode) {
+      return jsonResponse(403, { error: "Code not active or already used, please speak to your advisor for a new code." });
+    }
 
     const assessmentType = page.assessment_type as AssessmentType;
-    const price = calculateAdvisorPrice(assessmentType, page.discount_percent);
+    const price = calculateAdvisorPrice(assessmentType, page.discount_percent, page.commission_percent);
+
+    const { data: existingUserId, error: existingUserError } = await supabase.rpc("resolve_auth_user_id_by_email", {
+      _email: guestEmail,
+    });
+    if (existingUserError) {
+      console.warn("Could not resolve existing auth user by email:", existingUserError.message);
+    }
+    let guestUserId: string;
+
+    if (existingUserId) {
+      const authClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      );
+      const { data: signInData, error: signInError } = await authClient.auth.signInWithPassword({
+        email: guestEmail,
+        password: guestPassword,
+      });
+      if (signInError || !signInData?.user?.id) {
+        return jsonResponse(401, {
+          error: "This email already has an account. Enter the correct password to continue with advisor checkout.",
+        });
+      }
+      guestUserId = signInData.user.id;
+    } else {
+      const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+        email: guestEmail,
+        password: guestPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: guestName,
+          source: "advisor_landing_signup",
+          advisor_id: page.advisor_id,
+          landing_page_id: page.id,
+        },
+      });
+      if (createUserError || !createdUser?.user?.id) {
+        throw createUserError || new Error("Unable to create account for this email.");
+      }
+      guestUserId = createdUser.user.id;
+    }
+
+    await supabase
+      .from("profiles")
+      .upsert(
+        {
+          user_id: guestUserId,
+          full_name: guestName,
+          email: guestEmail,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
     const { data: submission, error: submissionError } = await supabase
       .from("advisor_landing_submissions")
       .insert({
         landing_page_id: page.id,
         advisor_id: page.advisor_id,
+        guest_user_id: guestUserId,
         guest_name: guestName,
         guest_email: guestEmail,
         assessment_type: assessmentType,
@@ -56,6 +121,8 @@ serve(async (req) => {
         original_amount_minor: price.originalAmountMinor,
         discounted_amount_minor: price.discountedAmountMinor,
         discount_percent: price.discountPercent,
+        commission_percent: price.commissionPercent,
+        access_code_used: advisorAccessCode,
       })
       .select("*")
       .single();
@@ -88,7 +155,7 @@ serve(async (req) => {
         landing_page_id: page.id,
         advisor_id: page.advisor_id,
         assessment_type: assessmentType,
-        commission_rate: "0.15",
+        commission_rate: String(price.commissionRate),
       },
     });
 
