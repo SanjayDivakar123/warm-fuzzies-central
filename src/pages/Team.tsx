@@ -87,7 +87,7 @@ const Team = () => {
   }, {
     name: "Jessicah Fowler",
     title: "Head of RevSales",
-    location: "Dallas, TX",
+    location: "Dallas, TX, USA",
     image: "/images/jessicah-fowler-clean.jpg",
     summary: "AI-native revenue leader designing go-to-market systems that scale with clarity, alignment, and measurable impact across sales, product, and partnerships.",
     link: "/team/jessicah-fowler",

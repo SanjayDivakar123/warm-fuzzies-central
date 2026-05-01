@@ -97,7 +97,7 @@ const JessicahFowler = () => {
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>Dallas, TX</span>
+                      <span>Dallas, TX, USA</span>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Globe className="w-4 h-4 flex-shrink-0" />
