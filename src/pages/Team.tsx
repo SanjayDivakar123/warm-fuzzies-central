@@ -85,14 +85,6 @@ const Team = () => {
     link: "/team/tristan-beley",
     roleColor: "yellow" as const
   }, {
-    name: "Tanisha Sikder",
-    title: "AI Engineer",
-    location: "Liberty Township, OH, USA",
-    image: "/images/tanisha-sikder.jpg",
-    summary: "Passionate about building, improving, and experimenting with AI systems to solve real-world problems. Engineers AI to help people understand their leadership style using color-based psychology.",
-    link: "/team/tanisha-sikder",
-    roleColor: "green" as const
-  }, {
     name: "Jessicah Fowler",
     title: "Head of RevSales",
     location: "Dallas, TX",
@@ -100,6 +92,30 @@ const Team = () => {
     summary: "AI-native revenue leader designing go-to-market systems that scale with clarity, alignment, and measurable impact across sales, product, and partnerships.",
     link: "/team/jessicah-fowler",
     roleColor: "red" as const
+  }, {
+    name: "Kody Krueger",
+    title: "Head of Operations",
+    location: "Seattle, WA, USA",
+    image: "/images/kody-krueger.jpg",
+    summary: "Head of Operations and supportive collaborator focused on disciplined execution, client relationships, and building repeatable systems that turn momentum into measurable growth.",
+    link: "/team/kody-krueger",
+    roleColor: "green" as const
+  }, {
+    name: "Aaron Smart",
+    title: "Sales Enablement Lead",
+    location: "Illinois, USA",
+    image: "/images/aaron-smart.png",
+    summary: "Sales Enablement Lead and Fast Executor focused on pipeline creation, outbound/inbound execution, and turning high-quality conversations into closed revenue through repeatable systems.",
+    link: "/team/aaron-smart",
+    roleColor: "yellow" as const
+  }, {
+    name: "Tanisha Sikder",
+    title: "AI Engineer",
+    location: "Liberty Township, OH, USA",
+    image: "/images/tanisha-sikder.jpg",
+    summary: "Passionate about building, improving, and experimenting with AI systems to solve real-world problems. Engineers AI to help people understand their leadership style using color-based psychology.",
+    link: "/team/tanisha-sikder",
+    roleColor: "green" as const
   }];
   const roleColorConfig = {
     red: { bg: "bg-red-500", text: "text-white", label: "Creative Motivator", border: "border-red-500" },
