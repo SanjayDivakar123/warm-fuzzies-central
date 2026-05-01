@@ -23,7 +23,7 @@ serve(async (req) => {
     const supabase = createServiceClient();
     const { data: submission, error } = await supabase
       .from("advisor_landing_submissions")
-      .select("id,guest_name,assessment_type,status,landing_page:advisor_landing_pages(title),advisor:advisors(name)")
+      .select("id,advisor_id,access_code_used,guest_name,assessment_type,status,landing_page:advisor_landing_pages(title),advisor:advisors(name)")
       .eq("assessment_token", String(assessmentToken))
       .single();
 
@@ -38,6 +38,18 @@ serve(async (req) => {
         .from("advisor_landing_submissions")
         .update({ status: "assessment_started" })
         .eq("id", submission.id);
+
+      if (submission.access_code_used) {
+        await supabase
+          .from("advisors")
+          .update({
+            access_code_status: "used",
+            access_code_used_at: new Date().toISOString(),
+          })
+          .eq("id", submission.advisor_id)
+          .eq("active_access_code", submission.access_code_used)
+          .eq("access_code_status", "active");
+      }
     }
 
     return jsonResponse(200, {

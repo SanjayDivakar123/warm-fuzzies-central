@@ -7,9 +7,14 @@ export interface AdvisorLandingPage {
   assessmentType: AdvisorAssessmentType;
   heroHeadline?: string | null;
   heroSubheadline?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
   advisorName?: string | null;
   advisorCompanyName?: string | null;
   discountPercent: number;
+  commissionPercent?: number;
+  requiresAccessCode?: boolean;
+  accessCodeStatus?: "inactive" | "active" | "used" | string;
   originalAmountMinor: number;
   discountedAmountMinor: number;
   originalPriceFormatted: string;

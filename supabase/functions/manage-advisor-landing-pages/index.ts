@@ -24,6 +24,58 @@ const pageSelect = `
   )
 `;
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const buildAdvisorInviteEmailHtml = ({
+  heading,
+  intro,
+  ctaLabel,
+  ctaHref,
+}: {
+  heading: string;
+  intro: string;
+  ctaLabel: string;
+  ctaHref: string;
+}) => {
+  const safeHeading = escapeHtml(heading);
+  const safeIntro = escapeHtml(intro);
+  const safeCtaLabel = escapeHtml(ctaLabel);
+  const safeCtaHref = escapeHtml(ctaHref);
+  const logoUrl = "https://rolecolorfinder.com/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png";
+
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; max-width: 640px; margin: 0 auto; background: #f8fafc; padding: 24px;">
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden;">
+        <div style="padding: 26px 28px; text-align: center; background: linear-gradient(135deg,#0f172a 0%,#1e293b 100%);">
+          <img src="${logoUrl}" alt="RoleColorFinder" style="max-width: 200px; height: auto;" />
+        </div>
+        <div style="padding: 30px 28px;">
+          <h2 style="margin: 0 0 14px; font-size: 30px; line-height: 1.2; color: #0f172a;">${safeHeading}</h2>
+          <p style="margin: 0 0 20px; color: #334155; font-size: 16px;">${safeIntro}</p>
+          <p style="margin: 0 0 24px;">
+            <a href="${safeCtaHref}" style="display: inline-block; background: #0f172a; color: #ffffff; text-decoration: none; padding: 12px 18px; border-radius: 999px; font-weight: 700;">
+              ${safeCtaLabel}
+            </a>
+          </p>
+          <p style="margin: 0; color: #64748b; font-size: 13px;">
+            If the button does not work, open this link: <a href="${safeCtaHref}" style="color: #0f172a; word-break: break-all;">${safeCtaHref}</a>
+          </p>
+        </div>
+      </div>
+      <div style="margin-top: 14px; color: #64748b; font-size: 12px; line-height: 1.5; text-align: center;">
+        <p style="margin: 0;">Sent by RoleColorFinder LLC</p>
+        <p style="margin: 2px 0 0;">43 Hunting Ridge Rd, Greenwich, 06831, Connecticut, United States</p>
+      </div>
+    </div>
+  `;
+};
+
 const listPages = async (supabase: any) => {
   const { data, error } = await supabase
     .from("advisor_landing_pages")
@@ -58,6 +110,10 @@ serve(async (req) => {
       const companyName = String(body.companyName || "").trim() || null;
       const title = String(body.title || "").trim();
       const assessmentType = body.assessmentType as AssessmentType;
+      const discountPercentRaw = Number(body.discountPercent);
+      const commissionPercentRaw = Number(body.commissionPercent);
+      const discountPercent = Number.isFinite(discountPercentRaw) ? discountPercentRaw : undefined;
+      const commissionPercent = Number.isFinite(commissionPercentRaw) ? commissionPercentRaw : undefined;
       const slug = normalizeSlug(String(body.slug || title || advisorName));
       const isActive = Boolean(body.isActive);
       const landingPageId = body.landingPageId ? String(body.landingPageId) : null;
@@ -92,13 +148,14 @@ serve(async (req) => {
 
       if (advisorError) throw advisorError;
 
-      const price = calculateAdvisorPrice(assessmentType);
+      const price = calculateAdvisorPrice(assessmentType, discountPercent, commissionPercent);
       const pagePayload = {
         advisor_id: advisor.id,
         title,
         slug,
         assessment_type: assessmentType,
         discount_percent: price.discountPercent,
+        commission_percent: price.commissionPercent,
         is_active: isActive,
         hero_headline: String(body.heroHeadline || `Take the ${price.product.name} with ${advisorName}`).trim(),
         hero_subheadline: String(body.heroSubheadline || `Save ${price.discountPercent}% through ${advisorName}'s advisor link.`).trim(),
@@ -182,13 +239,12 @@ serve(async (req) => {
         await sendMailgunEmail({
           to: advisor.email,
           subject: "Your Role Color Finder advisor portal access is ready",
-          html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-              <h2>Your advisor portal is ready</h2>
-              <p>${user.email} gave your existing Role Color Finder account advisor portal access.</p>
-              <p><a href="${redirectTo}">Open your advisor portal</a></p>
-            </div>
-          `,
+          html: buildAdvisorInviteEmailHtml({
+            heading: "Your advisor portal is ready",
+            intro: `${user.email} gave your existing Role Color Finder account advisor portal access.`,
+            ctaLabel: "Open your advisor portal",
+            ctaHref: redirectTo,
+          }),
         });
 
         await logAdminAction({
@@ -236,13 +292,12 @@ serve(async (req) => {
       await sendMailgunEmail({
         to: advisor.email,
         subject: "Your Role Color Finder advisor portal invite",
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-            <h2>You have been invited to Role Color Finder</h2>
-            <p>${user.email} invited you to access your advisor portal.</p>
-            <p><a href="${inviteUrl}">Create your advisor portal login</a></p>
-          </div>
-        `,
+        html: buildAdvisorInviteEmailHtml({
+          heading: "You have been invited to Role Color Finder",
+          intro: `${user.email} invited you to access your advisor portal.`,
+          ctaLabel: "Create your advisor portal login",
+          ctaHref: inviteUrl,
+        }),
       });
 
       await logAdminAction({

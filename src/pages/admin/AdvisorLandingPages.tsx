@@ -33,6 +33,7 @@ type AdvisorPageRow = {
   slug: string;
   assessment_type: "premium" | "pro";
   discount_percent: number;
+  commission_percent: number;
   is_active: boolean;
   hero_headline?: string | null;
   hero_subheadline?: string | null;
@@ -59,6 +60,8 @@ const initialForm = {
   title: "",
   slug: "",
   assessmentType: "premium" as "premium" | "pro",
+  discountPercent: "15",
+  commissionPercent: "30",
   heroHeadline: "",
   heroSubheadline: "",
   isActive: false,
@@ -133,6 +136,8 @@ export default function AdvisorLandingPages() {
       title: page.title,
       slug: page.slug,
       assessmentType: page.assessment_type,
+      discountPercent: String(page.discount_percent ?? 15),
+      commissionPercent: String(page.commission_percent ?? 30),
       heroHeadline: page.hero_headline || "",
       heroSubheadline: page.hero_subheadline || "",
       isActive: page.is_active,
@@ -241,6 +246,28 @@ export default function AdvisorLandingPages() {
                   </Select>
                 </div>
               </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Assessment discount (%)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.discountPercent}
+                    onChange={(event) => updateForm("discountPercent", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Advisor commission (%)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.commissionPercent}
+                    onChange={(event) => updateForm("commissionPercent", event.target.value)}
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label>Public slug</Label>
                 <Input value={form.slug} onChange={(event) => updateForm("slug", slugify(event.target.value))} />
@@ -281,7 +308,7 @@ export default function AdvisorLandingPages() {
             </CardHeader>
             <CardContent>
               <div className="rounded-3xl border bg-slate-50 p-6">
-                <Badge>{form.assessmentType === "pro" ? "Pro Assessment" : "Premium Assessment"} - 30% off</Badge>
+                <Badge>{form.assessmentType === "pro" ? "Pro Assessment" : "Premium Assessment"} - {form.discountPercent || "15"}% off</Badge>
                 <h2 className="mt-6 text-3xl font-bold">{form.heroHeadline || form.title || "Advisor landing page headline"}</h2>
                 <p className="mt-3 text-slate-600">
                   {form.heroSubheadline || `A simple discounted assessment page for ${form.advisorName || "your advisor"}.`}
@@ -289,6 +316,7 @@ export default function AdvisorLandingPages() {
                 <div className="mt-6 rounded-xl bg-white p-4 shadow-sm">
                   <p className="text-sm text-muted-foreground">Advisor</p>
                   <p className="font-semibold">{form.advisorName || "Advisor Name"}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Commission: {form.commissionPercent || "30"}%</p>
                 </div>
               </div>
             </CardContent>
@@ -309,6 +337,8 @@ export default function AdvisorLandingPages() {
                     <TableHead>Page</TableHead>
                     <TableHead>Advisor</TableHead>
                     <TableHead>Assessment</TableHead>
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Commission</TableHead>
                     <TableHead>Submissions</TableHead>
                     <TableHead>Commissions</TableHead>
                     <TableHead>Status</TableHead>
@@ -334,6 +364,8 @@ export default function AdvisorLandingPages() {
                           <div className="text-xs text-muted-foreground">{page.advisor?.email}</div>
                         </TableCell>
                         <TableCell className="capitalize">{page.assessment_type}</TableCell>
+                        <TableCell>{page.discount_percent}%</TableCell>
+                        <TableCell>{page.commission_percent}%</TableCell>
                         <TableCell>{page.submissions?.length || 0}</TableCell>
                         <TableCell>{formatMinorCurrency(commissionTotal)}</TableCell>
                         <TableCell>
@@ -346,6 +378,13 @@ export default function AdvisorLandingPages() {
                             <Button size="sm" variant="outline" onClick={() => toggleActive(page)}>{page.is_active ? "Disable" : "Activate"}</Button>
                             <Button size="sm" variant="outline" onClick={() => createConnectLink(page.advisor?.id)}>Connect</Button>
                             <Button size="sm" variant="outline" onClick={() => inviteAdvisor(page.advisor?.id)}>Invite</Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(`/advisor-portal?previewAdvisorId=${page.advisor?.id}`, "_blank")}
+                            >
+                              Preview Portal
+                            </Button>
                             <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/advisor/${page.slug}`)}>
                               <Copy className="h-4 w-4" />
                             </Button>

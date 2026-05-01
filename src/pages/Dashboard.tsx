@@ -97,6 +97,13 @@ interface DashboardAnnouncement {
   audience: string;
 }
 
+interface AdvisorPortalAccess {
+  advisorId: string;
+  advisorName: string;
+  advisorEmail: string;
+  pages: { id: string; slug: string; title: string; is_active: boolean }[];
+}
+
 // Career Finder Section Component
 interface CareerFinderSectionProps {
   user: any;
@@ -444,6 +451,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'assessments' | 'settings' | 'business' | 'career'>('overview');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [companyAccessList, setCompanyAccessList] = useState<CompanyAccess[]>([]);
+  const [advisorPortalAccess, setAdvisorPortalAccess] = useState<AdvisorPortalAccess | null>(null);
   const [googleLinking, setGoogleLinking] = useState(false);
   const [announcements, setAnnouncements] = useState<DashboardAnnouncement[]>([]);
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState<string[]>([]);
@@ -479,6 +487,7 @@ const Dashboard = () => {
       fetchUserAssessments();
       fetchInProgressAssessments();
       checkCompanyAccess();
+      checkAdvisorPortalAccess();
       fetchUserProfile();
       void fetchAnnouncements();
     }
@@ -649,6 +658,53 @@ const Dashboard = () => {
       console.error('Error checking company access:', error);
     }
   };
+
+  async function checkAdvisorPortalAccess() {
+    if (!user?.id) {
+      setAdvisorPortalAccess(null);
+      return;
+    }
+
+    try {
+      const userEmail = (user.email || "").trim().toLowerCase();
+      const { data: advisor, error: advisorError } = await supabase
+        .from("advisors")
+        .select("id,name,email")
+        .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+        .maybeSingle();
+
+      if (advisorError || !advisor) {
+        setAdvisorPortalAccess(null);
+        return;
+      }
+
+      const { data: pages, error: pagesError } = await supabase
+        .from("advisor_landing_pages")
+        .select("id,slug,title,is_active")
+        .eq("advisor_id", advisor.id)
+        .order("created_at", { ascending: false });
+
+      if (pagesError) {
+        setAdvisorPortalAccess({
+          advisorId: advisor.id,
+          advisorName: advisor.name,
+          advisorEmail: advisor.email,
+          pages: [],
+        });
+        return;
+      }
+
+      setAdvisorPortalAccess({
+        advisorId: advisor.id,
+        advisorName: advisor.name,
+        advisorEmail: advisor.email,
+        pages: pages || [],
+      });
+    } catch (error) {
+      console.error("Advisor portal access check failed:", error);
+      setAdvisorPortalAccess(null);
+    }
+  }
 
   const fetchUserAssessments = async () => {
     try {
@@ -1683,6 +1739,45 @@ const Dashboard = () => {
                               <Shield className="w-4 h-4 mr-2" />
                               Admin Dashboard
                             </Button>
+                          </CardContent>
+                        </Card>
+                      </section>
+                    )}
+
+                    {/* Advisor Landing Pages */}
+                    {advisorPortalAccess && (
+                      <section className="mb-6 sm:mb-8">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-indigo-500/10">
+                            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                          </div>
+                          Landing Pages
+                        </h2>
+                        <Card className="relative overflow-hidden shadow-lg border-indigo-400/30 bg-gradient-to-br from-indigo-50 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 hover:shadow-xl transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-bl from-indigo-400/10 to-transparent rounded-full" />
+                          <CardContent className="flex flex-col gap-4 py-4 sm:py-5 relative z-10">
+                            <div>
+                              <h3 className="font-bold text-base sm:text-lg">Advisor backend access</h3>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                Signed in as {advisorPortalAccess.advisorName} ({advisorPortalAccess.advisorEmail})
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                onClick={() => navigate("/advisor-portal")}
+                                className="bg-gradient-to-r from-indigo-500 to-blue-600 text-white border-0 hover:from-indigo-600 hover:to-blue-700 shadow-lg shadow-indigo-500/25"
+                              >
+                                Open Advisor Backend
+                              </Button>
+                              {advisorPortalAccess.pages[0] ? (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => window.open(`/advisor/${advisorPortalAccess.pages[0].slug}`, "_blank")}
+                                >
+                                  Preview Frontend ({advisorPortalAccess.pages[0].slug})
+                                </Button>
+                              ) : null}
+                            </div>
                           </CardContent>
                         </Card>
                       </section>

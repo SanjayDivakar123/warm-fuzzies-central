@@ -55,7 +55,12 @@ serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    const commissionAmountMinor = Math.round(submission.discounted_amount_minor * ADVISOR_COMMISSION_RATE);
+    const commissionPercent =
+      Number(submission.commission_percent) ||
+      Number(submission.landing_page?.commission_percent) ||
+      Math.round(ADVISOR_COMMISSION_RATE * 100);
+    const commissionRate = Math.min(1, Math.max(0, commissionPercent / 100));
+    const commissionAmountMinor = Math.round(submission.discounted_amount_minor * commissionRate);
     await supabase
       .from("advisor_commissions")
       .upsert({
@@ -63,7 +68,7 @@ serve(async (req) => {
         advisor_id: submission.advisor_id,
         currency: submission.currency,
         payment_amount_minor: submission.discounted_amount_minor,
-        commission_rate: ADVISOR_COMMISSION_RATE,
+        commission_rate: commissionRate,
         commission_amount_minor: commissionAmountMinor,
         stripe_connect_account_id: submission.advisor?.stripe_connect_account_id ?? null,
         status: submission.advisor?.stripe_connect_account_id ? "pending" : "held",

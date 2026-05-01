@@ -28,7 +28,7 @@ serve(async (req) => {
     const supabase = createServiceClient();
     const { data: page, error } = await supabase
       .from("advisor_landing_pages")
-      .select("id,title,slug,assessment_type,discount_percent,is_active,hero_headline,hero_subheadline,advisor:advisors(id,name,email,company_name)")
+      .select("id,title,slug,assessment_type,discount_percent,commission_percent,is_active,hero_headline,hero_subheadline,primary_color,secondary_color,advisor:advisors(id,name,email,company_name,access_code_status)")
       .eq("slug", safeSlug)
       .eq("is_active", true)
       .maybeSingle();
@@ -48,9 +48,14 @@ serve(async (req) => {
         assessmentType: page.assessment_type,
         heroHeadline: page.hero_headline,
         heroSubheadline: page.hero_subheadline,
+        primaryColor: page.primary_color,
+        secondaryColor: page.secondary_color,
         advisorName: page.advisor?.name,
         advisorCompanyName: page.advisor?.company_name,
         discountPercent: price.discountPercent,
+        commissionPercent: price.commissionPercent,
+        requiresAccessCode: true,
+        accessCodeStatus: page.advisor?.access_code_status || "inactive",
         originalAmountMinor: price.originalAmountMinor,
         discountedAmountMinor: price.discountedAmountMinor,
         originalPriceFormatted: formatMoney(price.originalAmountMinor),
