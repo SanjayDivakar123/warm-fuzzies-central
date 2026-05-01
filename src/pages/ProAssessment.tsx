@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 // 50 questions for Pro assessment - organized by Tuckman's team development stages
-const proQuestions = [
+export const proQuestions = [
   // FORMING STAGE - Questions 1-10 (Building Connection)
   {
     id: 1,

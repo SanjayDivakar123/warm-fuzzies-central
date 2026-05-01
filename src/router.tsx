@@ -46,6 +46,12 @@ import LeadershipGame3D from "@/pages/LeadershipGame3D";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import RCFB2BAdminDashboard from "@/pages/admin/RCFB2BAdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
+import AdvisorLandingPages from "@/pages/admin/AdvisorLandingPages";
+import AdvisorLandingPage from "@/pages/advisor/AdvisorLandingPage";
+import AdvisorPaymentSuccess from "@/pages/advisor/AdvisorPaymentSuccess";
+import AdvisorAssessment from "@/pages/advisor/AdvisorAssessment";
+import AdvisorResult from "@/pages/advisor/AdvisorResult";
+import AdvisorPortal from "@/pages/advisor/AdvisorPortal";
 import B2BDashboard from "@/pages/b2b/B2BDashboard";
 import B2BSignIn from "@/pages/b2b/B2BSignIn";
 import B2BPaymentSuccess from "@/pages/b2b/B2BPaymentSuccess";
@@ -199,6 +205,26 @@ export const routeConfig = [
     element: <Layout><PaymentSuccess /></Layout>,
   },
   {
+    path: "/advisor/:slug",
+    element: <Layout><AdvisorLandingPage /></Layout>,
+  },
+  {
+    path: "/advisor-payment-success",
+    element: <Layout><AdvisorPaymentSuccess /></Layout>,
+  },
+  {
+    path: "/advisor/assessment/:token",
+    element: <AdvisorAssessment />,
+  },
+  {
+    path: "/advisor/results/:token",
+    element: <Layout><AdvisorResult /></Layout>,
+  },
+  {
+    path: "/advisor-portal",
+    element: <AdvisorPortal />,
+  },
+  {
     path: "/pricing",
     element: <Layout><Pricing /></Layout>,
   },
@@ -309,6 +335,10 @@ export const routeConfig = [
   {
     path: "/admin/rcf-b2b",
     element: <WorkspaceLayout><RCFB2BAdminDashboard /></WorkspaceLayout>,
+  },
+  {
+    path: "/admin/advisor-landing-pages",
+    element: <WorkspaceLayout><AdvisorLandingPages /></WorkspaceLayout>,
   },
   {
     path: "/admin/users",

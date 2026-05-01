@@ -385,6 +385,9 @@ export default function RCFB2BAdminDashboard() {
   const [superAdminsLoading, setSuperAdminsLoading] = useState(false);
   const [selectedSuperAdminUserId, setSelectedSuperAdminUserId] = useState("");
   const [addingSuperAdmin, setAddingSuperAdmin] = useState(false);
+  const [pendingSuperAdminRemoval, setPendingSuperAdminRemoval] = useState<SuperAdminRow | null>(null);
+  const [confirmingSuperAdminRemoval, setConfirmingSuperAdminRemoval] = useState<SuperAdminRow | null>(null);
+  const [removingSuperAdminId, setRemovingSuperAdminId] = useState<string | null>(null);
   const [includeArchivedCompanies, setIncludeArchivedCompanies] = useState(false);
   const [companyEditOpen, setCompanyEditOpen] = useState(false);
   const [companyEditLoading, setCompanyEditLoading] = useState(false);
@@ -879,18 +882,64 @@ export default function RCFB2BAdminDashboard() {
       setSuperAdmins((data?.super_admins || []) as SuperAdminRow[]);
       setSelectedSuperAdminUserId("");
       await fetchSuperAdminCandidates();
-      toast({
-        title: "Super admin added",
-        description: `${data?.added_email || "Selected user"} can now access the super admin dashboard.`,
-      });
+      const emailSent = Boolean(data?.email_sent);
+      toast(
+        emailSent
+          ? {
+              title: "Super admin added",
+              description: `${data?.added_email || "Selected user"} can now access the super admin dashboard. Confirmation email sent.`,
+            }
+          : {
+              title: "Super admin added",
+              description:
+                `${data?.added_email || "Selected user"} can now access the super admin dashboard. ` +
+                `Confirmation email could not be sent${data?.email_error ? `: ${data.email_error}` : "."}`,
+              variant: "destructive",
+            },
+      );
     } catch (error: unknown) {
+      const description = await getEdgeErrorMessage(error);
       toast({
         title: "Failed to add super admin",
-        description: getErrorMessage(error),
+        description,
         variant: "destructive",
       });
     } finally {
       setAddingSuperAdmin(false);
+    }
+  };
+
+  const handleRemoveSuperAdmin = async () => {
+    const targetAdmin = confirmingSuperAdminRemoval || pendingSuperAdminRemoval;
+    if (!targetAdmin) return;
+    setRemovingSuperAdminId(targetAdmin.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-super-admins", {
+        body: {
+          action: "remove",
+          super_admin_id: targetAdmin.id,
+        },
+      });
+
+      if (error) throw error;
+
+      setSuperAdmins((data?.super_admins || []) as SuperAdminRow[]);
+      await fetchSuperAdminCandidates();
+      toast({
+        title: "Super admin removed",
+        description: `${data?.removed_email || targetAdmin.email} no longer has super admin access.`,
+      });
+      setPendingSuperAdminRemoval(null);
+      setConfirmingSuperAdminRemoval(null);
+    } catch (error: unknown) {
+      const description = await getEdgeErrorMessage(error);
+      toast({
+        title: "Failed to remove super admin",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setRemovingSuperAdminId(null);
     }
   };
 
@@ -1894,10 +1943,10 @@ export default function RCFB2BAdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Button
                   variant="outline"
-                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
+                  className="justify-center border-slate-200 bg-white/80 text-center"
                   onClick={() => setActiveTab("free-assessments")}
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
@@ -1905,7 +1954,7 @@ export default function RCFB2BAdminDashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
+                  className="justify-center border-slate-200 bg-white/80 text-center"
                   onClick={() => navigate("/admin/proposals")}
                 >
                   <ArrowUpRight className="mr-2 h-4 w-4" />
@@ -1913,7 +1962,15 @@ export default function RCFB2BAdminDashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="justify-center whitespace-nowrap border-slate-200 bg-white/80"
+                  className="justify-center border-slate-200 bg-white/80 text-center"
+                  onClick={() => navigate("/admin/advisor-landing-pages")}
+                >
+                  <Globe2 className="mr-2 h-4 w-4" />
+                  Landing Pages
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-center border-slate-200 bg-white/80 text-center"
                   onClick={() => navigate("/dashboard")}
                 >
                   Back 2 Dashboard
@@ -1980,7 +2037,7 @@ export default function RCFB2BAdminDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col gap-4">
-            <TabsList className="grid h-auto grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            <TabsList className="grid h-auto w-full grid-cols-1 gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               const isLink = "href" in tab;
@@ -3181,6 +3238,22 @@ export default function RCFB2BAdminDashboard() {
                           Added {formatShortDate(admin.created_at)}
                           {admin.added_by_email ? ` by ${admin.added_by_email}` : ""}
                         </p>
+                        <div className="mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={!admin.id || !/^[0-9a-f]{8}-/i.test(admin.id) || removingSuperAdminId === admin.id}
+                            onClick={() => setPendingSuperAdminRemoval(admin)}
+                          >
+                            {removingSuperAdminId === admin.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <XCircle className="mr-2 h-4 w-4" />
+                            )}
+                            Remove
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -4057,6 +4130,87 @@ export default function RCFB2BAdminDashboard() {
                     {pendingHiringToggle?.action === 'cancel_subscription' && "Confirm Cancel"}
                     {pendingHiringToggle?.action === 'remove_access' && "Confirm Remove Access"}
                   </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={pendingSuperAdminRemoval !== null}
+          onOpenChange={(open) => {
+            if (!open && !removingSuperAdminId) setPendingSuperAdminRemoval(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Super Admin</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove super admin access for{" "}
+                <span className="font-semibold">{pendingSuperAdminRemoval?.email}</span>.
+                <br />
+                <br />
+                They will immediately lose access to this dashboard and super-admin-only actions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={removingSuperAdminId !== null}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!pendingSuperAdminRemoval || removingSuperAdminId !== null}
+                onClick={() => {
+                  if (!pendingSuperAdminRemoval) return;
+                  setConfirmingSuperAdminRemoval(pendingSuperAdminRemoval);
+                  setPendingSuperAdminRemoval(null);
+                }}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {removingSuperAdminId !== null ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Confirm Remove"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={confirmingSuperAdminRemoval !== null}
+          onOpenChange={(open) => {
+            if (!open && !removingSuperAdminId) setConfirmingSuperAdminRemoval(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Final Confirmation Required</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to permanently remove super admin access for{" "}
+                <span className="font-semibold">{confirmingSuperAdminRemoval?.email}</span>.
+                <br />
+                <br />
+                This is the second confirmation step. Continue only if you are sure.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={removingSuperAdminId !== null}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!confirmingSuperAdminRemoval || removingSuperAdminId !== null}
+                onClick={async () => {
+                  await handleRemoveSuperAdmin();
+                  setConfirmingSuperAdminRemoval(null);
+                }}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {removingSuperAdminId !== null ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Yes, Remove Super Admin"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

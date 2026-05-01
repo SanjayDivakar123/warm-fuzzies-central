@@ -84,7 +84,7 @@ const sendMailgunEmail = async ({
   }
 
   const formData = new FormData();
-  formData.append("from", Deno.env.get("MAILGUN_FROM_EMAIL") || `Role Color Finder <support@${mailgunDomain}>`);
+  formData.append("from", Deno.env.get("MAILGUN_FROM_EMAIL") || `RoleColorFinder <support@${mailgunDomain}>`);
   formData.append("to", to);
   formData.append("subject", subject);
   formData.append("html", html);
@@ -163,20 +163,31 @@ serve(async (req) => {
     if (insertError) throw insertError;
     submissionId = data.id;
 
-    const origin = req.headers.get("origin");
-    const siteUrl = Deno.env.get("SITE_URL") || origin || "https://rolecolorfinder.com";
-    const authUrl = `${siteUrl.replace(/\/$/, "")}/auth`;
+    const siteUrl = Deno.env.get("SITE_URL") || "https://rolecolorfinder.com";
+    const baseUrl = siteUrl.replace(/\/$/, "");
+    const authUrl = `${baseUrl}/auth`;
+    const logoUrl =
+      Deno.env.get("ROLECOLORFINDER_LOGO_URL") ||
+      "https://rolecolorfinder.com/uploads/2842bc15-73da-4523-b9c9-228cb076346e.png";
     const resultLabel = colorLabels[dominantColor];
     const escapedResultLabel = escapeHtml(resultLabel);
     const escapedAuthUrl = escapeHtml(authUrl);
+    const escapedLogoUrl = escapeHtml(logoUrl);
 
     const html = `
       <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6; max-width: 640px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <img src="${escapedLogoUrl}" alt="RoleColorFinder" style="max-width: 180px; height: auto;" />
+        </div>
         <h1 style="font-size: 28px; margin-bottom: 12px;">Congrats on taking your assessment!</h1>
-        <p>Your free Role Color Finder preview result is:</p>
+        <p>Your free RoleColorFinder preview result is:</p>
         <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin: 20px 0; background: #f8fafc;">
           <p style="font-size: 22px; font-weight: 700; margin: 0;">${escapedResultLabel}</p>
           <p style="margin: 8px 0 0;">Create an account to keep exploring your RoleColor profile and unlock more tools.</p>
+        </div>
+        <div style="border: 1px solid #bbf7d0; border-radius: 16px; padding: 18px 20px; margin: 20px 0; background: #f0fdf4;">
+          <p style="font-size: 16px; font-weight: 700; margin: 0 0 6px; color: #166534;">Special offer</p>
+          <p style="margin: 0; color: #14532d;">Use code <strong>FREE499</strong> to get <strong>$4.99 off</strong> your first order.</p>
         </div>
         <p>
           <a href="${escapedAuthUrl}" style="display: inline-block; background: #0f172a; color: #ffffff; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700;">
@@ -184,15 +195,19 @@ serve(async (req) => {
           </a>
         </p>
         <p style="font-size: 13px; color: #64748b;">If the button does not work, open this link: ${escapedAuthUrl}</p>
+        <div style="border-top: 1px solid #e2e8f0; margin-top: 28px; padding-top: 18px; font-size: 12px; line-height: 1.5; color: #64748b;">
+          <p style="margin: 0 0 4px;">Sent by RoleColorFinder LLC</p>
+          <p style="margin: 0;">43 Hunting Ridge Rd, Greenwich, 06831, Connecticut, United States</p>
+        </div>
       </div>
     `;
 
-    const text = `Congrats on taking your assessment!\n\nYour free Role Color Finder preview result is: ${resultLabel}.\n\nSet up your account here: ${authUrl}`;
+    const text = `Congrats on taking your assessment!\n\nYour free RoleColorFinder preview result is: ${resultLabel}.\n\nUse code FREE499 to get $4.99 off your first order.\n\nSet up your account here: ${authUrl}\n\nSent by RoleColorFinder LLC\n43 Hunting Ridge Rd, Greenwich, 06831, Connecticut, United States`;
 
     try {
       await sendMailgunEmail({
         to: email,
-        subject: "Your Role Color Finder assessment result",
+        subject: "Your RoleColorFinder assessment result",
         html,
         text,
       });

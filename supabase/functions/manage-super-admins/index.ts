@@ -10,6 +10,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const DEFAULT_SITE_URL = "https://rolecolorfinder.com";
+
 function isValidUUID(value: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return typeof value === "string" && uuidRegex.test(value);
@@ -35,6 +37,77 @@ function buildFallbackSuperAdmins() {
     added_by_email: null,
     created_at: new Date(0).toISOString(),
   }));
+}
+
+async function sendSuperAdminConfirmationEmail({
+  email,
+  fullName,
+}: {
+  email: string;
+  fullName: string | null;
+}): Promise<{ sent: boolean; error?: string }> {
+  const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
+  const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN") || "rolecolorfinder.com";
+  const siteUrl = (Deno.env.get("SITE_URL") || DEFAULT_SITE_URL).replace(/\/$/, "");
+  const dashboardUrl = `${siteUrl}/admin/rcf-b2b`;
+
+  if (!mailgunApiKey) {
+    return { sent: false, error: "MAILGUN_API_KEY is not configured" };
+  }
+
+  const name = fullName?.trim() || email;
+  const safeName = name
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  const subject = "You now have RoleColorFinder super admin access";
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6; max-width: 640px; margin: 0 auto;">
+      <h1 style="font-size: 24px; margin-bottom: 12px;">Super admin access granted</h1>
+      <p>Hi ${safeName},</p>
+      <p>Your account now has super admin access in RoleColorFinder.</p>
+      <p>You can access the platform control dashboard using the link below:</p>
+      <p>
+        <a href="${dashboardUrl}" style="display: inline-block; background: #0f172a; color: #ffffff; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700;">
+          Open Super Admin Dashboard
+        </a>
+      </p>
+      <p style="font-size: 13px; color: #64748b;">If the button does not work, open this link: ${dashboardUrl}</p>
+    </div>
+  `;
+  const text = `Hi ${name},\n\nYour account now has super admin access in RoleColorFinder.\n\nOpen the dashboard here: ${dashboardUrl}`;
+
+  try {
+    const formData = new FormData();
+    formData.append("from", Deno.env.get("MAILGUN_FROM_EMAIL") || `RoleColorFinder <support@${mailgunDomain}>`);
+    formData.append("to", email);
+    formData.append("subject", subject);
+    formData.append("html", html);
+    formData.append("text", text);
+
+    const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { sent: false, error: `Mailgun request failed (${response.status}): ${errorText}` };
+    }
+
+    return { sent: true };
+  } catch (error) {
+    return {
+      sent: false,
+      error: error instanceof Error ? error.message : "Failed to send email",
+    };
+  }
 }
 
 async function ensurePlatformSuperAdminsTable() {
@@ -220,6 +293,10 @@ serve(async (req) => {
       }
 
       const { data } = await selectSuperAdmins(supabase);
+      const emailResult = await sendSuperAdminConfirmationEmail({
+        email: targetEmail,
+        fullName,
+      });
 
       await logAdminAction({
         supabase,
@@ -238,6 +315,78 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           added_email: targetEmail,
+          email_sent: emailResult.sent,
+          email_error: emailResult.error || null,
+          super_admins: data || [],
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (action === "remove") {
+      const targetSuperAdminId = (body?.super_admin_id || "").toString().trim();
+      if (!isValidUUID(targetSuperAdminId)) {
+        return new Response(JSON.stringify({ error: "Invalid super_admin_id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existingRow, error: existingError } = await supabase
+        .from("platform_super_admins")
+        .select("id, user_id, email, full_name")
+        .eq("id", targetSuperAdminId)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+      if (!existingRow) {
+        return new Response(JSON.stringify({ error: "Super admin not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { count: totalCount, error: countError } = await supabase
+        .from("platform_super_admins")
+        .select("id", { count: "exact", head: true });
+
+      if (countError) throw countError;
+      if ((totalCount || 0) <= 1) {
+        return new Response(JSON.stringify({ error: "At least one super admin must remain." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error: deleteError } = await supabase
+        .from("platform_super_admins")
+        .delete()
+        .eq("id", targetSuperAdminId);
+      if (deleteError) throw deleteError;
+
+      const { data } = await selectSuperAdmins(supabase);
+
+      await logAdminAction({
+        supabase,
+        actorId: user.id,
+        actorEmail: callerEmail,
+        actionType: "super_admin_remove",
+        targetType: "platform",
+        targetId: existingRow.user_id,
+        targetLabel: existingRow.email,
+        metadata: {
+          full_name: existingRow.full_name,
+          removed_super_admin_id: existingRow.id,
+        },
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          removed_email: existingRow.email,
           super_admins: data || [],
         }),
         {

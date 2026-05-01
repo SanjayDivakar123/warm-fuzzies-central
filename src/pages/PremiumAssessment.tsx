@@ -26,7 +26,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 // Use first 25 questions from the main quiz
-const premiumQuestions = [
+export const premiumQuestions = [
   // Forming Stage Questions (Building Connection)
   {
     id: 1,
