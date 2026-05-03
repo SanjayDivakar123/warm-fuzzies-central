@@ -133,7 +133,7 @@ serve(async (req) => {
       const user = await getUserFromAuthHeader(supabaseService, req.headers.get("Authorization"));
       if (user) {
         rcaiUserId = user.id;
-        const status = await checkRcaiDiscount(supabaseService, user.id);
+        const status = await checkRcaiDiscount(supabaseService, user.id, user.email);
         if (status.eligible) {
           rcaiDiscountApplied = true;
           rcaiRedemptionId = status.redemptionId;
