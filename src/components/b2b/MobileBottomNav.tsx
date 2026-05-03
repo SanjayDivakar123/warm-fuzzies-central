@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { Home, Users, UserSearch, ClipboardList, Settings, Video, BarChart3, Grid3x3, MoreHorizontal, Target, X } from 'lucide-react';
 

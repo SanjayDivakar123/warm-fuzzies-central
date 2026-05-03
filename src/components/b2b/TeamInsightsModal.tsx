@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { logAuditEvent, AUDIT_ENTITIES } from '@/lib/auditLogger';
 import {

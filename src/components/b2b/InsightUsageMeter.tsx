@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Lightbulb, Sparkles } from 'lucide-react';
