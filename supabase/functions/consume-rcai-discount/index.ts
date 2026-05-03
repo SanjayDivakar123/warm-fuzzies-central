@@ -49,8 +49,12 @@ serve(async (req) => {
         .eq("email", user.email.toLowerCase())
         .is("consumed_at", null)
         .select("id, consumed_at");
-      data = byEmail.data;
-      error = byEmail.error;
+      if (!byEmail.error) {
+        data = byEmail.data;
+        error = byEmail.error;
+      } else {
+        console.warn("consume-rcai-discount email fallback skipped:", byEmail.error.message);
+      }
     }
 
     if (error) {
