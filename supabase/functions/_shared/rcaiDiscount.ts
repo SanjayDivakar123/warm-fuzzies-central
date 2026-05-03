@@ -19,11 +19,16 @@ export function createServiceClient() {
 }
 
 export type RcaiDiscountStatus =
-  | { eligible: true; redemptionId: string; redeemedAt: string | null }
-  | { eligible: false; reason: "no_user" | "no_redemption" | "already_consumed" | "no_first_assessment_required"; consumedAt?: string | null };
+  | { eligible: true; redemptionId: string | null; status: string | null; plan: string | null }
+  | { eligible: false; reason: "no_user" | "not_eligible" | "already_consumed" | "lookup_error"; status?: string | null; plan?: string | null };
 
 /**
  * Defense-in-depth eligibility check. Caller is responsible for resolving the user from a bearer token.
+ */
+/**
+ * Source of truth: shared `public.rolecolorai_discount_status` view.
+ * Returns eligible=true only when the view says so. Falls back to the underlying
+ * redemption row to recover the redemption id (used for downstream consume bookkeeping).
  */
 export async function checkRcaiDiscount(
   supabase: ReturnType<typeof createServiceClient>,
@@ -31,22 +36,36 @@ export async function checkRcaiDiscount(
 ): Promise<RcaiDiscountStatus> {
   if (!userId) return { eligible: false, reason: "no_user" };
 
-  const { data: redemption, error } = await supabase
-    .from("rolecolorai_assessment_discounts")
-    .select("id, redeemed_at, consumed_at")
+  const { data, error } = await supabase
+    .from("rolecolorai_discount_status")
+    .select("eligible, status, plan")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) {
-    console.error("[rcaiDiscount] lookup error:", error);
-    return { eligible: false, reason: "no_redemption" };
+    console.error("[rcaiDiscount] view lookup error:", error);
+    return { eligible: false, reason: "lookup_error" };
   }
-  if (!redemption) return { eligible: false, reason: "no_redemption" };
-  if (redemption.consumed_at) {
-    return { eligible: false, reason: "already_consumed", consumedAt: redemption.consumed_at };
+  if (!data) return { eligible: false, reason: "not_eligible" };
+
+  if (data.eligible === true) {
+    // Best-effort fetch of redemption id for logging / metadata. Not required for eligibility.
+    let redemptionId: string | null = null;
+    try {
+      const { data: row } = await supabase
+        .from("rolecolorai_assessment_discounts")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      redemptionId = (row as { id?: string } | null)?.id ?? null;
+    } catch (_) { /* ignore */ }
+    return { eligible: true, redemptionId, status: data.status ?? null, plan: data.plan ?? null };
   }
 
-  return { eligible: true, redemptionId: redemption.id, redeemedAt: redemption.redeemed_at ?? null };
+  if (data.status === "consumed") {
+    return { eligible: false, reason: "already_consumed", status: data.status, plan: data.plan ?? null };
+  }
+  return { eligible: false, reason: "not_eligible", status: data.status ?? null, plan: data.plan ?? null };
 }
 
 export async function getUserFromAuthHeader(
