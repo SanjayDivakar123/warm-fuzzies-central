@@ -19,7 +19,14 @@ serve(async (req) => {
     const supabase = createServiceClient();
     const user = await getUserFromAuthHeader(supabase, req.headers.get("Authorization"));
     const url = new URL(req.url);
-    const productType = url.searchParams.get("productType");
+    let productType: string | null = url.searchParams.get("productType");
+    if (!productType && req.method !== "GET") {
+      try {
+        const body = await req.json();
+        productType = body?.productType ?? null;
+      } catch (_) { /* ignore empty body */ }
+    }
+    console.log("[check-rcai-discount] user:", user?.id, "email:", user?.email, "productType:", productType);
 
     if (!user) {
       return new Response(JSON.stringify({ eligible: false, reason: "no_user" }), {

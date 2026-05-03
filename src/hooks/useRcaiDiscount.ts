@@ -32,11 +32,11 @@ export function useRcaiDiscount(productType?: "premium" | "pro" | "career" | "te
     }
     (async () => {
       try {
-        const qs = productType ? `?productType=${productType}` : "";
-        const { data, error } = await supabase.functions.invoke(`check-rcai-discount${qs}`, {
-          method: "GET",
+        const { data, error } = await supabase.functions.invoke("check-rcai-discount", {
+          body: { productType: productType ?? null },
         });
         if (cancelled) return;
+        console.log("[useRcaiDiscount] response:", { data, error });
         if (error || !data) {
           setState({ loading: false, eligible: false, discountPct: 0, consumedAt: null, reason: error?.message });
           return;

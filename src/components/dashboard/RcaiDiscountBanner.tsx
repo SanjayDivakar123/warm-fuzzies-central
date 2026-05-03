@@ -26,13 +26,14 @@ export function RcaiDiscountBanner() {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase.functions.invoke("check-rcai-discount", {
-        method: "GET",
+        body: {},
       });
       if (cancelled) return;
       if (error) {
-        console.warn("[RcaiDiscountBanner] view lookup failed:", error.message);
+        console.warn("[RcaiDiscountBanner] lookup failed:", error.message);
         return;
       }
+      console.log("[RcaiDiscountBanner] discount status:", data);
       setData(data ?? null);
     })();
     return () => { cancelled = true; };
