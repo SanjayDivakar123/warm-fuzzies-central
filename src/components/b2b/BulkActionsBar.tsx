@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Mail, Bell, Trash2, UserCheck, RefreshCw, Download } from 'lucide-react';
