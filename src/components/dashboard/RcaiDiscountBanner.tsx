@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Gift, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { RcaiRedeemDialog } from "@/components/payment/RcaiRedeemDialog";
 
 type DiscountStatus = {
   eligible: boolean | null;
@@ -19,6 +19,7 @@ type DiscountStatus = {
 export function RcaiDiscountBanner() {
   const { user } = useAuth();
   const [data, setData] = useState<DiscountStatus | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -44,25 +45,29 @@ export function RcaiDiscountBanner() {
   if (data.eligible === true) {
     const planLabel = data.plan ? ` ${data.plan}` : "";
     return (
-      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
-            <Gift className="h-5 w-5 text-primary" />
+      <>
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
+              <Gift className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">🎁 You have 50% off waiting!</p>
+              <p className="text-sm text-muted-foreground">
+                Your RoleColorAI{planLabel} subscription unlocks one free 50% off RoleColorFinder assessment.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-foreground">🎁 You have 50% off waiting!</p>
-            <p className="text-sm text-muted-foreground">
-              Your RoleColorAI{planLabel} subscription unlocks one free 50% off RoleColorFinder assessment.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Redeem now →
+          </button>
         </div>
-        <Link
-          to="/pricing"
-          className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Redeem now →
-        </Link>
-      </div>
+        <RcaiRedeemDialog open={pickerOpen} onOpenChange={setPickerOpen} />
+      </>
     );
   }
 
