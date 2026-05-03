@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRcaiDiscount } from "@/hooks/useRcaiDiscount";
+import { RcaiRedeemDialog } from "@/components/payment/RcaiRedeemDialog";
 
 /**
  * /redeem?source=rolecolorai[&token=...]
@@ -18,6 +19,7 @@ export default function RedeemRcaiDiscount() {
   const source = params.get("source");
   const token = params.get("token"); // reserved for future signed RCAI redirects
   const status = useRcaiDiscount();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -25,6 +27,11 @@ export default function RedeemRcaiDiscount() {
       navigate(`/auth?next=${encodeURIComponent(next)}`);
     }
   }, [authLoading, user, navigate, params]);
+
+  // Auto-open the assessment picker as soon as we confirm eligibility.
+  useEffect(() => {
+    if (!status.loading && status.eligible) setPickerOpen(true);
+  }, [status.loading, status.eligible]);
 
   const isRcai = source === "rolecolorai";
 
@@ -60,8 +67,8 @@ export default function RedeemRcaiDiscount() {
               <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                 The discount will be applied automatically at checkout.
               </p>
-              <Button className="mt-4 w-full" onClick={() => navigate("/pricing")}>
-                Continue to assessments
+              <Button className="mt-4 w-full" onClick={() => setPickerOpen(true)}>
+                Choose your assessment
               </Button>
             </div>
           )}
@@ -100,6 +107,7 @@ export default function RedeemRcaiDiscount() {
           )}
         </CardContent>
       </Card>
+      <RcaiRedeemDialog open={pickerOpen} onOpenChange={setPickerOpen} />
     </div>
   );
 }
