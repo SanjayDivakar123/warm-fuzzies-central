@@ -15,6 +15,7 @@ const PaymentSuccess = () => {
   const [purchaseRecordId, setPurchaseRecordId] = useState<string | null>(null);
   
   const assessmentType = searchParams.get('type') as 'premium' | 'pro';
+  const stripeSessionId = searchParams.get('session_id');
 
   useEffect(() => {
     // Store the successful payment in the database
@@ -78,6 +79,7 @@ const PaymentSuccess = () => {
       if (existingUnstartedPurchase) {
         setPurchaseRecordId(existingUnstartedPurchase.id);
         console.log('Existing unstarted purchase found. Reusing purchase row:', existingUnstartedPurchase.id);
+        await consumeRcaiDiscountIfAny(existingUnstartedPurchase.id);
         return;
       }
       
@@ -102,9 +104,27 @@ const PaymentSuccess = () => {
       } else {
         console.log('Payment record stored successfully:', data);
         setPurchaseRecordId(data.id);
+        await consumeRcaiDiscountIfAny(data.id);
       }
     } catch (error) {
       console.error('Error storing payment record:', error);
+    }
+  };
+
+  // Marks the RoleColorAI member discount row as consumed after a successful payment.
+  // Atomic guard lives server-side (.is("consumed_at", null)) — safe to call always.
+  const consumeRcaiDiscountIfAny = async (assessmentId: string | null) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('consume-rcai-discount', {
+        body: { assessmentId, stripeSessionId },
+      });
+      if (error) {
+        console.warn('consume-rcai-discount call failed:', error);
+        return;
+      }
+      console.log('consume-rcai-discount result:', data);
+    } catch (err) {
+      console.warn('consume-rcai-discount unexpected error:', err);
     }
   };
 
