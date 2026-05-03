@@ -12,6 +12,7 @@ import PremiumResults from "@/pages/PremiumResults";
 import ProAssessment from "@/pages/ProAssessment";
 import ProResults from "@/pages/ProResults";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import RedeemRcaiDiscount from "@/pages/RedeemRcaiDiscount";
 import Pricing from "@/pages/Pricing";
 import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
@@ -205,6 +206,10 @@ export const routeConfig = [
   {
     path: "/payment-success",
     element: <Layout><PaymentSuccess /></Layout>,
+  },
+  {
+    path: "/redeem",
+    element: <Layout><RedeemRcaiDiscount /></Layout>,
   },
   {
     path: "/advisor/:slug",
