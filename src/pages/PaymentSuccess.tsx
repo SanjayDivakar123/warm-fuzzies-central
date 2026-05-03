@@ -111,20 +111,30 @@ const PaymentSuccess = () => {
     }
   };
 
-  // Marks the RoleColorAI member discount row as consumed after a successful payment.
-  // Atomic guard lives server-side (.is("consumed_at", null)) — safe to call always.
+  // Atomically marks the RoleColorAI member discount as consumed via shared RPC.
+  // If the row is already consumed, Postgres raises 23505 (unique_violation) and
+  // we surface that to the user — the payment side must then refund or charge full price.
   const consumeRcaiDiscountIfAny = async (assessmentId: string | null) => {
+    if (!assessmentId) return;
     try {
-      const { data, error } = await supabase.functions.invoke('consume-rcai-discount', {
-        body: { assessmentId, stripeSessionId },
+      const { error } = await (supabase as any).rpc('rolecolorai_consume_discount', {
+        p_assessment_id: assessmentId,
+        p_order_id: stripeSessionId,
       });
       if (error) {
-        console.warn('consume-rcai-discount call failed:', error);
-        return;
+        if ((error as any).code === '23505') {
+          console.warn('RCAI discount already consumed — full price applies / refund needed');
+          toast({
+            title: 'Discount already used',
+            description: "Your RoleColorAI discount was already redeemed. We'll charge full price or issue a refund as needed.",
+            variant: 'destructive',
+          });
+          return;
+        }
+        console.warn('rolecolorai_consume_discount error:', error);
       }
-      console.log('consume-rcai-discount result:', data);
     } catch (err) {
-      console.warn('consume-rcai-discount unexpected error:', err);
+      console.warn('rolecolorai_consume_discount unexpected error:', err);
     }
   };
 
