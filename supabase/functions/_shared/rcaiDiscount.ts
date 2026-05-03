@@ -11,9 +11,25 @@ export function isRcaiDiscountEligibleProduct(productType: string | null | undef
 }
 
 export function createServiceClient() {
+  // The RoleColorAI discount view + tables live in the SHARED RCAI Supabase
+  // project (qbuxoetprodjxpagfkoi), NOT this project's Lovable Cloud backend.
+  // We must use dedicated secrets that point at that shared project. The
+  // default SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are auto-injected by
+  // Lovable Cloud and point at the wrong project — using them silently
+  // returns "view not found" and we'd charge full price.
+  const url =
+    Deno.env.get("RCAI_SUPABASE_URL") ??
+    Deno.env.get("SHARED_SUPABASE_URL") ??
+    Deno.env.get("SUPABASE_URL") ??
+    "";
+  const serviceKey =
+    Deno.env.get("RCAI_SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SHARED_SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    "";
   return createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    url,
+    serviceKey,
     { auth: { persistSession: false } },
   );
 }
