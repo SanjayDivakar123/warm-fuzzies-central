@@ -59,14 +59,27 @@ export type RcaiDiscountStatus =
 export async function checkRcaiDiscount(
   supabase: ReturnType<typeof createServiceClient>,
   userId: string | null,
+  email?: string | null,
 ): Promise<RcaiDiscountStatus> {
   if (!userId) return { eligible: false, reason: "no_user" };
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("rolecolorai_discount_status")
     .select("eligible, status, plan")
     .eq("user_id", userId)
     .maybeSingle();
+
+  if ((!data || error) && email) {
+    const byEmail = await supabase
+      .from("rolecolorai_discount_status")
+      .select("eligible, status, plan")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+    if (byEmail.data || !byEmail.error) {
+      data = byEmail.data;
+      error = byEmail.error;
+    }
+  }
 
   if (error) {
     console.error("[rcaiDiscount] view lookup error:", error);
@@ -84,6 +97,14 @@ export async function checkRcaiDiscount(
         .eq("user_id", userId)
         .maybeSingle();
       redemptionId = (row as { id?: string } | null)?.id ?? null;
+      if (!redemptionId && email) {
+        const { data: emailRow } = await supabase
+          .from("rolecolorai_assessment_discounts")
+          .select("id")
+          .eq("email", email.toLowerCase())
+          .maybeSingle();
+        redemptionId = (emailRow as { id?: string } | null)?.id ?? null;
+      }
     } catch (_) { /* ignore */ }
     return { eligible: true, redemptionId, status: data.status ?? null, plan: data.plan ?? null };
   }
