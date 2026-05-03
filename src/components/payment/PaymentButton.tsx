@@ -60,9 +60,9 @@ export const PaymentButton = ({
       setLoading(true);
       
       // Determine success and cancel URLs based on product type
-      const successUrl = productType === 'career' 
-        ? `${window.location.origin}/career-payment-success`
-        : `${window.location.origin}/payment-success?type=${productType}`;
+      const successUrl = productType === 'career'
+        ? `${window.location.origin}/career-payment-success?session_id={CHECKOUT_SESSION_ID}`
+        : `${window.location.origin}/payment-success?type=${productType}&session_id={CHECKOUT_SESSION_ID}`;
       
       const cancelUrl = productType === 'career'
         ? `${window.location.origin}/career-finder`
