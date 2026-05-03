@@ -35,7 +35,7 @@ serve(async (req) => {
       });
     }
 
-    const status = await checkRcaiDiscount(supabase, user.id);
+    const status = await checkRcaiDiscount(supabase, user.id, user.email);
     return new Response(
       JSON.stringify({ ...status, discountPct: status.eligible ? RCAI_DISCOUNT_PCT : 0 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },

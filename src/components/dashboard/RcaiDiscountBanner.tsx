@@ -25,11 +25,9 @@ export function RcaiDiscountBanner() {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("rolecolorai_discount_status")
-        .select("eligible, status, plan")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("check-rcai-discount", {
+        method: "GET",
+      });
       if (cancelled) return;
       if (error) {
         console.warn("[RcaiDiscountBanner] view lookup failed:", error.message);

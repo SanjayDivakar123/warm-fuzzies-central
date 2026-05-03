@@ -27,7 +27,7 @@ serve(async (req) => {
     const orderId: string | null = body.orderId ?? body.stripeSessionId ?? null;
 
     // Atomic guard: only succeeds if consumed_at IS NULL.
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("rolecolorai_assessment_discounts")
       .update({
         consumed_at: new Date().toISOString(),
@@ -37,6 +37,25 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .is("consumed_at", null)
       .select("id, consumed_at");
+
+    if ((!data || data.length === 0) && user.email) {
+      const byEmail = await supabase
+        .from("rolecolorai_assessment_discounts")
+        .update({
+          consumed_at: new Date().toISOString(),
+          consumed_assessment_id: assessmentId,
+          consumed_order_id: orderId,
+        })
+        .eq("email", user.email.toLowerCase())
+        .is("consumed_at", null)
+        .select("id, consumed_at");
+      if (!byEmail.error) {
+        data = byEmail.data;
+        error = byEmail.error;
+      } else {
+        console.warn("consume-rcai-discount email fallback skipped:", byEmail.error.message);
+      }
+    }
 
     if (error) {
       console.error("consume-rcai-discount db error:", error);
