@@ -60,6 +60,7 @@ import { PaymentButton } from "@/components/payment/PaymentButton";
 import { careerProfiles, getCareerProfile } from "@/lib/careerData";
 import ResumeCareerUpload from "@/components/career/ResumeCareerUpload";
 import PublicRoleColorProfileSettings from "@/components/profile/PublicRoleColorProfileSettings";
+import { RcaiDiscountBanner } from "@/components/dashboard/RcaiDiscountBanner";
 
 interface AssessmentResult {
   id: string;
@@ -1225,6 +1226,7 @@ const Dashboard = () => {
                 {/* Overview Section */}
                 {activeSection === 'overview' && (
                   <>
+                    <RcaiDiscountBanner />
                     {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).map((announcement) => (
                       <Card key={announcement.id} className="border-blue-200 bg-blue-50/80">
                         <CardContent className="flex items-start justify-between gap-4 p-4">
