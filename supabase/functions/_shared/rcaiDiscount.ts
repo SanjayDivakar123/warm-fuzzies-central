@@ -34,6 +34,16 @@ export function createServiceClient() {
   );
 }
 
+export function createLocalAuthClient() {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  return createClient(
+    url,
+    serviceKey,
+    { auth: { persistSession: false } },
+  );
+}
+
 export type RcaiDiscountStatus =
   | { eligible: true; redemptionId: string | null; status: string | null; plan: string | null }
   | { eligible: false; reason: "no_user" | "not_eligible" | "already_consumed" | "lookup_error"; status?: string | null; plan?: string | null };
@@ -85,11 +95,15 @@ export async function checkRcaiDiscount(
 }
 
 export async function getUserFromAuthHeader(
-  supabase: ReturnType<typeof createServiceClient>,
+  _supabase: ReturnType<typeof createServiceClient>,
   authHeader: string | null,
 ) {
   if (!authHeader) return null;
   const token = authHeader.replace("Bearer ", "");
+  // Auth tokens are issued by this app's Lovable Cloud project. The discount
+  // data lives in the shared RCAI project, so validate the token locally first
+  // and then use the resulting app user id for the shared discount lookup.
+  const supabase = createLocalAuthClient();
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
   return data.user;
